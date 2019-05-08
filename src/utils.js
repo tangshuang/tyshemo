@@ -85,6 +85,11 @@ export function isInstanceOf(ins, Interface, strict) {
   return ins instanceof Interface && (strict ? ins.constructor === Interface : true)
 }
 
+export function isInheritedOf(SubInterface, Interface, strict) {
+  const ins = SubInterface.prototype
+  return isInstanceOf(ins, Interface, strict)
+}
+
 /**
  * 求数组的并集
  * @param {*} a

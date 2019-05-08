@@ -4,6 +4,7 @@ import { isObject, isArray, isInstanceOf, clone, inObject } from './utils.js'
 import Type from './type.js'
 import TySheMoError, { makeError } from './error.js'
 import Rule from './rule.js'
+import TySheMo from './tyshemo.js'
 
 const makeTypeDef = (definition, _key_ = '') => {
   const keys = Object.keys(definition)
@@ -142,7 +143,7 @@ export class Schema {
       }
       else if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
         const { type } = def
-        let error = isInstanceOf(type, Type) ? type.catch(value) : isInstanceOf(type, Rule) ? type.validate2(value, key, target) : Tx.catch(value).by(type)
+        let error = isInstanceOf(type, Type) ? type.catch(value) : isInstanceOf(type, Rule) ? type.validate2(value, key, target) : TySheMo.catch(value).by(type)
         if (error) {
           comming = clone(defaultValue)
           setTimeout(() => {

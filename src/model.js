@@ -1,7 +1,10 @@
-import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual } from './utils.js'
+import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf } from './utils.js'
 import TySheMoError, { makeError } from './error.js'
 import List from './list.js'
 import Rule from './rule.js'
+import Schema from './schema.js'
+import Type from './type.js'
+import TySheMo from './tyshemo.js'
 
 /**
  * 数据源相关信息
@@ -70,6 +73,9 @@ export class Model {
 
     this.state = this.schema.ensure(data)
     this.listeners = {}
+
+    this.__update = []
+    this.__set = {}
   }
 
   define() {
@@ -81,6 +87,11 @@ export class Model {
   }
 
   set(keyPath, value) {
+    const oldValue = parse(this.state, keyPath)
+    this.__set[keyPath] = {
+      oldValue,
+      newValue: value,
+    }
     assign(this.state, keyPath, value)
     return this
   }
@@ -257,7 +268,7 @@ export class Model {
           }
           else if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
             let { type } = def
-            let error = isInstanceOf(type, Type) ? type.catch(value) : isInstanceOf(type, Rule) ? type.validate2(value, key, target) : Tx.catch(value).by(type)
+            let error = isInstanceOf(type, Type) ? type.catch(value) : isInstanceOf(type, Rule) ? type.validate2(value, key, target) : TySheMo.catch(value).by(type)
             if (error) {
               error = makeError(error, info)
               reject(error)
@@ -373,8 +384,8 @@ export class Model {
 
             // type is inherited from Model, it means type is a Model too
             // we will use the true data of this model to output
-            if (isInstanceOf(type.prototype, Model)) {
-              value = isInstanceOf(value, Model) ? value.data() : (new type()).schema.ensure()
+            if (isInheritedOf(type, Model)) {
+              value = isInstanceOf(value, type) ? value.data() : (new type()).schema.ensure()
             }
 
             if (isFunction(flat)) {
@@ -426,9 +437,24 @@ export class Model {
     for (let i = 0, len = keys.length; i < len; i ++) {
       const key = keys[i]
       const def = definition[key]
-      const value = data[key]
-      if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def) && isArray(def.validators)) {
-        const { validators } = def
+      let value = data[key]
+      if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
+        const { validators, type } = def
+        const info = { value, key, model: this, level: 'model', action: 'validate' }
+
+        if (isInheritedOf(type, Model)) {
+          let error = value.validate()
+          if (error) {
+            return makeError(error, { ...info, pattern: type })
+          }
+
+          value = value.data()
+        }
+
+        if (!isArray(validators)) {
+          continue
+        }
+
         for (let i = 0, len = validators.length; i < len; i ++) {
           const item = validators[i]
 
@@ -450,9 +476,9 @@ export class Model {
           }
 
           let res = validate.call(this, value)
-          let info = { value, key, pattern: new Rule(validate.bind(this)), model: this, level: 'model', action: 'validate' }
+          let info2 = { ...info, pattern: new Rule(validate.bind(this)) }
           let msg = isFunction(message) ? message.call(this, value) : message
-          let error = isInstanceOf(res, Error) ? makeError(res, info) : !res ? new TySheMoError(msg, info) : null
+          let error = isInstanceOf(res, Error) ? makeError(res, info2) : !res ? new TySheMoError(msg, info2) : null
           if (error) {
             return error
           }
