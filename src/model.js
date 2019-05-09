@@ -1,4 +1,4 @@
-import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf, clone, getInterface, map } from './utils.js'
+import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf, clone, getInterface, map, each, extractObject } from './utils.js'
 import TsmError, { makeError } from './error.js'
 import List from './list.js'
 import Rule from './rule.js'
@@ -11,11 +11,11 @@ import TySheMo from './tyshemo.js'
  * definition是一个对象
  *
  * {
- *   // 字段名
+ *   // 对象格式的配置
  *   key: {
  *
  *     // ---------------- schema ---------------
- *     type: String, // 必填
+ *     type: String, // 必填，type 不能为 Model 及其继承者
  *       // 注意：default 和 compute 的结果必须符合 type 的要求，这一点必须靠开发者自己遵守，Model 内部没有进行控制
  *     default: '', // 必填，默认值
  *     validate,
@@ -59,6 +59,10 @@ import TySheMo from './tyshemo.js'
  *     map: (value) => newValue, // 可选，使用新值覆盖原始值输出，例如 map: region => region.region_id 使当前这个字段使用region.region_id作为最终结果输出。
  *       // 注意：它仅在drop为false的情况下生效，drop为true，map结果不会出现在结果中。
  *   },
+ *   // 某个 Model
+ *   key2: SomeModel,
+ *   // 某个 Model 的数组
+ *   key3: \[SomeModel\]
  * }
  *
  * 需要注意：只有definition中规定的属性会被当作model最终生成formdata的字段，不在definition中规定的，但是仍然存在于model中的属性不会被加入到formdata中。
@@ -69,29 +73,50 @@ import TySheMo from './tyshemo.js'
 
 export class Model {
   constructor(data = {}) {
-    if (getInterface(this) === Model) {
+    const Interface = getInterface(this)
+
+    if (!isInheritedOf(Interface, Model)) {
       throw new Error('Model should be extended.')
     }
 
-    const definition = this.define()
+    const definition = Interface.schema
+
     if (!isObject(definition)) {
-      throw new TsmError('model definition should be an object.')
+      throw new TsmError('model schema should be an object.')
     }
 
-    this.definition = map(definition, (value, key) => {
-
+    each(definition, (def, key) => {
+      if (isObject(def)) {
+        if (!inObject('default', def)) {
+          throw new TsmError(`[Model]: '${key}' should have 'default' property.`)
+        }
+        if (!inObject('type', def)) {
+          throw new TsmError(`[Model]: '${key}' should have 'type' property.`)
+        }
+        if (def.type === Model || isInheritedOf(def.type, Model)) {
+          throw new TsmError(`[Model]: '${key}.type' should not be model, use model as a property value directly.`)
+        }
+      }
+      else if (isArray(def)) {
+        if (def.length !== 1) {
+          throw new TsmError(`[Model]: '${key}' should have only one item in array.`)
+        }
+        if (!isInstanceOf(def[0], Model)) {
+          throw new TsmError(`[Model]: '${key}' should be a model array.`)
+        }
+      }
+      else if (!isInstanceOf(def, Model)) {
+        throw new TsmError(`[Model]: '${key}' should be a model, a model array or an model definition object.`)
+      }
     })
-    this.schema = new Schema(definition)
 
-    this.state = this.schema.ensure(data)
+    this.definition = definition
+
+    this.state = {}
+    this.reset(data)
 
     this.__listeners = {}
     this.__update = []
-    this.__catch = []
-  }
-
-  define() {
-    throw new Error('Model.define should be override.')
   }
 
   get(keyPath) {
@@ -207,7 +232,7 @@ export class Model {
       this.digest()
       return new Promise((resolve, reject) => {
         setTimeout(() => {
-          let error = this.schema.validate(this.state)
+          let error = this.validate()
           if (error) {
             reject(error)
           }
@@ -237,7 +262,7 @@ export class Model {
         const updating = this.__update
         this.__update = []
 
-        // 去除已经存在的
+        // 去重
         const table = {}
         updating.forEach((item, i) => {
           table[item.key] = i
@@ -253,37 +278,27 @@ export class Model {
           let def = definition[key]
           let info = { key, value, pattern: def, model: this, level: 'model', action: 'update' }
 
-          if (isInstanceOf(def, Schema)) {
-            let type = def.type
-            let error = type.catch(value)
-            if (error) {
-              error = makeError(error, info)
-              reject(error)
-              return
+          let error = null
+          if (isObject(def)) {
+            const { type } = def
+            error = TySheMo.catch(value).by(type)
+          }
+          else if (isArray(def)) {
+            const [model] = def
+            for (let i = 0, len = value.length; i < len; i ++) {
+              const item = value[i]
+              error = TySheMo.catch(item).by(model)
+              if (error) {
+                break
+              }
             }
           }
-          else if (isArray(def) && isInstanceOf(def[0], Schema)) {
-            let [schema] = def
-            let type = schema.type
-            let SchemaType = new List([type])
-            let error = SchemaType.catch(value)
-            if (error) {
-              error = makeError(error, info)
-              reject(error)
-              return
-            }
+          else if (isInheritedOf(def)) {
+            error = TySheMo.catch(value).by(def)
           }
-          else if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
-            let { type } = def
-            let error = isInstanceOf(type, Type) ? type.catch(value) : isInstanceOf(type, Rule) ? type.validate2(value, key, target) : TySheMo.catch(value).by(type)
-            if (error) {
-              error = makeError(error, info)
-              reject(error)
-              return
-            }
-          }
-          else {
-            let error = new TsmError(`schema.definition.${key} type error.`)
+
+          if (error) {
+            error = makeError(error, info)
             reject(error)
             return
           }
@@ -297,50 +312,14 @@ export class Model {
     })
   }
 
-  // 用新数据覆盖原始数据，使用 schema 的 prepare 函数获得需要覆盖的数据
-  // 如果一个数据不存在于新数据中，将使用默认值
-  reset(data) {
-    const definition = this.definition
-    const keys = Object.keys(definition)
-    const coming = {}
-
-    keys.forEach((key) => {
-      const def = definition[key]
-      if (isObject(def) && inObject('default', def) && inObject('type', def) && isFunction(def.prepare)) {
-        const { prepare } = def
-        coming[key] = prepare.call(this, data)
-        return
-      }
-      coming[key] = data[key]
-    })
-
-    let next = this.schema.ensure(coming)
-    this.state = next
-    this.digest()
-
-    this.schema.catch((errors) => {
-      this.__catch = errors
-    })
-
-    return next
-  }
-
-  catch(fn) {
-    setTimeout(() => {
-      const noise = this.__catch
-      if (noise && noise.length) {
-        fn(noise)
-      }
-      this.__catch = []
-    })
-  }
 
   /**
    * 获取数据，获取数据之前，一定要先校验一次，以防获取中报错
    * @param {*} mode
-   * 1: 获取经过map之后的数据
-   * 2: 在1的基础上获取扁平化数据
-   * 3: 在2的基础上转化为 FormData
+   * 1: 将内部的子 Model 提取值，而非以 model 形式返回
+   * 2: 获取经过map之后的数据
+   * 3: 在1的基础上获取扁平化数据
+   * 4: 在2的基础上转化为 FormData
    * 0: 获取原始数据
    */
   data(mode = 0) {
@@ -368,32 +347,13 @@ export class Model {
       const definition = this.definition
 
       const extract = (data, definition) => {
-        const keys = Object.keys(definition)
         const output = {}
 
-        keys.forEach((key) => {
-          const def = definition[key]
-          var value = data[key]
+        each(definition, (def, key) => {
+          const value = data[key]
 
-          if (isInstanceOf(def, Schema)) {
-            value = isObject(value) ? extract(value, def.definition) : def.ensure()
-            assign(output, key, value)
-            return
-          }
-          else if (isArray(def) && isInstanceOf(def[0], Schema)) {
-            let [schema] = def
-            value = isArray(value) ? value.map(item => extract(item, schema.definition)) : []
-            assign(output, key, value)
-            return
-          }
-          else if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
-            const { flat, drop, map, type } = def
-
-            // type is inherited from Model, it means type is a Model too
-            // we will use the true data of this model to output
-            if (isInheritedOf(type, Model)) {
-              value = isInstanceOf(value, type) ? value.data() : (new type()).schema.ensure()
-            }
+          if (isObject(def)) {
+            const { flat, drop, map } = def
 
             if (isFunction(flat)) {
               let mapping = flat.call(this, value)
@@ -411,10 +371,17 @@ export class Model {
               return
             }
 
-            if (isFunction(map)) {
-              let v = map.call(this, value)
-              assign(output, key, v)
-            }
+            const v = isFunction(map) ? map.call(this, value) : value
+            assign(output, key, v)
+          }
+          else if (isArray(def)) {
+            const [model] = def
+            const v = isArray(value) ? value.map(item => isInstanceOf(item, model) ? item.data(2) : null) : []
+            assign(output, key, v)
+          }
+          else if (isInheritedOf(def, Model)) {
+            const v = isInstanceOf(value, def) ? value.data(2) : null
+            assign(output, key, v)
           }
         })
 
@@ -430,9 +397,33 @@ export class Model {
     }
   }
 
+  /**
+   * 对当前 state 进行校验
+   */
   validate() {
-    const schema = this.schema
-    const data = this.state
+    const extract = (model) => {
+      const state = model.state
+      const data = map(state, (value) => {
+        if (isInstanceOf(value, Model)) {
+          return extract(value)
+        }
+        else {
+          return value
+        }
+      })
+      return data
+    }
+    const data = extract(this)
+
+    // 重新整理 schema 使之在调用时按照正确的方式进行调用
+    const schema = new Schema(map(definition, (def) => {
+      if (isObject(def)) {
+        return extractObject(def, ['type', 'default', 'validate', 'ensure', 'required'])
+      }
+    }))
+    /////// TODO: ////////////////////
+
+
     const error = schema.validate(data)
     if (error) {
       const info = { value: data, pattern: schema, model: this, level: 'model', action: 'validate' }
@@ -444,19 +435,11 @@ export class Model {
     for (let i = 0, len = keys.length; i < len; i ++) {
       const key = keys[i]
       const def = definition[key]
-      let value = data[key]
-      if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
-        const { validators, type } = def
+      const value = data[key]
+
+      if (isObject(def)) {
+        const { validators } = def
         const info = { value, key, model: this, level: 'model', action: 'validate' }
-
-        if (isInheritedOf(type, Model)) {
-          let error = value.validate()
-          if (error) {
-            return makeError(error, { ...info, pattern: type })
-          }
-
-          value = value.data()
-        }
 
         if (!isArray(validators)) {
           continue
@@ -493,6 +476,66 @@ export class Model {
       }
     }
   }
+
+
+  // 用新数据覆盖原始数据，使用 schema 的 prepare 函数获得需要覆盖的数据
+  // 如果一个数据不存在于新数据中，将使用默认值
+  reset(data) {
+    if (!isObject(data)) {
+      data = {}
+    }
+
+    const definition = this.definition
+    const coming = {}
+
+    each(definition, (def, key) => {
+      const value = data[key]
+
+      if (isObject(def)) {
+        const { prepare } = def
+        let v = null
+        if (isFunction(prepare)) {
+          try {
+            v = prepare.call(this, data)
+          }
+          catch (e) {
+            v = value
+          }
+        }
+        else {
+          v = value
+        }
+        coming[key] = v
+      }
+    })
+
+    const schema = this.schema
+    const next = schema.ensure(coming)
+
+    each(definition, (def, key) => {
+      const value = next[key]
+      if (isArray(def)) {
+        const [model] = def
+        const v = value.map((item) => {
+          const ins = new model()
+          ins.state = item
+          return ins
+        })
+        next[key] = v
+      }
+      else if (isObject(def)) {
+        const v = new model()
+        v.state = value
+        next[key] = v
+      }
+    })
+
+    this.state = next
+    this.digest()
+
+    return this
+  }
+
 }
 
 export default Model

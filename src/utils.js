@@ -337,3 +337,13 @@ export function flatObject(obj, determine) {
   }
   return flat(obj)
 }
+
+export function extractObject(obj, keys) {
+  const results = {}
+  keys.forEach((key) => {
+    if (inObject(key, obj)) {
+      results[key] = obj[key]
+    }
+  })
+  return results
+}

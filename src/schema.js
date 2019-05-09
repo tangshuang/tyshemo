@@ -11,7 +11,7 @@ export class Schema {
    *   // 字段名，值为一个配置对象
    *   object: {
    *     default: '', // 必填，默认值，注意：默认值必须符合该字段的类型和校验规则
-   *     type: String, // 必填，数据类型 Pattern
+   *     type: String, // 必填，数据类型，不能为 Schema 及其实例
    *     validate: value => true|false, // 选填，对值进行特殊校验，例如对数字的值域进行校验
    *     ensure: value => newValue, // 选填，在 ensure 的时候，对当前字段值进行转化，将转化结果返回，注意，转化结果不会再进行校验
    *     required: false, // 选填，默认为 true，为 false 的时候，表示这个字段是可选的，可以不存在，而类型检查和校验，只会在该字段存在时使用
@@ -32,16 +32,20 @@ export class Schema {
     // 经过实例化校验之后，后续的方法中都不用担心对应的类型问题
     each(definition, (def, key) => {
       if (isObject(def)) {
-        if (!inObject('default')) {
+        if (!inObject('default', def)) {
           throw new TsmError(`[Schema]: '${key}' should have 'default' property.`)
         }
-        if (!inObject('type')) {
+        if (!inObject('type', def)) {
           throw new TsmError(`[Schema]: '${key}' should have 'type' property.`)
+        }
+        // 对象定义时，不能使用 schema 作为 type，要使用 schema 直接传即可
+        if (isInstanceOf(def.type, Schema)) {
+          throw new TsmError(`[Schema]: '${key}.type' should not be schema, use schema as a property value directly.`)
         }
       }
       else if (isArray(def)) {
         if (def.length !== 1) {
-          throw new TsmError(`[Schema]: '${key}' should have only one schema item in array.`)
+          throw new TsmError(`[Schema]: '${key}' should have only one item in array.`)
         }
         if (!isInstanceOf(def[0], Schema)) {
           throw new TsmError(`[Schema]: '${key}' should be a schema array.`)
@@ -88,7 +92,7 @@ export class Schema {
           error = TySheMo.catch(value).by(type)
           // 再执行校验器
           if (!error && isFunction(validate)) {
-            error = validate.call(this, value, type) // 对于更高层的 Model，可以在 validate 里面做文章
+            error = validate(value) // 对于更高层的 Model，可以在 validate 里面做文章
           }
         }
       }
@@ -138,7 +142,7 @@ export class Schema {
         else if (!TySheMo.test(value).by(type)) {
           comming = clone(defaultValue)
         }
-        else if (isFunction(validate) && !validate.call(this, value, type)) {
+        else if (isFunction(validate) && !validate(value)) {
           comming = clone(defaultValue)
         }
         else {
@@ -146,7 +150,7 @@ export class Schema {
         }
 
         if (isFunction(ensure)) {
-          comming = ensure.call(this, comming) // 对于更高层的 Model 可以将值提取放到 ensure 中
+          comming = ensure(comming) // 对于更高层的 Model 可以将值提取放到 ensure 中
         }
       }
       else if (isArray(def)) {
