@@ -9,9 +9,10 @@ import {
   isString,
   isFunction,
   isSymbol,
-  isConstructor,
+  isInterface,
   isInstanceOf,
   inArray,
+  getInterface,
 } from './utils.js'
 
 export class Type {
@@ -253,7 +254,7 @@ export class Type {
 
     // instance of a class
     // i.e. (new Type(Person)).assert(person)
-    if (isConstructor(pattern) && isInstanceOf(value, pattern)) {
+    if (isInterface(pattern) && isInstanceOf(value, pattern)) {
       return null
     }
 
@@ -337,8 +338,8 @@ export class Type {
     return this
   }
   get strict() {
-    const Constructor = Object.getPrototypeOf(this).constructor
-    const ins = new Constructor(this.pattern)
+    const Interface = getInterface(this)
+    const ins = new Interface(this.pattern)
     ins.toBeStrict()
     return ins
   }

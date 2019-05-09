@@ -66,7 +66,7 @@ export function isEmpty(value) {
 	return false
 }
 
-export function isConstructor(f) {
+export function isInterface(f) {
   let instance = null
   try {
     instance = new f()
@@ -88,6 +88,10 @@ export function isInstanceOf(ins, Interface, strict) {
 export function isInheritedOf(SubInterface, Interface, strict) {
   const ins = SubInterface.prototype
   return isInstanceOf(ins, Interface, strict)
+}
+
+export function getInterface(ins) {
+  return Object.getPrototypeOf(ins).constructor
 }
 
 /**
@@ -142,6 +146,14 @@ export function stringify(obj) {
   return JSON.stringify(obj)
 }
 
+export function each(obj, fn) {
+  let keys = Object.keys(obj)
+  keys.forEach((key) => {
+    let value = obj[key]
+    fn(value, key, obj)
+  })
+}
+
 export function map(obj, fn) {
   if (!isObject(obj) || !isArray(obj)) {
     return obj
@@ -152,9 +164,7 @@ export function map(obj, fn) {
   }
 
   let result = isArray(obj) ? [] : {}
-  let keys = Object.keys(obj)
-  keys.forEach((key) => {
-    let value = obj[key]
+  each(obj, (value, key) => {
     result[key] = isFunction(fn) ? fn(value, key, obj) || value : value
   })
 

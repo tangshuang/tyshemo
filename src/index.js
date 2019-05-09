@@ -19,7 +19,7 @@ export {
   lambda,
 } from './rules.js'
 
-export { TySheMoError } from './error.js'
+export { TsmError } from './error.js'
 
 import TySheMo from './tyshemo.js'
 export { TySheMo }

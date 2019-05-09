@@ -1,11 +1,11 @@
 import Type from './type.js'
-import { isObject, isInstanceOf } from './utils.js'
-import TySheMoError, { makeError } from './error.js'
+import { isObject, isInstanceOf, getInterface } from './utils.js'
+import TsmError, { makeError } from './error.js'
 
 export class Dict extends Type {
   constructor(pattern) {
     if (!isObject(pattern)) {
-      throw new TySheMoError('Dict pattern should be an object.')
+      throw new TsmError('Dict pattern should be an object.')
     }
 
     super(pattern)
@@ -17,7 +17,7 @@ export class Dict extends Type {
     const info = { value, pattern, type: this, level: 'type', action: 'assert' }
 
     if (!isObject(value)) {
-      throw new TySheMoError('mistaken', info)
+      throw new TsmError('mistaken', info)
     }
 
     const error = this.validate(value, pattern)
@@ -29,7 +29,8 @@ export class Dict extends Type {
   extend(fields) {
     const current = this.pattern
     const next = Object.assign({}, current, fields)
-    const type = new Dict(next)
+    const Interface = getInterface(this)
+    const type = new Interface(next)
     return type
   }
   extract(fields) {
@@ -43,7 +44,8 @@ export class Dict extends Type {
       }
     })
 
-    const type = new Dict(next)
+    const Interface = getInterface(this)
+    const type = new Interface(next)
     return type
   }
   mix(fields) {
@@ -60,7 +62,8 @@ export class Dict extends Type {
       }
     })
 
-    const type = new Dict(next)
+    const Interface = getInterface(this)
+    const type = new Interface(next)
     return type
   }
 }

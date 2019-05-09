@@ -1,6 +1,6 @@
 import Type from './type.js'
 import { isFunction, isInstanceOf, isNumber, isBoolean, inObject, isNumeric, isNull, isUndefined, isArray, isObject, isEqual } from './utils.js'
-import TySheMoError, { makeError } from './error.js'
+import TsmError, { makeError } from './error.js'
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 
@@ -18,10 +18,10 @@ export function makeRule(name, determine, message = 'mistaken') {
       const msg = isFunction(message) ? message(value) : message
       const info = { value, rule: this, level: 'rule', action: 'validate' }
       if (isFunction(determine) && !determine.call(this, value)) {
-        return new TySheMoError(msg, info)
+        return new TsmError(msg, info)
       }
       else if (isBoolean(determine) && !determine) {
-        return new TySheMoError(msg, info)
+        return new TsmError(msg, info)
       }
       else {
         return null
@@ -156,21 +156,21 @@ export const shouldnotmatch = makeRuleGenerator('shouldnotmatch', function(patte
       if (isInstanceOf(pattern, Rule)) {
         let error = pattern.validate(value)
         if (!error) {
-          return new TySheMoError('unexcepted', info)
+          return new TsmError('unexcepted', info)
         }
       }
 
       if (isInstanceOf(pattern, Type)) {
         let error = pattern.catch(value)
         if (!error) {
-          return new TySheMoError('unexcepted', info)
+          return new TsmError('unexcepted', info)
         }
       }
 
       let type = new Type(pattern)
       let error = type.catch(value)
       if (!error) {
-        return new TySheMoError('unexcepted', info)
+        return new TsmError('unexcepted', info)
       }
     }
     for (let i = 0, len = patterns.length; i < len; i ++) {
@@ -208,7 +208,7 @@ export const ifexist = makeRuleGenerator('ifexist', function(pattern) {
 
   const make = (callback) => function(value) {
     if (!isReady) {
-      return new TySheMoError('ifexist can not be used in this situation.')
+      return new TsmError('ifexist can not be used in this situation.')
     }
     if (!isExist) {
       return null
@@ -318,7 +318,7 @@ export const determine = makeRuleGenerator('determine', function(determine) {
   return new Rule({
     validate: function(value) {
       if (!isReady) {
-        return new TySheMoError('determine can not be used in this situation.')
+        return new TsmError('determine can not be used in this situation.')
       }
 
       const [key, target] = data
@@ -375,7 +375,7 @@ export const shouldexist = makeRuleGenerator('shouldexist', function(determine, 
   return new Rule({
     validate: function(value) {
       if (!isReady) {
-        return new TySheMoError('shouldexist can not be used in this situation.')
+        return new TsmError('shouldexist can not be used in this situation.')
       }
 
       const [key, target] = data
@@ -431,7 +431,7 @@ export const shouldnotexist = makeRuleGenerator('shouldnotexist', function(deter
   return new Rule({
     validate: function(value) {
       if (!isReady) {
-        return new TySheMoError('shouldnotexist can not be used in this situation.')
+        return new TsmError('shouldnotexist can not be used in this situation.')
       }
 
       // should not exist and is not existing
@@ -445,7 +445,7 @@ export const shouldnotexist = makeRuleGenerator('shouldnotexist', function(deter
       }
 
       const info = { value, rule: this, level: 'rule', action: 'validate' }
-      return new TySheMoError('overflow', info)
+      return new TsmError('overflow', info)
     },
     prepare: function(value, prop, target) {
       shouldNotExist = determine(value, prop, target)
@@ -483,7 +483,7 @@ export const equal = makeRuleGenerator('equal', function(value) {
  */
 export const lambda = makeRuleGenerator('lambda', function(InputType, OutputType) {
   if (!isInstanceOf(InputType, Tuple)) {
-    throw new TySheMoError('lambda InputType should be a Tuple')
+    throw new TsmError('lambda InputType should be a Tuple')
   }
   if (!isInstanceOf(OutputType, Type)) {
     OutputType = new Type(OutputType)
@@ -494,12 +494,12 @@ export const lambda = makeRuleGenerator('lambda', function(InputType, OutputType
   return new Rule({
     validate: function(value) {
       if (!isReady) {
-        return new TySheMoError('lambda is can not be used in this situation.')
+        return new TsmError('lambda is can not be used in this situation.')
       }
 
       if (!isFunction(value)) {
         const info = { value, pattern: Function, rule: this, level: 'rule', action: 'validate' }
-        return new TySheMoError('mistaken', info)
+        return new TsmError('mistaken', info)
       }
     },
     prepare: function(value, key, target) {

@@ -1,5 +1,5 @@
-import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf } from './utils.js'
-import TySheMoError, { makeError } from './error.js'
+import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf, clone, getInterface, map } from './utils.js'
+import TsmError, { makeError } from './error.js'
 import List from './list.js'
 import Rule from './rule.js'
 import Schema from './schema.js'
@@ -13,9 +13,17 @@ import TySheMo from './tyshemo.js'
  * {
  *   // 字段名
  *   key: {
- *     type: String, // 可选，数据类型，assert 的时候使用
- *       // 注意：default 和 compute 的结果必须符合 type 的要求，这一点必须靠开发者自己遵守，TypeSchema 内部没有进行控制
- *     default: '', // 必填，默认值（parse 的时候使用）
+ *
+ *     // ---------------- schema ---------------
+ *     type: String, // 必填
+ *       // 注意：default 和 compute 的结果必须符合 type 的要求，这一点必须靠开发者自己遵守，Model 内部没有进行控制
+ *     default: '', // 必填，默认值
+ *     validate,
+ *     ensure,
+ *     required,
+ *
+ *
+ *     // ----------------- model ---------------
  *     // 计算属性
  *     // 每次digest时同步
  *     compute: function() {
@@ -61,25 +69,29 @@ import TySheMo from './tyshemo.js'
 
 export class Model {
   constructor(data = {}) {
-    // 定义schema，进来的数据必须符合schema的要求，并且schema的输出字段将会被作为Model的字段，且schema的输出结果应该符合define的结构要求
-    const definition = this.define()
-
-    if (!isObject(definition)) {
-      throw new TySheMoError('model.define should return an object.')
+    if (getInterface(this) === Model) {
+      throw new Error('Model should be extended.')
     }
 
-    this.definition = definition
+    const definition = this.define()
+    if (!isObject(definition)) {
+      throw new TsmError('model definition should be an object.')
+    }
+
+    this.definition = map(definition, (value, key) => {
+
+    })
     this.schema = new Schema(definition)
 
     this.state = this.schema.ensure(data)
-    this.listeners = {}
 
+    this.__listeners = {}
     this.__update = []
-    this.__set = {}
+    this.__catch = []
   }
 
   define() {
-    throw new TySheMoError('model.define method should be override.')
+    throw new Error('Model.define should be override.')
   }
 
   get(keyPath) {
@@ -87,25 +99,20 @@ export class Model {
   }
 
   set(keyPath, value) {
-    const oldValue = parse(this.state, keyPath)
-    this.__set[keyPath] = {
-      oldValue,
-      newValue: value,
-    }
     assign(this.state, keyPath, value)
     return this
   }
 
   watch(keyPath, fn, deep = false) {
     const value = this.get(keyPath)
-    const listener = this.listeners[keyPath]
+    const listener = this.__listeners[keyPath]
     if (!listener) {
-      this.listeners[keyPath] = {
+      this.__listeners[keyPath] = {
         keyPath,
         value: null,
         callbacks: [],
       }
-      listener = this.listeners[keyPath]
+      listener = this.__listeners[keyPath]
     }
 
     listener.value = clone(value)
@@ -114,7 +121,7 @@ export class Model {
   }
 
   unwatch(keyPath, fn) {
-    const listener = this.listeners[keyPath]
+    const listener = this.__listeners[keyPath]
     const { callbacks } = listener
     callbacks.forEach((item, i) => {
       if (item.fn === fn || fn === undefined) {
@@ -125,7 +132,7 @@ export class Model {
   }
 
   digest() {
-    const listeners = Object.values(this.listeners)
+    const listeners = Object.values(this.__listeners)
     if (!listeners.length) {
       return this
     }
@@ -180,7 +187,7 @@ export class Model {
 
       count ++
       if (count > 15) {
-        throw new TySheMoError(`digest over 15 times.`)
+        throw new TsmError(`digest over 15 times.`)
       }
 
       if (dirty) {
@@ -276,7 +283,7 @@ export class Model {
             }
           }
           else {
-            let error = new TySheMoError(`schema.definition.${key} type error.`)
+            let error = new TsmError(`schema.definition.${key} type error.`)
             reject(error)
             return
           }
@@ -478,7 +485,7 @@ export class Model {
           let res = validate.call(this, value)
           let info2 = { ...info, pattern: new Rule(validate.bind(this)) }
           let msg = isFunction(message) ? message.call(this, value) : message
-          let error = isInstanceOf(res, Error) ? makeError(res, info2) : !res ? new TySheMoError(msg, info2) : null
+          let error = isInstanceOf(res, Error) ? makeError(res, info2) : !res ? new TsmError(msg, info2) : null
           if (error) {
             return error
           }

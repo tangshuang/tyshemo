@@ -1,5 +1,5 @@
 import { isFunction, isInstanceOf, isBoolean } from './utils.js'
-import TySheMoError, { makeError } from './error.js'
+import TsmError, { makeError } from './error.js'
 
 export class Rule {
   /**
@@ -41,7 +41,7 @@ export class Rule {
       let res = this._validate.call(this, value)
       if (isBoolean(res)) {
         if (!res) {
-          let error = new TySheMoError('mistaken', info)
+          let error = new TsmError('mistaken', info)
           return error
         }
       }

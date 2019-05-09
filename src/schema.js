@@ -1,53 +1,58 @@
-import Dict from './dict.js'
-import List from './list.js'
-import { isObject, isArray, isInstanceOf, clone, inObject } from './utils.js'
-import Type from './type.js'
-import TySheMoError, { makeError } from './error.js'
-import Rule from './rule.js'
-import TySheMo from './tyshemo.js'
 
-const makeTypeDef = (definition, _key_ = '') => {
-  const keys = Object.keys(definition)
-  const pattern = {}
-  keys.forEach((key) => {
-    const def = definition[key]
-    const path = _key_ + '.' + key
-    if (isInstanceOf(def, Schema)) {
-      pattern[key] = makeTypeDef(def.definition, path)
-    }
-    else if (isArray(def) && isInstanceOf(def[0], Schema)) {
-      const [schema] = def
-      const type = makeTypeDef(schema.definition, path + '[]')
-      pattern[key] = new List([type])
-    }
-    else if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
-      pattern[key] = def.type
-    }
-    else {
-      throw new TySheMoError(`schema.definition${path} type error.`)
-    }
-  })
-  return new Dict(pattern)
-}
+import { isObject, isArray, isInstanceOf, clone, inObject, each, isFunction, getInterface } from './utils.js'
+import TsmError, { makeError } from './error.js'
+import TySheMo from './tyshemo.js'
 
 export class Schema {
   /**
    * 数据源相关信息
    * @param {object} definition
    * {
-   *   // 字段名，值为一个配置
+   *   // 字段名，值为一个配置对象
    *   object: {
-   *     default: '', // 必填，默认值
+   *     default: '', // 必填，默认值，注意：默认值必须符合该字段的类型和校验规则
    *     type: String, // 必填，数据类型 Pattern
+   *     validate: value => true|false, // 选填，对值进行特殊校验，例如对数字的值域进行校验
+   *     ensure: value => newValue, // 选填，在 ensure 的时候，对当前字段值进行转化，将转化结果返回，注意，转化结果不会再进行校验
+   *     required: false, // 选填，默认为 true，为 false 的时候，表示这个字段是可选的，可以不存在，而类型检查和校验，只会在该字段存在时使用
    *   },
    *   // 使用一个 schema 实例作为值，schema 本身是有默认值的
    *   schema: SomeSchema,
-   *   array: \[schema\],
+   *   // 使用一个 schema 数组作为值，表示这个属性必须是一个数组，且数组中的每一个元素都是一个 schema 结构。这里的数组必须只有一个元素。
+   *   schemaarray: \[SomeSchema\],
    * }
    */
   constructor(definition) {
+    // Schema 不允许被继承
+    if (getInterface(this) !== Schema) {
+      throw new TsmError(`Schema can not be extended.`)
+    }
+
+    // 校验定义信息是否符合规则
+    // 经过实例化校验之后，后续的方法中都不用担心对应的类型问题
+    each(definition, (def, key) => {
+      if (isObject(def)) {
+        if (!inObject('default')) {
+          throw new TsmError(`[Schema]: '${key}' should have 'default' property.`)
+        }
+        if (!inObject('type')) {
+          throw new TsmError(`[Schema]: '${key}' should have 'type' property.`)
+        }
+      }
+      else if (isArray(def)) {
+        if (def.length !== 1) {
+          throw new TsmError(`[Schema]: '${key}' should have only one schema item in array.`)
+        }
+        if (!isInstanceOf(def[0], Schema)) {
+          throw new TsmError(`[Schema]: '${key}' should be a schema array.`)
+        }
+      }
+      else if (!isInstanceOf(def, Schema)) {
+        throw new TsmError(`[Schema]: '${key}' should be a schema, a schema array or an schema definition object.`)
+      }
+    })
+
     this.definition = definition
-    this.type = makeTypeDef(definition)
     this.name = 'Schema'
   }
 
@@ -59,14 +64,50 @@ export class Schema {
   validate(data) {
     const info = { value: data, schema: this, level: 'schema', action: 'validate' }
     if (!isObject(data)) {
-      let error = new TySheMoError(`schema validate data should be an object.`, info)
+      let error = new TsmError(`schema validate data should be an object.`, info)
       return error
     }
 
-    let error = this.type.catch(data)
-    if (error) {
-      error = makeError(error, info)
-      return error
+    const definition = this.definition
+    const keys = Object.keys(definition)
+    for (let i = 0, len = keys.length; i < len; i ++) {
+      const key = keys[i]
+      const def = definition[key]
+      const value = data[key]
+      let error
+      // 因为在实例化的时候，已经对 definition 进行过检查，因此，它的格式一定不会是错的
+      if (isObject(def)) {
+        const { type, validate, required } = def
+        // 必填检查
+        if (required !== false && !inObject(key, data)) {
+          error = new TsmError(`{keyPath} should must exist.`)
+        }
+        // 只要存在，就会进行校验
+        else if (inObject(key, data)) {
+          // 先检查类型
+          error = TySheMo.catch(value).by(type)
+          // 再执行校验器
+          if (!error && isFunction(validate)) {
+            error = validate.call(this, value, type) // 对于更高层的 Model，可以在 validate 里面做文章
+          }
+        }
+      }
+      else if (isArray(def)) {
+        if (!isArray(value)) {
+          error = new TsmError(`{keyPath} should be an array.`)
+        }
+        else {
+          const [schema] = def
+          error = schema.validate(value)
+        }
+      }
+      else if (isInstanceOf(def, Schema)) {
+        error = def.validate(value)
+      }
+      if (error) {
+        error = makeError(error, info)
+        return error
+      }
     }
   }
 
@@ -81,102 +122,51 @@ export class Schema {
     }
 
     const definition = this.definition
-    const keys = Object.keys(definition)
     const output = {}
+    let comming = null
 
-    // 清空上一次留下来的噪声
-    this.__catch = []
-    // 一分钟之后清空 noise 释放内存。因此，要 catch 必须在一分钟之内，最好是 ensure 一结束
-    setTimeout(() => {
-      this.__catch = []
-    }, 60*1000)
-
-    keys.forEach((key) => {
-      const def = definition[key]
-      const defaultValue = def.default
+    each(definition, (def, key) => {
       const value = data[key]
 
-      let comming = null
+      if (isObject(def)) {
+        const { type, validate, ensure } = def
+        const defaultValue = def.default
 
-      if (isInstanceOf(def, Schema)) {
-        comming = def.ensure(value)
-        let noise = def.noise
-        def.noise = []
-        setTimeout(() => {
-          if (noise.length) {
-            let info = { key, value, pattern: def.type, schema: this, level: 'schema', action: 'ensure' }
-            noise.forEach((error) => {
-              error = makeError(error, info)
-              this.__catch.push(error)
-            })
-          }
-        })
-      }
-      else if (isArray(def) && isInstanceOf(def[0], Schema)) {
-        const [schema] = def
-        const info = { key, value, pattern: Array, schema: this, level: 'schema', action: 'ensure' }
-        if (isArray(value)) {
-          comming = value.map((item, i) => {
-            let output = schema.ensure(item)
-            let noise = schema.noise
-            schema.noise = []
-            setTimeout(() => {
-              if (noise.length) {
-                let info2 = { index: i, value, pattern: schema.type, schema: this, level: 'schema', action: 'ensure' }
-                noise.forEach((error) => {
-                  error = makeError(error, info2)
-                  error = makeError(error, info)
-                  this.__catch.push(error)
-                })
-              }
-            })
-            return output
-          })
-        }
-        else {
-          comming = []
-          setTimeout(() => {
-            let error = new TySheMoError(`{keyPath} should be an array for schema.`, info)
-            this.__catch.push(error)
-          })
-        }
-      }
-      else if (def && typeof def === 'object' && inObject('default', def) && inObject('type', def)) {
-        const { type } = def
-        let error = isInstanceOf(type, Type) ? type.catch(value) : isInstanceOf(type, Rule) ? type.validate2(value, key, target) : TySheMo.catch(value).by(type)
-        if (error) {
+        if (!inObject(key, data)) {
           comming = clone(defaultValue)
-          setTimeout(() => {
-            if (error) {
-              let info = { key, value, pattern: type, schema: this, level: 'schema', action: 'ensure' }
-              error = makeError(error, info)
-              this.__catch.push(error)
-            }
-          })
+        }
+        else if (!TySheMo.test(value).by(type)) {
+          comming = clone(defaultValue)
+        }
+        else if (isFunction(validate) && !validate.call(this, value, type)) {
+          comming = clone(defaultValue)
         }
         else {
           comming = clone(value)
         }
+
+        if (isFunction(ensure)) {
+          comming = ensure.call(this, comming) // 对于更高层的 Model 可以将值提取放到 ensure 中
+        }
+      }
+      else if (isArray(def)) {
+        const [schema] = def
+
+        if (!isArray(value)) {
+          comming = clone(defaultValue)
+        }
+        else {
+          comming = value.map(item => schema.ensure(item))
+        }
+      }
+      else if (isInstanceOf(def, Schema)) {
+        comming = def.ensure(value)
       }
 
       output[key] = comming
     })
 
     return output
-  }
-
-  /**
-   * 用于异步捕获 ensure 过程中判断的错误，在调用 ensure 之后使用
-   * @param {*} fn
-   */
-  catch(fn) {
-    setTimeout(() => {
-      const noise = this.__catch
-      if (noise && noise.length) {
-        fn(noise)
-      }
-      this.__catch = []
-    })
   }
 
   /**
