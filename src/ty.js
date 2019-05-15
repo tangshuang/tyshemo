@@ -1,7 +1,7 @@
 import { isInstanceOf, isFunction } from './utils.js'
 import Type from './type.js'
 
-export class TySheMo {
+export class Ty {
   constructor() {
     this._listeners = []
     this._silent = false
@@ -148,7 +148,7 @@ export class TySheMo {
    * @example
    * @ts.decorate('input').with((value) => SomeType.assert(value))
    */
-  decorate(method) {
+  decorate(what) {
     var $this = this
     var decorator = {
       by: instance => {
@@ -158,7 +158,7 @@ export class TySheMo {
       with: (type) => function(target, prop, descriptor) {
         // decorate class constructor function
         if (target && !prop) {
-          if (method !== 'input' && method !== 'output') {
+          if (what !== 'input' && what !== 'output') {
             return class extends target {
               constructor(...args) {
                 $this.expect(args).to.be(type)
@@ -173,22 +173,22 @@ export class TySheMo {
         // decorate class member
         else if (prop) {
           // change the property
-          if (method !== 'input' && method !== 'output') {
+          if (what !== 'input' && what !== 'output') {
             descriptor.set = (value) => {
               $this.expect(value).to.be(type)
               descriptor.value = value
             }
           }
 
-          // method
-          if (typeof property === 'function' && (method === 'input' || method === 'output')) {
+          // what
+          if (typeof property === 'function' && (what === 'input' || what === 'output')) {
             let property = descriptor.value
             let wrapper = function(...args) {
-              if (method === 'input') {
+              if (what === 'input') {
                 $this.expect(args).to.be(type)
               }
               let result = property.call(this, ...args)
-              if (method === 'output') {
+              if (what === 'output') {
                 $this.expect(result).to.be(type)
               }
               return result
@@ -208,12 +208,12 @@ export class TySheMo {
 
 }
 
-export const ts = new TySheMo()
-TySheMo.expect = ts.expect.bind(ts)
-TySheMo.catch = ts.catch.bind(ts)
-TySheMo.trace = ts.trace.bind(ts)
-TySheMo.track = ts.track.bind(ts)
-TySheMo.is = ts.is.bind(ts)
-TySheMo.decorate = ts.decorate.bind(ts)
+export const ts = new Ty()
+Ty.expect = ts.expect.bind(ts)
+Ty.catch = ts.catch.bind(ts)
+Ty.trace = ts.trace.bind(ts)
+Ty.track = ts.track.bind(ts)
+Ty.is = ts.is.bind(ts)
+Ty.decorate = ts.decorate.bind(ts)
 
-export default TySheMo
+export default Ty

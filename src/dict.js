@@ -1,11 +1,11 @@
 import Type from './type.js'
 import { isObject, isInstanceOf, getInterface } from './utils.js'
-import TsmError, { makeError } from './error.js'
+import TyError, { makeError } from './error.js'
 
 export class Dict extends Type {
   constructor(pattern) {
     if (!isObject(pattern)) {
-      throw new TsmError('Dict pattern should be an object.')
+      throw new TyError('Dict pattern should be an object.')
     }
 
     super(pattern)
@@ -17,7 +17,7 @@ export class Dict extends Type {
     const info = { value, pattern, type: this, level: 'type', action: 'assert' }
 
     if (!isObject(value)) {
-      throw new TsmError('mistaken', info)
+      throw new TyError('mistaken', info)
     }
 
     const error = this.validate(value, pattern)

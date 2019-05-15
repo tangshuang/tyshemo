@@ -1,5 +1,5 @@
 import Rule from './rule.js'
-import TySheMoError, { makeError } from './error.js'
+import TyError, { makeError } from './error.js'
 import {
   isArray,
   isBoolean,
@@ -52,7 +52,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -63,7 +63,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -74,7 +74,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -85,7 +85,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -93,13 +93,13 @@ export class Type {
     // i.e. (new Type(/a/)).assert('name')
     if (isInstanceOf(pattern, RegExp)) {
       if (!isString(value)) {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
       if (pattern.test(value)) {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -110,7 +110,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -121,7 +121,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -132,7 +132,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -141,7 +141,7 @@ export class Type {
         return null
       }
       else {
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
     }
 
@@ -165,7 +165,7 @@ export class Type {
             return null
           }
         }
-        return new TySheMoError('mistaken', info)
+        return new TyError('mistaken', info)
       }
 
       for (let i = 0; i < itemCount; i ++) {
@@ -209,7 +209,7 @@ export class Type {
           let key = targetKeys[i]
           // target has key beyond rules
           if (!inArray(key, patternKeys)) {
-            return new TySheMoError('overflow', { ...info, key })
+            return new TyError('overflow', { ...info, key })
           }
         }
       }
@@ -228,7 +228,7 @@ export class Type {
               continue
             }
           }
-          return new TySheMoError('missing', { ...info, key })
+          return new TyError('missing', { ...info, key })
         }
 
         // rule validate2
@@ -274,7 +274,7 @@ export class Type {
       return null
     }
 
-    return new TySheMoError('mistaken', info)
+    return new TyError('mistaken', info)
   }
 
   assert(value) {

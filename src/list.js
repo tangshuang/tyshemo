@@ -1,12 +1,11 @@
 import Type from './type.js'
 import { isArray, isEmpty } from './utils.js'
-import TsmError, { makeError } from './error.js'
-import { Any } from './rules.js'
+import TyError, { makeError } from './error.js'
 
 export class List extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new TsmError('List pattern should be an array.')
+      throw new TyError('List pattern should be an array.')
     }
 
     if (isEmpty(pattern)) {
@@ -21,7 +20,7 @@ export class List extends Type {
     const info = { value, pattern, type: this, level: 'type', action: 'assert' }
 
     if (!isArray(value)) {
-      throw new TsmError('mistaken', info)
+      throw new TyError('mistaken', info)
     }
 
     const error = this.validate(value, pattern)

@@ -1,12 +1,12 @@
 import Type from './type.js'
 import Rule from './rule.js'
 import { isInstanceOf, isArray } from './utils.js'
-import TsmError, { makeError } from './error.js'
+import TyError, { makeError } from './error.js'
 
 export class Tuple extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new TsmError('Tuple pattern should be an array.')
+      throw new TyError('Tuple pattern should be an array.')
     }
 
     super(pattern)
@@ -17,7 +17,7 @@ export class Tuple extends Type {
     const info = { value, pattern, type: this, level: 'type', action: 'assert' }
 
     if (!isArray(value)) {
-      throw new TsmError('mistaken', info)
+      throw new TyError('mistaken', info)
     }
 
     const items = value
@@ -26,7 +26,7 @@ export class Tuple extends Type {
     const itemCount = items.length
 
     if (this.mode === 'strict' && itemCount !== patternCount) {
-      throw new TsmError('dirty', { ...info, length: patternCount })
+      throw new TyError('dirty', { ...info, length: patternCount })
     }
 
     for (let i = 0; i < itemCount; i ++) {

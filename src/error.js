@@ -1,7 +1,7 @@
 import { inObject, stringify, isInstanceOf, inArray, isArray, isObject, isFunction, isNaN } from './utils.js'
 
 function makeErrorMessage(key, params) {
-  let message = TsmError.messages[key] || key
+  let message = TyError.messages[key] || key
   let text = message.replace(/\{(.*?)\}/g, (match, key) => inObject(key, params) ? params[key] : match)
   return text
 }
@@ -49,7 +49,7 @@ export function makeError(error, params) {
   return error
 }
 
-export class TsmError extends TypeError {
+export class TyError extends TypeError {
   constructor(key, params = {}) {
     super(key)
     Object.defineProperties(this, {
@@ -220,7 +220,7 @@ export class TsmError extends TypeError {
   }
 }
 
-TsmError.messages = {
+TyError.messages = {
   mistaken: '{keyPath} should match {should}, but receive {receive}.',
   unexcepted: '{keyPath} should not match {should}, but receive {receive}.',
   dirty: '{keyPath} does not match {should}, length should be {length}.',
@@ -228,4 +228,4 @@ TsmError.messages = {
   missing: '{keyPath} is missing.',
 }
 
-export default TsmError
+export default TyError

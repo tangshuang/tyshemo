@@ -3,7 +3,7 @@ import { dict } from '../src/dict.js'
 
 describe('Model', () => {
   class PersonModel extends Model {
-    define() {
+    schema() {
       return {
         name: {
           default: '',
@@ -35,24 +35,16 @@ describe('Model', () => {
     expect(person.get('body.head')).toBe(true)
   })
   test('set', async () => {
-    person.set('body.feet', false)
-    await person.update()
-    expect(person.get('body.feet')).toBe(false);
+    await person.set('body.feet', false)
+    expect(person.get('body.feet')).toBe(false)
   })
   test('update', async () => {
     await person.update({
       name: 'tomy',
       age: 10,
     })
-    const data = person.data()
+    const data = person.data
     expect(data.name).toBe('tomy')
     expect(data.age).toBe(10)
-  })
-  test('set value which not fix type', async () => {
-    expect.assertions(2)
-    person.set('body.hands', 10)
-    await expect(person.update()).rejects.toBeInstanceOf(Error)
-    expect(person.get('body.hands')).not.toBe(10)
-    expect(person.get('body.hands')).toBe(true)
   })
 })

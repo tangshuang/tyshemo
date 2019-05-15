@@ -1,11 +1,11 @@
 import Type from './type.js'
-import TsmError from './error.js'
+import TyError from './error.js'
 import { isArray } from './utils.js'
 
 export class Enum extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new TsmError('Enum pattern should be an array.')
+      throw new TyError('Enum pattern should be an array.')
     }
 
     super(pattern)
@@ -25,7 +25,7 @@ export class Enum extends Type {
       }
     }
 
-    throw new TsmError('mistaken', info)
+    throw new TyError('mistaken', info)
   }
 }
 
