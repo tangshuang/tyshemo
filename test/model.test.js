@@ -25,17 +25,31 @@ describe('Model', () => {
             feet: Boolean,
           }),
         },
+        height: {
+          type: Number,
+          default: 0,
+          compute() {
+            return this.get('body.feet') ? 120 : 60
+          },
+        },
       }
     }
   }
 
   const person = new PersonModel()
+  const data = person.data
 
+  test('computed', () => {
+    expect(data.height).toBe(120)
+    person.set('body.feet', false)
+    expect(data.height).toBe(60)
+    person.set('body.feet', true)
+  })
   test('get', () => {
     expect(person.get('body.head')).toBe(true)
   })
-  test('set', async () => {
-    await person.set('body.feet', false)
+  test('set', () => {
+    person.set('body.feet', false)
     expect(person.get('body.feet')).toBe(false)
   })
   test('update', async () => {
@@ -43,8 +57,14 @@ describe('Model', () => {
       name: 'tomy',
       age: 10,
     })
-    const data = person.data
     expect(data.name).toBe('tomy')
     expect(data.age).toBe(10)
+  })
+  test('watch', () => {
+    person.watch('age', function() {
+      this.set('ageChanged', true)
+    })
+    person.set('age', 20)
+    expect(data.ageChanged).toBe(true)
   })
 })

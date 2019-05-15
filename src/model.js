@@ -1,4 +1,4 @@
-import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf, clone, getInterface, map, each, extractObject } from './utils.js'
+import { isObject, isArray, inObject, isInstanceOf, assign, parse, isEmpty, isFunction, isBoolean, flatObject, isEqual, isInheritedOf, clone, getInterface, map, each, extractObject, sortBy } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Rule from './rule.js'
 import Ty from './ty.js'
@@ -40,11 +40,13 @@ export class Model {
       }
     })
 
-    this.__listeners = {}
+    this.__listeners = []
     this.__updators = {}
     this.__isUpdating = null
     this.__schema = schema
     this.__isDigesting = false
+    this.__isComputing = false
+    this.__cache = {}
 
     this.data = {}
     this.init(data)
@@ -97,14 +99,19 @@ export class Model {
   }
 
   set(key, value) {
+    // you should not use `set` in `compute`
+    if (this.__isComputing) {
+      return
+    }
+
     assign(this.data, key, value)
 
-    // you can use `set` in `watch`
+    // you should use `set` in `watch`
     if (this.__isDigesting) {
       return
     }
 
-    return this.update()
+    this.digest()
   }
 
   update(data = {}) {
@@ -126,21 +133,25 @@ export class Model {
     })
   }
 
-  digest() {
-    const listeners = Object.values(this.__listeners)
-    if (!listeners.length) {
-      return
-    }
+  compute() {
+    this.__isComputing = true
 
-    // computed properties
     const schema = this.__schema
-    const computers = []
     each(schema, (def, key) => {
       if (isObject(def) && isFunction(def.compute)) {
         const { compute } = def
-        computers.push({ key, compute })
+        const value = compute.call(this)
+        assign(this.data, key, value)
       }
     })
+
+    this.__isComputing = false
+  }
+
+  digest() {
+    this.__isDigesting = true
+
+    const listeners = sortBy(this.__listeners, 'priority')
 
     var dirty = false
     var count = 0
@@ -148,34 +159,20 @@ export class Model {
     const digest = () => {
       dirty = false
 
-      // computing should come before callbacks, because current value of listeners may changed by computers
-      computers.forEach(({ key, compute }) => {
-        const value = compute.call(this)
-        assign(this.data, key, value)
-      })
+      // run computing before all watchers run
+      // because the properties which are watched may based on computed properties
+      this.compute()
 
-      listeners.forEach((item) => {
-        const { key, value, callbacks } = item
+      listeners.forEach(({ key, fn }) => {
         const current = this.get(key)
-        const previous = value
+        const previous = parse(this.__cache, key)
 
-        // set current value before callbacks run, so that you can get current value in callback function by using `this.get(key)`
-        item.value = current
-
-        if (!callbacks.length) {
-          return
+        if (!isEqual(current, previous)) {
+          fn.call(this, current, previous)
+          dirty = true
+          const cache = clone(current)
+          assign(this.__cache, key, cache)
         }
-
-        callbacks.forEach(({ fn, deep }) => {
-          if (deep && !isEqual(current, previous)) {
-            fn.call(this, current, previous)
-            dirty = true
-          }
-          else if (!deep && current !== previous) {
-            fn.call(this, current, previous)
-            dirty = true
-          }
-        })
       })
 
       count ++
@@ -188,32 +185,23 @@ export class Model {
       }
     }
 
-    this.__isDigesting = true
     digest()
+
     this.__isDigesting = false
   }
 
-  watch(key, fn, deep = false) {
+  watch(key, fn, priority = 10) {
     const value = this.get(key)
-    const listener = this.__listeners[key]
-    if (!listener) {
-      this.__listeners[key] = {
-        key,
-        value: null,
-        callbacks: [],
-      }
-      listener = this.__listeners[key]
-    }
+    const current = clone(value)
 
-    listener.value = clone(value)
-    listener.callbacks.push({ fn, deep })
+    assign(this.__cache, key, current)
+    this.__listeners.push({ key, fn, priority })
   }
 
   unwatch(key, fn) {
-    const listener = this.__listeners[key]
-    const { callbacks } = listener
-    callbacks.forEach((item, i) => {
-      if (item.fn === fn || fn === undefined) {
+    const listeners = this.__listeners
+    listeners.forEach((item, i) => {
+      if (key === item.key && (item.fn === fn || fn === undefined)) {
         callbacks.splice(i, 1)
       }
     })
@@ -425,7 +413,7 @@ export class Model {
     })
 
     this.data = coming
-    this.digest()
+    this.compute()
   }
 
 }
