@@ -1,5 +1,7 @@
-import { isInstanceOf, isFunction } from './utils.js'
+import { isInstanceOf, isFunction, isObject, isArray } from './utils.js'
 import Type from './type.js'
+import Dict from './dict.js'
+import List from './list.js'
 
 export class Ty {
   constructor() {
@@ -47,9 +49,7 @@ export class Ty {
     return {
       to: {
         match: (type) => {
-          if (!isInstanceOf(type, Type)) {
-            type = new Type(type)
-          }
+          type = makeType(type)
 
           try {
             type.assert(value)
@@ -74,9 +74,7 @@ export class Ty {
   catch(value) {
     return {
       by: (type) => {
-        if (!isInstanceOf(type, Type)) {
-          type = new Type(type)
-        }
+        type = makeType(type)
 
         let error = type.catch(value)
         if (error) {
@@ -94,9 +92,7 @@ export class Ty {
   trace(value) {
     return {
       by: (type) => {
-        if (!isInstanceOf(type, Type)) {
-          type = new Type(type)
-        }
+        type = makeType(type)
 
         return type.trace(value).catch(error => this.throw(error))
       },
@@ -110,9 +106,7 @@ export class Ty {
   track(value) {
     return {
       by: (type) => {
-        if (!isInstanceOf(type, Type)) {
-          type = new Type(type)
-        }
+        type = makeType(type)
 
         return type.track(value).catch(error => this.throw(error))
       },
@@ -129,9 +123,7 @@ export class Ty {
     return {
       typeof: (value) => {
         let type = arg
-        if (!isInstanceOf(type, Type)) {
-          type = new Type(type)
-        }
+        type = makeType(type)
 
         let error = type.catch(value)
         if (error) {
@@ -149,19 +141,14 @@ export class Ty {
    * @ts.decorate('input').with((value) => SomeType.assert(value))
    */
   decorate(what) {
-    var $this = this
-    var decorator = {
-      by: instance => {
-        $this = instance
-        return decorator
-      },
-      with: (type) => function(target, prop, descriptor) {
+    return {
+      with: (type) => (target, prop, descriptor) => {
         // decorate class constructor function
         if (target && !prop) {
           if (what !== 'input' && what !== 'output') {
             return class extends target {
               constructor(...args) {
-                $this.expect(args).to.be(type)
+                this.expect(args).to.be(type)
                 super(...args)
               }
             }
@@ -175,7 +162,7 @@ export class Ty {
           // change the property
           if (what !== 'input' && what !== 'output') {
             descriptor.set = (value) => {
-              $this.expect(value).to.be(type)
+              this.expect(value).to.be(type)
               descriptor.value = value
             }
           }
@@ -183,6 +170,7 @@ export class Ty {
           // what
           if (typeof property === 'function' && (what === 'input' || what === 'output')) {
             let property = descriptor.value
+            let $this = this
             let wrapper = function(...args) {
               if (what === 'input') {
                 $this.expect(args).to.be(type)
@@ -203,7 +191,6 @@ export class Ty {
         }
       }
     }
-    return decorator
   }
 
 }
@@ -217,3 +204,16 @@ Ty.is = ts.is.bind(ts)
 Ty.decorate = ts.decorate.bind(ts)
 
 export default Ty
+
+function makeType(type) {
+  if (isInstanceOf(type, Type)) {
+    return type
+  }
+  if (isObject(type)) {
+    return new Dict(type)
+  }
+  if (isArray(type)) {
+    return new List(type)
+  }
+  return new Type(type)
+}

@@ -15,7 +15,7 @@ export function makeRule(name, determine, message = 'mistaken') {
   return new Rule({
     name,
     validate: function(value) {
-      const msg = isFunction(message) ? message(value) : message
+      const msg = isFunction(message) ? message.call(this, value) : message
       const info = { value, rule: this, level: 'rule', action: 'validate' }
       if (isFunction(determine) && !determine.call(this, value)) {
         return new TyError(msg, info)

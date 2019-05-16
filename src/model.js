@@ -177,7 +177,7 @@ export class Model {
 
       count ++
       if (count > 15) {
-        throw new TyError(`digest over 15 times.`)
+        throw new TyError(`[Model]: digest over 15 times.`)
       }
 
       if (dirty) {

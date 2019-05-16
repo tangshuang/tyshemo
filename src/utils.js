@@ -347,3 +347,15 @@ export function extractObject(obj, keys) {
   })
   return results
 }
+
+export function iterate(obj, fn) {
+  const keys = Object.keys(obj)
+  for (let i = 0, len = keys.length; i < len; i ++) {
+    const key = keys[i]
+    const value = obj[key]
+    const res = fn(value, key, obj)
+    if (res !== undefined) {
+      return res
+    }
+  }
+}
