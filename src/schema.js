@@ -47,6 +47,12 @@ export class Schema {
     this.definition = definition
   }
 
+  /**
+   * validate type and vaidators
+   * @param {*} key
+   * @param {*} value
+   * @param {*} context
+   */
   validate(key, value, context) {
     const definition = this.definition
 
@@ -119,6 +125,12 @@ export class Schema {
     }
   }
 
+  /**
+   * make sure very property is fit type and validators
+   * @param {*} key
+   * @param {*} value
+   * @param {*} context
+   */
   ensure(key, value, context) {
     const definition = this.definition
 
@@ -156,8 +168,8 @@ export class Schema {
           return defaultValue
         }
       })
-      const results = this.digest(output, context)
-      return results
+
+      return output
     }
 
     const def = definition[key]
@@ -165,23 +177,6 @@ export class Schema {
 
     if (!def) {
       throw new TyError(`[Schema]: '${key}' is not existing in schema definition when ensure.`, info)
-    }
-
-    // use computed value
-    const { compute } = def
-    const defaultValue = def.default
-    const handle = def.catch
-    if (isFunction(compute)) {
-      try {
-        const output = compute.call(context)
-        return output
-      }
-      catch (error) {
-        if (isFunction(handle)) {
-          handle.call(context, error)
-        }
-        return defaultValue
-      }
     }
 
     const error = this.validate(key, value, context)
@@ -195,6 +190,76 @@ export class Schema {
     return value
   }
 
+  /**
+   * get final computed properties.
+   * Notice: data will be changed.
+   * @param {*} data
+   * @param {*} context
+   */
+  digest(data, context) {
+    const definition = this.definition
+    const getComputedValue = (def, value) => {
+      const { compute } = def
+      const handle = def.catch
+      const defaultValue = def.default
+      if (isFunction(compute)) {
+        try {
+          const res = compute.call(context)
+          return res
+        }
+        catch (error) {
+          if (isFunction(handle)) {
+            handle.call(context, error)
+          }
+          return defaultValue
+        }
+      }
+      else {
+        return value
+      }
+    }
+
+    var dirty = false
+    var count = 0
+
+    const digest = () => {
+      dirty = false
+
+      each(definition, (def, key) => {
+        const { compute } = def
+        if (!isFunction(compute)) {
+          return
+        }
+
+        const value = data[key]
+        const computed = getComputedValue(def, value)
+        const cache = data[key]
+        if (!isEqual(cache, computed)) {
+          dirty = true
+          data[key] = computed
+        }
+      })
+
+      count ++
+      if (count > 15) {
+        throw new TyError(`[Schema]: digest over 15 times.`)
+      }
+
+      if (dirty) {
+        digest()
+      }
+    }
+
+    digest()
+
+    return data
+  }
+
+  /**
+   * rebuild data by passed data
+   * @param {*} data
+   * @param {*} context
+   */
   rebuild(data, context) {
     const definition = this.definition
 
@@ -210,7 +275,6 @@ export class Schema {
 
       var coming
       if (isFunction(prepare)) {
-        key === 'number' && console.log(0)
         try {
           coming = prepare.call(context, value, key, data)
         }
@@ -236,10 +300,16 @@ export class Schema {
       return coming
     })
 
-    const results = this.ensure(output, context)
+    const computed = this.digest(output, context)
+    const results = this.ensure(computed, context)
     return results
   }
 
+  /**
+   * formulate to get output data
+   * @param {*} data
+   * @param {*} context
+   */
   formulate(data, context) {
     const definition = this.definition
 
@@ -276,61 +346,6 @@ export class Schema {
     })
 
     return output
-  }
-
-  digest(data, context) {
-    const definition = this.definition
-    const getComputedValue = (def, value) => {
-      const { compute } = def
-      const handle = def.catch
-      const defaultValue = def.default
-      if (isFunction(compute)) {
-        try {
-          const res = compute.call(context)
-          return res
-        }
-        catch (error) {
-          if (isFunction(handle)) {
-            handle.call(context, error)
-          }
-          return defaultValue
-        }
-      }
-      else {
-        return value
-      }
-    }
-
-    const caches = { ...data }
-    var dirty = false
-    var count = 0
-
-    const digest = () => {
-      dirty = false
-
-      each(definition, (def, key) => {
-        const value = data[key]
-        const computed = getComputedValue(def, value)
-        const cache = caches[key]
-        if (!isEqual(cache, computed)) {
-          dirty = true
-          caches[key] = computed
-        }
-      })
-
-      count ++
-      if (count > 15) {
-        throw new TyError(`[Schema]: digest over 15 times.`)
-      }
-
-      if (dirty) {
-        digest()
-      }
-    }
-
-    digest()
-
-    return caches
   }
 
   extend(fields) {

@@ -1,10 +1,11 @@
 import Model from '../src/model.js'
+import Schema from '../src/schema.js'
 import { dict } from '../src/dict.js'
 
-xdescribe('Model', () => {
+describe('Model', () => {
   class PersonModel extends Model {
     schema() {
-      return {
+      return new Schema({
         name: {
           default: '',
           type: String,
@@ -32,7 +33,11 @@ xdescribe('Model', () => {
             return this.get('body.feet') ? 120 : 60
           },
         },
-      }
+        weight: {
+          type: Number,
+          default: 20,
+        },
+      })
     }
   }
 
@@ -42,6 +47,7 @@ xdescribe('Model', () => {
   test('computed', () => {
     expect(data.height).toBe(120)
     person.set('body.feet', false)
+
     expect(data.height).toBe(60)
     person.set('body.feet', true)
   })
@@ -61,10 +67,10 @@ xdescribe('Model', () => {
     expect(data.age).toBe(10)
   })
   test('watch', () => {
-    person.watch('age', function() {
-      this.set('ageChanged', true)
+    person.watch('age', function(age) {
+      this.set('weight', age * 2 + 20)
     })
     person.set('age', 20)
-    expect(data.ageChanged).toBe(true)
+    expect(data.weight).toBe(60)
   })
 })
