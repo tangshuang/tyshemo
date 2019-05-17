@@ -165,7 +165,10 @@ export function map(obj, fn) {
 
   let result = isArray(obj) ? [] : {}
   each(obj, (value, key) => {
-    result[key] = isFunction(fn) ? fn(value, key, obj) : value
+    let res = isFunction(fn) ? fn(value, key, obj) : value
+    if (res !== undefined) {
+      result[key] = res
+    }
   })
 
   return result

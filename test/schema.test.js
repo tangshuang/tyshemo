@@ -31,6 +31,34 @@ describe('Schema', () => {
         },
       ],
     },
+
+    key1: {
+      type: String,
+      default: '',
+      required: false,
+      prepare(value, key, data) {
+        return data.prop1
+      },
+    },
+
+    key2: {
+      type: String,
+      default: '',
+      required: false,
+      map(value) {
+        return value + '!'
+      },
+    },
+
+    key3: {
+      type: String,
+      default: '',
+      required: false,
+      map(value) {
+        return value + '!!'
+      },
+      drop: true,
+    },
   })
 
   test('validate key', () => {
@@ -79,17 +107,35 @@ describe('Schema', () => {
   })
 
   test('ensure', () => {
-    const defaultValue = {
+    const want = {
       string: '',
-      number: 0,
       dict: { name: '', age: 0 },
       list: [],
       validators: '',
     }
-    expect(SomeSchema.ensure({})).toEqual(defaultValue)
+    expect(SomeSchema.ensure({})).toEqual(want)
     expect(SomeSchema.ensure({
       string: null,
       number: null,
-    })).toEqual(defaultValue)
+    })).toEqual({
+      ...want,
+      number: 0,
+    })
+  })
+
+  test('rebuild', () => {
+    const data = SomeSchema.rebuild({
+      prop1: 'xxx',
+    })
+    expect(data.key1).toBe('xxx')
+  })
+
+  test('formulate', () => {
+    const data = SomeSchema.formulate({
+      key2: 'a',
+      key3: 'x',
+    })
+    expect(data.key2).toBe('a!')
+    expect(data.key3).toBeUndefined()
   })
 })

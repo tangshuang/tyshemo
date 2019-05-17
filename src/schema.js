@@ -1,4 +1,4 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, inObject, isEqual } from './utils.js'
+import { each, isObject, map, iterate, isArray, isFunction, isBoolean, inObject, isEqual, getInterface } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Ty from './ty.js'
 
@@ -27,7 +27,7 @@ export class Schema {
    *       return a + '' + b
    *     },
    *
-   *     prepare: (value, key, data) => !!data.on_market, // optional, used by `restore`, `data` is the parameter of `restore`
+   *     prepare: (value, key, data) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
    *
    *     drop: (value) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
    *     map: (value) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
@@ -130,8 +130,13 @@ export class Schema {
       const output = map(definition, (def, key) => {
         const defaultValue = def.default
         const handle = def.catch
+        const { required } = def
 
-        if (def.required !== false && !inObject(key, data)) {
+        if (!inObject(key, data) && required === false) {
+          return
+        }
+
+        if (!inObject(key, data) && required !== false) {
           let error = new TyError(`{keyPath} is required, but is not existing.`, { key, level: 'schema', schema: this, action: 'validate' })
           if (isFunction(handle)) {
             handle.call(context, error)
@@ -190,34 +195,45 @@ export class Schema {
     return value
   }
 
-  restore(data, context) {
+  rebuild(data, context) {
     const definition = this.definition
 
     if (!isObject(data)) {
-      throw new TyError(`[Schema]: data should be an object when restore.`)
+      throw new TyError(`[Schema]: data should be an object when rebuild.`)
     }
 
     const output = map(definition, (def, key) => {
       const value = data[key]
-      const { prepare } = def
+      const { prepare, required } = def
       const handle = def.catch
       const defaultValue = def.default
 
+      var coming
       if (isFunction(prepare)) {
+        key === 'number' && console.log(0)
         try {
-          const res = prepare.call(context, value, key, data)
-          return res
+          coming = prepare.call(context, value, key, data)
         }
         catch (error) {
           if (isFunction(handle)) {
             handle.call(context, error)
           }
-          return defaultValue
         }
       }
-      else {
-        return value
+
+      if (!inObject(key, data) && required === false && coming === undefined) {
+        return
       }
+
+      if (!inObject(key, data) && required !== false && coming === undefined) {
+        return defaultValue
+      }
+
+      if (coming === undefined) {
+        return defaultValue
+      }
+
+      return coming
     })
 
     const results = this.ensure(output, context)
@@ -228,7 +244,7 @@ export class Schema {
     const definition = this.definition
 
     if (!isObject(data)) {
-      throw new TyError(`[Schema]: data should be an object when restore.`)
+      throw new TyError(`[Schema]: data should be an object when rebuild.`)
     }
 
     const output = map(definition, (def, key) => {
@@ -315,6 +331,47 @@ export class Schema {
     digest()
 
     return caches
+  }
+
+  extend(fields) {
+    const current = this.definition
+    const next = Object.assign({}, current, fields)
+    const Interface = getInterface(this)
+    const schema = new Interface(next)
+    return schema
+  }
+  extract(fields) {
+    const current = this.definition
+    const keys = Object.keys(fields)
+    const next = {}
+
+    keys.forEach((key) => {
+      if (fields[key] === true) {
+        next[key] = current[key]
+      }
+    })
+
+    const Interface = getInterface(this)
+    const schema = new Interface(next)
+    return schema
+  }
+  mix(fields) {
+    const current = this.definition
+    const keys = Object.keys(fields)
+    const next = {}
+
+    keys.forEach((key) => {
+      if (fields[key] === true) {
+        next[key] = current[key]
+      }
+      else if (isObject(fields[key]) || isInstanceOf(fields[key], Type)) {
+        next[key] = fields[key]
+      }
+    })
+
+    const Interface = getInterface(this)
+    const schema = new Interface(next)
+    return schema
   }
 }
 export default Schema
