@@ -56,7 +56,10 @@ export class Schema {
 
       const data = value
       const error = iterate(definition, (def, key) => {
-        if (def.required !== false && !inObject(key, data)) {
+        if (!inObject(key, data) && def.required === false) {
+          return
+        }
+        if (!inObject(key, data) && def.required !== false) {
           return new TyError(`{keyPath} is required, but is not existing.`, { key, level: 'schema', schema: this, action: 'validate' })
         }
 
@@ -261,7 +264,7 @@ export class Schema {
 
   digest(data, context) {
     const definition = this.definition
-    const getComputedValue = (def) => {
+    const getComputedValue = (def, value) => {
       const { compute } = def
       const handle = def.catch
       const defaultValue = def.default
@@ -277,6 +280,9 @@ export class Schema {
           return defaultValue
         }
       }
+      else {
+        return value
+      }
     }
 
     const caches = { ...data }
@@ -287,8 +293,9 @@ export class Schema {
       dirty = false
 
       each(definition, (def, key) => {
+        const value = data[key]
+        const computed = getComputedValue(def, value)
         const cache = caches[key]
-        const computed = getComputedValue(def)
         if (!isEqual(cache, computed)) {
           dirty = true
           caches[key] = computed

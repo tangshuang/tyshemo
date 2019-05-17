@@ -155,7 +155,7 @@ export function each(obj, fn) {
 }
 
 export function map(obj, fn) {
-  if (!isObject(obj) || !isArray(obj)) {
+  if (!isObject(obj) && !isArray(obj)) {
     return obj
   }
 
@@ -165,7 +165,7 @@ export function map(obj, fn) {
 
   let result = isArray(obj) ? [] : {}
   each(obj, (value, key) => {
-    result[key] = isFunction(fn) ? fn(value, key, obj) || value : value
+    result[key] = isFunction(fn) ? fn(value, key, obj) : value
   })
 
   return result

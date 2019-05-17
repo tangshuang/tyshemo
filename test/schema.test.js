@@ -9,6 +9,7 @@ describe('Schema', () => {
     number: {
       type: Number,
       default: 0,
+      required: false,
     },
     dict: {
       type: { name: String, age: Number },
@@ -54,5 +55,41 @@ describe('Schema', () => {
     expect(SomeSchema.validate('validators', '123')).not.toBeInstanceOf(Error)
     expect(SomeSchema.validate('validators', 123)).toBeInstanceOf(Error)
     expect(SomeSchema.validate('validators', 'aa')).toBeInstanceOf(Error)
+  })
+
+  test('validate', () => {
+    const some = {
+      string: 'ok',
+      number: 10,
+      dict: {
+        name: 'tomy',
+        age: 10,
+      },
+      list: ['ok'],
+      validators: '123',
+    }
+    expect(SomeSchema.validate(some)).not.toBeInstanceOf(Error)
+
+    const some2 = { ...some, dict: {} }
+    expect(SomeSchema.validate(some2)).toBeInstanceOf(Error)
+
+    const some3 = { ...some }
+    delete some3.number
+    expect(SomeSchema.validate(some3)).not.toBeInstanceOf(Error)
+  })
+
+  test('ensure', () => {
+    const defaultValue = {
+      string: '',
+      number: 0,
+      dict: { name: '', age: 0 },
+      list: [],
+      validators: '',
+    }
+    expect(SomeSchema.ensure({})).toEqual(defaultValue)
+    expect(SomeSchema.ensure({
+      string: null,
+      number: null,
+    })).toEqual(defaultValue)
   })
 })
