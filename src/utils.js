@@ -210,9 +210,23 @@ export function clone(obj, fn) {
   return result
 }
 
-function makeKeyChain(path) {
+export function makeKeyChain(path) {
   let chain = path.toString().split(/\.|\[|\]/).filter(item => !!item)
   return chain
+}
+
+export function makeKeyPath(chain) {
+  let path = ''
+  for (let i = 0, len = chain.length; i < len; i ++) {
+    let key = chain[i]
+    if (/^[0-9]+$/.test(key)) {
+      path += '[' + key + ']'
+    }
+    else {
+      path += path ? '.' + key : key
+    }
+  }
+  return path
 }
 
 /**

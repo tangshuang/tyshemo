@@ -1,4 +1,4 @@
-import { inObject, stringify, isInstanceOf, inArray, isArray, isObject, isFunction, isNaN } from './utils.js'
+import { inObject, stringify, isInstanceOf, inArray, isArray, isObject, isFunction, isNaN, makeKeyPath } from './utils.js'
 
 function makeErrorMessage(key, params) {
   let message = TyError.messages[key] || key
@@ -24,18 +24,6 @@ export function makeError(error, params) {
 
   let traces = error.traces ? error.traces : (error.traces = [])
 
-  let keyPath = inObject('key', params) ? params.key : inObject('index', params) ? `[${params.index}]` : ''
-  let currentPath = ''
-  traces.forEach((item) => {
-    if (inObject('key', item)) {
-      currentPath = currentPath + '.' + item.key
-    }
-    if (inObject('index', item)) {
-      currentPath = currentPath + '[' + item.index + ']'
-    }
-    item.keyPath = currentPath
-  })
-
   let e = new Error()
   let stack = e.stack || e.stacktrace
   let stacks = stack.split('\n')
@@ -43,7 +31,7 @@ export function makeError(error, params) {
   stacks.shift()
   stack = stacks.join('\n')
 
-  let trace = Object.assign({}, params, { stack, keyPath })
+  let trace = Object.assign({}, params, { stack })
   traces.unshift(trace)
 
   return error
@@ -141,43 +129,23 @@ export class TyError extends TypeError {
 
           const traces = this.traces
           let info = traces[traces.length - 1] // use last trace which from the stack bottom as base info
-          let research = ''
 
-          let lastResearch = ''
+          let keyPath = []
           traces.forEach((item, i) => {
-            let prev = traces[i - 1]
-            let keyPath = item.keyPath
-            let sep = ''
-            let nextResearch = getTraceSummary(item)
-
-            if (prev && prev.keyPath !== keyPath) { // keyPath changed
-              sep = '/'
-            }
-            else if (nextResearch !== lastResearch) {
-              sep = ';'
-            }
-            research += i > 0 ? sep : ''
-
-            if (prev && prev.keyPath !== keyPath && (item.key || item.index)) {
-              research += (item.key || item.index) + ':'
-            }
-
-            if (nextResearch !== lastResearch) {
-              research += nextResearch
-            }
-
-            lastResearch = nextResearch
-
-            if (keyPath === info.keyPath) {
-              info = Object.assign({}, info, item)
+            let current = item.key || item.index || ''
+            let prev = keyPath[keyPath.length - 1]
+            if (current !== prev) {
+              keyPath.push(current)
             }
           })
+          keyPath = keyPath.filter(item => !!item)
+          keyPath = makeKeyPath(keyPath)
 
           let summary = {
             value: info.value,
             receive: getValueSummary(info.value, this.masking), // received node value
             should: getTraceSummary(info), // node rule
-            research,
+            keyPath,
           }
           let res = Object.assign({}, info, summary)
 

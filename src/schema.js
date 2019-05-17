@@ -69,7 +69,6 @@ export class Schema {
       return error
     }
 
-    const definition = this.definition
     const def = definition[key]
     const info = { key, value, level: 'schema', schema: this, action: 'validate' }
 
@@ -81,7 +80,7 @@ export class Schema {
 
     var error = Ty.catch(value).by(type)
     if (error) {
-      error = makeError(error, { info, pattern: type })
+      error = makeError(error, { ...info, pattern: type })
       return error
     }
 
@@ -111,7 +110,7 @@ export class Schema {
       })
 
       if (error) {
-        error = makeError(error, { info, pattern: validators })
+        error = makeError(error, { ...info, pattern: validators })
         return error
       }
     }
@@ -311,3 +310,4 @@ export class Schema {
     return caches
   }
 }
+export default Schema
