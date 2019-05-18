@@ -24,7 +24,7 @@ export class Model {
     this.isUpdating = null
 
     this.cache = {}
-    this.data = this.schema.ensure({})
+    this.data = {}
     this.restore(data)
   }
 
@@ -122,6 +122,14 @@ export class Model {
       }
     })
   }
+  
+  compute() {
+    this.__isComputing = true
+    this.schema.digest(this.data, this, (key, value) => {
+      this.data[key] = value
+    })
+    this.__isComputing = false
+  }
 
   digest() {
     this.isDigesting = true
@@ -137,9 +145,7 @@ export class Model {
 
       // run computing before all watchers run
       // because the properties which are watched may based on computed properties
-      this.__isComputing = true
-      this.schema.digest(this.data, this)
-      this.__isComputing = false
+      this.compute()
 
       listeners.forEach(({ key, fn }) => {
         const current = this.get(key)
@@ -198,6 +204,11 @@ export class Model {
   restore(data = {}) {
     const coming = this.schema.rebuild(data, this)
     this.data = coming
+    
+    this.compute()
+    
+    const output = this.schema.ensure(this.data, this)
+    this.data = output
   }
 
 }

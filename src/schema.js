@@ -195,29 +195,26 @@ export class Schema {
    * Notice: data will be changed.
    * @param {*} data
    * @param {*} context
+   * @param {function} [fn]
    */
-  digest(data, context) {
+  digest(data, context, fn) {
     const definition = this.definition
-    const getComputedValue = (def, value) => {
+    const getComputedValue = (def) => {
       const { compute } = def
       const handle = def.catch
       const defaultValue = def.default
-      if (isFunction(compute)) {
-        try {
-          const res = compute.call(context)
-          return res
-        }
-        catch (error) {
-          if (isFunction(handle)) {
-            handle.call(context, error)
-          }
-          return defaultValue
-        }
+      try {
+        const res = compute.call(context)
+        return res
       }
-      else {
-        return value
+      catch (error) {
+        if (isFunction(handle)) {
+          handle.call(context, error)
+        }
+        return defaultValue
       }
     }
+    const output = { ...data }
 
     var dirty = false
     var count = 0
@@ -231,12 +228,14 @@ export class Schema {
           return
         }
 
-        const value = data[key]
-        const computed = getComputedValue(def, value)
-        const cache = data[key]
-        if (!isEqual(cache, computed)) {
+        const computed = getComputedValue(def)
+        const current = output[key]
+        if (!isEqual(current, computed)) {
           dirty = true
-          data[key] = computed
+          output[key] = computed
+          if (isFunction(fn)) {
+            fn.call(context, key, computed)
+          }
         }
       })
 
@@ -299,10 +298,7 @@ export class Schema {
 
       return coming
     })
-
-    const computed = this.digest(output, context)
-    const results = this.ensure(computed, context)
-    return results
+    return output
   }
 
   /**
