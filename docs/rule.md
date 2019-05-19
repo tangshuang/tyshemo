@@ -12,12 +12,14 @@ import { Rule } from 'tyshemo'
 // pass options
 const SomeRule = new Rule({
   name: 'SomeRule',
+  prepare: function(value, key, target) {},
   validate: function(value) {
     return typeof value === 'string'
   },
   override: function(value, key, target) {
     target[key] = value + '' // make it a string
   },
+  complete: function() {},
 })
 
 // pass validate function only
@@ -92,6 +94,7 @@ The rule generators will create some rules which have different logic.
 If the value does not match `pattern`, an error with `message` will be throw.
 
 - @param {Function|Pattern} pattern
+
 
 ```js
 const SomeRule = validate(value => typeof value === 'string', 'It should be a string.')

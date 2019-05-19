@@ -366,23 +366,5 @@ export class Schema {
     const schema = new Interface(next)
     return schema
   }
-  mix(fields) {
-    const current = this.definition
-    const keys = Object.keys(fields)
-    const next = {}
-
-    keys.forEach((key) => {
-      if (fields[key] === true) {
-        next[key] = current[key]
-      }
-      else if (isObject(fields[key]) || isInstanceOf(fields[key], Type)) {
-        next[key] = fields[key]
-      }
-    })
-
-    const Interface = getInterface(this)
-    const schema = new Interface(next)
-    return schema
-  }
 }
 export default Schema

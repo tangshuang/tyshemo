@@ -48,24 +48,6 @@ export class Dict extends Type {
     const type = new Interface(next)
     return type
   }
-  mix(fields) {
-    const current = this.pattern
-    const keys = Object.keys(fields)
-    const next = {}
-
-    keys.forEach((key) => {
-      if (fields[key] === true) {
-        next[key] = current[key]
-      }
-      else if (isObject(fields[key]) || isInstanceOf(fields[key], Type)) {
-        next[key] = fields[key]
-      }
-    })
-
-    const Interface = getInterface(this)
-    const type = new Interface(next)
-    return type
-  }
 }
 
 export function dict(pattern) {

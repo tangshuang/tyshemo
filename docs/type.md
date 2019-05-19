@@ -128,8 +128,9 @@ const MyType = dict({
 
 These 4 types of data structure is extended from `Type`. So they have the same methods with `Type`.
 
+```
 +-------------+----------+----------+--
-| TySheMo  |    JS    |  Python  |
+|    TySheMo  |    JS    |  Python  |
 +-------------+----------+----------+--
 |    Dict     |  Object  |   dict   |
 +-------------+----------+----------+-------------------
@@ -139,11 +140,12 @@ These 4 types of data structure is extended from `Type`. So they have the same m
 +-------------+----------+----------+-------------------
 |    Tuple    |          |   tuple  |  immutable array
 +-------------+----------+----------+-------------------
+```
 
 ### Dict
 
 ```js
-const DictType = Dict({
+const DictType = new Dict({
   name: String,
   age: Number,
 })
@@ -152,7 +154,7 @@ const DictType = Dict({
 You can pass nested object, but are recommended to use another Dict instead:
 
 ```js
-const BodyType = Dict({
+const BodyType = new Dict({
   head: Object,
   foot: Object,
   body: {
@@ -161,10 +163,10 @@ const BodyType = Dict({
     feet: [Object],
   },
 })
-const PersonType = Dict({
+const PersonType = new Dict({
   name: String,
   age: Number,
-  body: BodyType,
+  body: BodyType, // use another type
 })
 ```
 
@@ -185,7 +187,7 @@ const SomeDictType = dict({
 
 As known, `list()` `tuple()` and `enumerate()` are available.
 
-Dict has 3 more methods:
+Dict has 2 more methods than `Type` `List` `Enum` and `Tuple`:
 
 **extend**
 
@@ -224,25 +226,6 @@ const Some2Type = SomeType.extract({
 // Some2Type only uses name property
 ```
 
-**mix**
-
-To create a new dict based on current dict.
-
-```js
-const SomeType = new Dict({
-  home: { name: String },
-  neighbor: { name: String },
-})
-const Some2Type = SomeType.mix({
-  home: true,
-  town: { name: String },
-})
-// Some2Type will have `home` and `twon`
-```
-
-Notice: mix only works for those properties whose value is object.
-
-
 ### List
 
 A list is an array in which each item has some structure.
@@ -271,7 +254,7 @@ An Array match any structure for its item. However, a List match certain structu
 
 ### Tuple
 
-A tuple is a group of items with certain order, the length of tuple can not be changed.
+A tuple is a list with certain order, the length of tuple can not be changed.
 
 ```js
 const ParamsType = Tuple([Object, Number, String])
@@ -285,13 +268,12 @@ _What's the difference between Tuple and List?_
 List items' length is not stable, a List can contains any amount items.
 But a Tuple should have stable length.
 
-List items should match given types in order, and the overflowed ones should match one of the given types.
-Tuple items should match the data type on each index.
+List items can match any of the given types.
+Tuple items should match the data type at each place.
 
 ### Enum
 
 An Enum is a set of values from which the given value should pick.
-
 
 ```js
 const ColorType = new Enum(['red', 'white', 'green'])
@@ -312,7 +294,7 @@ How to create a new type? Just extend from Type and override `assert` method:
 ```js
 class RangeType extends Type {
   assert(value) {
-    const pattern = this.pattern
+    const pattern = this.pattern // this.pattern is what you passed into contructor
 
     if (!Array.isArray(pattern)) {
       throw new Error('pattern should be an array.')

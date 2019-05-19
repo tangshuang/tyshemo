@@ -9,7 +9,7 @@ export class Model {
       throw new Error('Model should be extended.')
     }
 
-    const schema = this.schema()
+    const schema = this.schema(Schema)
     if (!isInstanceOf(schema, Schema)) {
       throw new TyError('[Model]: schema method should return a Schema instance.')
     }
@@ -28,7 +28,7 @@ export class Model {
     this.restore(data)
   }
 
-  schema() {
+  schema(Schema) {
     throw new Error('[Model]: schema method should be override.')
   }
 

@@ -1,5 +1,5 @@
 TySheMo
-==========
+=======
 
 An ECMAScript data type/schema system which based on data type validation.
 
@@ -11,7 +11,7 @@ You can use TySheMo to:
 
 - define your own data type
 - validate data structure
-- formulate data by type
+- formulate data
 - watch data change
 - formulate data from backend to frontend
 
@@ -24,13 +24,13 @@ npm i tyshemo
 ## Usage
 
 ```js
-import TySheMo from 'tyshemo'
+import { Rule, Type, Schema, Model } from 'tyshemo'
 ```
 
 or
 
 ```js
-const { TySheMo } = require('tyshemo')
+const { Ty } = require('tyshemo')
 ```
 
 or
@@ -38,19 +38,19 @@ or
 ```html
 <script src="/node_modules/tyshemo/dist/bundle.js"></script>
 <script>
-const { TySheMo } = window['tyshemo']
+const { Ty } = window['tyshemo']
 </script>
 ```
 
 If you want to use some sub modules, you can use files in `dist` dir.
 
 ```js
-import Dict from 'tyshemo/dist/dict'
+import Dict from 'tyshemo/dist/dict.js'
 ```
 
 ## Concepts
 
-Before we develop, we should learn about four concepts.
+Before we develop, we should learn about 4 concepts.
 
 ### Rule
 
@@ -58,7 +58,7 @@ A `Rule` is a Behavior Definition of an automic data.
 For example, `var a = 10` and we know `a` is a number.
 But how do you know `a` is a number which will be stored/computed as number type by V8? And how do you know a variable is a what behavior definition?
 
-We have native prototypes/definition:
+We have native prototypes/definition used by TySheMo:
 
 - String
 - Number: should be a finite number, not match `NaN` `"123"` and `Infinity`
@@ -176,16 +176,7 @@ And different type constructor need different pattern form.
 A Schema is to describe data structure interaction logic.
 In javascript, we use object to reflect data set which contains fields, so in TySheMo you should use object to define Schema.
 
-A schema do not care the real data, it create a abstract data structure to validate and formulate data.
-By using formulated data, your business code will never have type or structure problem.
-
-```
-+-------------+        +------------+
-|  api data   |   ->   |   schema   |  -> formulated data: non-type-problem data as schema discribed
-+-------------+        +------------+
-```
-
-Here schema is like a constraint to prevent data error in business code.
+A schema do not care the real data, it is no-state, it creates a abstract data structure to validate and formulate data.
 
 ```js
 const PersonSchema = new Schema({
@@ -205,20 +196,21 @@ const PersonSchema = new Schema({
     type: NumberString,
     default: '0',
   },
-  history: HistorySchema, // Schema
-  books: [BookSchema], // Schema list
 })
 
-fetch('xxx').then(res => res.json()).then(data => PersonSchema.ensure(data)).then(data => console.log(data))
-// final data will have PersonSchema data structure whatever the backend data's structure is.
-// you can use the final data without worry
+fetch('xxx')
+  .then(res => res.json())
+  .then(data => PersonSchema.ensure(data))
+  .then(data => console.log(data))
+  // final data will have PersonSchema data structure whatever the backend data's structure is.
+  // you can use the final data without worry
 ```
 
 ### Model
 
 A model is a data container which provide features about data operation.
 We always use a model in our business code to use data.
-Js native data is very weak, we provide a model that you can watch data change and based on schema, so that you can make your business logic more clear.
+Js native data is very weak, we provide a model that you can watch data change, so that you can make your business logic more clear.
 
 - watch data change
 - computed property
@@ -226,7 +218,24 @@ Js native data is very weak, we provide a model that you can watch data change a
 - extract formdata
 
 Model is used to create controllable data, it always used in bussiness code and we do not know how developers will use a model.
-So it is designed to be simple and principle.
+To define a model, you should provide a schema. To implement this, you should extend `Model` and give you own schema method to return a schema.
+
+```js
+import { Model, Enum } from 'tyshemo'
+
+class CarModel extends Model {
+  schema(Schema) {
+    return new Schema({
+      color: {
+        type: new Enum(['red', 'blue', 'yellow']),
+        default: 'red',
+      },
+    })
+  }
+}
+```
+
+The relationship of `Rule` `Type` `Schema` and `Model`:
 
 ```
 +---------------------+

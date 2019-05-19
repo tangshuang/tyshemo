@@ -20,5 +20,3 @@ export { Ty } from './ty.js'
 export { TyError } from './error.js'
 
 export { Model } from './model.js'
-
-export default Ty
