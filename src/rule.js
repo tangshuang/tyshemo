@@ -41,7 +41,8 @@ export class Rule {
       let res = this._validate.call(this, value)
       if (isBoolean(res)) {
         if (!res) {
-          let error = new TyError('mistaken', info)
+          let msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : 'mistaken'
+          let error = new TyError(msg, info)
           return error
         }
       }
