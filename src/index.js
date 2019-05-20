@@ -19,4 +19,5 @@ export {
 export { Ty } from './ty.js'
 export { TyError } from './error.js'
 
+export { Schema } from './schema.js'
 export { Model } from './model.js'

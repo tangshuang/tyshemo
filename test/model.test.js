@@ -73,4 +73,18 @@ describe('Model', () => {
     person.set('age', 20)
     expect(data.weight).toBe(60)
   })
+  
+  test('sync update', () => {
+    const person = new PersonModel()
+    const data = person.data
+    
+    person.watch('age', function(age) {
+      this.set('weight', age * 2 + 20)
+    })
+    
+    data.age = 20
+    person.update()
+    
+    expect(person.data.weight).toBe(60)
+  })
 })

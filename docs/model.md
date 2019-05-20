@@ -87,17 +87,8 @@ It will return a promise, you can get the final data in `then`.
 some.update(next).then(data => console.log(data)) // the new data of model
 ```
 
-If you pass an empty object or any other value which is not object, it will not update data but just sync computed properties and watchers.
-
-```js
-// NOT RECOMMENDED !!
-const data = some.data
-data.body.head = 123 // without any data checking, not recommended
-some.update() // notice, is run asyncly
-```
-
 Notice: `set` and `update` will check data first, if it does not data checking, an error will be thrown.
-And after calling `set`, the computed properties will be recomputed and watchers will run.
+And after calling `set` or `update`, the computed properties will be recomputed and watchers will run.
 
 **watch**
 
@@ -123,8 +114,7 @@ Unregister the watcher which registered by `watch`
 When you get data from api, you may want to reset data into model, and use new data. You can use `restore`.
 
 ```js
-fetch(url).then(res => res.json()).then(data => some.restore(data)).then(() => {
-  const data = some.data
+fetch(url).then(res => res.json()).then(data => some.restore(data)).then((data) => {
   console.log(data) // you will get new data here
 })
 ```

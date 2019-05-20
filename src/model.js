@@ -1,4 +1,4 @@
-import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getInterface, each, sortBy, iterate, makeKeyChain, makeKeyPath } from './utils.js'
+import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getInterface, each, sortBy, iterate, makeKeyChain, makeKeyPath, isEmpty, isFunction } from './utils.js'
 import TyError from './error.js'
 import Schema from './schema.js'
 
@@ -19,12 +19,14 @@ export class Model {
 
     this.isComputing = false
     this.isDigesting = false
+    this.isCallbacking = false
 
     this.updators = {}
     this.isUpdating = null
 
-    this.cache = {}
     this.data = {}
+    this.cache = {}
+    this.latest = null
     this.restore(data)
   }
 
@@ -38,7 +40,7 @@ export class Model {
 
   set(key, value) {
     // you should not use `set` in `compute`
-    if (this.isComputing) {
+    if (this.isComputing || this.isCallbacking) {
       return
     }
 
@@ -77,11 +79,26 @@ export class Model {
     this.digest()
   }
 
-  update(data = {}) {
+  update(data) {
+    // if do not pass any data
+    // example:
+    // data.a = 1
+    // data.b = 2
+    // model.update()
+    if (!data || !isObject(data)) {
+      const error = this.schema.validate(this.data)
+      if (error) {
+        throw error
+      }
+      this.digest()
+      return
+    }
+        
     return new Promise((resolve, reject) => {
       Object.assign(this.updators, data)
       clearTimeout(this.isUpdating)
       this.isUpdating = setTimeout(() => {
+        // check data first
         const error = iterate(this.updators, (value, key) => {
           const error = this.schema.validate(key, value, this)
           if (error) {
@@ -93,6 +110,7 @@ export class Model {
           return
         }
 
+        // update data
         try {
           Object.assign(this.data, this.updators)
           this.updators = {}
@@ -134,7 +152,9 @@ export class Model {
   digest() {
     this.isDigesting = true
 
-    const listeners = sortBy(this.listeners, 'priority')
+    var listeners = this.listeners.filter(({ key }) => key !== '*')
+    listeners = sortBy(listeners, 'priority')
+    
     const cache = this.cache
 
     var dirty = false
@@ -170,14 +190,33 @@ export class Model {
     }
 
     digest()
+    
+    // if data changed, trigger global watchers
+    if (!isEqual(this.latest, this.data)) {
+      this.isCallbacking = true
+      var callbacks = this.listeners.filter(({ key }) => key === '*')
+      callbacks = sortBy(callbacks, 'priority')
+      callbacks.forEach(({ fn }) => {
+        fn.call(this, this.data, this.latest)
+      })
+      this.latest = clone(this.data)
+      this.isCallbacking = false
+    }
 
     this.isDigesting = false
+  }
+  
+  // serialize data after formulate, should be override
+  serialize(data) {
+    return data
   }
 
   jsondata() {
     const data = this.data
     const output = this.schema.formulate(data, this)
-    return output
+    const result = this.serialize(output)
+    
+    return result
   }
 
   plaindata() {
@@ -201,14 +240,22 @@ export class Model {
     return error
   }
 
+  // parse data before restore, should be override
+  parse(data) {
+    return data
+  }
+
   restore(data = {}) {
-    const coming = this.schema.rebuild(data, this)
+    const entry = this.parse(data)
+    const coming = this.schema.rebuild(entry, this)
     this.data = coming
     
     this.compute()
     
     const output = this.schema.ensure(this.data, this)
     this.data = output
+    
+    return output
   }
 
 }
