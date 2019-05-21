@@ -109,7 +109,7 @@ export const asynchronous = makeRuleGenerator('asynchronous', function(fn) {
  * the passed value should match all passed patterns
  * @param {...Pattern} patterns
  */
-export const shouldmatch = makeRuleGenerator('shouldmatch', function(patterns) {
+export const match = makeRuleGenerator('match', function(patterns) {
   if (!isArray(patterns)) {
     patterns = [patterns]
   }
@@ -143,42 +143,29 @@ export const shouldmatch = makeRuleGenerator('shouldmatch', function(patterns) {
 
 /**
  * the passed value should not match patterns
- * @param {...Pattern} patterns
+ * @param {Pattern} pattern
  */
-export const shouldnotmatch = makeRuleGenerator('shouldnotmatch', function(patterns) {
-  if (!isArray(patterns)) {
-    patterns = [patterns]
-  }
-
+export const shouldnotmatch = makeRuleGenerator('shouldnotmatch', function(pattern) {
   return new Rule(function(value) {
-    const validate = (value, pattern) => {
-      let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-      if (isInstanceOf(pattern, Rule)) {
-        let error = pattern.validate(value)
-        if (!error) {
-          return new TyError('unexcepted', info)
-        }
-      }
-
-      if (isInstanceOf(pattern, Type)) {
-        let error = pattern.catch(value)
-        if (!error) {
-          return new TyError('unexcepted', info)
-        }
-      }
-
-      let type = new Type(pattern)
-      let error = type.catch(value)
+    let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
+    if (isInstanceOf(pattern, Rule)) {
+      let error = pattern.validate(value)
       if (!error) {
         return new TyError('unexcepted', info)
       }
     }
-    for (let i = 0, len = patterns.length; i < len; i ++) {
-      let pattern = patterns[i]
-      let error = validate(value, pattern)
-      if (error) {
-        return error
+
+    if (isInstanceOf(pattern, Type)) {
+      let error = pattern.catch(value)
+      if (!error) {
+        return new TyError('unexcepted', info)
       }
+    }
+
+    let type = new Type(pattern)
+    let error = type.catch(value)
+    if (!error) {
+      return new TyError('unexcepted', info)
     }
   })
 })
