@@ -8,9 +8,9 @@ export { Rule } from './rule.js'
 export {
   Null, Undefined, Any,
   Int, Float, Numeric,
-  asynchronous, validate, determine,
+  asynchronous, validate, determine, match,
   ifexist, ifnotmatch,
-  shouldmatch, shouldnotmatch,
+  shouldnotmatch,
   shouldexist, shouldnotexist,
   implement, equal,
   lambda,

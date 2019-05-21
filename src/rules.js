@@ -107,13 +107,9 @@ export const asynchronous = makeRuleGenerator('asynchronous', function(fn) {
 
 /**
  * the passed value should match all passed patterns
- * @param {...Pattern} patterns
+ * @param {...Pattern} pattern
  */
-export const match = makeRuleGenerator('match', function(patterns) {
-  if (!isArray(patterns)) {
-    patterns = [patterns]
-  }
-
+export const match = makeRuleGenerator('match', function(...patterns) {
   return new Rule(function(value) {
     const validate = (value, pattern) => {
       let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }

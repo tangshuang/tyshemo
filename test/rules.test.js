@@ -1,8 +1,8 @@
 import Type from '../src/type.js'
 import {
   Any, Null, Undefined, Numeric, Int, Float,
-  asynchronous, determine, validate,
-  shouldmatch, shouldnotmatch,
+  asynchronous, determine, validate, match,
+  shouldnotmatch,
   ifexist, ifnotmatch,
   shouldexist, shouldnotexist,
   implement, equal,
@@ -87,23 +87,23 @@ describe('Internal Rule Generators', () => {
     })
   })
 
-  test('shouldmatch', () => {
+  test('match', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'
-    const SomeRule = shouldmatch([
+    const SomeRule = match(
       validate(String, msg1),
       validate(Numeric, msg2),
-    ])
+    )
     const SomeType = new Type(SomeRule)
     expect(() => SomeType.assert('123')).not.toThrowError()
     expect(SomeType.catch(123).message).toBe(msg1)
     expect(SomeType.catch('123a').message).toBe(msg2)
   })
   test('shouldnotmatch', () => {
-    const SomeRule = shouldnotmatch([String, Number])
+    const SomeRule = shouldnotmatch(String)
     const SomeType = new Type(SomeRule)
     expect(() => SomeType.assert('123')).toThrowError()
-    expect(() => SomeType.assert(123)).toThrowError()
+    expect(() => SomeType.assert(123)).not.toThrowError()
     expect(() => SomeType.assert(null)).not.toThrowError()
   })
 
