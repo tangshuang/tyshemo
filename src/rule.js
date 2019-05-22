@@ -21,11 +21,12 @@ export class Rule {
     this._complete = complete
     this._validate = validate
     this._override = override
-    this._message = message
+    this._message = message || 'mistaken'
 
-    this.name = name
-    this.options = options
     this.isStrict = false
+
+    this.name = name || 'Rule'
+    this.options = options
   }
 
   /**
@@ -74,13 +75,19 @@ export class Rule {
     return makeError(error, info)
   }
 
-  toBeStrict(mode = true) {
-    this.isStrict = mode
-    return this
-  }
-  get strict() {
+  clone() {
     const Interface = getInterface(this)
     const ins = new Interface(this.pattern)
+    return ins
+  }
+
+  toBeStrict(mode = true) {
+    this.isStrict = !!mode
+    return this
+  }
+
+  get strict() {
+    const ins = this.clone()
     ins.toBeStrict()
     return ins
   }

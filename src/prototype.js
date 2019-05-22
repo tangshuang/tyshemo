@@ -3,7 +3,10 @@ import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray
 export class Prototype {
   constructor({ name, validate }) {
     this.name = name
-    this.validate = validate.bind(this)
+    this._validate = validate
+  }
+  validate(value) {
+    return this._validate.call(this, value)
   }
   toString() {
     return this.name
@@ -12,7 +15,17 @@ export class Prototype {
 
 export default Prototype
 
-Prototype.is = (arg) => ({
+Prototype.can = arg => isInstanceOf(arg, Prototype) || isNaN(arg) || isInstanceOf(arg, RegExp) || inArray(arg, [
+  Number,
+  String,
+  Boolean,
+  Function,
+  Array,
+  Object,
+  Symbol,
+]) || isInterface(arg)
+
+Prototype.is = arg => ({
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
     const prototype = arg

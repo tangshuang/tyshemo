@@ -32,23 +32,24 @@ export class Tuple extends Type {
     for (let i = 0; i < itemCount; i ++) {
       let value = items[i]
       let pattern = patterns[i]
-      let _info = { ...info, index: i, value, pattern }
+      let info2 = { ...info, index: i, value, pattern }
 
       // rule validate2
       if (isInstanceOf(pattern, Rule)) {
-        let error = pattern.validate2(value, i, items)
-        if (error) {
-          throw makeError(error, _info)
+        if (this.isStrict && !pattern.isStrict) {
+          pattern = pattern.strict
         }
-        else {
+        let error = pattern.validate2(value, i, items)
+        if (!error) {
           continue
         }
+        throw makeError(error, info2)
       }
 
       // normal validate
       let error = this.validate(value, pattern)
       if (error) {
-        throw makeError(error, _info)
+        throw makeError(error, info2)
       }
     }
   }

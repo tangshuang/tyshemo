@@ -9,24 +9,6 @@ export class Ty {
     this._silent = false
   }
 
-  make(type, strict) {
-    if (isObject(type)) {
-      type = new Dict(type)
-    }
-    if (isArray(type)) {
-      type = new List(type)
-    }
-    if (!isInstanceOf(type, Type)) {
-      type = new Type(type)
-    }
-
-    if (arguments.length > 1) {
-      type = type.clone().toBeStrict(strict)
-    }
-
-    return type
-  }
-
   bind(fn) {
     if (isFunction(fn)) {
       this._listeners.push(fn)
@@ -61,7 +43,7 @@ export class Ty {
 
   /**
    * @example
-   * ts.expect(10).to.match(Number)
+   * ty.expect(10).to.match(Number)
    */
   expect(value) {
     return {
@@ -87,7 +69,7 @@ export class Ty {
 
   /**
    * @example
-   * let error = ts.catch(10).by(Number)
+   * let error = ty.catch(10).by(Number)
    */
   catch(value) {
     return {
@@ -105,7 +87,7 @@ export class Ty {
 
   /**
    * @example
-   * ts.trace('10').by(Number)
+   * ty.trace('10').by(Number)
    */
   trace(value) {
     return {
@@ -119,7 +101,7 @@ export class Ty {
 
   /**
    * @example
-   * ts.track('10').by(Number)
+   * ty.track('10').by(Number)
    */
   track(value) {
     return {
@@ -134,8 +116,8 @@ export class Ty {
   /**
    * determine whether type match
    * @example
-   * let bool = ts.is(Number).typeof(10)
-   * let bool = ts.is(10).of(Number)
+   * let bool = ty.is(Number).typeof(10)
+   * let bool = ty.is(10).of(Number)
    */
   is(arg) {
     return {
@@ -156,7 +138,7 @@ export class Ty {
   /**
    * @param {string|undefined} which input|output
    * @example
-   * @ts.decorate('input').with((value) => SomeType.assert(value))
+   * @ty.decorate('input').with((value) => SomeType.assert(value))
    */
   decorate(what) {
     return {
@@ -213,13 +195,35 @@ export class Ty {
 
 }
 
-export const ts = new Ty()
-Ty.expect = ts.expect.bind(ts)
-Ty.catch = ts.catch.bind(ts)
-Ty.trace = ts.trace.bind(ts)
-Ty.track = ts.track.bind(ts)
-Ty.is = ts.is.bind(ts)
-Ty.decorate = ts.decorate.bind(ts)
-Ty.make = ts.make.bind(ts)
-
 export default Ty
+
+
+const ty = new Ty()
+
+Ty.expect = ty.expect.bind(ty)
+Ty.catch = ty.catch.bind(ty)
+Ty.trace = ty.trace.bind(ty)
+Ty.track = ty.track.bind(ty)
+Ty.is = ty.is.bind(ty)
+Ty.decorate = ty.decorate.bind(ty)
+
+Ty.create = function(type, strict) {
+  if (isObject(type)) {
+    type = new Dict(type)
+  }
+  else if (isArray(type)) {
+    type = new List(type)
+  }
+  else if (isInstanceOf(type, Type)) {
+    type = type.clone()
+  }
+  else {
+    type = new Type(type)
+  }
+
+  if (arguments.length > 1) {
+    type = type.toBeStrict(strict)
+  }
+
+  return type
+}

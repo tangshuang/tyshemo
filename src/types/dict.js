@@ -14,7 +14,7 @@ export class Dict extends Type {
 
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type' }
+    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
 
     if (!isObject(value)) {
       throw new TyError('mistaken', info)

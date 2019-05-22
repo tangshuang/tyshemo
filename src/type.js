@@ -1,7 +1,7 @@
 import Prototype from './prototype.js'
 import Rule from './rule.js'
 import TyError, { makeError } from './error.js'
-import { isArray, isObject, isInstanceOf, inArray, getInterface } from './utils.js'
+import { isArray, isObject, isInstanceOf, inArray, getInterface, inObject } from './utils.js'
 
 export class Type {
 
@@ -12,6 +12,7 @@ export class Type {
   constructor(pattern) {
     this.isStrict = false
     this.pattern = pattern
+    this.name =  'Type'
   }
 
   /**
@@ -25,93 +26,6 @@ export class Type {
     }
 
     const info = { type: this, level: 'type', action: 'validate' }
-
-    // check type
-    if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, { ...info, value, pattern })
-    }
-
-    // check rule
-    if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.validate(value)
-      return makeError(error, { ...info, value, pattern })
-    }
-
-    // check object
-    if (isObject(pattern)) {
-      if (!isObject(value)) {
-        return new TyError('mistaken', { ...info, value, pattern })
-      }
-
-      const patterns = pattern
-      const target = value
-      const patternKeys = Object.keys(patterns)
-      const targetKeys = Object.keys(target)
-
-      // in strict mode, keys should absolutely equal
-      if (this.isStrict) {
-        // properties should be absolutely same
-        for (let i = 0, len = targetKeys.length; i < len; i ++) {
-          let key = targetKeys[i]
-          if (!inArray(key, patternKeys)) {
-            return new TyError('overflow', { ...info, key })
-          }
-        }
-        for (let i = 0, len = patternKeys.length; i < len; i ++) {
-          let key = patternKeys[i]
-          if (!inArray(key, targetKeys)) {
-            return new TyError('missing', { ...info, key })
-          }
-        }
-      }
-
-      for (let i = 0, len = patternKeys.length; i < len; i ++) {
-        let key = patternKeys[i]
-        let value = target[key]
-        let pattern = patterns[key]
-        let isRule = isInstanceOf(pattern, Rule)
-
-        if (isRule && this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-
-        // not found some key in target
-        // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
-        if (!inArray(key, targetKeys)) {
-          if (isRule) {
-            let error = pattern.validate2(value, key, target)
-            if (!error) {
-              continue
-            }
-          }
-          return new TyError('missing', { ...info, key })
-        }
-
-        // rule validate2
-        if (isRule) {
-          let error = pattern.validate2(value, key, target)
-          if (!error) {
-            continue
-          }
-          return makeError(error, { ...info, key, value, pattern })
-        }
-
-        // normal validate
-        let error = this.validate(value, pattern)
-        if (error) {
-          return makeError(error, { ...info, key, value, pattern })
-        }
-      }
-
-      return null
-    }
 
     // check array
     if (isArray(pattern)) {
@@ -129,42 +43,41 @@ export class Type {
       let patternCount = patterns.length
       let itemCount = items.length
 
-      const validate = (pattern, value, key, target) => {
+      const validate = (value, index, items, pattern) => {
         let error = null
         if (isInstanceOf(pattern, Rule)) {
           if (this.isStrict && !pattern.isStrict) {
             pattern = pattern.strict
           }
-          error = pattern.validate2(value, key, target)
+          error = pattern.validate2(value, index, items)
         }
         else {
           error = this.validate(value, pattern)
         }
         return error
       }
-      const enumerate = (patterns, value, index, items) => {
+      const enumerate = (value, index, items, patterns) => {
         for (let i = 0, len = patterns.length; i < len; i ++) {
           let pattern = patterns[i]
-          let error = validate(pattern, value, index, items)
-
+          let error = validate(value, index, items, pattern)
           // if there is one match, break the loop
           if (!error) {
             return null
           }
         }
-        return new TyError('mistaken', { ...info, index, value })
+        return new TyError('mistaken', { ...info, index, value, pattern: patterns, action: 'enumerate' })
       }
 
       for (let i = 0; i < itemCount; i ++) {
         let value = items[i]
         let error = null
         if (patternCount > 1) {
-          error = enumerate(patterns, value, i, items)
+          error = enumerate(value, i, items, patterns)
           error = makeError(error, { ...info, index: i, value })
         }
         else {
           let pattern = patterns[0]
-          error = validate(pattern, value, i, items)
+          error = validate(value, i, items, pattern)
           error = makeError(error, { ...info, index: i, value, pattern })
         }
         if (error) {
@@ -175,13 +88,82 @@ export class Type {
       return null
     }
 
-    // check prototypes
-    const res = Prototype.is(value).of(pattern)
-    if (res === true) {
+    // check object
+    if (isObject(pattern)) {
+      if (!isObject(value)) {
+        return new TyError('mistaken', { ...info, value, pattern })
+      }
+
+      const patterns = pattern
+      const data = value
+      const patternKeys = Object.keys(patterns)
+      const dataKeys = Object.keys(data)
+
+      // in strict mode, keys should absolutely equal
+      // properties should be absolutely same
+      if (this.isStrict) {
+        for (let i = 0, len = dataKeys.length; i < len; i ++) {
+          let key = dataKeys[i]
+          if (!inArray(key, patternKeys)) {
+            return new TyError('overflow', { ...info, key })
+          }
+        }
+        for (let i = 0, len = patternKeys.length; i < len; i ++) {
+          let key = patternKeys[i]
+          if (!inArray(key, dataKeys)) {
+            return new TyError('missing', { ...info, key })
+          }
+        }
+      }
+
+      for (let i = 0, len = patternKeys.length; i < len; i ++) {
+        let key = patternKeys[i]
+        let value = data[key]
+        let pattern = patterns[key]
+        let isRule = isInstanceOf(pattern, Rule)
+        let error = null
+
+        if (isRule) {
+          if (this.isStrict && !pattern.isStrict) {
+            pattern = pattern.strict
+          }
+          error = pattern.validate2(value, key, data)
+          if (!error) {
+            continue
+          }
+        }
+
+        // not found some key in data
+        // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
+        if (!inObject(key, data)) {
+          return new TyError('missing', { ...info, key })
+        }
+
+        // rule error
+        // should come after not found, because the error of rule may caused by non-existing
+        if (isRule) {
+          return makeError(error, { ...info, key, value, pattern })
+        }
+
+        // normal validate
+        let error = this.validate(value, pattern)
+        if (error) {
+          return makeError(error, { ...info, key, value, pattern })
+        }
+      }
+
       return null
     }
-    else if (res === false) {
-      return new TyError('mistaken', info)
+
+    // check prototypes
+    if (Prototype.can(pattern)) {
+      const res = Prototype.is(value).of(pattern)
+      if (res === true) {
+        return null
+      }
+      else if (res === false) {
+        return new TyError('mistaken', info)
+      }
     }
 
     // check single value
@@ -255,7 +237,7 @@ export class Type {
   }
 
   toBeStrict(mode = true) {
-    this.isStrict = mode
+    this.isStrict = !!mode
     return this
   }
 
@@ -270,7 +252,7 @@ export class Type {
 
   // use name when convert to string
   toString() {
-    return this.name || 'Type'
+    return this.name
   }
 
 }
