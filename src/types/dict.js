@@ -1,6 +1,6 @@
-import Type from './type.js'
-import { isObject, isInstanceOf, getInterface } from './utils.js'
-import TyError, { makeError } from './error.js'
+import Type from '../type.js'
+import { isObject, getInterface } from '../utils.js'
+import TyError, { makeError } from '../error.js'
 
 export class Dict extends Type {
   constructor(pattern) {
@@ -14,7 +14,7 @@ export class Dict extends Type {
 
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
+    const info = { value, pattern, type: this, level: 'type' }
 
     if (!isObject(value)) {
       throw new TyError('mistaken', info)

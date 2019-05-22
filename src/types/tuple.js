@@ -1,7 +1,7 @@
-import Type from './type.js'
-import Rule from './rule.js'
-import { isInstanceOf, isArray } from './utils.js'
-import TyError, { makeError } from './error.js'
+import Type from '../type.js'
+import Rule from '../rule.js'
+import { isInstanceOf, isArray } from '../utils.js'
+import TyError, { makeError } from '../error.js'
 
 export class Tuple extends Type {
   constructor(pattern) {
@@ -25,7 +25,7 @@ export class Tuple extends Type {
     const patternCount = patterns.length
     const itemCount = items.length
 
-    if (this.mode === 'strict' && itemCount !== patternCount) {
+    if (this.isStrict && itemCount !== patternCount) {
       throw new TyError('dirty', { ...info, length: patternCount })
     }
 

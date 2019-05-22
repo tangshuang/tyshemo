@@ -2,138 +2,109 @@ import Type from './type.js'
 import { isFunction, isInstanceOf, isNumber, isBoolean, inObject, isNumeric, isNull, isUndefined, isArray, isObject, isEqual } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Rule from './rule.js'
-import Tuple from './tuple.js'
+import Dict from './types/dict.js'
+import List from './types/list.js'
+import Tuple from './types/tuple.js'
+import Prototype from './prototype.js'
+import Ty from './ty.js'
 
-// create a simple rule
-export function makeRule(name, determine, message = 'mistaken') {
-  if (isFunction(name)) {
-    message = determine
-    determine = name
-    name = 'Rule'
+// create a check function
+function checkBy(value, pattern, context) {
+  if (isInstanceOf(pattern, Rule)) {
+    if (context.isStrict && !pattern.isStrict) {
+      pattern = pattern.strict
+    }
+    let error = pattern.validate(value)
+    return makeError(error, info)
   }
 
-  return new Rule({
-    name,
-    validate: function(value) {
-      const msg = isFunction(message) ? message.call(this, value) : message
-      const info = { value, rule: this, level: 'rule', action: 'validate' }
-      if (isFunction(determine) && !determine.call(this, value)) {
-        return new TyError(msg, info)
-      }
-      else if (isBoolean(determine) && !determine) {
-        return new TyError(msg, info)
-      }
-      else {
-        return null
-      }
-    },
-  })
-}
-
-// create some basic rules
-export const Null = makeRule('Null', isNull)
-export const Undefined = makeRule('Undefined', isUndefined)
-export const Any = makeRule('Any', true)
-export const Numeric = makeRule('Numeric', isNumeric)
-export const Int = makeRule('Int', value => isNumber(value) && Number.isInteger(value))
-export const Float = makeRule('Float', value => isNumber(value) && !Number.isInteger(value))
-
-
-// create a rule generator (a function) which return a rule
-// fn should must return a rule
-function makeRuleGenerator(name, make) {
-  return function(...factors) {
-    const rule = make(...factors)
-    rule.factors = factors
-    rule.name = name
-    return rule
+  if (isInstanceOf(pattern, Type)) {
+    if (context.isStrict && !pattern.isStrict) {
+      pattern = pattern.strict
+    }
+    let error = pattern.catch(value)
+    return makeError(error, info)
   }
+
+  let type = makeType(rule)
+
+  if (context.isStrict) {
+    type.toBeStrict()
+  }
+
+  let error = type.catch(value)
+  return makeError(error, info)
 }
+
 
 /**
  * Verify a rule by using custom error message
  * @param {Rule|Type|Function} pattern
  * @param {String|Function} message
  */
-export const validate = makeRuleGenerator('validate', function(pattern, message) {
-  if (isFunction(pattern)) {
-    return makeRule(pattern, message)
-  }
+export function validate(pattern, message = 'mistaken') {
+  var validate = null
 
-  if (isInstanceOf(pattern, Rule)) {
-    return makeRule(value => !pattern.validate(value), message)
-  }
 
-  if (isInstanceOf(pattern, Type)) {
-    return makeRule(value => !pattern.validate(value), message)
-  }
-
-  let type = new Type(pattern)
-  return makeRule(value => !type.validate(value), message)
-})
+  return new Rule({
+    name: 'validate',
+    validate(value) {
+      if (isFunction(pattern)) {
+        validate = value => !!pattern(value)
+      }
+      else {
+        validate = value => !checkBy(value, pattern, this)
+      }
+    },
+    message,
+  })
+}
 
 /**
  * asynchronous rule
  * @param {Function} fn which can be an async function and should return a pattern
  */
-export const asynchronous = makeRuleGenerator('asynchronous', function(fn) {
-  const rule = new Rule(function(value) {
-    if (this.__await__) {
-      let pattern = this.__await__
-      let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-
-      if (isInstanceOf(pattern, Rule)) {
-        let error = pattern.validate(value)
+export function asynchronous(fn) {
+  const rule = new Rule({
+    name: 'asynchronous',
+    validate(value) {
+      if (this.__await__) {
+        let pattern = this.__await__
+        let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
+        let error = checkBy(value, pattern, this)
         return makeError(error, info)
       }
 
-      if (isInstanceOf(pattern, Type)) {
-        let error = pattern.catch(value)
-        return makeError(error, info)
-      }
-
-      let type = new Type(rule)
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
-
-    return true
+      return true
+    },
   })
   Promise.resolve().then(() => fn()).then((pattern) => {
     rule.__await__ = pattern
   })
   return rule
-})
+}
 
 /**
  * the passed value should match all passed patterns
  * @param {...Pattern} pattern
  */
 export const match = makeRuleGenerator('match', function(...patterns) {
-  return new Rule(function(value) {
-    const validate = (value, pattern) => {
-      let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-      if (isInstanceOf(pattern, Rule)) {
-        let error = pattern.validate(value)
+  return new Rule({
+    name: 'match',
+    validate(value) {
+      const validate = (value, pattern) => {
+        let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
+        let error = checkBy(value, pattern, this)
         return makeError(error, info)
       }
-
-      if (isInstanceOf(pattern, Type)) {
-        let error = pattern.catch(value)
-        return makeError(error, info)
+      for (let i = 0, len = patterns.length; i < len; i ++) {
+        let pattern = patterns[i]
+        let error = validate(value, pattern)
+        if (error) {
+          return error
+        }
       }
-
-      let type = new Type(pattern)
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
-    for (let i = 0, len = patterns.length; i < len; i ++) {
-      let pattern = patterns[i]
-      let error = validate(value, pattern)
-      if (error) {
-        return error
-      }
-    }
+    },
   })
 })
 
@@ -144,22 +115,7 @@ export const match = makeRuleGenerator('match', function(...patterns) {
 export const shouldnotmatch = makeRuleGenerator('shouldnotmatch', function(pattern) {
   return new Rule(function(value) {
     let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    if (isInstanceOf(pattern, Rule)) {
-      let error = pattern.validate(value)
-      if (!error) {
-        return new TyError('unexcepted', info)
-      }
-    }
-
-    if (isInstanceOf(pattern, Type)) {
-      let error = pattern.catch(value)
-      if (!error) {
-        return new TyError('unexcepted', info)
-      }
-    }
-
-    let type = new Type(pattern)
-    let error = type.catch(value)
+    let error = checkBy(value, pattern, this)
     if (!error) {
       return new TyError('unexcepted', info)
     }
@@ -171,7 +127,7 @@ export const shouldnotmatch = makeRuleGenerator('shouldnotmatch', function(patte
  * If not exists, ignore this rule.
  * @param {Pattern} pattern
  */
-export const ifexist = makeRuleGenerator('ifexist', function(pattern) {
+export function ifexist(pattern) {
   let isReady = false
   let isExist = false
   let data = []
@@ -213,7 +169,11 @@ export const ifexist = makeRuleGenerator('ifexist', function(pattern) {
 
   if (isInstanceOf(pattern, Rule)) {
     return new Rule({
+      name: 'ifexist',
       validate: make(function(value) {
+        if (this.isStrict && !pattern.isStrict) {
+          pattern = pattern.strict
+        }
         let [key, target] = data
         let error = pattern.validate2(value, key, target)
         return error
@@ -225,7 +185,11 @@ export const ifexist = makeRuleGenerator('ifexist', function(pattern) {
 
   if (isInstanceOf(pattern, Type)) {
     return new Rule({
+      name: 'ifexist',
       validate: make(function(value) {
+        if (this.isStrict && !pattern.isStrict) {
+          pattern = pattern.strict
+        }
         let error = pattern.catch(value)
         return error
       }),
@@ -234,16 +198,20 @@ export const ifexist = makeRuleGenerator('ifexist', function(pattern) {
     })
   }
 
-  let type = new Type(pattern)
+  let type = makeType(pattern)
   return new Rule({
+    name: 'ifexist',
     validate: make(function(value) {
+      if (this.isStrict) {
+        type = type.strict
+      }
       let error = type.catch(value)
       return error
     }),
     prepare,
     complete,
   })
-})
+}
 
 /**
  * If the value not match pattern, use defaultValue as value.
@@ -278,7 +246,7 @@ export const ifnotmatch = makeRuleGenerator('ifnotmatch', function(pattern, call
     })
   }
 
-  let type = new Type(pattern)
+  let type = makeType(pattern)
   return new Rule({
     validate: function(value) {
       const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
@@ -324,7 +292,7 @@ export const determine = makeRuleGenerator('determine', function(determine) {
         return makeError(error, info)
       }
 
-      let type = new Type(pattern)
+      let type = makeType(pattern)
       let error = type.catch(value)
       return makeError(error, info)
     },
@@ -379,7 +347,7 @@ export const shouldexist = makeRuleGenerator('shouldexist', function(determine, 
         return makeError(error, info)
       }
 
-      let type = new Type(pattern)
+      let type = makeType(pattern)
       let error = type.catch(value)
       return makeError(error, info)
     },
@@ -469,7 +437,7 @@ export const lambda = makeRuleGenerator('lambda', function(InputType, OutputType
     throw new TyError('lambda InputType should be a Tuple')
   }
   if (!isInstanceOf(OutputType, Type)) {
-    OutputType = new Type(OutputType)
+    OutputType = makeType(OutputType)
   }
 
   let isReady = false

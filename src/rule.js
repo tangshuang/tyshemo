@@ -1,20 +1,15 @@
-import { isFunction, isInstanceOf, isBoolean } from './utils.js'
+import { isFunction, isBoolean, isInstanceOf } from './utils.js'
 import TyError, { makeError } from './error.js'
 
 export class Rule {
   /**
    * define a rule
-   * @param {*} name
-   * @param {*} validate return 1.true/false 2.error/null
-   * @param {*} override
-   * @example
-   * // example1:
-   * const Null = new Rule(value => value === null)
-   * // example2:
-   * const ifnotmatch = (validate, override) => new Rule({ name: 'ifnotmatch', validate, override })
-   * const SomePattern = {
-   *   weight: ifnotmatch(value => typeof value === 'number', (value, key, target) => { target[key] = 0 }),
-   * }
+   * @param {string} name
+   * @param {function} validate return 1.true/false 2.error/null
+   * @param {function} prepare
+   * @param {function} override
+   * @param {function} complete
+   * @param {string|function} message
    */
   constructor(options = {}) {
     var { name, validate, override, message, prepare, complete } = options
@@ -27,7 +22,10 @@ export class Rule {
     this._validate = validate
     this._override = override
     this._message = message
-    this.name = name || 'Rule'
+
+    this.name = name
+    this.options = options
+    this.isStrict = false
   }
 
   /**
@@ -60,7 +58,7 @@ export class Rule {
    * @param {*} target
    */
   validate2(value, key, target) {
-    const info = { value, rule: this, level: 'rule', action: 'validate2' }
+    const info = { key, value, rule: this, level: 'rule', action: 'validate2' }
     if (isFunction(this._prepare)) {
       this._prepare.call(this, value, key, target)
     }
@@ -74,6 +72,20 @@ export class Rule {
       this._complete.call(this, value, key, target)
     }
     return makeError(error, info)
+  }
+
+  toBeStrict(mode = true) {
+    this.isStrict = mode
+    return this
+  }
+  get strict() {
+    const Interface = getInterface(this)
+    const ins = new Interface(this.pattern)
+    ins.toBeStrict()
+    return ins
+  }
+  get Strict() {
+    return this.strict
   }
 
   toString() {

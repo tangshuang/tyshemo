@@ -1,12 +1,30 @@
-import { isInstanceOf, isFunction, isObject, isArray } from './utils.js'
+import { isFunction } from './utils.js'
+import Dict from './types/dict.js'
+import List from './types/list.js'
 import Type from './type.js'
-import Dict from './dict.js'
-import List from './list.js'
 
 export class Ty {
   constructor() {
     this._listeners = []
     this._silent = false
+  }
+
+  make(type, strict) {
+    if (isObject(type)) {
+      type = new Dict(type)
+    }
+    if (isArray(type)) {
+      type = new List(type)
+    }
+    if (!isInstanceOf(type, Type)) {
+      type = new Type(type)
+    }
+
+    if (arguments.length > 1) {
+      type = type.clone().toBeStrict(strict)
+    }
+
+    return type
   }
 
   bind(fn) {
@@ -202,18 +220,6 @@ Ty.trace = ts.trace.bind(ts)
 Ty.track = ts.track.bind(ts)
 Ty.is = ts.is.bind(ts)
 Ty.decorate = ts.decorate.bind(ts)
+Ty.make = ts.make.bind(ts)
 
 export default Ty
-
-function makeType(type) {
-  if (isInstanceOf(type, Type)) {
-    return type
-  }
-  if (isObject(type)) {
-    return new Dict(type)
-  }
-  if (isArray(type)) {
-    return new List(type)
-  }
-  return new Type(type)
-}

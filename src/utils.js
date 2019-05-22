@@ -3,7 +3,7 @@ export function isNumber(value) {
 }
 
 export function isNumeric(value) {
-  return isNumber(value) || (isString(value) && /^\-?[0-9]+(\.{0,1}[0-9]+){0,1}$/.test(value))
+  return isString(value) && /^\-?[0-9]+(\.{0,1}[0-9]+){0,1}$/.test(value)
 }
 
 export function isBoolean(value) {

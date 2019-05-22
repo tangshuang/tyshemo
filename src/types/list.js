@@ -1,6 +1,6 @@
-import Type from './type.js'
-import { isArray, isEmpty } from './utils.js'
-import TyError, { makeError } from './error.js'
+import Type from '../type.js'
+import { isArray, isEmpty } from '../utils.js'
+import TyError, { makeError } from '../error.js'
 
 export class List extends Type {
   constructor(pattern) {
