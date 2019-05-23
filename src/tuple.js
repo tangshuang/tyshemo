@@ -26,7 +26,7 @@ export class Tuple extends Type {
     const itemCount = items.length
 
     if (this.isStrict && itemCount !== patternCount) {
-      throw new TyError('dirty', { ...info, length: patternCount })
+      throw new TyError('dirty', { ...info, length: patternCount, count: itemCount })
     }
 
     for (let i = 0; i < itemCount; i ++) {

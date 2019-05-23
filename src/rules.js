@@ -5,44 +5,6 @@ import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
 
-
-/**
- * Verify a rule by using custom error message
- * @param {Rule|Type|Function} pattern
- * @param {String|Function} message
- */
-export function validate(pattern, message = 'mistaken') {
-  function validate(value) {
-    if (isFunction(pattern)) {
-      return !!pattern(value)
-    }
-    else if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      return !pattern.validate(value)
-    }
-    else if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      return pattern.test(value)
-    }
-    else {
-      let type = Ty.create(pattern)
-      if (this.isStrict) {
-        type.toBeStrict()
-      }
-      return type.test(value)
-    }
-  }
-  return new Rule({
-    name: 'validate',
-    message,
-    validate,
-  })
-}
-
 /**
  * asynchronous rule
  * @param {Function} fn which can be an async function and should return a pattern
@@ -131,6 +93,110 @@ export function match(...patterns) {
   }
   return new Rule({
     name: 'match',
+    validate,
+  })
+}
+
+/**
+ * determine which pattern to use.
+ * @param {Function} determine a function to receive parent node of current prop, and return a pattern
+ */
+export function determine(determine) {
+  let isReady = false
+  let pattern = null
+  let data = []
+
+  function prepare(value, key, target) {
+    pattern = determine(value, key, target)
+    isReady = true
+    data = [key, target]
+  }
+  function complete() {
+    isReady = false
+    pattern = null
+    data = []
+  }
+  function validate(value) {
+    if (!isReady) {
+      return new TyError('determine can not be used in this situation.')
+    }
+
+    const [key, target] = data
+    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
+
+    if (target && isArray(target)) {
+      info.index = key
+    }
+    else if (target && isObject(target)) {
+      info.key = key
+    }
+
+    if (isInstanceOf(pattern, Rule)) {
+      if (this.isStrict && !pattern.isStrict) {
+        pattern = pattern.strict
+      }
+      let [key, target] = data
+      let error = pattern.validate2(value, key, target)
+      return makeError(error, info)
+    }
+    else if (isInstanceOf(pattern, Type)) {
+      if (this.isStrict && !pattern.isStrict) {
+        pattern = pattern.strict
+      }
+      let error = pattern.catch(value)
+      return makeError(error, info)
+    }
+    else {
+      let type = Ty.create(pattern)
+      if (this.isStrict) {
+        type.toBeStrict()
+      }
+      let error = type.catch(value)
+      return makeError(error, info)
+    }
+  }
+
+  return new Rule({
+    name: 'determine',
+    validate,
+    prepare,
+    complete,
+  })
+}
+
+/**
+ * Verify a rule by using custom error message
+ * @param {Rule|Type|Function} pattern
+ * @param {String|Function} message
+ */
+export function shouldmatch(pattern, message = 'mistaken') {
+  function validate(value) {
+    if (isFunction(pattern)) {
+      return !!pattern(value)
+    }
+    else if (isInstanceOf(pattern, Rule)) {
+      if (this.isStrict && !pattern.isStrict) {
+        pattern = pattern.strict
+      }
+      return !pattern.validate(value)
+    }
+    else if (isInstanceOf(pattern, Type)) {
+      if (this.isStrict && !pattern.isStrict) {
+        pattern = pattern.strict
+      }
+      return pattern.test(value)
+    }
+    else {
+      let type = Ty.create(pattern)
+      if (this.isStrict) {
+        type.toBeStrict()
+      }
+      return type.test(value)
+    }
+  }
+  return new Rule({
+    name: 'shouldmatch',
+    message,
     validate,
   })
 }
@@ -281,73 +347,6 @@ export function ifnotmatch(pattern, callback) {
     name: 'ifnotmatch',
     validate,
     override,
-  })
-}
-
-/**
- * determine which pattern to use.
- * @param {Function} determine a function to receive parent node of current prop, and return a pattern
- */
-export function determine(determine) {
-  let isReady = false
-  let pattern = null
-  let data = []
-
-  function prepare(value, key, target) {
-    pattern = determine(value, key, target)
-    isReady = true
-    data = [key, target]
-  }
-  function complete() {
-    isReady = false
-    pattern = null
-    data = []
-  }
-  function validate(value) {
-    if (!isReady) {
-      return new TyError('determine can not be used in this situation.')
-    }
-
-    const [key, target] = data
-    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-
-    if (target && isArray(target)) {
-      info.index = key
-    }
-    else if (target && isObject(target)) {
-      info.key = key
-    }
-
-    if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let [key, target] = data
-      let error = pattern.validate2(value, key, target)
-      return makeError(error, info)
-    }
-    else if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, info)
-    }
-    else {
-      let type = Ty.create(pattern)
-      if (this.isStrict) {
-        type.toBeStrict()
-      }
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
-  }
-
-  return new Rule({
-    name: 'determine',
-    validate,
-    prepare,
-    complete,
   })
 }
 

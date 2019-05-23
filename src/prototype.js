@@ -15,55 +15,57 @@ export class Prototype {
 
 export default Prototype
 
-Prototype.can = arg => isInstanceOf(arg, Prototype) || isNaN(arg) || isInstanceOf(arg, RegExp) || inArray(arg, [
-  Number,
-  String,
-  Boolean,
-  Function,
-  Array,
-  Object,
-  Symbol,
-]) || isInterface(arg)
-
+const prototypes = []
+Prototype.registry = (proto, validate) => {
+  const item = prototypes.find(item => item.proto === proto)
+  if (item) {
+    item.validate = validate
+  }
+  else {
+    prototypes.push({ proto, validate })
+  }
+}
+Prototype.unregistry = (proto) => {
+  for (let i = 0, len = prototypes.length; i < len; i ++) {
+    const item = prototypes[i]
+    if (item.proto === proto) {
+      prototypes.splice(i, 1)
+      break
+    }
+  }
+}
+Prototype.has = proto => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isInterface(proto) || prototypes.some(item => item.proto === proto)
 Prototype.is = arg => ({
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
-    const prototype = arg
-    if (isInstanceOf(prototype, Prototype)) {
-      return prototype.validate(value)
+    const proto = arg
+    if (isInstanceOf(proto, Prototype)) {
+      return proto.validate(value)
     }
-    if (isNaN(prototype)) {
+    if (isNaN(proto)) {
       return isNaN(value)
     }
-    if (prototype === Number) {
-      return isNumber(value)
+    if (isInstanceOf(proto, RegExp)) {
+      return isString(value) && proto.test(value)
     }
-    if (prototype === Boolean) {
-      return isBoolean(value)
+    if (isInterface(proto)) {
+      return isInstanceOf(value, proto)
     }
-    if (prototype === String) {
-      return isString(value)
+    const item = prototypes.find(item => item.proto === proto)
+    if (item) {
+      return item.validate(value)
     }
-    if (isInstanceOf(prototype, RegExp)) {
-      return isString(value) && prototype.test(value)
-    }
-    if (prototype === Function) {
-      return isFunction(value)
-    }
-    if (prototype === Array) {
-      return isArray(value)
-    }
-    if (prototype === Object) {
-      return isObject(value)
-    }
-    if (prototype === Symbol) {
-      return isSymbol(value)
-    }
-    if (isInterface(prototype)) {
-      return isInstanceOf(value, prototype)
-    }
+    return false
   },
 
   // Prototype.is(10).of(Number)
-  of: (prototype) => Prototype.is(prototype).typeof(arg),
+  of: (proto) => Prototype.is(proto).typeof(arg),
 })
+
+Prototype.registry(Number, isNumber)
+Prototype.registry(String, isString)
+Prototype.registry(Boolean, isBoolean)
+Prototype.registry(Object, isObject)
+Prototype.registry(Array, isArray)
+Prototype.registry(Function, isFunction)
+Prototype.registry(Symbol, isSymbol)

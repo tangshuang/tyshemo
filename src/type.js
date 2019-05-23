@@ -36,6 +36,67 @@ export class Type {
       return makeError(error, info)
     }
 
+    // check array
+    if (isArray(pattern)) {
+      if (!isArray(value)) {
+        return new TyError('mistaken', { ...info, value, pattern })
+      }
+
+      // can be empty array
+      if (!value.length) {
+        return
+      }
+
+      let patterns = pattern
+      let items = value
+      let patternCount = patterns.length
+      let itemCount = items.length
+
+      const validate = (value, index, items, pattern) => {
+        let error = null
+        if (isInstanceOf(pattern, Rule)) {
+          if (this.isStrict && !pattern.isStrict) {
+            pattern = pattern.strict
+          }
+          error = pattern.validate2(value, index, items)
+        }
+        else {
+          error = this.validate(value, pattern)
+        }
+        return error
+      }
+      const enumerate = (value, index, items, patterns) => {
+        for (let i = 0, len = patterns.length; i < len; i ++) {
+          let pattern = patterns[i]
+          let error = validate(value, index, items, pattern)
+          // if there is one match, break the loop
+          if (!error) {
+            return
+          }
+        }
+        return new TyError('mistaken', { ...info, index, value, pattern: patterns, action: 'enumerate' })
+      }
+
+      for (let i = 0; i < itemCount; i ++) {
+        let value = items[i]
+        let error = null
+        if (patternCount > 1) {
+          error = enumerate(value, i, items, patterns)
+          error = makeError(error, { ...info, index: i, value })
+        }
+        else {
+          let pattern = patterns[0]
+          error = validate(value, i, items, pattern)
+          error = makeError(error, { ...info, index: i, value, pattern })
+        }
+        if (error) {
+          return error
+        }
+      }
+
+      return
+    }
+
     // check object
     if (isObject(pattern)) {
       if (!isObject(value)) {
@@ -50,16 +111,16 @@ export class Type {
       // in strict mode, keys should absolutely equal
       // properties should be absolutely same
       if (this.isStrict) {
-        for (let i = 0, len = dataKeys.length; i < len; i ++) {
-          let key = dataKeys[i]
-          if (!inArray(key, patternKeys)) {
-            return new TyError('overflow', { ...info, key })
-          }
-        }
         for (let i = 0, len = patternKeys.length; i < len; i ++) {
           let key = patternKeys[i]
           if (!inArray(key, dataKeys)) {
             return new TyError('missing', { ...info, key })
+          }
+        }
+        for (let i = 0, len = dataKeys.length; i < len; i ++) {
+          let key = dataKeys[i]
+          if (!inArray(key, patternKeys)) {
+            return new TyError('overflow', { ...info, key })
           }
         }
       }
@@ -69,57 +130,57 @@ export class Type {
         let value = data[key]
         let pattern = patterns[key]
         let isRule = isInstanceOf(pattern, Rule)
-        let error = null
 
         if (isRule) {
           if (this.isStrict && !pattern.isStrict) {
             pattern = pattern.strict
           }
-          error = pattern.validate2(value, key, data)
+
+          let error = pattern.validate2(value, key, data)
           if (!error) {
             continue
           }
-        }
 
-        // not found some key in data
-        // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
-        if (!inObject(key, data)) {
-          return new TyError('missing', { ...info, key })
-        }
+          // after validate2, the property may create by validate2
+          if (!inObject(key, data)) {
+            return new TyError('missing', { ...info, key })
+          }
 
-        // rule error
-        // should come after not found, because the error of rule may caused by non-existing
-        if (isRule) {
           return makeError(error, { ...info, key, value, pattern })
+        }
+        else {
+          // not found some key in data
+          // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
+          if (!inObject(key, data)) {
+            return new TyError('missing', { ...info, key })
+          }
         }
 
         // normal validate
-        error = this.validate(value, pattern)
+        let error = this.validate(value, pattern)
         if (error) {
           return makeError(error, { ...info, key, value, pattern })
         }
       }
 
-      return null
+      return
     }
 
     // check prototypes
-    if (Prototype.can(pattern)) {
+    if (Prototype.has(pattern)) {
       const res = Prototype.is(value).of(pattern)
       if (res === true) {
-        return null
+        return
       }
-      else if (res === false) {
-        return new TyError('mistaken', info)
-      }
+      return new TyError('mistaken', { ...info, value, pattern })
     }
 
     // check single value
     if (value === pattern) {
-      return null
+      return
     }
 
-    return new TyError('mistaken', info)
+    return new TyError('mistaken', { ...info, value, pattern })
   }
 
   assert(value) {

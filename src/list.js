@@ -1,7 +1,6 @@
 import Type from './type.js'
 import { isArray, isEmpty } from './utils.js'
 import TyError, { makeError } from './error.js'
-import Enum from './enum.js'
 
 export class List extends Type {
   constructor(pattern) {
@@ -18,28 +17,15 @@ export class List extends Type {
   }
   assert(value) {
     const pattern = this.pattern
-    const info = { type: this, level: 'type', action: 'assert' }
+    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
 
     if (!isArray(value)) {
-      throw new TyError('mistaken', { ...info, value, pattern })
+      throw new TyError('mistaken', info)
     }
 
-    // can be empty array
-    if (!value.length) {
-      return null
-    }
-
-    let patterns = pattern
-    let items = value
-
-    pattern = new Enum(patterns)
-
-    for (let i = 0, len = items.length; i < len; i ++) {
-      let value = items[i]
-      let error = pattern.catch(value)
-      if (error) {
-        throw makeError(error, { ...info, index: i, value, pattern })
-      }
+    const error = this.validate(value, pattern)
+    if (error) {
+      throw makeError(error, info)
     }
   }
 }
