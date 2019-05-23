@@ -27,65 +27,13 @@ export class Type {
 
     const info = { type: this, level: 'type', action: 'validate' }
 
-    // check array
-    if (isArray(pattern)) {
-      if (!isArray(value)) {
-        return new TyError('mistaken', { ...info, value, pattern })
+    // nested Type
+    if (isInstanceOf(pattern, Type)) {
+      if (this.isStrict && !pattern.isStrict) {
+        pattern = pattern.strict
       }
-
-      // can be empty array
-      if (!value.length) {
-        return null
-      }
-
-      let patterns = pattern
-      let items = value
-      let patternCount = patterns.length
-      let itemCount = items.length
-
-      const validate = (value, index, items, pattern) => {
-        let error = null
-        if (isInstanceOf(pattern, Rule)) {
-          if (this.isStrict && !pattern.isStrict) {
-            pattern = pattern.strict
-          }
-          error = pattern.validate2(value, index, items)
-        }
-        else {
-          error = this.validate(value, pattern)
-        }
-        return error
-      }
-      const enumerate = (value, index, items, patterns) => {
-        for (let i = 0, len = patterns.length; i < len; i ++) {
-          let pattern = patterns[i]
-          let error = validate(value, index, items, pattern)
-          // if there is one match, break the loop
-          if (!error) {
-            return null
-          }
-        }
-        return new TyError('mistaken', { ...info, index, value, pattern: patterns, action: 'enumerate' })
-      }
-
-      for (let i = 0; i < itemCount; i ++) {
-        let value = items[i]
-        let error = null
-        if (patternCount > 1) {
-          error = enumerate(value, i, items, patterns)
-          error = makeError(error, { ...info, index: i, value })
-        }
-        else {
-          let pattern = patterns[0]
-          error = validate(value, i, items, pattern)
-          error = makeError(error, { ...info, index: i, value, pattern })
-        }
-        if (error) {
-          return error
-        }
-      }
-
-      return null
+      let error = pattern.catch(value)
+      return makeError(error, info)
     }
 
     // check object
@@ -146,7 +94,7 @@ export class Type {
         }
 
         // normal validate
-        let error = this.validate(value, pattern)
+        error = this.validate(value, pattern)
         if (error) {
           return makeError(error, { ...info, key, value, pattern })
         }

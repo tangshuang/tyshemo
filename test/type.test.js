@@ -1,5 +1,4 @@
 import Type from '../src/type.js'
-import Rule from '../src/rule.js'
 
 describe('Type', () => {
   describe('assert', () => {
@@ -71,13 +70,6 @@ describe('Type', () => {
       const MyType = new Type(Date)
       expect(() => MyType.assert(new Date('2019-08-29'))).not.toThrowError()
       expect(() => MyType.assert(null)).toThrowError()
-    })
-    test('Rule', () => {
-      const MyRule = new Rule(value => typeof value === 'string')
-      const MyType = new Type(MyRule)
-      expect(() => MyType.assert('111')).not.toThrowError()
-      expect(() => MyType.assert(111)).toThrowError()
-      expect(() => MyType.assert(new String('...'))).toThrowError()
     })
     test('{}', () => {
       const SomeType = new Type({

@@ -1,3 +1,6 @@
+export { Prototype } from './prototype.js'
+export { Null, Undefined, Numeric, Int, Float, Any } from './prototypes.js'
+
 export { Type, type } from './type.js'
 export { Dict, dict } from './dict.js'
 export { List, list } from './list.js'
@@ -6,13 +9,17 @@ export { Enum, enumerate } from './enum.js'
 
 export { Rule } from './rule.js'
 export {
-  Null, Undefined, Any,
-  Int, Float, Numeric,
-  asynchronous, validate, determine, match,
-  ifexist, ifnotmatch,
+  asynchronous,
+  validate,
+  determine,
+  match,
   shouldnotmatch,
-  shouldexist, shouldnotexist,
-  implement, equal,
+  ifexist,
+  ifnotmatch,
+  shouldexist,
+  shouldnotexist,
+  implement,
+  equal,
   lambda,
 } from './rules.js'
 

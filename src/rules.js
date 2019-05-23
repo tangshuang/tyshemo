@@ -2,7 +2,7 @@ import Type from './type.js'
 import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Rule from './rule.js'
-import Tuple from './types/tuple.js'
+import Tuple from './tuple.js'
 import Ty from './ty.js'
 
 

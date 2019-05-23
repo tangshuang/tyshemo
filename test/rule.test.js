@@ -1,7 +1,7 @@
 import Type from '../src/type.js'
 import Rule from '../src/rule.js'
 
-describe('Rule', () => {
+xdescribe('Rule', () => {
   test('pass a determine function', () => {
     const ObjectRule = new Rule(function(value) {
       if (typeof value !== 'object') {

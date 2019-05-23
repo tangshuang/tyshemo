@@ -9,7 +9,7 @@ import {
 } from '../src/rules.js'
 import Dict from '../src/dict.js'
 
-describe('Internal Rules', () => {
+xdescribe('Internal Rules', () => {
   test('Null', () => {
     const NullType = new Type(Null)
     expect(() => { NullType.assert({}) }).toThrowError()
@@ -49,7 +49,7 @@ describe('Internal Rules', () => {
   })
 })
 
-describe('Internal Rule Generators', () => {
+xdescribe('Internal Rule Generators', () => {
   test('determine', () => {
     const SomeRule = determine((value, key, target) => {
       if (target.should) {

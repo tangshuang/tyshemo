@@ -1,7 +1,7 @@
-import Type from '../type.js'
-import Rule from '../rule.js'
-import { isInstanceOf, isArray } from '../utils.js'
-import TyError, { makeError } from '../error.js'
+import Type from './type.js'
+import Rule from './rule.js'
+import { isInstanceOf, isArray } from './utils.js'
+import TyError, { makeError } from './error.js'
 
 export class Tuple extends Type {
   constructor(pattern) {

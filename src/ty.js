@@ -1,6 +1,6 @@
-import { isFunction } from './utils.js'
-import Dict from './types/dict.js'
-import List from './types/list.js'
+import { isFunction, isObject, isArray, isInstanceOf } from './utils.js'
+import Dict from './dict.js'
+import List from './list.js'
 import Type from './type.js'
 
 export class Ty {
@@ -49,7 +49,7 @@ export class Ty {
     return {
       to: {
         match: (type) => {
-          type = makeType(type)
+          type = Ty.create(type)
 
           try {
             type.assert(value)
@@ -74,7 +74,7 @@ export class Ty {
   catch(value) {
     return {
       by: (type) => {
-        type = makeType(type)
+        type = Ty.create(type)
 
         let error = type.catch(value)
         if (error) {
@@ -92,7 +92,7 @@ export class Ty {
   trace(value) {
     return {
       by: (type) => {
-        type = makeType(type)
+        type = Ty.create(type)
 
         return type.trace(value).catch(error => this.throw(error))
       },
@@ -106,7 +106,7 @@ export class Ty {
   track(value) {
     return {
       by: (type) => {
-        type = makeType(type)
+        type = Ty.create(type)
 
         return type.track(value).catch(error => this.throw(error))
       },
@@ -123,7 +123,7 @@ export class Ty {
     return {
       typeof: (value) => {
         let type = arg
-        type = makeType(type)
+        type = Ty.create(type)
 
         let error = type.catch(value)
         if (error) {
@@ -207,7 +207,7 @@ Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
 Ty.decorate = ty.decorate.bind(ty)
 
-Ty.create = function(type, strict) {
+Ty.create = function(type) {
   if (isObject(type)) {
     type = new Dict(type)
   }
@@ -219,10 +219,6 @@ Ty.create = function(type, strict) {
   }
   else {
     type = new Type(type)
-  }
-
-  if (arguments.length > 1) {
-    type = type.toBeStrict(strict)
   }
 
   return type
