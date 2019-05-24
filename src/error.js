@@ -19,7 +19,7 @@ function makeErrorMessage(key, params) {
  */
 export function makeError(error, params) {
   if (!isInstanceOf(error, Error)) {
-    return null
+    return
   }
 
   let traces = error.traces ? error.traces : (error.traces = [])

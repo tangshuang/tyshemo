@@ -19,7 +19,6 @@ export class Enum extends Type {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       let pattern = patterns[i]
       let error = this.validate(value, pattern)
-      // if there is one match, break the loop
       if (!error) {
         return
       }

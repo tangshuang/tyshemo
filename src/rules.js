@@ -261,7 +261,7 @@ export function ifexist(pattern) {
       return new TyError('ifexist can not be used in this situation.')
     }
     if (!isExist) {
-      return null
+      return
     }
 
     const [key, target] = data
@@ -374,7 +374,7 @@ export function shouldexist(determine, pattern) {
 
     // can not exist and it does not exist, do nothing
     if (!shouldExist && !isExist) {
-      return null
+      return
     }
 
     if (isInstanceOf(pattern, Rule)) {
@@ -442,12 +442,12 @@ export function shouldnotexist(determine) {
 
     // should not exist and is not existing
     if (shouldNotExist && !isExist) {
-      return null
+      return
     }
 
     // can exist and is existing
     if (!shouldNotExist && isExist) {
-      return null
+      return
     }
 
     const info = { value, rule: this, level: 'rule', action: 'validate' }
