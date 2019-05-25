@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isObject, getInterface } from './utils.js'
+import { isObject, getInterface, isEmpty } from './utils.js'
 import TyError, { makeError } from './error.js'
 
 export class Dict extends Type {
@@ -18,6 +18,10 @@ export class Dict extends Type {
 
     if (!isObject(value)) {
       throw new TyError('mistaken', info)
+    }
+    
+    if (isEmpty(pattern)) {
+      return
     }
 
     const error = this.validate(value, pattern)

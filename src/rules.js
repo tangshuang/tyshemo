@@ -5,6 +5,40 @@ import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
 
+function catchErrorBy(pattern, value, key, data) {
+  if (isInstanceOf(pattern, Rule)) {
+    if (this.isStrict && !pattern.isStrict) {
+      pattern = pattern.strict
+    }
+    const error = key && data ? pattern.validate2(value, key, data) : pattern.validate(value)
+    return error
+  }
+  else if (isInstanceOf(pattern, Type)) {
+    if (this.isStrict && !pattern.isStrict) {
+      pattern = pattern.strict
+    }
+    const error = pattern.catch(value)
+    return error
+  }
+  else {
+    const type = Ty.create(pattern)
+    if (this.isStrict) {
+      type.toBeStrict()
+    }
+    const error = type.catch(value)
+    return error
+  }
+}
+
+function modifyInfo(info, key, data) {
+  if (isArray(data)) {
+    info.index = key
+  }
+  else if (isObject(data)) {
+    info.key = key
+  }
+}
+
 /**
  * asynchronous rule
  * @param {Function} fn which can be an async function and should return a pattern
@@ -12,34 +46,12 @@ import Ty from './ty.js'
 export function asynchronous(fn) {
   function validate(value) {
     if (this.__await__) {
-      let pattern = this.__await__
-      let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-
-      if (isInstanceOf(pattern, Rule)) {
-        if (this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-        let error = pattern.validate(value)
-        return makeError(error, info)
-      }
-      else if (isInstanceOf(pattern, Type)) {
-        if (this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-        let error = pattern.catch(value)
-        return makeError(error, info)
-      }
-      else {
-        let type = Ty.create(pattern)
-        if (this.isStrict) {
-          type.toBeStrict()
-        }
-        let error = type.catch(value)
-        return makeError(error, info)
-      }
+      return
     }
-
-    return true
+    const pattern = this.__await__
+    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
+    const error = catchErrorBy(pattern, value)
+    return makeError(error, info)
   }
   const rule = new Rule({
     name: 'asynchronous',
@@ -57,37 +69,12 @@ export function asynchronous(fn) {
  */
 export function match(...patterns) {
   function validate(value) {
-    const validate = (value, pattern) => {
-      let info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-
-      if (isInstanceOf(pattern, Rule)) {
-        if (this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-        let error = pattern.validate(value)
-        return makeError(error, info)
-      }
-      else if (isInstanceOf(pattern, Type)) {
-        if (this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-        let error = pattern.catch(value)
-        return makeError(error, info)
-      }
-      else {
-        let type = Ty.create(pattern)
-        if (this.isStrict) {
-          type.toBeStrict()
-        }
-        let error = type.catch(value)
-        return makeError(error, info)
-      }
-    }
     for (let i = 0, len = patterns.length; i < len; i ++) {
-      let pattern = patterns[i]
-      let error = validate(value, pattern)
+      const pattern = patterns[i]
+      const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
+      const error = catchErrorBy(pattern, value)
       if (error) {
-        return error
+        return makeError(error, info)
       }
     }
   }
@@ -104,56 +91,29 @@ export function match(...patterns) {
 export function determine(determine) {
   let isReady = false
   let pattern = null
-  let data = []
+  let target = {}
 
-  function prepare(value, key, target) {
-    pattern = determine(value, key, target)
+  function prepare(value, key, data) {
+    pattern = determine({ value, key, data })
     isReady = true
-    data = [key, target]
+    target = { key, data }
   }
   function complete() {
     isReady = false
     pattern = null
-    data = []
+    target = {}
   }
   function validate(value) {
     if (!isReady) {
       return new TyError('determine can not be used in this situation.')
     }
 
-    const [key, target] = data
+    const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-
-    if (target && isArray(target)) {
-      info.index = key
-    }
-    else if (target && isObject(target)) {
-      info.key = key
-    }
-
-    if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let [key, target] = data
-      let error = pattern.validate2(value, key, target)
-      return makeError(error, info)
-    }
-    else if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, info)
-    }
-    else {
-      let type = Ty.create(pattern)
-      if (this.isStrict) {
-        type.toBeStrict()
-      }
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
+    const error = catchErrorBy(pattern, value, key, data)
+    
+    modifyInfo(info, key, data)
+    return makeError(error, info)
   }
 
   return new Rule({
@@ -187,7 +147,7 @@ export function shouldmatch(pattern, message = 'mistaken') {
       return pattern.test(value)
     }
     else {
-      let type = Ty.create(pattern)
+      const type = Ty.create(pattern)
       if (this.isStrict) {
         type.toBeStrict()
       }
@@ -220,7 +180,7 @@ export function shouldnotmatch(pattern, message = 'mistaken') {
       return !pattern.test(value)
     }
     else {
-      let type = Ty.create(pattern)
+      const type = Ty.create(pattern)
       if (this.isStrict) {
         type.toBeStrict()
       }
@@ -242,14 +202,14 @@ export function shouldnotmatch(pattern, message = 'mistaken') {
 export function ifexist(pattern) {
   let isReady = false
   let isExist = false
-  let data = []
+  let target = {}
 
-  function prepare(value, key, target) {
+  function prepare(value, key, data) {
     isReady = true
-    if (inObject(key, target)) {
+    if (inObject(key, data)) {
       isExist = true
     }
-    data = [key, target]
+    target = { key, data }
   }
   function complete() {
     isReady = false
@@ -264,39 +224,12 @@ export function ifexist(pattern) {
       return
     }
 
-    const [key, target] = data
+    const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-
-    if (target && isArray(target)) {
-      info.index = key
-    }
-    else if (target && isObject(target)) {
-      info.key = key
-    }
-
-    if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let [key, target] = data
-      let error = pattern.validate2(value, key, target)
-      return makeError(error, info)
-    }
-    else if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, info)
-    }
-    else {
-      let type = Ty.create(pattern)
-      if (this.isStrict) {
-        type.toBeStrict()
-      }
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
+    const error = catchErrorBy(pattern, value, key, target)
+    
+    modifyInfo(info, key, data)
+    return makeError(error, info)
   }
 
   return new Rule({
@@ -314,33 +247,13 @@ export function ifexist(pattern) {
  * @param {Function|Any} callback a function to return new value with origin old value
  */
 export function ifnotmatch(pattern, callback) {
-  function override(value, key, target) {
-    target[key] = isFunction(callback) ? callback(value, key, target) : callback
+  function override(value, key, data) {
+    target[key] = isFunction(callback) ? callback({ value, key, data }) : callback
   }
   function validate(value) {
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.validate(value)
-      return makeError(error, info)
-    }
-    else if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, info)
-    }
-    else {
-      let type = Ty.create(pattern)
-      if (this.isStrict) {
-        type.toBeStrict()
-      }
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
+    const error = catchErrorBy(value, pattern)
+    return makeError(error, info)
   }
 
   return new Rule({
@@ -362,56 +275,37 @@ export function shouldexist(determine, pattern) {
   let isReady = false
   let shouldExist = true
   let isExist = false
-  let data = []
+  let target = {}
 
   function validate(value) {
     if (!isReady) {
       return new TyError('shouldexist can not be used in this situation.')
     }
 
-    const [key, target] = data
+    const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
 
     // can not exist and it does not exist, do nothing
     if (!shouldExist && !isExist) {
       return
     }
-
-    if (isInstanceOf(pattern, Rule)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let [key, target] = data
-      let error = pattern.validate2(value, key, target)
-      return makeError(error, info)
-    }
-    else if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, info)
-    }
-    else {
-      let type = Ty.create(pattern)
-      if (this.isStrict) {
-        type.toBeStrict()
-      }
-      let error = type.catch(value)
-      return makeError(error, info)
-    }
+    
+    const error = catchErrorBy(pattern, value, key, target)
+    
+    modifyInfo(info, key, data)
+    return makeError(error, info)
   }
-  function prepare(value, key, target) {
-    shouldExist = determine(value, key, target)
+  function prepare(value, key, data) {
+    shouldExist = determine({ value, key, data })
     isReady = true
-    isExist = inObject(key, target)
-    data = [key, target]
+    isExist = inObject(key, data)
+    target = { key, data }
   }
   function complete() {
     shouldExist = true
     isReady = false
     isExist = false
-    data = []
+    target = {}
   }
 
   return new Rule({
@@ -453,10 +347,10 @@ export function shouldnotexist(determine) {
     const info = { value, rule: this, level: 'rule', action: 'validate' }
     return new TyError('overflow', info)
   }
-  function prepare(value, prop, target) {
-    shouldNotExist = determine(value, prop, target)
+  function prepare(value, prop, data) {
+    shouldNotExist = determine({ value, prop, data })
     isReady = true
-    isExist = inObject(prop, target)
+    isExist = inObject(prop, data)
   }
   function complete() {
     isReady = false

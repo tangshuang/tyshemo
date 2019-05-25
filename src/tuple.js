@@ -32,24 +32,51 @@ export class Tuple extends Type {
     for (let i = 0; i < itemCount; i ++) {
       let value = items[i]
       let pattern = patterns[i]
-      let info2 = { ...info, index: i, value, pattern }
+      let index = i
+      let info2 = { ...info, index, value, pattern }
 
-      // rule validate2
-      if (isInstanceOf(pattern, Rule)) {
+      let isRule = isInstanceOf(pattern, Rule)
+      if (isRule) {
         if (this.isStrict && !pattern.isStrict) {
           pattern = pattern.strict
         }
-        let error = pattern.validate2(value, i, items)
+
+        let error = pattern.validate2(value, index, items)
         if (!error) {
           continue
         }
-        throw makeError(error, info2)
+
+        // after validate2, the property may create by validate2
+        if (!inObject(index, items)) {
+          return new TyError('missing', { ...info, index })
+        }
+
+        return makeError(error, info2)
+      }
+      else {
+        // not found some key in data
+        // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
+        if (!inObject(index, items)) {
+          return new TyError('missing', { ...info, index })
+        }
       }
 
+      // nested type
+      if (isInstanceOf(pattern, Type)) {
+        if (this.isStrict && !pattern.isStrict) {
+          pattern = pattern.strict
+        }
+        let error = pattern.catch(value)
+        if (error) {
+          throw makeError(error, info2)
+        }
+      }
       // normal validate
-      let error = this.validate(value, pattern)
-      if (error) {
-        throw makeError(error, info2)
+      else {
+        let error = this.validate(value, pattern)
+        if (error) {
+          throw makeError(error, info2)
+        }
       }
     }
   }

@@ -27,15 +27,6 @@ export class Type {
 
     const info = { type: this, level: 'type', action: 'validate' }
 
-    // nested Type
-    if (isInstanceOf(pattern, Type)) {
-      if (this.isStrict && !pattern.isStrict) {
-        pattern = pattern.strict
-      }
-      let error = pattern.catch(value)
-      return makeError(error, info)
-    }
-
     // check array
     if (isArray(pattern)) {
       if (!isArray(value)) {
@@ -54,9 +45,22 @@ export class Type {
       const enumerate = (value, index, patterns) => {
         for (let i = 0, len = patterns.length; i < len; i ++) {
           let pattern = patterns[i]
-          let error = this.validate(value, pattern)
-          if (!error) {
-            return
+          // nested Type
+          if (isInstanceOf(pattern, Type)) {
+            if (this.isStrict && !pattern.isStrict) {
+              pattern = pattern.strict
+            }
+            let error = pattern.catch(value)
+            if (!error) {
+              return
+            }
+          }
+          // normal validate
+          else {
+            let error = this.validate(value, pattern)
+            if (!error) {
+              return
+            }
           }
         }
         return new TyError('mistaken', { ...info, index, value, pattern: patterns, action: 'enumerate' })
@@ -104,8 +108,8 @@ export class Type {
         let key = patternKeys[i]
         let value = data[key]
         let pattern = patterns[key]
+        
         let isRule = isInstanceOf(pattern, Rule)
-
         if (isRule) {
           if (this.isStrict && !pattern.isStrict) {
             pattern = pattern.strict
@@ -131,10 +135,22 @@ export class Type {
           }
         }
 
+        // nested Type
+        if (isInstanceOf(pattern, Type)) {
+          if (this.isStrict && !pattern.isStrict) {
+            pattern = pattern.strict
+          }
+          let error = pattern.catch(value)
+          if (error) {
+            return makeError(error, { ...info, key, value, pattern })
+          }
+        }
         // normal validate
-        let error = this.validate(value, pattern)
-        if (error) {
-          return makeError(error, { ...info, key, value, pattern })
+        else {
+          let error = this.validate(value, pattern)
+          if (error) {
+            return makeError(error, { ...info, key, value, pattern })
+          }        
         }
       }
 

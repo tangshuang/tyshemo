@@ -13,9 +13,6 @@ export class Rule {
    */
   constructor(options = {}) {
     var { name, validate, override, message, prepare, complete } = options
-    if (isFunction(options)) {
-      validate = options
-    }
 
     this._prepare = prepare
     this._complete = complete
@@ -24,7 +21,6 @@ export class Rule {
     this._message = message || 'mistaken'
 
     this.isStrict = false
-
     this.name = name || 'Rule'
     this.options = options
   }

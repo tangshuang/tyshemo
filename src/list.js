@@ -8,10 +8,6 @@ export class List extends Type {
       throw new TyError('List pattern should be an array.')
     }
 
-    if (isEmpty(pattern)) {
-      pattern = Array
-    }
-
     super(pattern)
     this.name = 'List'
   }
@@ -21,6 +17,10 @@ export class List extends Type {
 
     if (!isArray(value)) {
       throw new TyError('mistaken', info)
+    }
+    
+    if (isEmpty(pattern)) {
+      return
     }
 
     const error = this.validate(value, pattern)

@@ -18,9 +18,22 @@ export class Enum extends Type {
 
     for (let i = 0, len = patterns.length; i < len; i ++) {
       let pattern = patterns[i]
-      let error = this.validate(value, pattern)
-      if (!error) {
-        return
+      // nested Type
+      if (isInstanceOf(pattern, Type)) {
+        if (this.isStrict && !pattern.isStrict) {
+          pattern = pattern.strict
+        }
+        let error = pattern.catch(value)
+        if (!error) {
+          return
+        }
+      }
+      // normal validate
+      else {
+        let error = this.validate(value, pattern)
+        if (!error) {
+          return
+        }
       }
     }
 
