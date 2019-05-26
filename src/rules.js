@@ -93,7 +93,7 @@ export function determine(determine) {
   let pattern = null
   let target = {}
 
-  function prepare(value, key, data) {
+  function prepare({ value, key, data }) {
     pattern = determine({ value, key, data })
     isReady = true
     target = { key, data }
@@ -111,7 +111,7 @@ export function determine(determine) {
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(pattern, value, key, data)
-    
+
     modifyInfo(info, key, data)
     return makeError(error, info)
   }
@@ -204,7 +204,7 @@ export function ifexist(pattern) {
   let isExist = false
   let target = {}
 
-  function prepare(value, key, data) {
+  function prepare({ key, data }) {
     isReady = true
     if (inObject(key, data)) {
       isExist = true
@@ -227,7 +227,7 @@ export function ifexist(pattern) {
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(pattern, value, key, target)
-    
+
     modifyInfo(info, key, data)
     return makeError(error, info)
   }
@@ -247,7 +247,7 @@ export function ifexist(pattern) {
  * @param {Function|Any} callback a function to return new value with origin old value
  */
 export function ifnotmatch(pattern, callback) {
-  function override(value, key, data) {
+  function override({ value, key, data }) {
     target[key] = isFunction(callback) ? callback({ value, key, data }) : callback
   }
   function validate(value) {
@@ -289,13 +289,13 @@ export function shouldexist(determine, pattern) {
     if (!shouldExist && !isExist) {
       return
     }
-    
+
     const error = catchErrorBy(pattern, value, key, target)
-    
+
     modifyInfo(info, key, data)
     return makeError(error, info)
   }
-  function prepare(value, key, data) {
+  function prepare({ value, key, data }) {
     shouldExist = determine({ value, key, data })
     isReady = true
     isExist = inObject(key, data)
@@ -347,7 +347,7 @@ export function shouldnotexist(determine) {
     const info = { value, rule: this, level: 'rule', action: 'validate' }
     return new TyError('overflow', info)
   }
-  function prepare(value, prop, data) {
+  function prepare({ value, prop, data }) {
     shouldNotExist = determine({ value, prop, data })
     isReady = true
     isExist = inObject(prop, data)

@@ -19,7 +19,7 @@ export class Dict extends Type {
     if (!isObject(value)) {
       throw new TyError('mistaken', info)
     }
-    
+
     if (isEmpty(pattern)) {
       return
     }

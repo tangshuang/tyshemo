@@ -35,7 +35,7 @@ export class Type {
 
       // can be empty array
       if (!value.length) {
-        return
+        return null
       }
 
       let patterns = pattern
@@ -52,14 +52,14 @@ export class Type {
             }
             let error = pattern.catch(value)
             if (!error) {
-              return
+              return null
             }
           }
           // normal validate
           else {
             let error = this.validate(value, pattern)
             if (!error) {
-              return
+              return null
             }
           }
         }
@@ -73,7 +73,7 @@ export class Type {
         }
       }
 
-      return
+      return null
     }
 
     // check object
@@ -108,7 +108,7 @@ export class Type {
         let key = patternKeys[i]
         let value = data[key]
         let pattern = patterns[key]
-        
+
         let isRule = isInstanceOf(pattern, Rule)
         if (isRule) {
           if (this.isStrict && !pattern.isStrict) {
@@ -150,25 +150,26 @@ export class Type {
           let error = this.validate(value, pattern)
           if (error) {
             return makeError(error, { ...info, key, value, pattern })
-          }        
+          }
         }
       }
 
-      return
+      return null
     }
+
 
     // check prototypes
     if (Prototype.has(pattern)) {
       const res = Prototype.is(value).of(pattern)
       if (res === true) {
-        return
+        return null
       }
       return new TyError('mistaken', { ...info, value, pattern })
     }
 
     // check single value
     if (value === pattern) {
-      return
+      return null
     }
 
     return new TyError('mistaken', { ...info, value, pattern })
@@ -185,7 +186,7 @@ export class Type {
   catch(value) {
     try {
       this.assert(value)
-      return
+      return null
     }
     catch (error) {
       return error

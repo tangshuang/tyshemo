@@ -24,7 +24,7 @@ describe('Dict', () => {
       const DictType = new Dict({})
       expect(() => { DictType.assert({}) }).not.toThrowError()
       expect(() => { DictType.assert({ name: 'tomy' }) }).not.toThrowError()
-      expect(() => { DictType.Strict.assert({ name: 'tomy' }) }).toThrowError()
+      expect(() => { DictType.Strict.assert({ name: 'tomy' }) }).not.toThrowError()
     })
     test('nested object', () => {
       const DictType = new Dict({

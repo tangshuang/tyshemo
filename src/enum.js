@@ -1,6 +1,6 @@
 import Type from './type.js'
 import TyError from './error.js'
-import { isArray } from './utils.js'
+import { isArray, isInstanceOf } from './utils.js'
 
 export class Enum extends Type {
   constructor(pattern) {

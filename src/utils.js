@@ -38,7 +38,8 @@ export function inArray(value, arr) {
 }
 
 export function inObject(key, obj) {
-  return inArray(key, Object.keys(obj))
+  // key should be converted to string
+  return inArray(key + '', Object.keys(obj))
 }
 
 export function isNull(value) {

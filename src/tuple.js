@@ -1,6 +1,6 @@
 import Type from './type.js'
 import Rule from './rule.js'
-import { isInstanceOf, isArray } from './utils.js'
+import { isInstanceOf, isArray, inObject } from './utils.js'
 import TyError, { makeError } from './error.js'
 
 export class Tuple extends Type {
@@ -48,16 +48,15 @@ export class Tuple extends Type {
 
         // after validate2, the property may create by validate2
         if (!inObject(index, items)) {
-          return new TyError('missing', { ...info, index })
+          throw new TyError('missing', { ...info, index })
         }
 
-        return makeError(error, info2)
+        throw makeError(error, info2)
       }
       else {
-        // not found some key in data
-        // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
+        // not gave index
         if (!inObject(index, items)) {
-          return new TyError('missing', { ...info, index })
+          throw new TyError('missing', { ...info, index })
         }
       }
 

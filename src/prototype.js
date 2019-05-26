@@ -1,4 +1,4 @@
-import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isInterface, inArray } from './utils.js'
+import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isInterface } from './utils.js'
 
 export class Prototype {
   constructor({ name, validate }) {
@@ -6,7 +6,7 @@ export class Prototype {
     this._validate = validate
   }
   validate(value) {
-    return this._validate.call(this, value)
+    return !!this._validate.call(this, value)
   }
   toString() {
     return this.name
@@ -42,6 +42,12 @@ Prototype.is = arg => ({
     if (isInstanceOf(proto, Prototype)) {
       return proto.validate(value)
     }
+
+    const item = prototypes.find(item => item.proto === proto)
+    if (item) {
+      return item.validate(value)
+    }
+
     if (isNaN(proto)) {
       return isNaN(value)
     }
@@ -51,10 +57,7 @@ Prototype.is = arg => ({
     if (isInterface(proto)) {
       return isInstanceOf(value, proto)
     }
-    const item = prototypes.find(item => item.proto === proto)
-    if (item) {
-      return item.validate(value)
-    }
+
     return false
   },
 

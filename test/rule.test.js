@@ -1,19 +1,7 @@
-import Type from '../src/type.js'
+import Dict from '../src/dict.js'
 import Rule from '../src/rule.js'
 
-xdescribe('Rule', () => {
-  test('pass a determine function', () => {
-    const ObjectRule = new Rule(function(value) {
-      if (typeof value !== 'object') {
-        return new Error(value + ' is not an object')
-      }
-    })
-    const ObjectType = new Type(ObjectRule)
-    expect(() => { ObjectType.assert({}) }).not.toThrowError()
-    expect(() => { ObjectType.assert(null) }).not.toThrowError()
-    expect(() => { ObjectType.assert([]) }).not.toThrowError()
-    expect(() => { ObjectType.assert('') }).toThrowError()
-  })
+describe('Rule', () => {
   test('pass validate option', () => {
     const SomeRule = new Rule({
       validate(value) {
@@ -22,11 +10,18 @@ xdescribe('Rule', () => {
         }
       },
     })
-    const SomeType = new Type(SomeRule)
-    expect(() => { SomeType.assert({}) }).not.toThrowError()
-    expect(() => { SomeType.assert(null) }).not.toThrowError()
-    expect(() => { SomeType.assert([]) }).not.toThrowError()
-    expect(() => { SomeType.assert('') }).toThrowError()
+    const SomeType = new Dict({
+      some: SomeRule,
+    })
+    expect(() => SomeType.assert({
+      some: {},
+    })).not.toThrowError()
+    expect(() => SomeType.assert({
+      some: null,
+    })).not.toThrowError()
+    expect(() => SomeType.assert({
+      some: 'null',
+    })).toThrowError()
   })
   test('pass override option', () => {
     const SomeRule = new Rule({
@@ -35,25 +30,22 @@ xdescribe('Rule', () => {
           return new Error(value + ' is not an object')
         }
       },
-      override(value, key, target) {
-        target[key] = {}
+      override({ key, data }) {
+        data[key] = {}
       },
     })
-    const SomeType = new Type({
-      key: SomeRule
+    const SomeType = new Dict({
+      some: SomeRule,
     })
-    expect(() => {
-      SomeType.assert({
-        key: null
-      })
-    }).not.toThrowError()
+
+    expect(() => SomeType.assert({
+      some: null
+    })).not.toThrowError()
 
     const obj = {
-      key: ''
+      some: ''
     }
-    expect(() => {
-      SomeType.assert(obj)
-    }).not.toThrowError()
-    expect(obj.key).toEqual({})
+    expect(() => SomeType.assert(obj)).not.toThrowError()
+    expect(obj.some).toEqual({})
   })
 })
