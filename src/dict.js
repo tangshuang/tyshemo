@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isObject, getInterface, isEmpty } from './utils.js'
+import { isObject, getConstructor, isEmpty } from './utils.js'
 import TyError, { makeError } from './error.js'
 
 export class Dict extends Type {
@@ -33,8 +33,8 @@ export class Dict extends Type {
   extend(fields) {
     const current = this.pattern
     const next = Object.assign({}, current, fields)
-    const Interface = getInterface(this)
-    const type = new Interface(next)
+    const Constructor = getConstructor(this)
+    const type = new Constructor(next)
     return type
   }
   extract(fields) {
@@ -48,8 +48,8 @@ export class Dict extends Type {
       }
     })
 
-    const Interface = getInterface(this)
-    const type = new Interface(next)
+    const Constructor = getConstructor(this)
+    const type = new Constructor(next)
     return type
   }
 }

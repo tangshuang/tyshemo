@@ -1,7 +1,7 @@
 import Prototype from './prototype.js'
 import Rule from './rule.js'
 import TyError, { makeError } from './error.js'
-import { isArray, isObject, isInstanceOf, inArray, getInterface, inObject } from './utils.js'
+import { isArray, isObject, isInstanceOf, inArray, getConstructor, inObject } from './utils.js'
 
 export class Type {
 
@@ -232,8 +232,8 @@ export class Type {
   }
 
   clone() {
-    const Interface = getInterface(this)
-    const ins = new Interface(this.pattern)
+    const Constructor = getConstructor(this)
+    const ins = new Constructor(this.pattern)
     return ins
   }
 

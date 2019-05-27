@@ -1,11 +1,11 @@
-import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getInterface, each, sortBy, iterate, makeKeyChain, makeKeyPath, isEmpty, isFunction } from './utils.js'
+import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isEmpty, isFunction } from './utils.js'
 import TyError from './error.js'
 import Schema from './schema.js'
 
 export class Model {
   constructor(data = {}) {
-    const Interface = getInterface(this)
-    if (!isInheritedOf(Interface, Model)) {
+    const Constructor = getConstructor(this)
+    if (!isInheritedOf(Constructor, Model)) {
       throw new Error('Model should be extended.')
     }
 
@@ -93,7 +93,7 @@ export class Model {
       this.digest()
       return
     }
-        
+
     return new Promise((resolve, reject) => {
       Object.assign(this.updators, data)
       clearTimeout(this.isUpdating)
@@ -140,7 +140,7 @@ export class Model {
       }
     })
   }
-  
+
   compute() {
     this.__isComputing = true
     this.schema.digest(this.data, this, (key, value) => {
@@ -154,7 +154,7 @@ export class Model {
 
     var listeners = this.listeners.filter(({ key }) => key !== '*')
     listeners = sortBy(listeners, 'priority')
-    
+
     const cache = this.cache
 
     var dirty = false
@@ -190,7 +190,7 @@ export class Model {
     }
 
     digest()
-    
+
     // if data changed, trigger global watchers
     if (!isEqual(this.latest, this.data)) {
       this.isCallbacking = true
@@ -205,7 +205,7 @@ export class Model {
 
     this.isDigesting = false
   }
-  
+
   // serialize data after formulate, should be override
   serialize(data) {
     return data
@@ -215,7 +215,7 @@ export class Model {
     const data = this.data
     const output = this.schema.formulate(data, this)
     const result = this.serialize(output)
-    
+
     return result
   }
 
@@ -249,12 +249,12 @@ export class Model {
     const entry = this.parse(data)
     const coming = this.schema.rebuild(entry, this)
     this.data = coming
-    
+
     this.compute()
-    
+
     const output = this.schema.ensure(this.data, this)
     this.data = output
-    
+
     return output
   }
 

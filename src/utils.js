@@ -82,16 +82,16 @@ export function isInterface(f) {
   return true
 }
 
-export function isInstanceOf(ins, Interface, strict) {
-  return ins instanceof Interface && (strict ? ins.constructor === Interface : true)
+export function isInstanceOf(ins, Constructor, strict) {
+  return ins instanceof Constructor && (strict ? ins.constructor === Constructor : true)
 }
 
-export function isInheritedOf(SubInterface, Interface, strict) {
+export function isInheritedOf(SubInterface, Constructor, strict) {
   const ins = SubInterface.prototype
-  return isInstanceOf(ins, Interface, strict)
+  return isInstanceOf(ins, Constructor, strict)
 }
 
-export function getInterface(ins) {
+export function getConstructor(ins) {
   return Object.getPrototypeOf(ins).constructor
 }
 

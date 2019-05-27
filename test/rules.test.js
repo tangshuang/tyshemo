@@ -4,7 +4,7 @@ import {
   shouldmatch, shouldnotmatch,
   ifexist, ifnotmatch,
   shouldexist, shouldnotexist,
-  implement, equal,
+  of, equal,
 } from '../src/rules.js'
 import Dict from '../src/dict.js'
 
@@ -92,8 +92,8 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ shouldnotexist: false, name: 'tomy' })).not.toThrowError()
   })
 
-  test('implement', () => {
-    const StringRule = implement(String)
+  test('of', () => {
+    const StringRule = of(String)
     const StringType = new Dict({
       some: StringRule
     })

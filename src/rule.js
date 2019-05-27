@@ -72,8 +72,8 @@ export class Rule {
   }
 
   clone() {
-    const Interface = getInterface(this)
-    const ins = new Interface(this.pattern)
+    const Constructor = getConstructor(this)
+    const ins = new Constructor(this.pattern)
     return ins
   }
 

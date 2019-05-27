@@ -5,16 +5,16 @@ import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
 
-function catchErrorBy(pattern, value, key, data) {
+export function catchErrorBy(context, pattern, value, key, data) {
   if (isInstanceOf(pattern, Rule)) {
-    if (this.isStrict && !pattern.isStrict) {
+    if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
     const error = key && data ? pattern.validate2(value, key, data) : pattern.validate(value)
     return error
   }
   else if (isInstanceOf(pattern, Type)) {
-    if (this.isStrict && !pattern.isStrict) {
+    if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
     const error = pattern.catch(value)
@@ -22,7 +22,7 @@ function catchErrorBy(pattern, value, key, data) {
   }
   else {
     const type = Ty.create(pattern)
-    if (this.isStrict) {
+    if (context.isStrict) {
       type.toBeStrict()
     }
     const error = type.catch(value)
@@ -50,7 +50,7 @@ export function asynchronous(fn) {
     }
     const pattern = this.__await__
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy.call(this,pattern, value)
+    const error = catchErrorBy(this, pattern, value)
     return makeError(error, info)
   }
   const rule = new Rule({
@@ -72,7 +72,7 @@ export function match(...patterns) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
       const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-      const error = catchErrorBy.call(this,pattern, value)
+      const error = catchErrorBy(this, pattern, value)
       if (error) {
         return makeError(error, info)
       }
@@ -110,7 +110,7 @@ export function determine(determine) {
 
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy.call(this,pattern, value, key, data)
+    const error = catchErrorBy(this, pattern, value, key, data)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -229,7 +229,7 @@ export function ifexist(pattern) {
 
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy.call(this,pattern, value, key, data)
+    const error = catchErrorBy(this, pattern, value, key, data)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -255,7 +255,7 @@ export function ifnotmatch(pattern, callback) {
   }
   function validate(value) {
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy.call(this, pattern, value)
+    const error = catchErrorBy(this, pattern, value)
     return makeError(error, info)
   }
 
@@ -293,7 +293,7 @@ export function shouldexist(determine, pattern) {
       return
     }
 
-    const error = catchErrorBy.call(this, pattern, value, key, data)
+    const error = catchErrorBy(this, pattern, value, key, data)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -365,11 +365,11 @@ export function shouldnotexist(determine) {
  * Whether the value is an instance of given class
  * @param {Constructor} Cons should be a class constructor
  */
-export function implement(Interface) {
+export function of(Constructor) {
   return new Rule({
-    name: 'implement',
+    name: 'of',
     message: 'mistaken',
-    validate: value => isInstanceOf(value, Interface, true),
+    validate: value => isInstanceOf(value, Constructor, true),
   })
 }
 

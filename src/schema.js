@@ -1,4 +1,4 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, inObject, isEqual, getInterface } from './utils.js'
+import { each, isObject, map, iterate, isArray, isFunction, isBoolean, inObject, isEqual, getConstructor } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Ty from './ty.js'
 
@@ -10,7 +10,7 @@ export class Schema {
    *   property: {
    *     default: '', // required
    *     type: String, // required, notice: `default` and result of `compute` should match type
-   *     required: true, // optional, whether the property can be not existing, set to be `false` if you want it can be ignored
+   *     rule: of, // optional, which rule to use, here will use `of(String)`, only `ifexist` `of` and `equal` allowed
    *
    *     validators: [ // optional
    *       {
@@ -62,17 +62,21 @@ export class Schema {
 
       const data = value
       const error = iterate(definition, (def, key) => {
-        if (!inObject(key, data) && def.required === false) {
-          return
-        }
-        if (!inObject(key, data) && def.required !== false) {
-          return new TyError(`{keyPath} is required, but is not existing.`, { key, level: 'schema', schema: this, action: 'validate' })
-        }
-
+        const { rule, type } = def
         const value = data[key]
-        const error = this.validate(key, value, context)
-        if (error) {
-          return error
+
+        if (isFunction(rule)) {
+          const TyRule = rule(type)
+          const error = TyRule.validate2(value, key, data)
+          if (error) {
+            return error
+          }
+        }
+        else {
+          const error = this.validate(key, value, context)
+          if (error) {
+            return error
+          }
         }
       })
       return error
@@ -142,22 +146,24 @@ export class Schema {
       const output = map(definition, (def, key) => {
         const defaultValue = def.default
         const handle = def.catch
-        const { required } = def
+        const { rule, type } = def
+        const value = data[key]
 
-        if (!inObject(key, data) && required === false) {
-          return
-        }
-
-        if (!inObject(key, data) && required !== false) {
-          let error = new TyError(`{keyPath} is required, but is not existing.`, { key, level: 'schema', schema: this, action: 'validate' })
-          if (isFunction(handle)) {
-            handle.call(context, error)
+        if (isFunction(rule)) {
+          const TyRule = rule(type)
+          const error = TyRule.validate2(value, key, data)
+          if (error) {
+            if (isFunction(handle)) {
+              handle.call(context, error)
+            }
+            return defaultValue
           }
-          return defaultValue
+          else {
+            return value
+          }
         }
 
         try {
-          const value = data[key]
           const res = this.ensure(key, value, context)
           return res
         }
@@ -268,35 +274,25 @@ export class Schema {
 
     const output = map(definition, (def, key) => {
       const value = data[key]
-      const { prepare, required } = def
+      const { prepare } = def
       const handle = def.catch
       const defaultValue = def.default
 
-      var coming
       if (isFunction(prepare)) {
         try {
-          coming = prepare.call(context, value, key, data)
+          const coming = prepare.call(context, value, key, data)
+          return coming
         }
         catch (error) {
           if (isFunction(handle)) {
             handle.call(context, error)
           }
+          return defaultValue
         }
       }
-
-      if (!inObject(key, data) && required === false && coming === undefined) {
-        return
+      else {
+        return value
       }
-
-      if (!inObject(key, data) && required !== false && coming === undefined) {
-        return defaultValue
-      }
-
-      if (coming === undefined) {
-        return defaultValue
-      }
-
-      return coming
     })
     return output
   }
@@ -347,8 +343,8 @@ export class Schema {
   extend(fields) {
     const current = this.definition
     const next = Object.assign({}, current, fields)
-    const Interface = getInterface(this)
-    const schema = new Interface(next)
+    const Constructor = getConstructor(this)
+    const schema = new Constructor(next)
     return schema
   }
   extract(fields) {
@@ -362,8 +358,8 @@ export class Schema {
       }
     })
 
-    const Interface = getInterface(this)
-    const schema = new Interface(next)
+    const Constructor = getConstructor(this)
+    const schema = new Constructor(next)
     return schema
   }
 }
