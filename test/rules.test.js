@@ -37,70 +37,60 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ should: false, body: null })).not.toThrowError()
     expect(() => SomeType.assert({ should: true, body: null })).toThrowError()
   })
-  test('match', () => {
+  test('match+shouldmatch+shouldnotmatch', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'
+    const msg3 = 'It should not begin will 123.'
     const SomeRule = match(
       shouldmatch(String, msg1),
       shouldmatch(Numeric, msg2),
+      shouldnotmatch(value => value.indexOf('123') === 0, msg3),
     )
     const SomeType = new Dict({
       some: SomeRule,
     })
-    expect(() => SomeType.assert({ some: '123' })).not.toThrowError()
+    expect(() => SomeType.assert({ some: '100' })).not.toThrowError()
     expect(SomeType.catch({ some: 123 }).message).toBe(msg1)
-    expect(SomeType.catch({ some: '123a' }).message).toBe(msg2)
+    expect(SomeType.catch({ some: '123' }).message).toBe(msg3)
+    expect(SomeType.catch({ some: '100a' }).message).toBe(msg2)
   })
-  // test('shouldnotmatch', () => {
-  //   const SomeRule = shouldnotmatch(String)
-  //   const SomeType = new Type(SomeRule)
-  //   expect(() => SomeType.assert('123')).toThrowError()
-  //   expect(() => SomeType.assert(123)).not.toThrowError()
-  //   expect(() => SomeType.assert(null)).not.toThrowError()
-  // })
-
-  // test('ifexist', () => {
-  //   const SomeRule = ifexist(String)
-  //   const SomeType = new Dict({
-  //     name: SomeRule,
-  //   })
-  //   expect(() => SomeType.assert({})).not.toThrowError()
-  //   expect(() => SomeType.assert({ name: 'tomy' })).not.toThrowError()
-  //   expect(() => SomeType.assert({ name: null })).toThrowError()
-  // })
-  // test('ifnotmatch', () => {
-  //   const SomeRule = ifnotmatch(String, '')
-  //   const SomeType = new Dict({
-  //     name: SomeRule,
-  //   })
-  //   const obj = { name: null }
-  //   expect(() => SomeType.assert(obj)).not.toThrowError()
-  //   expect(obj.name).toBe('')
-  // })
-
-  // test('shouldexist', () => {
-  //   const SomeRule = shouldexist((value, key, target) => {
-  //     return target.has
-  //   }, String)
-  //   const SomeType = new Dict({
-  //     has: Boolean,
-  //     name: SomeRule,
-  //   })
-  //   expect(() => SomeType.assert({ has: true, name: 'tomy' })).not.toThrowError()
-  //   expect(() => SomeType.assert({ has: true, name: null })).toThrowError()
-  //   expect(() => SomeType.assert({ has: false })).not.toThrowError()
-  // })
-  // test('shouldnotexist', () => {
-  //   const SomeRule = shouldnotexist((value, key, target) => {
-  //     return target.shouldnotexist
-  //   })
-  //   const SomeType = new Dict({
-  //     shouldnotexist: Boolean,
-  //     name: SomeRule,
-  //   })
-  //   expect(() => SomeType.assert({ shouldnotexist: true, name: 'tomy' })).toThrowError()
-  //   expect(() => SomeType.assert({ shouldnotexist: false, name: 'tomy' })).not.toThrowError()
-  // })
+  test('ifexist', () => {
+    const SomeRule = ifexist(String)
+    const SomeType = new Dict({
+      name: SomeRule,
+    })
+    expect(() => SomeType.assert({})).not.toThrowError()
+    expect(() => SomeType.assert({ name: 'tomy' })).not.toThrowError()
+    expect(() => SomeType.assert({ name: null })).toThrowError()
+  })
+  test('ifnotmatch', () => {
+    const SomeRule = ifnotmatch(String, '')
+    const SomeType = new Dict({
+      name: SomeRule,
+    })
+    const obj = { name: null }
+    expect(() => SomeType.assert(obj)).not.toThrowError()
+    expect(obj.name).toBe('')
+  })
+  test('shouldexist', () => {
+    const SomeRule = shouldexist(({ data }) => data.has, String)
+    const SomeType = new Dict({
+      has: Boolean,
+      name: SomeRule,
+    })
+    expect(() => SomeType.assert({ has: true, name: 'tomy' })).not.toThrowError()
+    expect(() => SomeType.assert({ has: true, name: null })).toThrowError()
+    expect(() => SomeType.assert({ has: false })).not.toThrowError()
+  })
+  test('shouldnotexist', () => {
+    const SomeRule = shouldnotexist(({ data }) => data.shouldnotexist)
+    const SomeType = new Dict({
+      shouldnotexist: Boolean,
+      name: SomeRule,
+    })
+    expect(() => SomeType.assert({ shouldnotexist: true, name: 'tomy' })).toThrowError()
+    expect(() => SomeType.assert({ shouldnotexist: false, name: 'tomy' })).not.toThrowError()
+  })
 
   test('implement', () => {
     const StringRule = implement(String)

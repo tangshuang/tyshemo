@@ -86,7 +86,7 @@ export function match(...patterns) {
 
 /**
  * determine which pattern to use.
- * @param {Function} determine a function to receive parent node of current prop, and return a pattern
+ * @param {Function} determine a function to receive parent node of current key, and return a pattern
  */
 export function determine(determine) {
   let isReady = false
@@ -167,7 +167,10 @@ export function shouldmatch(pattern, message = 'mistaken') {
  */
 export function shouldnotmatch(pattern, message = 'mistaken') {
   function validate(value) {
-    if (isInstanceOf(pattern, Rule)) {
+    if (isFunction(pattern)) {
+      return !pattern(value)
+    }
+    else if (isInstanceOf(pattern, Rule)) {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
@@ -214,7 +217,7 @@ export function ifexist(pattern) {
   function complete() {
     isReady = false
     isExist = false
-    data = []
+    target = []
   }
   function validate(value) {
     if (!isReady) {
@@ -226,7 +229,7 @@ export function ifexist(pattern) {
 
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy.call(this,pattern, value, key, target)
+    const error = catchErrorBy.call(this,pattern, value, key, data)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -248,11 +251,11 @@ export function ifexist(pattern) {
  */
 export function ifnotmatch(pattern, callback) {
   function override({ value, key, data }) {
-    target[key] = isFunction(callback) ? callback({ value, key, data }) : callback
+    data[key] = isFunction(callback) ? callback({ value, key, data }) : callback
   }
   function validate(value) {
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy.call(this,value, pattern)
+    const error = catchErrorBy.call(this, pattern, value)
     return makeError(error, info)
   }
 
@@ -264,11 +267,11 @@ export function ifnotmatch(pattern, callback) {
 }
 
 /**
- * Advance version of ifexist, determine whether a prop can not exist with a determine function,
- * if the prop is existing, use the passed type to check.
+ * Advance version of ifexist, determine whether a key can not exist with a determine function,
+ * if the key is existing, use the passed type to check.
  * @param {Function} determine the function to return true or false,
- * if true, it means the prop should must exists and will use the second parameter to check data type,
- * if false, it means the prop can not exist
+ * if true, it means the key should must exists and will use the second parameter to check data type,
+ * if false, it means the key can not exist
  * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
 export function shouldexist(determine, pattern) {
@@ -290,7 +293,7 @@ export function shouldexist(determine, pattern) {
       return
     }
 
-    const error = catchErrorBy.call(this,pattern, value, key, target)
+    const error = catchErrorBy.call(this, pattern, value, key, data)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -317,11 +320,11 @@ export function shouldexist(determine, pattern) {
 }
 
 /**
- * Advance version of ifexist, determine whether a prop can not exist with a determine function,
- * if the prop is existing, use the passed type to check.
+ * Advance version of ifexist, determine whether a key can not exist with a determine function,
+ * if the key is existing, use the passed type to check.
  * @param {Function} determine the function to return true or false,
- * if true, it means the prop should must exists and will use the second parameter to check data type,
- * if false, it means the prop can not exist
+ * if true, it means the key should must exists and will use the second parameter to check data type,
+ * if false, it means the key can not exist
  * @param {Function} determine when the determine function return true, use this to check data type
  */
 export function shouldnotexist(determine) {
@@ -334,23 +337,15 @@ export function shouldnotexist(determine) {
       return new TyError('shouldnotexist can not be used in this situation.')
     }
 
-    // should not exist and is not existing
-    if (shouldNotExist && !isExist) {
-      return
+    if (shouldNotExist && isExist) {
+      const info = { value, rule: this, level: 'rule', action: 'validate' }
+      return new TyError('overflow', info)
     }
-
-    // can exist and is existing
-    if (!shouldNotExist && isExist) {
-      return
-    }
-
-    const info = { value, rule: this, level: 'rule', action: 'validate' }
-    return new TyError('overflow', info)
   }
-  function prepare({ value, prop, data }) {
-    shouldNotExist = determine({ value, prop, data })
+  function prepare({ value, key, data }) {
+    shouldNotExist = determine({ value, key, data })
     isReady = true
-    isExist = inObject(prop, data)
+    isExist = inObject(key, data)
   }
   function complete() {
     isReady = false
