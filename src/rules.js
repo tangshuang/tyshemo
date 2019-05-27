@@ -45,12 +45,12 @@ function modifyInfo(info, key, data) {
  */
 export function asynchronous(fn) {
   function validate(value) {
-    if (this.__await__) {
+    if (!this.__await__) {
       return
     }
     const pattern = this.__await__
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy(pattern, value)
+    const error = catchErrorBy.call(this,pattern, value)
     return makeError(error, info)
   }
   const rule = new Rule({
@@ -72,7 +72,7 @@ export function match(...patterns) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
       const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-      const error = catchErrorBy(pattern, value)
+      const error = catchErrorBy.call(this,pattern, value)
       if (error) {
         return makeError(error, info)
       }
@@ -110,7 +110,7 @@ export function determine(determine) {
 
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy(pattern, value, key, data)
+    const error = catchErrorBy.call(this,pattern, value, key, data)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -226,7 +226,7 @@ export function ifexist(pattern) {
 
     const { key, data } = target
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy(pattern, value, key, target)
+    const error = catchErrorBy.call(this,pattern, value, key, target)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
@@ -252,7 +252,7 @@ export function ifnotmatch(pattern, callback) {
   }
   function validate(value) {
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
-    const error = catchErrorBy(value, pattern)
+    const error = catchErrorBy.call(this,value, pattern)
     return makeError(error, info)
   }
 
@@ -290,7 +290,7 @@ export function shouldexist(determine, pattern) {
       return
     }
 
-    const error = catchErrorBy(pattern, value, key, target)
+    const error = catchErrorBy.call(this,pattern, value, key, target)
 
     modifyInfo(info, key, data)
     return makeError(error, info)
