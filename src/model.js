@@ -24,7 +24,7 @@ export class Model {
     this.updators = {}
     this.isUpdating = null
 
-    this.state = {}
+    this.data = {}
     this.cache = {} // use for property watching
     this.latest = null // use for global watching
 
@@ -54,28 +54,24 @@ export class Model {
         },
         set(state, key, value) {
           const chain = [ ...parents, key ]
-          const root = chain[0]
-          if ($this.schema.has(root)) {
-            const path = makeKeyPath(chain)
-            $this.set(path, value)
-          }
-          else {
-            state[key] = value
-          }
+          const path = makeKeyPath(chain)
+          $this.set(path, value)
+
           return true
         },
         deleteProperty(state, key) {
-          if (context && context.schema && context.schema.has(key)) {
-            throw new TyError(`{keyPath} should not be deleted.`, { key, level: 'model', model: context, action: 'delete' })
-          }
-          delete state[key]
+          const chain = [ ...parents, key ]
+          const path = makeKeyPath(chain)
+          $this.del(path)
+
           delete subproxies[key]
+          return true
         },
       }
       return new Proxy(data, handler)
     }
 
-    this.data = createProxy(this.state)
+    this.state = createProxy(this.data)
   }
 
   schema() {
@@ -83,7 +79,7 @@ export class Model {
   }
 
   get(key) {
-    return parse(this.state, key)
+    return parse(this.data, key)
   }
 
   set(key, value) {
@@ -93,31 +89,87 @@ export class Model {
     }
 
     const chain = makeKeyChain(key)
-    if (chain.length > 1) {
-      const root = chain.shift()
-      const current = this.get(root)
+    const root = chain.shift()
+    if (this.schema.has(root)) {
+      if (chain.length) {
+        const current = this.get(root)
 
-      if (!isObject(current)) {
-        throw new TyError(`{keyPath} is not an object.`, { key: root, value: current, pattern: Object, level: 'model', model: this, action: 'set' })
+        if (!isObject(current)) {
+          throw new TyError(`{keyPath} is not an object.`, { key: root, value: current, pattern: Object, level: 'model', model: this, action: 'set' })
+        }
+
+        const keyPath = makeKeyPath(chain)
+        const next = clone(current)
+        assign(next, keyPath, value)
+
+        const error = this.schema.validate(root, next, this)
+        if (error) {
+          throw error
+        }
+      }
+      else {
+        const error = this.schema.validate(root, value, this)
+        if (error) {
+          throw error
+        }
+      }
+    }
+
+    // assign
+    assign(this.data, key, value)
+
+    // you should use `set` in `watch`
+    if (this.isDigesting) {
+      return
+    }
+
+    // compute and trigger watchers
+    this.digest()
+  }
+
+  del(key) {
+    // you should not use `set` in `compute`
+    if (this.isComputing || this.isCallbacking) {
+      return
+    }
+
+    const chain = makeKeyChain(key)
+    const root = chain.shift()
+
+    if (this.schema.has(root)) {
+      if (!chain.length) {
+        throw new TyError(`{keyPath} should not be deleted.`, { key, level: 'model', model: this, action: 'del' })
       }
 
-      const keyPath = makeKeyPath(chain)
-      const next = clone(current)
-      assign(next, keyPath, value)
+      const current = this.get(root)
 
+      // do nothing is the property is not an object
+      if (!isObject(current)) {
+        return
+      }
+
+      const next = clone(current)
+      const tailKey = chain.pop()
+      const keyPath = makeKeyPath(chain)
+      const target = parse(next, keyPath)
+
+      if (!isObject(target)) {
+        return
+      }
+
+      delete target[tailKey]
       const error = this.schema.validate(root, next, this)
       if (error) {
         throw error
       }
-    }
-    else {
-      const error = this.schema.validate(key, value, this)
-      if (error) {
-        throw error
-      }
-    }
 
-    assign(this.state, key, value)
+      // assign new data which property deleted
+      assign(this.data, root, next)
+    }
+    // not in schema
+    else {
+      delete this.data[root]
+    }
 
     // you should use `set` in `watch`
     if (this.isDigesting) {
@@ -134,7 +186,7 @@ export class Model {
     // data.b = 2
     // model.update()
     if (!data || !isObject(data)) {
-      const error = this.schema.validate(this.state)
+      const error = this.schema.validate(this.data)
       if (error) {
         throw error
       }
@@ -160,10 +212,10 @@ export class Model {
 
         // update data
         try {
-          Object.assign(this.state, this.updators)
+          Object.assign(this.data, this.updators)
           this.updators = {}
           this.digest()
-          resolve(this.state)
+          resolve(this.data)
         }
         catch (e) {
           reject(e)
@@ -191,8 +243,8 @@ export class Model {
 
   compute() {
     this.__isComputing = true
-    this.schema.digest(this.state, this, (key, value) => {
-      this.state[key] = value
+    this.schema.digest(this.data, this, (key, value) => {
+      this.data[key] = value
     })
     this.__isComputing = false
   }
@@ -240,14 +292,14 @@ export class Model {
     digest()
 
     // if data changed, trigger global watchers
-    if (!isEqual(this.latest, this.state)) {
+    if (!isEqual(this.latest, this.data)) {
       this.isCallbacking = true
       var callbacks = this.listeners.filter(({ key }) => key === '*')
       callbacks = sortBy(callbacks, 'priority')
       callbacks.forEach(({ fn }) => {
-        fn.call(this, this.state, this.latest)
+        fn.call(this, this.data, this.latest)
       })
-      this.latest = clone(this.state)
+      this.latest = clone(this.data)
       this.isCallbacking = false
     }
 
@@ -260,7 +312,7 @@ export class Model {
   }
 
   jsondata() {
-    const data = this.state
+    const data = this.data
     const output = this.schema.formulate(data, this)
     const result = this.serialize(output)
 
@@ -283,7 +335,7 @@ export class Model {
   }
 
   validate() {
-    const data = this.state
+    const data = this.data
     const error = this.schema.validate(data, this)
     return error
   }
@@ -299,10 +351,10 @@ export class Model {
     const making = this.schema.ensure(coming, this)
 
     // use assign to recover, because developer may append some non-defined property to state
-    Object.assign(this.state, making)
+    Object.assign(this.data, making)
     this.compute()
 
-    return this.state
+    return this.data
   }
 
 }
