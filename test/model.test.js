@@ -43,12 +43,12 @@ describe('Model', () => {
 
   test('computed', () => {
     const person = new PersonModel()
-    const data = person.data
+    const state = person.state
 
-    expect(data.height).toBe(120)
+    expect(state.height).toBe(120)
     person.set('body.feet', false)
 
-    expect(data.height).toBe(60)
+    expect(state.height).toBe(60)
     person.set('body.feet', true)
   })
   test('get', () => {
@@ -63,37 +63,54 @@ describe('Model', () => {
   })
   test('update', async () => {
     const person = new PersonModel()
-    const data = person.data
+    const state = person.state
 
     await person.update({
       name: 'tomy',
       age: 10,
     })
-    expect(data.name).toBe('tomy')
-    expect(data.age).toBe(10)
+    expect(state.name).toBe('tomy')
+    expect(state.age).toBe(10)
   })
   test('watch', () => {
     const person = new PersonModel()
-    const data = person.data
+    const state = person.state
 
     person.watch('age', function(age) {
       this.set('weight', age * 2 + 20)
     })
     person.set('age', 20)
-    expect(data.weight).toBe(60)
+    expect(state.weight).toBe(60)
   })
 
   test('sync update', () => {
     const person = new PersonModel()
-    const data = person.data
+    const state = person.state
 
     person.watch('age', function(age) {
       this.set('weight', age * 2 + 20)
     })
 
-    data.age = 20
+    state.age = 20
     person.update()
 
-    expect(person.data.weight).toBe(60)
+    expect(person.state.weight).toBe(60)
+  })
+
+  test('data', () => {
+    const person = new PersonModel()
+    const data = person.data
+
+    // proxy with watcher
+    person.watch('age', function(age) {
+      this.set('weight', age * 2 + 20)
+    })
+    data.age = 20
+    expect(data.weight).toBe(60)
+
+    // nested object with computed definition
+    expect(data.height).toBe(120)
+    data.body.feet = false
+    expect(data.height).toBe(60)
   })
 })

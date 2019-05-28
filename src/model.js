@@ -24,11 +24,58 @@ export class Model {
     this.updators = {}
     this.isUpdating = null
 
-    this.data = {}
+    this.state = {}
     this.cache = {} // use for property watching
     this.latest = null // use for global watching
 
+    this.init(data)
+  }
+
+  init(data) {
+    const $this = this
     this.restore(data)
+
+    function createProxy(data, parents = []) {
+      const subproxies = {}
+      const handler = {
+        get(state, key) {
+          const value = state[key]
+          if (isObject(value)) {
+            if (subproxies[key]) {
+              return subproxies[key]
+            }
+            const proxy = createProxy(value, [ ...parents, key ])
+            subproxies[key] = proxy
+            return proxy
+          }
+          else {
+            return value
+          }
+        },
+        set(state, key, value) {
+          const chain = [ ...parents, key ]
+          const root = chain[0]
+          if ($this.schema.has(root)) {
+            const path = makeKeyPath(chain)
+            $this.set(path, value)
+          }
+          else {
+            state[key] = value
+          }
+          return true
+        },
+        deleteProperty(state, key) {
+          if (context && context.schema && context.schema.has(key)) {
+            throw new TyError(`{keyPath} should not be deleted.`, { key, level: 'model', model: context, action: 'delete' })
+          }
+          delete state[key]
+          delete subproxies[key]
+        },
+      }
+      return new Proxy(data, handler)
+    }
+
+    this.data = createProxy(this.state)
   }
 
   schema() {
@@ -36,7 +83,7 @@ export class Model {
   }
 
   get(key) {
-    return parse(this.data, key)
+    return parse(this.state, key)
   }
 
   set(key, value) {
@@ -70,7 +117,7 @@ export class Model {
       }
     }
 
-    assign(this.data, key, value)
+    assign(this.state, key, value)
 
     // you should use `set` in `watch`
     if (this.isDigesting) {
@@ -87,7 +134,7 @@ export class Model {
     // data.b = 2
     // model.update()
     if (!data || !isObject(data)) {
-      const error = this.schema.validate(this.data)
+      const error = this.schema.validate(this.state)
       if (error) {
         throw error
       }
@@ -113,10 +160,10 @@ export class Model {
 
         // update data
         try {
-          Object.assign(this.data, this.updators)
+          Object.assign(this.state, this.updators)
           this.updators = {}
           this.digest()
-          resolve(this.data)
+          resolve(this.state)
         }
         catch (e) {
           reject(e)
@@ -144,8 +191,8 @@ export class Model {
 
   compute() {
     this.__isComputing = true
-    this.schema.digest(this.data, this, (key, value) => {
-      this.data[key] = value
+    this.schema.digest(this.state, this, (key, value) => {
+      this.state[key] = value
     })
     this.__isComputing = false
   }
@@ -193,14 +240,14 @@ export class Model {
     digest()
 
     // if data changed, trigger global watchers
-    if (!isEqual(this.latest, this.data)) {
+    if (!isEqual(this.latest, this.state)) {
       this.isCallbacking = true
       var callbacks = this.listeners.filter(({ key }) => key === '*')
       callbacks = sortBy(callbacks, 'priority')
       callbacks.forEach(({ fn }) => {
-        fn.call(this, this.data, this.latest)
+        fn.call(this, this.state, this.latest)
       })
-      this.latest = clone(this.data)
+      this.latest = clone(this.state)
       this.isCallbacking = false
     }
 
@@ -213,7 +260,7 @@ export class Model {
   }
 
   jsondata() {
-    const data = this.data
+    const data = this.state
     const output = this.schema.formulate(data, this)
     const result = this.serialize(output)
 
@@ -236,7 +283,7 @@ export class Model {
   }
 
   validate() {
-    const data = this.data
+    const data = this.state
     const error = this.schema.validate(data, this)
     return error
   }
@@ -251,10 +298,11 @@ export class Model {
     const coming = this.schema.rebuild(entry, this)
     const making = this.schema.ensure(coming, this)
 
-    this.data = making
+    // use assign to recover, because developer may append some non-defined property to state
+    Object.assign(this.state, making)
     this.compute()
 
-    return this.data
+    return this.state
   }
 
 }

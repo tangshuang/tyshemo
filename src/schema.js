@@ -47,6 +47,10 @@ export class Schema {
     this.definition = definition
   }
 
+  has(key) {
+    return !!this.definition[key]
+  }
+
   /**
    * validate type and vaidators
    * @param {*} key
