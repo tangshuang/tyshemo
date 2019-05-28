@@ -10,9 +10,9 @@ export { Enum, enumerate } from './enum.js'
 export { Rule } from './rule.js'
 export {
   asynchronous,
-  validate,
-  determine,
   match,
+  determine,
+  shouldmatch,
   shouldnotmatch,
   ifexist,
   ifnotmatch,

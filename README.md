@@ -1,19 +1,21 @@
 TySheMo
 =======
 
-An ECMAScript data type/schema system which based on data type validation.
+An ECMAScript data type/schema describe system.
 
 - [API DOC](./docs)
 - [中文文档](https://www.tangshuang.net/5625.html)
 
-TySheMo is a js runtime data type/schema system, which contains 4 parts: Rule, Type, Schema and Model.
+TySheMo is a js runtime data type/schema describe system, which contains 5 parts: Prototype, Rule, Type, Schema and Model.
+
 You can use TySheMo to:
 
-- define your own data type
-- validate data structure
+- define your own data type and schema
+- validate data with complex structure
 - formulate data
 - watch data change
 - formulate data from backend to frontend
+- responsive data model
 
 ## Install
 
@@ -24,16 +26,16 @@ npm i tyshemo
 ## Usage
 
 ```js
-import { Rule, Type, Schema, Model } from 'tyshemo'
+import { Ty } from 'tyshemo'
 ```
 
-or
+or commonjs
 
 ```js
 const { Ty } = require('tyshemo')
 ```
 
-or
+or bundle file (umd)
 
 ```html
 <script src="/node_modules/tyshemo/dist/bundle.js"></script>
@@ -48,224 +50,140 @@ If you want to use some sub modules, you can use files in `dist` dir.
 import Dict from 'tyshemo/dist/dict.js'
 ```
 
-## Concepts
-
-Before we develop, we should learn about 4 concepts.
-
-### Rule
-
-A `Rule` is a Behavior Definition of an automic data.
-For example, `var a = 10` and we know `a` is a number.
-But how do you know `a` is a number which will be stored/computed as number type by V8? And how do you know a variable is a what behavior definition?
-
-We have native prototypes/definition used by TySheMo:
-
-- String
-- Number: should be a finite number, not match `NaN` `"123"` and `Infinity`
-- Boolean: should be one of `true` or `false`
-- Object: should be a normal object like `{}`, not match instance of class, array and Object self
-- Array: should be a normal array like `[]`, not match instance of class inherited from Array and Array self
-- Function
-- RegExp: should be a string match regexp
-- Symbol: should be a symbol
-- NaN
-- Infinity
-- Date
-- Promise
-
-But these do not contains all of what we want, we want more.
-Now you can use Rule to define a behavior definition of a variable.
-
-And we extended so that we now have:
-
-- Int
-- Float
-- Numeric: number or number string
-- Null
-- Undefined
-- Any
-
-And to use `Rule` conveniently, we provide functions to generate rules:
-
-- asynchronous(async fn:type)
-- validate(fn, msg)
-- match(...types)
-- ifexist(type)
-- ifnotmatch(type, defaultValue)
-- determine(fn:type)
-- shouldexist(fn, type)
-- shouldnotexist(fn)
-- implement(Constructor)
-- equal(value)
-- lambda(inputType, outputType)
-
-After you learn the usage of `Rule`, you can define your own rule to create new definition.
+or use source code:
 
 ```js
-// example
-import { Rule } from 'tyshemo'
-export const NumberString = new Rule('NumberString', value => typeof value === 'string' && /^\-?[0-9]+(\.{0,1}[0-9]+){0,1}$/.test(value))
+import Dict from 'tyshemo/src/dict.js'
 ```
+
+## Concepts
+
+Before we develop, we should learn about 5 concepts.
+
+### Prototype
+
+Prototype is to describe data automic type which points out the data's nature, quality or characteristic.
+
+For example, `var a = 10` and we know `a` is a number.
+But how do you know `a` is a number which will be stored/computed as number type by V8?
+This is defined by prototype.
+
+In TySheMo, we do not need to describe the deep theory, we just need to define a way to check whether the given data is the given prototype.
+
+We use native definition/interface as prototypes:
+
+- String: should be a string
+- Number: should be a finite number, not match `NaN` `"123"` and `Infinity`
+- Boolean: should be `true` or `false`
+- Object: should be a normal object like `{}`, not match instances, array and Object self
+- Array: should be a normal array like `[]`
+- Function: should be a function
+- RegExp: should be a string which match regexp
+- Symbol: should be a symbol
+- NaN: should be NaN
+- Infinity: should be infinity
+- Date: should be an instanceof Data (new Date)
+- Promise: should be an instance of Promise (new Promise)
+
+In fact, all classes can be a prototype, even the custom classes which are defined by yourself.
+
+And we extended some prototypes:
+
+- Int: int number
+- Float: float number
+- Numeric: string which is number
+- Null: null
+- Undefined: undefined
+- Any: any value in javascript
+
+However, these do not contains all of what we want, we want more.
+After you learn more about `[Prototype](./docs/prototype.md)`, you will be able to extend your own prototypes.
+
 
 ### Type
 
-A `Type` is a data nature, quality or characteristic.
-You call a data as some type data, it means you know what genera it belongs to.
+Type is to describe data structure definition which points out the data storage and usage.
+
+You call a data as some type of data, it means you know what genera it belongs to.
 For example, you call a boy as a Person, because you know the boy has what a Person should contains: a head, two hands and may talk.
-In summary, Type contains the data behavior definition, the data structure and the ability to maintain data change as defined.
-So a Type has the ability to check and trace data's characteristic, and throw out warn to user if the data is not of current Type.
+In summary, type contains the data structure definition and the ability to maintain data change as defined (or to throw error when you operate in way which is not allowed).
 
-To create a type, you can use:
+In TySheMo, we do not need to implement data structure in deep theory, we just need to define a way to check whether the given data match the given type.
 
-- new Type(pattern)
+We have defined types:
 
-And we have define some data structure:
-
-- new Dict({ ... })
-- new List([ ... ])
-- new Tuple([ ... ])
-- new Enum([ ... ])
+- Dict
+- List
+- Tuple
+- Enum
 
 ```
 +-------------+----------+----------+--
 |    TySheMo  |    JS    |  Python  |
 +=============+==========+==========+==
 |    Dict     |  Object  |   dict   |
-+-------------+----------+----------+-------------------
++-------------+----------+----------+------------------------------
 |    List     |  Array   |   list   |  mutable array
-+-------------+----------+----------+--------------------
-|    Enum     |   Set    |   set    |
-+-------------+----------+----------+-------------------
++-------------+----------+----------+------------------------------
+|    Enum     |          |          |  should be one of given items
++-------------+----------+----------+------------------------------
 |    Tuple    |          |   tuple  |  immutable determined array
 +-------------+----------+----------+------------------------------
 ```
 
-The output of these constructors are all types which can be used in our system.
-And these 4 types are extended from `Type`.
-Later I will tell you how to create type by using these constructors.
+After you learn more about `[Type](./docs/type.md)`, you will be able to extend your own types.
 
-And to use `Type` conveniently, we provide functions to generate types:
+### Rule
 
-- type(pattern)
-- dict({ ... })
-- list([ ... ])
-- tuple([ ... ])
-- enumerate([ ... ])
+Rule is to describe the behaviour methods of object properties.
+We need to know whether a property should exist, or whether a property should match some type.
 
-**Pattern**
+In TySheMo, we have defined rules:
 
-To define a type, you should provide data behavior definition and data structure, these make up a Pattern.
-A Pattern is what passed into `Type` constructors.
+- asynchronous: check later
+- match: match multiple
+- determine: determine which type to check
+- shouldmatch: should match the given type, or throw out the given message
+- shouldnotmatch: should not match the given type, or throw out the given message
+- ifexist: if the property exists, check, if not exists, do not check
+- ifnotmatch: if the property does not match the given type, use the given data to replace the property
+- shouldexist: determine whether the property should exist, if exists, check with the given type
+- shouldnotexist: determine whether the property should not exist
+- instance: the property should be an instance of the given class
+- equal: the property should deep equal the given value
+- lambda: the property should be a function, and the input and output should match the given types
 
-```js
-const SomePattern = {
-  name: String,
-  age: Number,
-  code: NumberString, // Rule
-  books: BooksListType, // Type
-}
-const SomeType = new Dict(SomePattern)
-```
-
-Pattern is the design of type to implement the type's ability.
-You can use js native prototypes/class/value or Rule or Type in a Pattern.
-And different type constructor need different pattern form.
+After you learn more about `[Rule](./docs/rule.md)`, you will be able to extend your own rules.
 
 ### Schema
 
-A Schema is to describe data structure interaction logic.
-In javascript, we use object to reflect data set which contains fields, so in TySheMo you should use object to define Schema.
+Schema is to describe data structure in which you describe each property's interaction logic, such as default value, type, rule, computing and so on.
 
-A schema do not care the real data, it is no-state, it creates a abstract data structure to validate and formulate data.
+A schema does not care the real data, it is non-statable, it creates a abstract data structure to validate and formulate data.
 
-```js
-const PersonSchema = new Schema({
-  name: {
-    type: String,
-    default: '',
-  },
-  age: {
-    type: Number,
-    default: 0,
-  },
-  sex: {
-    type: Number,
-    default: 'M',
-  },
-  code: {
-    type: NumberString,
-    default: '0',
-  },
-})
-
-fetch('xxx')
-  .then(res => res.json())
-  .then(data => PersonSchema.ensure(data))
-  .then(data => console.log(data))
-  // final data will have PersonSchema data structure whatever the backend data's structure is.
-  // you can use the final data without worry
-```
+In TySheMo, you should use the `Schema` class to create an instance so that you can use the ability to validate and formulate. Please read more about `[Schema](./docs/schema.md)`.
 
 ### Model
 
-A model is a data container which provide features about data operation.
-We always use a model in our business code to use data.
-Js native data is very weak, we provide a model that you can watch data change, so that you can make your business logic more clear.
+Model is a data container which provide features about data operation.
 
+Js native data is very weak, we provide a model that you can watch data change, so that you can make your business logic more clear. We always use a model in our business code to matain data.
+
+- define data structure and type of each property
+- ensure data to be in right types
 - watch data change
-- computed property
-- validate
-- extract formdata
+- recover data from backend api
+- create formdata/postdata
 
-Model is used to create controllable data, it always used in bussiness code and we do not know how developers will use a model.
-To define a model, you should provide a schema. To implement this, you should extend `Model` and give you own schema method to return a schema.
-
-```js
-import { Model, Enum } from 'tyshemo'
-
-class CarModel extends Model {
-  schema(Schema) {
-    return new Schema({
-      color: {
-        type: new Enum(['red', 'blue', 'yellow']),
-        default: 'red',
-      },
-    })
-  }
-}
-```
-
-The relationship of `Rule` `Type` `Schema` and `Model`:
+The relationship:
 
 ```
-+---------------------+
-|  Native Prototypes  |
-+=====================+
-|                     |
-|  String             |
-|  Number             |
-|  Array              |  -----------+
-|  Object             |             |
-|  Function           |             |        +----------------+
-|  Symbol             |             |        |  Type          |           +----------------+
-|  ...                |             |        +================+           |  Schema        |
-|                     |             |        |                |           +================+         +-------------+
-+---------------------+             |        |  Dict          |           |                |         |             |
-                                    +----->  |  List          |  ------>  |  Property1     |  ---->  |    Model    |
-+---------------------+             |        |  Tuple         |           |  Property2     |         |             |
-|  Rule               |             |        |  Enum          |           |  Property3     |         +-------------+
-+=====================+             |        |  ....          |           |                |
-|                     |             |        |                |           +----------------+
-|  Any                |             |        +----------------+
-|  Null               |             |
-|  Undefined          |  -----------+
-|  Int                |
-|  Float              |
-|  Numeric            |
-|  ...                |
-|                     |
-+---------------------+
++-----------+      +-----------+       +-----------+      +------------+      +-----------+
+| Prototype |  ->  |   Type    |  <->  |   Rule    |  ->  |   Schema   |  ->  |   Model   |
++-----------+      +-----------+       +-----------+      +------------+      +-----------+
 ```
+
+Learn more about `[Model](./docs/model.md)` to use it.
 
 ## MIT License
 
