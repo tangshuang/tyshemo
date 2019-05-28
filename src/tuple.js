@@ -41,12 +41,12 @@ export class Tuple extends Type {
           pattern = pattern.strict
         }
 
-        let error = pattern.validate2(value, index, items)
+        let error = pattern.validate(value, index, items)
         if (!error) {
           continue
         }
 
-        // after validate2, the property may create by validate2
+        // after validate, the property may create by validate
         if (!inObject(index, items)) {
           throw new TyError('missing', { ...info, index })
         }

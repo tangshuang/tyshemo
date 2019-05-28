@@ -115,12 +115,12 @@ export class Type {
             pattern = pattern.strict
           }
 
-          let error = pattern.validate2(value, key, data)
+          let error = pattern.validate(value, key, data)
           if (!error) {
             continue
           }
 
-          // after validate2, the property may create by validate2
+          // after validate, the property may create by validate
           if (!inObject(key, data)) {
             return new TyError('missing', { ...info, key })
           }

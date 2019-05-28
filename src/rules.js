@@ -10,7 +10,7 @@ export function catchErrorBy(context, pattern, value, key, data) {
     if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
-    const error = key && data ? pattern.validate2(value, key, data) : pattern.validate(value)
+    const error = pattern.validate(value, key, data)
     return error
   }
   else if (isInstanceOf(pattern, Type)) {
@@ -365,9 +365,9 @@ export function shouldnotexist(determine) {
  * Whether the value is an instance of given class
  * @param {Constructor} Cons should be a class constructor
  */
-export function of(Constructor) {
+export function instance(Constructor) {
   return new Rule({
-    name: 'of',
+    name: 'instance',
     message: 'mistaken',
     validate: value => isInstanceOf(value, Constructor, true),
   })

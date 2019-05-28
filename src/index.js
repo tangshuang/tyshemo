@@ -18,7 +18,7 @@ export {
   ifnotmatch,
   shouldexist,
   shouldnotexist,
-  of,
+  instance,
   equal,
   lambda,
 } from './rules.js'

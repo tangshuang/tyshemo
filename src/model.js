@@ -9,7 +9,7 @@ export class Model {
       throw new Error('Model should be extended.')
     }
 
-    const schema = this.schema(Schema)
+    const schema = this.schema()
     if (!isInstanceOf(schema, Schema)) {
       throw new TyError('[Model]: schema method should return a Schema instance.')
     }
@@ -25,12 +25,13 @@ export class Model {
     this.isUpdating = null
 
     this.data = {}
-    this.cache = {}
-    this.latest = null
+    this.cache = {} // use for property watching
+    this.latest = null // use for global watching
+
     this.restore(data)
   }
 
-  schema(Schema) {
+  schema() {
     throw new Error('[Model]: schema method should be override.')
   }
 
@@ -248,14 +249,12 @@ export class Model {
   restore(data = {}) {
     const entry = this.parse(data)
     const coming = this.schema.rebuild(entry, this)
-    this.data = coming
+    const making = this.schema.ensure(coming, this)
 
+    this.data = making
     this.compute()
 
-    const output = this.schema.ensure(this.data, this)
-    this.data = output
-
-    return output
+    return this.data
   }
 
 }

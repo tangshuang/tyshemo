@@ -9,9 +9,9 @@ export class Schema {
    * {
    *   property: {
    *     default: '', // required
+   *
    *     type: String, // required, notice: `default` and result of `compute` should match type
    *     rule: of, // optional, which rule to use, here will use `of(String)`, only `ifexist` `of` and `equal` allowed
-   *
    *     validators: [ // optional
    *       {
    *         determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
@@ -27,10 +27,10 @@ export class Schema {
    *       return a + '' + b
    *     },
    *
-   *     prepare: (value, key, data) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
+   *     prepare: ({ value, key, data }) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
    *
-   *     drop: (value) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
-   *     map: (value) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
+   *     drop: ({ value, key, data }) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
+   *     map: ({ value, key, data }) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
 
    *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error, always by using `ensure`
    *   },
@@ -67,7 +67,7 @@ export class Schema {
 
         if (isFunction(rule)) {
           const TyRule = rule(type)
-          const error = TyRule.validate2(value, key, data)
+          const error = TyRule.validate(value, key, data)
           if (error) {
             return error
           }
@@ -92,6 +92,7 @@ export class Schema {
     const { type, validators } = def
 
     var error = Ty.catch(value).by(type)
+
     if (error) {
       error = makeError(error, { ...info, pattern: type })
       return error
@@ -151,7 +152,7 @@ export class Schema {
 
         if (isFunction(rule)) {
           const TyRule = rule(type)
-          const error = TyRule.validate2(value, key, data)
+          const error = TyRule.validate(value, key, data)
           if (error) {
             if (isFunction(handle)) {
               handle.call(context, error)
@@ -280,7 +281,7 @@ export class Schema {
 
       if (isFunction(prepare)) {
         try {
-          const coming = prepare.call(context, value, key, data)
+          const coming = prepare.call(context, { value, key, data })
           return coming
         }
         catch (error) {
@@ -314,7 +315,7 @@ export class Schema {
       const { drop, map } = def
       const handle = def.catch
 
-      if (isFunction(drop) && drop.call(context, value, key, data)) {
+      if (isFunction(drop) && drop.call(context, { value, key, data })) {
         return
       }
       if (isBoolean(drop) && drop) {
@@ -323,7 +324,7 @@ export class Schema {
 
       if (isFunction(map)) {
         try {
-          const res = map.call(context, value, key, data)
+          const res = map.call(context, { value, key, data })
           return res
         }
         catch (error) {

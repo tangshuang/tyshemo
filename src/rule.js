@@ -30,7 +30,12 @@ export class Rule {
    * @param {*} value
    * @returns error/null
    */
-  validate(value) {
+  validate(value, key, data) {
+    // use validate as validate2
+    if (key && data) {
+      return this.validate2(value, key, data)
+    }
+
     if (isFunction(this._validate)) {
       const info = { value, rule: this, level: 'rule', action: 'validate' }
       let res = this._validate.call(this, value)

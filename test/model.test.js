@@ -2,7 +2,7 @@ import Model from '../src/model.js'
 import Schema from '../src/schema.js'
 import { dict } from '../src/dict.js'
 
-xdescribe('Model', () => {
+describe('Model', () => {
   class PersonModel extends Model {
     schema() {
       return new Schema({
@@ -41,10 +41,10 @@ xdescribe('Model', () => {
     }
   }
 
-  const person = new PersonModel()
-  const data = person.data
-
   test('computed', () => {
+    const person = new PersonModel()
+    const data = person.data
+
     expect(data.height).toBe(120)
     person.set('body.feet', false)
 
@@ -52,13 +52,19 @@ xdescribe('Model', () => {
     person.set('body.feet', true)
   })
   test('get', () => {
+    const person = new PersonModel()
     expect(person.get('body.head')).toBe(true)
   })
   test('set', () => {
+    const person = new PersonModel()
+
     person.set('body.feet', false)
     expect(person.get('body.feet')).toBe(false)
   })
   test('update', async () => {
+    const person = new PersonModel()
+    const data = person.data
+
     await person.update({
       name: 'tomy',
       age: 10,
@@ -67,6 +73,9 @@ xdescribe('Model', () => {
     expect(data.age).toBe(10)
   })
   test('watch', () => {
+    const person = new PersonModel()
+    const data = person.data
+
     person.watch('age', function(age) {
       this.set('weight', age * 2 + 20)
     })
