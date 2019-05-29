@@ -15,18 +15,19 @@ export class Model {
     }
 
     this.schema = schema
-    this.listeners = []
-
-    this.isComputing = false
-    this.isDigesting = false
-    this.isCallbacking = false
-
-    this.updators = {}
-    this.isUpdating = null
-
     this.data = {}
-    this.cache = {} // use for property watching
-    this.latest = null // use for global watching
+
+    this.__listeners = []
+
+    this.__isComputing = false
+    this.__isDigesting = false
+    this.__isCallbacking = false
+
+    this.__updators = {}
+    this.__isUpdating = null
+
+    this.__cache = {} // use for property watching
+    this.__latest = null // use for global watching
 
     this.init(data)
   }
@@ -84,7 +85,7 @@ export class Model {
 
   set(key, value) {
     // you should not use `set` in `compute`
-    if (this.isComputing || this.isCallbacking) {
+    if (this.__isComputing || this.__isCallbacking) {
       return
     }
 
@@ -119,7 +120,7 @@ export class Model {
     assign(this.data, key, value)
 
     // you should use `set` in `watch`
-    if (this.isDigesting) {
+    if (this.__isDigesting) {
       return
     }
 
@@ -129,7 +130,7 @@ export class Model {
 
   del(key) {
     // you should not use `set` in `compute`
-    if (this.isComputing || this.isCallbacking) {
+    if (this.__isComputing || this.__isCallbacking) {
       return
     }
 
@@ -172,7 +173,7 @@ export class Model {
     }
 
     // you should use `set` in `watch`
-    if (this.isDigesting) {
+    if (this.__isDigesting) {
       return
     }
 
@@ -195,11 +196,11 @@ export class Model {
     }
 
     return new Promise((resolve, reject) => {
-      Object.assign(this.updators, data)
-      clearTimeout(this.isUpdating)
-      this.isUpdating = setTimeout(() => {
+      Object.assign(this.__updators, data)
+      clearTimeout(this.__isUpdating)
+      this.__isUpdating = setTimeout(() => {
         // check data first
-        const error = iterate(this.updators, (value, key) => {
+        const error = iterate(this.__updators, (value, key) => {
           const error = this.schema.validate(key, value, this)
           if (error) {
             return error
@@ -212,8 +213,8 @@ export class Model {
 
         // update data
         try {
-          Object.assign(this.data, this.updators)
-          this.updators = {}
+          Object.assign(this.data, this.__updators)
+          this.__updators = {}
           this.digest()
           resolve(this.data)
         }
@@ -228,12 +229,12 @@ export class Model {
     const current = this.get(key)
     const value = clone(current)
 
-    assign(this.cache, key, value)
-    this.listeners.push({ key, fn, priority })
+    assign(this.__cache, key, value)
+    this.__listeners.push({ key, fn, priority })
   }
 
   unwatch(key, fn) {
-    const listeners = this.listeners
+    const listeners = this.__listeners
     listeners.forEach((item, i) => {
       if (key === item.key && (item.fn === fn || fn === undefined)) {
         callbacks.splice(i, 1)
@@ -250,12 +251,12 @@ export class Model {
   }
 
   digest() {
-    this.isDigesting = true
+    this.__isDigesting = true
 
-    var listeners = this.listeners.filter(({ key }) => key !== '*')
+    var listeners = this.__listeners.filter(({ key }) => key !== '*')
     listeners = sortBy(listeners, 'priority')
 
-    const cache = this.cache
+    const cache = this.__cache
 
     var dirty = false
     var count = 0
@@ -292,18 +293,18 @@ export class Model {
     digest()
 
     // if data changed, trigger global watchers
-    if (!isEqual(this.latest, this.data)) {
-      this.isCallbacking = true
-      var callbacks = this.listeners.filter(({ key }) => key === '*')
+    if (!isEqual(this.__latest, this.data)) {
+      this.__isCallbacking = true
+      var callbacks = this.__listeners.filter(({ key }) => key === '*')
       callbacks = sortBy(callbacks, 'priority')
       callbacks.forEach(({ fn }) => {
-        fn.call(this, this.data, this.latest)
+        fn.call(this, this.data, this.__latest)
       })
-      this.latest = clone(this.data)
-      this.isCallbacking = false
+      this.__latest = clone(this.data)
+      this.__isCallbacking = false
     }
 
-    this.isDigesting = false
+    this.__isDigesting = false
   }
 
   // serialize data after formulate, should be override

@@ -4,3 +4,4 @@ test/
 docs/
 gulpfile.js
 webpack.config.js
+examples/

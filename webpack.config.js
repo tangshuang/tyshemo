@@ -30,4 +30,10 @@ module.exports = {
     usedExports: true,
     sideEffects: true,
   },
+
+  devServer: {
+    contentBase: __dirname + '/examples',
+    index: 'index.html',
+    port: 9000,
+  },
 }

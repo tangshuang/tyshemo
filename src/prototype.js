@@ -1,4 +1,4 @@
-import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isInterface } from './utils.js'
+import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isInterface, isFinite } from './utils.js'
 
 export class Prototype {
   constructor({ name, validate }) {
@@ -72,3 +72,4 @@ Prototype.registry(Object, isObject)
 Prototype.registry(Array, isArray)
 Prototype.registry(Function, isFunction)
 Prototype.registry(Symbol, isSymbol)
+Prototype.registry(Infinity, value => !isFinite(value))

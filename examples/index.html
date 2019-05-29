@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TySheMo</title>
+  </head>
+  <body>
+
+    <script src="./bundle.js"></script>
+    <script>
+      const { Model, Schema, ifexist, dict, shouldmatch } = window['tyshemo']
+    </script>
+    <script>
+      const SomeType = dict({
+        some: {
+          sub: ifexist(String),
+          get: shouldmatch(Function),
+        },
+      })
+      SomeType.assert({
+        some: {
+          sub: 10,
+          get: null,
+        },
+      })
+    </script>
+    <script>
+      class PersonModel extends Model {
+        schema() {
+          return new Schema({
+            name: {
+              type: String,
+              default: '',
+            },
+            age: {
+              type: Number,
+              default: 0,
+            },
+            body: {
+              type: dict({
+                head: Boolean,
+                neck: Boolean,
+                hands: Boolean,
+                feet: Boolean,
+              }),
+              default: {
+                head: true,
+                neck: true,
+                hands: true,
+                feet: true,
+              },
+              rule: ifexist,
+            },
+          })
+        }
+      }
+
+      const person = new PersonModel()
+      const state = person.state
+
+      state.body = {
+        head: true,
+        neck: true,
+        hands: true,
+        feet: true,
+      }
+
+      console.log(person.data)
+      console.log(person.state)
+    </script>
+  </body>
+</html>

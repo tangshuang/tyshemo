@@ -1,5 +1,13 @@
 export function isNumber(value) {
-  return typeof value === 'number' && Number.isFinite(value)
+  return typeof value === 'number' && !Number.isNaN(value)
+}
+
+export function isNaN(value) {
+  return typeof value === 'number' && Number.isNaN(value)
+}
+
+export function isFinite(value) {
+  return typeof value === 'number' && !Number.isFinite(value)
 }
 
 export function isNumeric(value) {
@@ -48,10 +56,6 @@ export function isNull(value) {
 
 export function isUndefined(value) {
   return value === undefined
-}
-
-export function isNaN(value) {
-  return typeof value === 'number' && Number.isNaN(value)
 }
 
 export function isEmpty(value) {

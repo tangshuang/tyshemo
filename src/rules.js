@@ -45,10 +45,10 @@ function modifyInfo(info, key, data) {
  */
 export function asynchronous(fn) {
   function validate(value) {
-    if (!this.__await__) {
+    const pattern = this.pattern
+    if (pattern === undefined) {
       return
     }
-    const pattern = this.__await__
     const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(this, pattern, value)
     return makeError(error, info)
@@ -58,7 +58,7 @@ export function asynchronous(fn) {
     validate,
   })
   Promise.resolve().then(() => fn()).then((pattern) => {
-    rule.__await__ = pattern
+    rule.pattern = pattern
   })
   return rule
 }
@@ -80,6 +80,7 @@ export function match(...patterns) {
   }
   return new Rule({
     name: 'match',
+    pattern: patterns,
     validate,
   })
 }
@@ -118,6 +119,7 @@ export function determine(determine) {
 
   return new Rule({
     name: 'determine',
+    pattern: determine,
     validate,
     prepare,
     complete,
@@ -156,6 +158,7 @@ export function shouldmatch(pattern, message = 'mistaken') {
   }
   return new Rule({
     name: 'shouldmatch',
+    pattern,
     message,
     validate,
   })
@@ -192,6 +195,7 @@ export function shouldnotmatch(pattern, message = 'mistaken') {
   }
   return new Rule({
     name: 'shouldnotmatch',
+    pattern,
     message,
     validate,
   })
@@ -237,6 +241,7 @@ export function ifexist(pattern) {
 
   return new Rule({
     name: 'ifexist',
+    pattern,
     validate,
     prepare,
     complete,
@@ -261,6 +266,7 @@ export function ifnotmatch(pattern, callback) {
 
   return new Rule({
     name: 'ifnotmatch',
+    pattern,
     validate,
     override,
   })
@@ -313,6 +319,7 @@ export function shouldexist(determine, pattern) {
 
   return new Rule({
     name: 'shouldexist',
+    pattern,
     validate,
     prepare,
     complete,
@@ -355,6 +362,7 @@ export function shouldnotexist(determine) {
 
   return new Rule({
     name: 'shouldnotexist',
+    pattern: determine,
     validate,
     prepare,
     complete,
@@ -368,6 +376,7 @@ export function shouldnotexist(determine) {
 export function instance(Constructor) {
   return new Rule({
     name: 'instance',
+    pattern: Constructor,
     message: 'mistaken',
     validate: value => isInstanceOf(value, Constructor, true),
   })
@@ -380,6 +389,7 @@ export function instance(Constructor) {
 export function equal(value) {
   return new Rule({
     name: 'equal',
+    pattern: value,
     message: 'mistaken',
     validate: v => isEqual(value, v),
   })
@@ -425,6 +435,7 @@ export function lambda(InputType, OutputType) {
 
   return new Rule({
     name: 'lambda',
+    pattern: [InputType, OutputType],
     validate,
     prepare,
     complete,

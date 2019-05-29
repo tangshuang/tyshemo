@@ -131,10 +131,10 @@ export class TyError extends TypeError {
           let info = traces[traces.length - 1] // use last trace which from the stack bottom as base info
 
           let keyPath = []
-          traces.forEach((item, i) => {
+          traces.forEach((item) => {
             let current = item.key || item.index || ''
             let prev = keyPath[keyPath.length - 1]
-            if (current !== prev) {
+            if (current && current !== prev) {
               keyPath.push(current)
             }
           })

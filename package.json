@@ -6,7 +6,8 @@
   "scripts": {
     "prepublishOnly": "npm run test && npm run build",
     "build": "node gulpfile.js && webpack",
-    "test": "jest"
+    "test": "jest",
+    "start": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "gulp-babel": "^8.0.0",
     "jest": "^23.5.0",
     "webpack": "^4.30.0",
-    "webpack-cli": "^3.3.2"
+    "webpack-cli": "^3.3.2",
+    "webpack-dev-server": "^3.4.1"
   }
 }
