@@ -7,7 +7,7 @@
 
     <script src="./bundle.js"></script>
     <script>
-      const { Model, Schema, ifexist, dict, shouldmatch } = window['tyshemo']
+      const { Model, Schema, ifexist, dict, shouldmatch, TyError } = window['tyshemo']
       function test(fn) {
         try {
           fn()
@@ -16,6 +16,8 @@
           console.error(e)
         }
       }
+
+      // TyError.shouldShowDetail = false
     </script>
     <script>
       const SomeType = dict({
@@ -55,7 +57,6 @@
         },
         name: 'ok',
       }))
-
 
       const error = SomeType.catch(data3)
       console.log(error.traces)

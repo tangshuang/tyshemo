@@ -1,4 +1,4 @@
-import { inObject, isInstanceOf, inArray, isArray, isObject, isFunction, makeKeyPath, each, isString } from './utils.js'
+import { inObject, isInstanceOf, inArray, isArray, isObject, isFunction, makeKeyPath, each, isString, map, isNaN } from './utils.js'
 
 /**
  * create message by using TyError.messages
@@ -91,16 +91,18 @@ export function makeValueString(value, detail = true, space = 2) {
       return str
     }
     else {
-      return makeValueString(value)
+      return makeValueString(value, detail, space)
     }
   }
 
-  if (inArray(totype, ['boolean', 'undefined']) || value === null || totype === 'number') {
+  if (inArray(totype, ['boolean', 'undefined']) || value === null || isNaN(value)) {
     return value
   }
+  else if (totype === 'number') {
+    return detail ? value : 'number:***'
+  }
   else if (totype === 'string') {
-    let output = JSON.stringify(value)
-    return output
+    return JSON.stringify(detail ? value : '***')
   }
   else if (isFunction(value)) {
     return value.name + '()'
@@ -116,7 +118,15 @@ export function makeValueString(value, detail = true, space = 2) {
     return output
   }
   else if (typeof value === 'object') { // for class instances
-    return value.name ? value.name : value.constructor ? value.constructor.name : 'Object'
+    // type or rule
+    if (inObject('pattern', value)) {
+      const name = value.name
+      const output = makeValueString(value.pattern, detail, space + 2)
+      return isString(name) ? name + '(' + output + ')' : output
+    }
+    else {
+      return value.name ? value.name : value.constructor ? value.constructor.name : 'Object'
+    }
   }
   else if (typeof value === 'function') { // for native functions or classes
     return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
@@ -140,18 +150,19 @@ function makeErrorInfo(traces) {
   return info
 }
 
-function makePatterString(pattern) {
+function makePatterString(name, pattern) {
   if (typeof pattern === 'object' && !isObject(pattern)) {
+    const { name, context } = pattern
     if (inObject('pattern', pattern)) {
-      return makePatterString(pattern.pattern)
+      const output = makePatterString(pattern.pattern)
+      pattern = isString(name) ? name + '(' + output + ')' : output
     }
-
-    const { name } = pattern
-    return makeValueString(name || pattern)
   }
   else {
-    return makeValueString(pattern)
+    pattern = makeValueString(pattern)
   }
+
+  return name + '(' + pattern + ')'
 }
 
 function makeShouldString(info) {
@@ -166,8 +177,7 @@ function makeShouldString(info) {
     return makeValueString(name)
   }
 
-  const patternstr = makePatterString(pattern)
-  const output = isString(name) ? name + '(' + patternstr + ')' : patternstr
+  const output = makePatterString(name, pattern)
   return output
 }
 
@@ -198,7 +208,7 @@ export class TyError extends TypeError {
           }
 
           const value = info.value
-          const receive = makeValueString(value)
+          const receive = makeValueString(value, TyError.shouldShowDetail)
           const should = makeShouldString(info)
 
           let keyPath = []
@@ -257,5 +267,7 @@ TyError.messages = {
   overflow: '{keyPath} should not exists.',
   missing: '{keyPath} is missing.',
 }
+
+TyError.shouldShowDetail = true
 
 export default TyError
