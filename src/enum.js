@@ -5,7 +5,7 @@ import { isArray, isInstanceOf } from './utils.js'
 export class Enum extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new TyError('Enum pattern should be an array.')
+      throw new Error('[Enum]: pattern should be an array.')
     }
 
     super(pattern)
@@ -13,7 +13,7 @@ export class Enum extends Type {
   }
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
+    const info = { value, should: [this.name, pattern], context: this }
     const patterns = pattern
 
     for (let i = 0, len = patterns.length; i < len; i ++) {

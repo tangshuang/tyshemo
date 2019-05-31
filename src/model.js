@@ -11,7 +11,7 @@ export class Model {
 
     const schema = this.schema()
     if (!isInstanceOf(schema, Schema)) {
-      throw new TyError('[Model]: schema method should return a Schema instance.')
+      throw new Error('[Model]: schema method should return a Schema instance.')
     }
 
     this.schema = schema
@@ -96,7 +96,7 @@ export class Model {
         const current = this.get(root)
 
         if (!isObject(current)) {
-          throw new TyError(`{keyPath} is not an object.`, { key: root, value: current, pattern: Object, level: 'model', model: this, action: 'set' })
+          throw new TyError(`{keyPath} is not an object.`, { key: root, value: current, should: [Object] })
         }
 
         const keyPath = makeKeyPath(chain)
@@ -139,7 +139,7 @@ export class Model {
 
     if (this.schema.has(root)) {
       if (!chain.length) {
-        throw new TyError(`{keyPath} should not be deleted.`, { key, level: 'model', model: this, action: 'del' })
+        throw new TyError(`{keyPath} should not be deleted.`, { key })
       }
 
       const current = this.get(root)
@@ -282,7 +282,7 @@ export class Model {
 
       count ++
       if (count > 15) {
-        throw new TyError(`[Model]: digest over 15 times.`)
+        throw new Error(`[Model]: digest over 15 times.`)
       }
 
       if (dirty) {

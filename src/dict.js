@@ -5,7 +5,7 @@ import TyError, { makeError } from './error.js'
 export class Dict extends Type {
   constructor(pattern) {
     if (!isObject(pattern)) {
-      throw new TyError('Dict pattern should be an object.')
+      throw new Error('[Dict]: pattern should be an object.')
     }
 
     super(pattern)
@@ -14,7 +14,7 @@ export class Dict extends Type {
 
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
+    const info = { value, should: [this.name, pattern], context: this }
 
     if (!isObject(value)) {
       throw new TyError('mistaken', info)

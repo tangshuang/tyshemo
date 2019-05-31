@@ -19,6 +19,7 @@
     </script>
     <script>
       const SomeType = dict({
+        name: String,
         some: {
           sub: ifexist(String),
           get: shouldmatch(Function),
@@ -26,6 +27,7 @@
       })
       // nested object
       test(() => SomeType.assert({
+        name: 'tomy',
         some: {
           sub: 0,
           get: null,
@@ -33,9 +35,30 @@
       }))
       // dict error
       test(() => SomeType.assert({
+        name: 'tomy',
         some: null,
       }))
+      // wrong attr
+      const data3 = {
+        name: {
+          start: true,
+          end: false,
+        },
+        some: null,
+      }
+      test(() => SomeType.assert(data3))
+      // rule error
+      test(() => SomeType.assert({
+        some: {
+          sub: 122,
+          get: true,
+        },
+        name: 'ok',
+      }))
 
+
+      const error = SomeType.catch(data3)
+      console.log(error.traces)
     </script>
     <script>
 

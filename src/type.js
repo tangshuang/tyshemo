@@ -25,12 +25,10 @@ export class Type {
       pattern = this.pattern
     }
 
-    const info = { type: this, level: 'type', action: 'validate' }
-
     // check array
     if (isArray(pattern)) {
       if (!isArray(value)) {
-        return new TyError('mistaken', { ...info, value, pattern })
+        return new TyError('mistaken', { value, should: ['List', pattern], context: this })
       }
 
       // can be empty array
@@ -63,13 +61,13 @@ export class Type {
             }
           }
         }
-        return new TyError('mistaken', { ...info, index, value, pattern: patterns, action: 'enumerate' })
+        return new TyError('mistaken', { index, value, should: ['Enum', patterns], context: this })
       }
       for (let i = 0; i < itemCount; i ++) {
         let value = items[i]
         let error = enumerate(value, i, patterns)
         if (error) {
-          return makeError(error, { ...info, index: i, value })
+          return makeError(error, { index: i, value, context: this })
         }
       }
 
@@ -79,7 +77,7 @@ export class Type {
     // check object
     if (isObject(pattern)) {
       if (!isObject(value)) {
-        return new TyError('mistaken', { ...info, value, pattern })
+        return new TyError('mistaken', { value, should: ['Dict', pattern], context: this })
       }
 
       const patterns = pattern
@@ -93,13 +91,13 @@ export class Type {
         for (let i = 0, len = patternKeys.length; i < len; i ++) {
           let key = patternKeys[i]
           if (!inArray(key, dataKeys)) {
-            return new TyError('missing', { ...info, key })
+            return new TyError('missing', { key, context: this })
           }
         }
         for (let i = 0, len = dataKeys.length; i < len; i ++) {
           let key = dataKeys[i]
           if (!inArray(key, patternKeys)) {
-            return new TyError('overflow', { ...info, key })
+            return new TyError('overflow', { key, context: this })
           }
         }
       }
@@ -122,16 +120,16 @@ export class Type {
 
           // after validate, the property may create by validate
           if (!inObject(key, data)) {
-            return new TyError('missing', { ...info, key })
+            return new TyError('missing', { key, context: this })
           }
 
-          return makeError(error, { ...info, key, value, pattern })
+          return makeError(error, { key, value, should: [pattern.name, pattern.pattern], context: this })
         }
         else {
           // not found some key in data
           // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
           if (!inObject(key, data)) {
-            return new TyError('missing', { ...info, key })
+            return new TyError('missing', { key, context: this })
           }
         }
 
@@ -142,14 +140,14 @@ export class Type {
           }
           let error = pattern.catch(value)
           if (error) {
-            return makeError(error, { ...info, key, value, pattern })
+            return makeError(error, { key, value, should: [pattern.name, pattern.pattern], context: this })
           }
         }
         // normal validate
         else {
           let error = this.validate(value, pattern)
           if (error) {
-            return makeError(error, { ...info, key, value, pattern })
+            return makeError(error, { key, value, should: [pattern], context: this })
           }
         }
       }
@@ -164,7 +162,7 @@ export class Type {
       if (res === true) {
         return null
       }
-      return new TyError('mistaken', { ...info, value, pattern })
+      return new TyError('mistaken', { value, should: [pattern], context: this })
     }
 
     // check single value
@@ -172,15 +170,14 @@ export class Type {
       return null
     }
 
-    return new TyError('mistaken', { ...info, value, pattern })
+    return new TyError('mistaken', { value, should: [pattern], context: this })
   }
 
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
     const error = this.validate(value, pattern)
     if (error) {
-      throw makeError(error, info)
+      throw makeError(error, { value, should: [this.name, pattern], context: this })
     }
   }
   catch(value) {

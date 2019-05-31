@@ -6,7 +6,7 @@ import TyError, { makeError } from './error.js'
 export class Tuple extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new TyError('Tuple pattern should be an array.')
+      throw new Error('[Tuple]: pattern should be an array.')
     }
 
     super(pattern)
@@ -14,7 +14,7 @@ export class Tuple extends Type {
   }
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
+    const info = { value, params: [this.name, pattern], context: this }
 
     if (!isArray(value)) {
       throw new TyError('mistaken', info)
@@ -26,14 +26,14 @@ export class Tuple extends Type {
     const itemCount = items.length
 
     if (this.isStrict && itemCount !== patternCount) {
-      throw new TyError('dirty', { ...info, length: patternCount, count: itemCount })
+      throw new TyError('dirty', { length: itemCount, should: ['length', patternCount], context: this })
     }
 
     for (let i = 0; i < itemCount; i ++) {
       let value = items[i]
       let pattern = patterns[i]
       let index = i
-      let info2 = { ...info, index, value, pattern }
+      let info2 = { index, value, should: [pattern], context: this }
 
       let isRule = isInstanceOf(pattern, Rule)
       if (isRule) {
@@ -48,7 +48,7 @@ export class Tuple extends Type {
 
         // after validate, the property may create by validate
         if (!inObject(index, items)) {
-          throw new TyError('missing', { ...info, index })
+          throw new TyError('missing', { index, context: this })
         }
 
         throw makeError(error, info2)
@@ -56,7 +56,7 @@ export class Tuple extends Type {
       else {
         // not gave index
         if (!inObject(index, items)) {
-          throw new TyError('missing', { ...info, index })
+          throw new TyError('missing', { index, context: this })
         }
       }
 

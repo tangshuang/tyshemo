@@ -6,36 +6,40 @@ import Tuple from './tuple.js'
 import Ty from './ty.js'
 
 export function catchErrorBy(context, pattern, value, key, data) {
+  const info = { value, context }
+  if (key) {
+    if (isArray(data)) {
+      info.index = key
+    }
+    else if (isObject(data)) {
+      info.key = key
+    }
+  }
+
   if (isInstanceOf(pattern, Rule)) {
     if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
-    const error = pattern.validate(value, key, data)
+    let error = error = pattern.validate(value, key, data)
+    error = makeError(error, { ...info, should: [pattern.name, pattern.pattern], context })
     return error
   }
   else if (isInstanceOf(pattern, Type)) {
     if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
-    const error = pattern.catch(value)
+    let error = pattern.catch(value)
+    error = makeError(error, { ...info, should: [pattern.name, pattern.pattern], context })
     return error
   }
   else {
-    const type = Ty.create(pattern)
+    let type = Ty.create(pattern)
     if (context.isStrict) {
       type.toBeStrict()
     }
-    const error = type.catch(value)
+    let error = type.catch(value)
+    error = makeError(error, { ...info, should: [pattern], context })
     return error
-  }
-}
-
-function modifyInfo(info, key, data) {
-  if (isArray(data)) {
-    info.index = key
-  }
-  else if (isObject(data)) {
-    info.key = key
   }
 }
 
@@ -49,9 +53,8 @@ export function asynchronous(fn) {
     if (pattern === undefined) {
       return
     }
-    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(this, pattern, value)
-    return makeError(error, info)
+    return error
   }
   const rule = new Rule({
     name: 'asynchronous',
@@ -71,11 +74,8 @@ export function match(...patterns) {
   function validate(value) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
-      const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
       const error = catchErrorBy(this, pattern, value)
-      if (error) {
-        return makeError(error, info)
-      }
+      return error
     }
   }
   return new Rule({
@@ -110,11 +110,8 @@ export function determine(determine) {
     }
 
     const { key, data } = target
-    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(this, pattern, value, key, data)
-
-    modifyInfo(info, key, data)
-    return makeError(error, info)
+    return error
   }
 
   return new Rule({
@@ -232,11 +229,8 @@ export function ifexist(pattern) {
     }
 
     const { key, data } = target
-    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(this, pattern, value, key, data)
-
-    modifyInfo(info, key, data)
-    return makeError(error, info)
+    return error
   }
 
   return new Rule({
@@ -259,9 +253,8 @@ export function ifnotmatch(pattern, callback) {
     data[key] = isFunction(callback) ? callback({ value, key, data }) : callback
   }
   function validate(value) {
-    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
     const error = catchErrorBy(this, pattern, value)
-    return makeError(error, info)
+    return error
   }
 
   return new Rule({
@@ -292,7 +285,6 @@ export function shouldexist(determine, pattern) {
     }
 
     const { key, data } = target
-    const info = { value, pattern, rule: this, level: 'rule', action: 'validate' }
 
     // can not exist and it does not exist, do nothing
     if (!shouldExist && !isExist) {
@@ -300,9 +292,7 @@ export function shouldexist(determine, pattern) {
     }
 
     const error = catchErrorBy(this, pattern, value, key, data)
-
-    modifyInfo(info, key, data)
-    return makeError(error, info)
+    return error
   }
   function prepare({ value, key, data }) {
     shouldExist = determine({ value, key, data })
@@ -346,7 +336,7 @@ export function shouldnotexist(determine) {
 
     if (shouldNotExist && isExist) {
       const info = { value, rule: this, level: 'rule', action: 'validate' }
-      return new TyError('overflow', info)
+      return new TyError('overflow', { value, should: [this.name, ''], context: this })
     }
   }
   function prepare({ value, key, data }) {
@@ -415,8 +405,7 @@ export function lambda(InputType, OutputType) {
     }
 
     if (!isFunction(value)) {
-      const info = { value, pattern: Function, rule: this, level: 'rule', action: 'validate' }
-      return new TyError('mistaken', info)
+      return new TyError('mistaken', { value, should: [this.name, Function], context: this })
     }
   }
   function prepare(value, key, target) {

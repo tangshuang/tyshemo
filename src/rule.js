@@ -38,7 +38,7 @@ export class Rule {
     }
 
     if (isFunction(this._validate)) {
-      const info = { value, rule: this, level: 'rule', action: 'validate' }
+      const info = { value, should: [this.name, this.pattern], context: this }
       let res = this._validate.call(this, value)
       if (isBoolean(res)) {
         if (!res) {
@@ -61,7 +61,7 @@ export class Rule {
    * @param {*} data
    */
   validate2(value, key, data) {
-    const info = { key, value, rule: this, level: 'rule', action: 'validate2' }
+    const info = { key, value, should: [this.name, this.pattern], context: this }
     if (isFunction(this._prepare)) {
       this._prepare.call(this, { value, key, data })
     }

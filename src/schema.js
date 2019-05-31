@@ -40,7 +40,7 @@ export class Schema {
   constructor(definition) {
     each(definition, (def, key) => {
       if (!isObject(def)) {
-        throw new TyError(`[Schema]: definition '${key}' should be an object.`)
+        throw new Error(`[Schema]: definition '${key}' should be an object.`)
       }
     })
 
@@ -87,18 +87,17 @@ export class Schema {
     }
 
     const def = definition[key]
-    const info = { key, value, level: 'schema', schema: this, action: 'validate' }
+    const { type, validators } = def
+    const info = { key, value }
 
     if (!def) {
-      return new TyError(`{keyPath} is not existing in schema definition when validate.`, info)
+      return new TyError(`{keyPath} should not exist, which is not defined in schema.`, info)
     }
-
-    const { type, validators } = def
 
     var error = Ty.catch(value).by(type)
 
     if (error) {
-      error = makeError(error, { ...info, pattern: type })
+      error = makeError(error, { ...info, should: [type] })
       return error
     }
 
@@ -123,12 +122,12 @@ export class Schema {
           msg = message.call(context, value)
         }
 
-        let error = new TyError(msg, { ...info, pattern: validate })
+        let error = new TyError(msg, { ...info, should: ['validate()'] })
         return error
       })
 
       if (error) {
-        error = makeError(error, { ...info, pattern: validators })
+        error = makeError(error, { ...info, should: ['validators[]'] })
         return error
       }
     }
@@ -252,7 +251,7 @@ export class Schema {
 
       count ++
       if (count > 15) {
-        throw new TyError(`[Schema]: digest over 15 times.`)
+        throw new Error(`[Schema]: digest over 15 times.`)
       }
 
       if (dirty) {
@@ -274,7 +273,7 @@ export class Schema {
     const definition = this.definition
 
     if (!isObject(data)) {
-      throw new TyError(`[Schema]: data should be an object when rebuild.`)
+      throw new Error(`[Schema]: data should be an object when rebuild.`)
     }
 
     const output = map(definition, (def, key) => {
@@ -311,7 +310,7 @@ export class Schema {
     const definition = this.definition
 
     if (!isObject(data)) {
-      throw new TyError(`[Schema]: data should be an object when rebuild.`)
+      throw new Error(`[Schema]: data should be an object when rebuild.`)
     }
 
     const output = map(definition, (def, key) => {

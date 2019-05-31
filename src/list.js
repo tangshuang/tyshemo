@@ -5,7 +5,7 @@ import TyError, { makeError } from './error.js'
 export class List extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new TyError('List pattern should be an array.')
+      throw new Error('[List]: pattern should be an array.')
     }
 
     super(pattern)
@@ -13,12 +13,12 @@ export class List extends Type {
   }
   assert(value) {
     const pattern = this.pattern
-    const info = { value, pattern, type: this, level: 'type', action: 'assert' }
+    const info = { value, should: [this.name, pattern], context: this }
 
     if (!isArray(value)) {
       throw new TyError('mistaken', info)
     }
-    
+
     if (isEmpty(pattern)) {
       return
     }

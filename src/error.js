@@ -1,4 +1,4 @@
-import { inObject, isInstanceOf, inArray, isArray, isObject, isFunction, makeKeyPath } from './utils.js'
+import { inObject, isInstanceOf, inArray, isArray, isObject, isFunction, makeKeyPath, each, isString } from './utils.js'
 
 /**
  * create message by using TyError.messages
@@ -37,34 +37,82 @@ export function makeError(error, params) {
   stack = stacks.join('\n')
 
   let trace = Object.assign({}, params, { stack })
+
+  // make sure the bottom trace has message
+  if (!traces.length) {
+    trace.message = error.message
+  }
+
   traces.unshift(trace)
 
   return error
-}
-
-function stringify(value) {
-  return JSON.stringify(value, null, 2)
 }
 
 /**
  * get some value's string
  * @param {*} value
  */
-export function makeValueString(value) {
+export function makeValueString(value, detail = true, space = 2) {
   const totype = typeof value
+
+  const createspace = (count) => {
+    let str = ''
+    for (let i = 0; i < count; i ++) {
+      str += ' '
+    }
+    return str
+  }
+  const britems = (keys) => {
+    let str = ''
+    let spacestr = createspace(space)
+    keys.forEach((key) => {
+      str += '\n' + spacestr + key + ','
+    })
+    str += '\n'
+    return str
+  }
+  const stringify = (value, space = 2) => {
+    if (isObject(value)) {
+      let str = '{'
+      let spacestr = createspace(space)
+      each(value, (value, key) => {
+        str += '\n' + spacestr + key + ': ' + stringify(value, space + 2) + ','
+      })
+      str += '\n}'
+      return str
+    }
+    else if (isArray(value)) {
+      let str = '['
+      let spacestr = createspace(space)
+      value.forEach((item) => {
+        str += '\n' + spacestr + stringify(item, space + 2) + ','
+      })
+      str += ']'
+      return str
+    }
+    else {
+      return makeValueString(value)
+    }
+  }
 
   if (inArray(totype, ['boolean', 'undefined']) || value === null || totype === 'number') {
     return value
   }
   else if (totype === 'string') {
-    let output = stringify(value)
+    let output = JSON.stringify(value)
     return output
   }
   else if (isFunction(value)) {
     return value.name + '()'
   }
-  else if (isArray(value) || isObject(value)) {
-    let output = stringify(value)
+  else if (isArray(value)) {
+    let items = value.map(item => makeValueString(item, detail, space + 2))
+    let output = `[${britems(items)}]`
+    return output
+  }
+  else if (isObject(value)) {
+    let keys = Object.keys(value)
+    let output = detail ? stringify(value) : `{${britems(keys)}}`
     return output
   }
   else if (typeof value === 'object') { // for class instances
@@ -79,77 +127,79 @@ export function makeValueString(value) {
   }
 }
 
-function makePatternString(info) {
-  if (!info.level) {
-    return 'unknown'
+function makeErrorInfo(traces) {
+  // get the last trace record, which is at the bottom of stack
+  const info = traces[traces.length - 1]
+
+  // the info should be created by new TyError
+  const { message } = info
+  if (!message) {
+    return null
   }
 
-  const level = info.level
-  const source = info[level]
-  const name = makeValueString(source)
+  return info
+}
 
-  let should = name
+function makePatterString(pattern) {
+  if (typeof pattern === 'object' && !isObject(pattern)) {
+    if (inObject('pattern', pattern)) {
+      return makePatterString(pattern.pattern)
+    }
 
-  if (inArray(name, ['List', 'Tuple', 'Enum'])) {
-    let pattern = source.pattern
-    should = `${name}(${stringify(pattern)})`
+    const { name } = pattern
+    return makeValueString(name || pattern)
   }
-  else if (name === 'Dict') {
-    let pattern = source.pattern
-    should = `Dict(${stringify(pattern)})`
+  else {
+    return makeValueString(pattern)
   }
-  else if (name === 'Type') {
-    let pattern = source.pattern
-    should = makeValueString(pattern)
-  }
-  else if (level === 'rule') {
-    should = name
+}
+
+function makeShouldString(info) {
+  const { should = [] } = info || {}
+  const [name, pattern] = should
+
+  if (should.length === 0) {
+    return '%unknown'
   }
 
-  return should
+  if (should.length === 1) {
+    return makeValueString(name)
+  }
+
+  const patternstr = makePatterString(pattern)
+  const output = isString(name) ? name + '(' + patternstr + ')' : patternstr
+  return output
 }
 
 export class TyError extends TypeError {
-  constructor(key, params = {}) {
-    super(key)
+  constructor(message, params = {}) {
+    super(message)
     Object.defineProperties(this, {
       traces: {
         value: [],
       },
+      addtrace: {
+        value: function(params) {
+          makeError(this, { ...params, message })
+          return this
+        },
+      },
       summary: {
         get() {
-          const getTraceSummary = (info) => {
-            if (!info.level) {
-              return 'unknown'
-            }
-
-            const level = info.level
-            const source = info[level]
-            const name = makeValueString(source)
-
-            let should = name
-
-            if (inArray(name, ['List', 'Tuple', 'Enum'])) {
-              let pattern = source.pattern
-              should = `${name}(${stringify(pattern)})`
-            }
-            else if (name === 'Dict') {
-              let pattern = source.pattern
-              should = `Dict(${stringify(pattern)})`
-            }
-            else if (name === 'Type') {
-              let pattern = source.pattern
-              should = makeValueString(pattern)
-            }
-            else if (level === 'rule') {
-              should = name
-            }
-
-            return should
+          const traces = this.traces
+          if (!traces.length) {
+            return
           }
 
-          const traces = this.traces
-          let info = traces[traces.length - 1] // use last trace which from the stack bottom as base info
+          const info = makeErrorInfo(traces)
+
+          if (!info) {
+            return null
+          }
+
+          const value = info.value
+          const receive = makeValueString(value)
+          const should = makeShouldString(info)
 
           let keyPath = []
           traces.forEach((item) => {
@@ -162,40 +212,35 @@ export class TyError extends TypeError {
           keyPath = keyPath.filter(item => !!item)
           keyPath = makeKeyPath(keyPath)
 
-          let summary = {
-            value: info.value,
-            receive: makeValueString(info.value), // received node value
-            should: getTraceSummary(info), // node rule
+          const summary = {
+            ...info,
+            value,
+            receive,
+            should,
             keyPath,
           }
-          let res = Object.assign({}, info, summary)
 
-          delete res.type
-          delete res.rule
-
-          return res
+          return summary
         },
-      },
-      message_key: {
-        value: key,
       },
       message: {
         get() {
-          let message = makeErrorMessage(key, this.summary)
-          return message
-        },
-      },
-      addtrace: {
-        value: function(params) {
-          makeError(this, params)
-          return this
+          // when the error is not thrown from type system
+          if (!this.summary) {
+            return message
+          }
+          return makeErrorMessage(message, this.summary)
         },
       },
       translate: {
         value: function(text, replace) {
           if (replace) {
             // after this, error.message will get new text
-            key = text
+            message = text
+          }
+
+          if (!this.summary) {
+            return text
           }
           return makeErrorMessage(text, this.summary)
         },
@@ -208,7 +253,7 @@ export class TyError extends TypeError {
 TyError.messages = {
   mistaken: '{keyPath} should match {should}, but receive {receive}.',
   unexcepted: '{keyPath} should not match {should}, but receive {receive}.',
-  dirty: '{keyPath} does not match {should}, length should be {length}.',
+  dirty: '{keyPath} length does not match {should}, receive {receive}.',
   overflow: '{keyPath} should not exists.',
   missing: '{keyPath} is missing.',
 }
