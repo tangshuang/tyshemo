@@ -12,21 +12,21 @@ export class Dict extends Type {
     this.name = 'Dict'
   }
 
-  assert(value) {
+  catch(value) {
     const pattern = this.pattern
     const info = { value, should: [this.name, pattern], context: this }
 
     if (!isObject(value)) {
-      throw new TyError('mistaken', info)
+      return new TyError('mistaken', info)
     }
 
     if (isEmpty(pattern)) {
-      return
+      return null
     }
 
     const error = this.validate(value, pattern)
     if (error) {
-      throw makeError(error, info)
+      return makeError(error, info)
     }
   }
 

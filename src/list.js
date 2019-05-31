@@ -11,21 +11,21 @@ export class List extends Type {
     super(pattern)
     this.name = 'List'
   }
-  assert(value) {
+  catch(value) {
     const pattern = this.pattern
     const info = { value, should: [this.name, pattern], context: this }
 
     if (!isArray(value)) {
-      throw new TyError('mistaken', info)
+      return new TyError('mistaken', info)
     }
 
     if (isEmpty(pattern)) {
-      return
+      return null
     }
 
     const error = this.validate(value, pattern)
     if (error) {
-      throw makeError(error, info)
+      return makeError(error, info)
     }
   }
 }

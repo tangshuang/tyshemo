@@ -336,7 +336,7 @@ export function shouldnotexist(determine) {
 
     if (shouldNotExist && isExist) {
       const info = { value, rule: this, level: 'rule', action: 'validate' }
-      return new TyError('overflow', { value, should: [this.name, ''], context: this })
+      return new TyError('overflow', { value, should: [this.name, ''] })
     }
   }
   function prepare({ value, key, data }) {
@@ -405,7 +405,7 @@ export function lambda(InputType, OutputType) {
     }
 
     if (!isFunction(value)) {
-      return new TyError('mistaken', { value, should: [this.name, Function], context: this })
+      return new TyError('mistaken', { value, should: [this.name, Function] })
     }
   }
   function prepare(value, key, target) {

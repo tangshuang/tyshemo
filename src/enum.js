@@ -11,7 +11,7 @@ export class Enum extends Type {
     super(pattern)
     this.name = 'Enum'
   }
-  assert(value) {
+  catch(value) {
     const pattern = this.pattern
     const info = { value, should: [this.name, pattern], context: this }
     const patterns = pattern
@@ -25,19 +25,19 @@ export class Enum extends Type {
         }
         let error = pattern.catch(value)
         if (!error) {
-          return
+          return null
         }
       }
       // normal validate
       else {
         let error = this.validate(value, pattern)
         if (!error) {
-          return
+          return null
         }
       }
     }
 
-    throw new TyError('mistaken', info)
+    return new TyError('mistaken', info)
   }
 }
 
