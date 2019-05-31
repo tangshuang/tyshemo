@@ -8,6 +8,14 @@
     <script src="./bundle.js"></script>
     <script>
       const { Model, Schema, ifexist, dict, shouldmatch } = window['tyshemo']
+      function test(fn) {
+        try {
+          fn()
+        }
+        catch (e) {
+          console.error(e)
+        }
+      }
     </script>
     <script>
       const SomeType = dict({
@@ -16,56 +24,65 @@
           get: shouldmatch(Function),
         },
       })
-      SomeType.assert({
+      // nested object
+      test(() => SomeType.assert({
         some: {
-          sub: 10,
+          sub: 0,
           get: null,
         },
-      })
+      }))
+      // dict error
+      test(() => SomeType.assert({
+        some: null,
+      }))
+
     </script>
     <script>
-      class PersonModel extends Model {
-        schema() {
-          return new Schema({
-            name: {
-              type: String,
-              default: '',
-            },
-            age: {
-              type: Number,
-              default: 0,
-            },
-            body: {
-              type: dict({
-                head: Boolean,
-                neck: Boolean,
-                hands: Boolean,
-                feet: Boolean,
-              }),
-              default: {
-                head: true,
-                neck: true,
-                hands: true,
-                feet: true,
-              },
-              rule: ifexist,
-            },
-          })
-        }
-      }
 
-      const person = new PersonModel()
-      const state = person.state
+    </script>
+    <script>
+      // class PersonModel extends Model {
+      //   schema() {
+      //     return new Schema({
+      //       name: {
+      //         type: String,
+      //         default: '',
+      //       },
+      //       age: {
+      //         type: Number,
+      //         default: 0,
+      //       },
+      //       body: {
+      //         type: dict({
+      //           head: Boolean,
+      //           neck: Boolean,
+      //           hands: Boolean,
+      //           feet: Boolean,
+      //         }),
+      //         default: {
+      //           head: true,
+      //           neck: true,
+      //           hands: true,
+      //           feet: true,
+      //         },
+      //         rule: ifexist,
+      //       },
+      //     })
+      //   }
+      // }
 
-      state.body = {
-        head: true,
-        neck: true,
-        hands: true,
-        feet: true,
-      }
+      // const person = new PersonModel()
+      // const state = person.state
 
-      console.log(person.data)
-      console.log(person.state)
+      // state.body = {
+      //   head: true,
+      //   neck: true,
+      //   hands: true,
+      //   feet: true,
+      // }
+
+      // console.log(person.data)
+      // console.log(person.state)
     </script>
   </body>
 </html>

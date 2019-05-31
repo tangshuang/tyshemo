@@ -1,6 +1,11 @@
-import { inObject, stringify, isInstanceOf, inArray, isArray, isObject, isFunction, isNaN, makeKeyPath } from './utils.js'
+import { inObject, isInstanceOf, inArray, isArray, isObject, isFunction, makeKeyPath } from './utils.js'
 
-function makeErrorMessage(key, params) {
+/**
+ * create message by using TyError.messages
+ * @param {*} key
+ * @param {*} params
+ */
+export function makeErrorMessage(key, params) {
   let message = TyError.messages[key] || key
   let text = message.replace(/\{(.*?)\}/g, (match, key) => inObject(key, params) ? params[key] : match)
   return text
@@ -37,6 +42,73 @@ export function makeError(error, params) {
   return error
 }
 
+function stringify(value) {
+  return JSON.stringify(value, null, 2)
+}
+
+/**
+ * get some value's string
+ * @param {*} value
+ */
+export function makeValueString(value) {
+  const totype = typeof value
+
+  if (inArray(totype, ['boolean', 'undefined']) || value === null || totype === 'number') {
+    return value
+  }
+  else if (totype === 'string') {
+    let output = stringify(value)
+    return output
+  }
+  else if (isFunction(value)) {
+    return value.name + '()'
+  }
+  else if (isArray(value) || isObject(value)) {
+    let output = stringify(value)
+    return output
+  }
+  else if (typeof value === 'object') { // for class instances
+    return value.name ? value.name : value.constructor ? value.constructor.name : 'Object'
+  }
+  else if (typeof value === 'function') { // for native functions or classes
+    return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
+  }
+  else {
+    let output = value.toString()
+    return output
+  }
+}
+
+function makePatternString(info) {
+  if (!info.level) {
+    return 'unknown'
+  }
+
+  const level = info.level
+  const source = info[level]
+  const name = makeValueString(source)
+
+  let should = name
+
+  if (inArray(name, ['List', 'Tuple', 'Enum'])) {
+    let pattern = source.pattern
+    should = `${name}(${stringify(pattern)})`
+  }
+  else if (name === 'Dict') {
+    let pattern = source.pattern
+    should = `Dict(${stringify(pattern)})`
+  }
+  else if (name === 'Type') {
+    let pattern = source.pattern
+    should = makeValueString(pattern)
+  }
+  else if (level === 'rule') {
+    should = name
+  }
+
+  return should
+}
+
 export class TyError extends TypeError {
   constructor(key, params = {}) {
     super(key)
@@ -46,56 +118,6 @@ export class TyError extends TypeError {
       },
       summary: {
         get() {
-          const getValueSummary = (value, masking = false) => {
-            let totype = typeof(value)
-            if (inArray(totype, ['boolean', 'undefined']) || value === null || isNaN(value)) {
-              return value
-            }
-            else if (totype === 'number') {
-              let output = masking ? `Number` : value
-              return output
-            }
-            else if (totype === 'string') {
-              let output = masking ? `String` : value
-              return stringify(output)
-            }
-            else if (isFunction(value)) {
-              return `Function:${value.name}()`
-            }
-            else if (isArray(value)) {
-              let name = 'Array'
-              if (masking) {
-                return `${name}(${value.length})`
-              }
-              else {
-                return `[${value.map(item => getValueSummary(item, masking)).join(',')}]`
-              }
-            }
-            else if (isObject(value)) {
-              let keys = Object.keys(value)
-              if (masking) {
-                return `{${keys.join(',')}}`
-              }
-              else {
-                let values = []
-                keys.forEach((key) => {
-                  values.push(`${key}:` + getValueSummary(value[key], masking))
-                })
-                return `{${values.join(',')}}`
-              }
-            }
-            else if (typeof value === 'object') { // for class instances
-              return value.name ? value.name : value.constructor ? value.constructor.name : 'Object'
-            }
-            else if (typeof value === 'function') { // for native functions or classes
-              return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
-            }
-            else {
-              let output = value.toString()
-              let res = masking ? '*********' : output
-              return res
-            }
-          }
           const getTraceSummary = (info) => {
             if (!info.level) {
               return 'unknown'
@@ -103,22 +125,21 @@ export class TyError extends TypeError {
 
             const level = info.level
             const source = info[level]
-            const name = getValueSummary(source)
+            const name = makeValueString(source)
 
             let should = name
 
             if (inArray(name, ['List', 'Tuple', 'Enum'])) {
-              let pattern = source.pattern.map(item => getValueSummary(item))
-              should = `${name}(${pattern.join(',')})`
+              let pattern = source.pattern
+              should = `${name}(${stringify(pattern)})`
             }
             else if (name === 'Dict') {
               let pattern = source.pattern
-              let keys = Object.keys(pattern)
-              should = `Dict({${keys.join(',')}})`
+              should = `Dict(${stringify(pattern)})`
             }
             else if (name === 'Type') {
               let pattern = source.pattern
-              should = getValueSummary(pattern)
+              should = makeValueString(pattern)
             }
             else if (level === 'rule') {
               should = name
@@ -143,7 +164,7 @@ export class TyError extends TypeError {
 
           let summary = {
             value: info.value,
-            receive: getValueSummary(info.value, this.masking), // received node value
+            receive: makeValueString(info.value), // received node value
             should: getTraceSummary(info), // node rule
             keyPath,
           }
@@ -178,10 +199,6 @@ export class TyError extends TypeError {
           }
           return makeErrorMessage(text, this.summary)
         },
-      },
-      masking: {
-        value: false,
-        writable: true,
       },
     })
     makeError(this, params)

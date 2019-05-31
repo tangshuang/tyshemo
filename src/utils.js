@@ -147,10 +147,6 @@ export function isEqual(val1, val2) {
   }
 }
 
-export function stringify(obj) {
-  return JSON.stringify(obj)
-}
-
 export function each(obj, fn) {
   let keys = Object.keys(obj)
   keys.forEach((key) => {
