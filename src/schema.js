@@ -1,4 +1,4 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, inObject, isEqual, getConstructor } from './utils.js'
+import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Ty from './ty.js'
 
@@ -11,7 +11,7 @@ export class Schema {
    *     default: '', // required
    *
    *     type: String, // required, notice: `default` and result of `compute` should match type
-   *     rule: of, // optional, which rule to use, here will use `of(String)`, only `ifexist` `of` and `equal` allowed
+   *     rule: ifexist, // optional, which rule to use, only `ifexist` `instance` and `equal` allowed
    *     validators: [ // optional
    *       {
    *         determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
@@ -105,15 +105,19 @@ export class Schema {
       error = iterate(validators, (validator) => {
         const { validate, determine, message } = validator
         if (isFunction(determine) && !determine.call(context, value)) {
-          return
+          return null
         }
         if (isBoolean(determine) && !determine) {
-          return
+          return null
         }
 
-        const passed = validate.call(context, value)
-        if (passed) {
-          return
+        const res = validate.call(context, value)
+        if (isBoolean(res) && res) {
+          return null
+        }
+
+        if (isInstanceOf(res, Error)) {
+          message = res.message
         }
 
         let msg = message
@@ -131,6 +135,8 @@ export class Schema {
         return error
       }
     }
+
+    return null
   }
 
   /**

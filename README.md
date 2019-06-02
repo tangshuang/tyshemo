@@ -4,17 +4,16 @@ TySheMo
 An ECMAScript data type/schema describe system.
 
 - [API DOC](./docs)
-- [中文文档](https://www.tangshuang.net/5625.html)
+- ????
 
 TySheMo is a js runtime data type/schema describe system, which contains 5 parts: Prototype, Rule, Type, Schema and Model.
 
-You can use TySheMo to:
+You can use TySheMo for:
 
-- define your own data type and schema
-- validate data with complex structure
-- formulate data
-- watch data change
-- formulate data from backend to frontend
+- data type and structure checking
+- model schema
+- formulated data
+- data change watcher
 - responsive data model
 
 ## Install
@@ -25,17 +24,25 @@ npm i tyshemo
 
 ## Usage
 
+webpack:
+
 ```js
 import { Ty } from 'tyshemo'
 ```
 
-or commonjs
+ES:
+
+```js
+import { Ty } from 'tyshemo/src/index.js'
+```
+
+commonjs:
 
 ```js
 const { Ty } = require('tyshemo')
 ```
 
-or bundle file (umd)
+bundle file (umd):
 
 ```html
 <script src="/node_modules/tyshemo/dist/bundle.js"></script>
@@ -47,7 +54,7 @@ const { Ty } = window['tyshemo']
 If you want to use some sub modules, you can use files in `dist` dir.
 
 ```js
-import Dict from 'tyshemo/dist/dict.js'
+const { Dict } = require('tyshemo/dist/dict.js')
 ```
 
 or use source code:
@@ -68,12 +75,12 @@ For example, `var a = 10` and we know `a` is a number.
 But how do you know `a` is a number which will be stored/computed as number type by V8?
 This is defined by prototype.
 
-In TySheMo, we do not need to describe the deep theory, we just need to define a way to check whether the given data is the given prototype.
+In TySheMo, we do not need to describe the deep theory, we just need to define a way to check whether the given data matches the given prototype.
 
 We use native definition/interface as prototypes:
 
 - String: should be a string
-- Number: should be a finite number, not match `NaN` `"123"` and `Infinity`
+- Number: should be a finite number, not match `NaN` `"123"`
 - Boolean: should be `true` or `false`
 - Object: should be a normal object like `{}`, not match instances, array and Object self
 - Array: should be a normal array like `[]`
@@ -89,20 +96,23 @@ In fact, all classes can be a prototype, even the custom classes which are defin
 
 And we extended some prototypes:
 
-- Int: int number
-- Float: float number
+- Int
+- Float
+- Negative
+- Positive
+- Finity
+- Zero
 - Numeric: string which is number
-- Null: null
-- Undefined: undefined
+- Null
+- Undefined
 - Any: any value in javascript
 
 However, these do not contains all of what we want, we want more.
-After you learn more about `[Prototype](./docs/prototype.md)`, you will be able to extend your own prototypes.
-
+After you learn more about `Prototype`, you will be able to extend your own prototypes.
 
 ### Type
 
-Type is to describe data structure definition which points out the data storage and usage.
+Type is to describe data structure type definition which points out the data storage and usage.
 
 You call a data as some type of data, it means you know what genera it belongs to.
 For example, you call a boy as a Person, because you know the boy has what a Person should contains: a head, two hands and may talk.
@@ -116,6 +126,7 @@ We have defined types:
 - List
 - Tuple
 - Enum
+- Range
 
 ```
 +-------------+----------+----------+--
@@ -129,9 +140,11 @@ We have defined types:
 +-------------+----------+----------+------------------------------
 |    Tuple    |          |   tuple  |  immutable determined array
 +-------------+----------+----------+------------------------------
+|    Range    |          |          |
++-------------+----------+----------+------------------------------
 ```
 
-After you learn more about `[Type](./docs/type.md)`, you will be able to extend your own types.
+After you learn more about `Type`, you will be able to extend your own types.
 
 ### Rule
 
@@ -153,7 +166,7 @@ In TySheMo, we have defined rules:
 - equal: the property should deep equal the given value
 - lambda: the property should be a function, and the input and output should match the given types
 
-After you learn more about `[Rule](./docs/rule.md)`, you will be able to extend your own rules.
+After you learn more about `Rule`, you will be able to extend your own rules.
 
 ### Schema
 
@@ -161,7 +174,7 @@ Schema is to describe data structure in which you describe each property's inter
 
 A schema does not care the real data, it is non-statable, it creates a abstract data structure to validate and formulate data.
 
-In TySheMo, you should use the `Schema` class to create an instance so that you can use the ability to validate and formulate. Please read more about `[Schema](./docs/schema.md)`.
+In TySheMo, you should use the `Schema` class to create an instance so that you can use the ability to validate and formulate. Please read more about `Schema`.
 
 ### Model
 
@@ -183,7 +196,7 @@ The relationship:
 +-----------+      +-----------+       +-----------+      +------------+      +-----------+
 ```
 
-Learn more about `[Model](./docs/model.md)` to use it.
+Learn more about `Model` to use it.
 
 ## MIT License
 

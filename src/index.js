@@ -6,6 +6,7 @@ export { Dict, dict } from './dict.js'
 export { List, list } from './list.js'
 export { Tuple, tuple } from './tuple.js'
 export { Enum, enumerate } from './enum.js'
+export { Range, range } from './range.js'
 
 export { Rule } from './rule.js'
 export {

@@ -116,4 +116,18 @@ describe('Rule Generators', () => {
       some: 'lucy',
     })).toThrowError()
   })
+
+  test('ifexist + ifnotmatch', () => {
+    const SomeRule = ifexist(ifnotmatch(String, ''))
+    const SomeType = new Dict({
+      some: SomeRule,
+    })
+
+    const data = {
+      some: 10,
+    }
+    expect(() => SomeType.assert(data)).not.toThrowError()
+    expect(data.some).toBe('')
+    expect(() => SomeType.assert({})).not.toThrowError()
+  })
 })
