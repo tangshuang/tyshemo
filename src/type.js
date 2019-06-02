@@ -200,7 +200,7 @@ export class Type {
         reject(error)
       }
       else {
-        resolve()
+        resolve(null)
       }
     })
   }
@@ -217,7 +217,7 @@ export class Type {
           reject(error)
         }
         else {
-          resolve()
+          resolve(null)
         }
       })
     })
