@@ -208,7 +208,6 @@ export class Schema {
 
   /**
    * get final computed properties.
-   * Notice: data will be changed.
    * @param {*} data
    * @param {*} context
    * @param {function} [fn]
@@ -267,7 +266,7 @@ export class Schema {
 
     digest()
 
-    return data
+    return output
   }
 
   /**
