@@ -1,4 +1,4 @@
-import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isEmpty, isFunction } from './utils.js'
+import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray } from './utils.js'
 import TyError from './error.js'
 import Schema from './schema.js'
 
@@ -41,7 +41,7 @@ export class Model {
       const handler = {
         get(state, key) {
           const value = state[key]
-          if (isObject(value)) {
+          if (isObject(value) || isArray(value)) {
             if (subproxies[key]) {
               return subproxies[key]
             }
