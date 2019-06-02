@@ -287,13 +287,12 @@ export function shouldexist(determine, pattern) {
       return new TyError('shouldexist can not be used in this situation.')
     }
 
-    const { key, data } = target
-
     // can not exist and it does not exist, do nothing
     if (!shouldExist && !isExist) {
       return null
     }
 
+    const { key, data } = target
     const error = catchErrorBy(this, pattern, value, key, data)
     return error
   }
@@ -327,10 +326,11 @@ export function shouldexist(determine, pattern) {
  * if false, it means the key can not exist
  * @param {Function} determine when the determine function return true, use this to check data type
  */
-export function shouldnotexist(determine) {
+export function shouldnotexist(determine, pattern) {
   let isReady = false
   let shouldNotExist = false
   let isExist = false
+  let target = {}
 
   function validate(value) {
     if (!isReady) {
@@ -341,17 +341,25 @@ export function shouldnotexist(determine) {
       return new TyError('overflow', { value, should: [this.name, ''] })
     }
 
-    return null
+    if (!shouldNotExist && !isExist) {
+      return null
+    }
+
+    const { key, data } = target
+    const error = catchErrorBy(this, pattern, value, key, data)
+    return error
   }
   function prepare({ value, key, data }) {
     shouldNotExist = determine({ value, key, data })
     isReady = true
     isExist = inObject(key, data)
+    target = { key, data }
   }
   function complete() {
     isReady = false
     shouldNotExist = false
     isExist = false
+    target = {}
   }
 
   return new Rule({

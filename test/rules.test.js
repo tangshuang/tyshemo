@@ -83,7 +83,7 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ has: false })).not.toThrowError()
   })
   test('shouldnotexist', () => {
-    const SomeRule = shouldnotexist(({ data }) => data.shouldnotexist)
+    const SomeRule = shouldnotexist(({ data }) => data.shouldnotexist, String)
     const SomeType = new Dict({
       shouldnotexist: Boolean,
       name: SomeRule,
