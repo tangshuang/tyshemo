@@ -78,6 +78,8 @@ export class Tuple extends Type {
         }
       }
     }
+
+    return null
   }
 }
 

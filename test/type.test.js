@@ -7,7 +7,7 @@ describe('Type', () => {
       expect(() => NumberType.assert(1)).not.toThrowError()
       expect(() => NumberType.assert('123')).toThrowError()
       expect(() => NumberType.assert(NaN)).toThrowError()
-      expect(() => NumberType.assert(Infinity)).toThrowError()
+      expect(() => NumberType.assert(Infinity)).not.toThrowError()
       expect(() => NumberType.assert(new Number(1))).toThrowError()
     })
     test('Array', () => {

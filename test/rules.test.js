@@ -37,7 +37,7 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ should: false, body: null })).not.toThrowError()
     expect(() => SomeType.assert({ should: true, body: null })).toThrowError()
   })
-  test('match+shouldmatch+shouldnotmatch', () => {
+  test('match + shouldmatch+shouldnotmatch', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'
     const msg3 = 'It should not begin will 123.'

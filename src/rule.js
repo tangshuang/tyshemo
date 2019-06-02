@@ -51,7 +51,8 @@ export class Rule {
         return makeError(res, info)
       }
     }
-    return
+
+    return null
   }
 
   /**

@@ -51,7 +51,7 @@ export function asynchronous(fn) {
   function validate(value) {
     const pattern = this.pattern
     if (pattern === undefined) {
-      return
+      return null
     }
     const error = catchErrorBy(this, pattern, value)
     return error
@@ -75,8 +75,11 @@ export function match(...patterns) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
       const error = catchErrorBy(this, pattern, value)
-      return error
+      if (error) {
+        return error
+      }
     }
+    return null
   }
   return new Rule({
     name: 'match',
@@ -225,7 +228,7 @@ export function ifexist(pattern) {
       return new TyError('ifexist can not be used in this situation.')
     }
     if (!isExist) {
-      return
+      return null
     }
 
     const { key, data } = target
@@ -288,7 +291,7 @@ export function shouldexist(determine, pattern) {
 
     // can not exist and it does not exist, do nothing
     if (!shouldExist && !isExist) {
-      return
+      return null
     }
 
     const error = catchErrorBy(this, pattern, value, key, data)
@@ -335,9 +338,10 @@ export function shouldnotexist(determine) {
     }
 
     if (shouldNotExist && isExist) {
-      const info = { value, rule: this, level: 'rule', action: 'validate' }
       return new TyError('overflow', { value, should: [this.name, ''] })
     }
+
+    return null
   }
   function prepare({ value, key, data }) {
     shouldNotExist = determine({ value, key, data })

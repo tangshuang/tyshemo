@@ -25,9 +25,7 @@ export class Dict extends Type {
     }
 
     const error = this.validate(value, pattern)
-    if (error) {
-      return makeError(error, info)
-    }
+    return makeError(error, info)
   }
 
   extend(fields) {
