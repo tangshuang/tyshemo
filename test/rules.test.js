@@ -41,11 +41,11 @@ describe('Rule Generators', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'
     const msg3 = 'It should not begin will 123.'
-    const SomeRule = match(
+    const SomeRule = match([
       shouldmatch(String, msg1),
       shouldmatch(Numeric, msg2),
       shouldnotmatch(value => value.indexOf('123') === 0, msg3),
-    )
+    ])
     const SomeType = new Dict({
       some: SomeRule,
     })

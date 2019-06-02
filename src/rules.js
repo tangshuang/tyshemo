@@ -68,9 +68,9 @@ export function asynchronous(fn) {
 
 /**
  * the passed value should match all passed patterns
- * @param {...Pattern} pattern
+ * @param {Array} patterns
  */
-export function match(...patterns) {
+export function match(patterns) {
   function validate(value) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
