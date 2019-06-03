@@ -158,7 +158,7 @@ export class Type {
 
     // check prototypes
     if (Prototype.has(pattern)) {
-      const res = Prototype.is(value).of(pattern)
+      const res = Prototype.is(pattern).typeof(value)
       if (res === true) {
         return null
       }
@@ -166,7 +166,7 @@ export class Type {
     }
 
     // check single value
-    if (value === pattern) {
+    if (Prototype.is(value).equal(pattern)) {
       return null
     }
 
