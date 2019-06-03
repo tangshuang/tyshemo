@@ -26,6 +26,11 @@ Prototype.registry = (proto, validate) => {
   }
 }
 Prototype.unregistry = (proto) => {
+  if (arguments.length === 0) {
+    prototypes.length = 0
+    return
+  }
+
   for (let i = 0, len = prototypes.length; i < len; i ++) {
     const item = prototypes[i]
     if (item.proto === proto) {
@@ -35,10 +40,14 @@ Prototype.unregistry = (proto) => {
   }
 }
 Prototype.find = proto => prototypes.find(item => item.proto === proto)
-Prototype.has = proto => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isInterface(proto) || !!Prototype.find(proto)
 Prototype.is = proto => ({
+
+  // Prototype.is(Number).existing()
+  existing: () => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isInterface(proto) || !!Prototype.find(proto),
+
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
+
     if (isInstanceOf(proto, Prototype)) {
       return proto.validate(value)
     }
@@ -51,18 +60,22 @@ Prototype.is = proto => ({
     if (isNaN(proto)) {
       return isNaN(value)
     }
+
     if (isInstanceOf(proto, RegExp)) {
       return isString(value) && proto.test(value)
     }
+
     if (isInterface(proto)) {
       return isInstanceOf(value, proto)
     }
 
     return false
+
   },
 
   // Prototype.is(10).equal(10)
   equal: value => proto === value,
+
 })
 
 Prototype.registry(Number, isNumber)

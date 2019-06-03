@@ -157,7 +157,7 @@ export class Type {
 
 
     // check prototypes
-    if (Prototype.has(pattern)) {
+    if (Prototype.is(pattern).existing()) {
       const res = Prototype.is(pattern).typeof(value)
       if (res === true) {
         return null
