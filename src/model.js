@@ -9,9 +9,14 @@ export class Model {
       throw new Error('Model should be extended.')
     }
 
-    const schema = this.schema()
+    var schema = this.schema()
+
+    if (isObject(schema)) {
+      schema = new Schema(schema)
+    }
+
     if (!isInstanceOf(schema, Schema)) {
-      throw new Error('[Model]: schema method should return a Schema instance.')
+      throw new Error('[Model]: schema should be an object or an instance of Schema.')
     }
 
     this.schema = schema
