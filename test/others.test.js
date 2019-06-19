@@ -1,6 +1,6 @@
 import { Model, Schema } from '../src/index.js'
 
-describe('format', () => {
+describe('others', () => {
   test('format', async () => {
     class PersonModel extends Model {
       schema() {
@@ -40,5 +40,24 @@ describe('format', () => {
     })
 
     expect(person.data.age).toBe(14)
+  })
+
+  test('message', () => {
+    class SomeModel extends Model {
+      schema() {
+        return new Schema({
+          some: {
+            type: String,
+            default: 0,
+            message: 'it should be a string',
+          },
+        })
+      }
+    }
+    const some = new SomeModel()
+
+    some.state.some = 12
+
+    expect(some.message('some')).toBe('it should be a string')
   })
 })

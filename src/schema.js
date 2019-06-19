@@ -1,6 +1,7 @@
 import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf } from './utils.js'
 import TyError, { makeError } from './error.js'
 import Ty from './ty.js'
+import { ifexist } from './rules.js'
 
 export class Schema {
 
@@ -134,7 +135,7 @@ export class Schema {
     }
 
     const def = definition[key]
-    const { type, validators, message } = def
+    const { type, rule, validators, message } = def
     const info = { key, value }
 
     if (!def) {
@@ -142,6 +143,11 @@ export class Schema {
     }
 
     var error = Ty.catch(value).by(type)
+
+    // ignore ifexist when have no value
+    if (error && rule === ifexist && value === undefined) {
+      error = null
+    }
 
     if (error) {
       error = makeError(error, { ...info, should: [type] })

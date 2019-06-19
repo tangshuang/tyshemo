@@ -87,7 +87,13 @@ export class Model {
     return output
   }
 
-  set(key, value) {
+  /**
+   * set key value
+   * @param {*} key
+   * @param {*} value
+   * @param {*} ensure validate before set, if not pass throw an error
+   */
+  set(key, value, ensure = false) {
     // you should not use `set` in `compute`
     if (this.__isComputing || this.__isCallbacking) {
       return
@@ -108,18 +114,24 @@ export class Model {
         assign(next, keyPath, value)
 
         const coming = this.schema.set(root, next, this)
-        const error = this.schema.validate(root, coming, this)
-        if (error) {
-          throw error
+
+        if (ensure) {
+          const error = this.schema.validate(root, coming, this)
+          if (error) {
+            throw error
+          }
         }
 
         assign(this.data, root, coming)
       }
       else {
         const coming = this.schema.set(root, value, this)
-        const error = this.schema.validate(root, coming, this)
-        if (error) {
-          throw error
+
+        if (ensure) {
+          const error = this.schema.validate(root, coming, this)
+          if (error) {
+            throw error
+          }
         }
 
         assign(this.data, root, coming)
@@ -355,6 +367,12 @@ export class Model {
     const data = this.data
     const error = this.schema.validate(data, this)
     return error
+  }
+
+  message(key) {
+    const value = parse(this.data, key)
+    const error = this.schema.validate(key, value, this)
+    return error ? error.message : ''
   }
 
   // parse data before restore, should be override
