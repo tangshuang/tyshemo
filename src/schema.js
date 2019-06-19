@@ -12,6 +12,7 @@ export class Schema {
    *
    *     type: String, // required, notice: `default` and result of `compute` should match type
    *     rule: ifexist, // optional, which rule to use, only `ifexist` `instance` and `equal` allowed
+   *     message: '', // the message when type checking fail
    *     validators: [ // optional
    *       {
    *         determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
@@ -19,6 +20,7 @@ export class Schema {
    *         message: '', // the message of error which throw when validate not pass
    *       },
    *     ],
+   *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error, always by using `ensure`
    *
    *     // computed property, will compute at each time digest end
    *     compute: function() {
@@ -31,8 +33,9 @@ export class Schema {
    *
    *     drop: ({ value, key, data }) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
    *     map: ({ value, key, data }) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
-
-   *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error, always by using `ensure`
+   *
+   *     getter: (value) => newValue, // format this property value when get
+   *     setter: (value) => value, // format this property value when set
    *   },
    * }
    */
@@ -51,6 +54,34 @@ export class Schema {
     return !!this.definition[key]
   }
 
+  get(key, value, context) {
+    const definition = this.definition
+    const def = definition[key]
+
+    if (!def) {
+      return value
+    }
+
+    const { getter } = def
+    const next = isFunction(getter) ? getter.call(context, value) : value
+
+    return next
+  }
+
+  set(key, value, context) {
+    const definition = this.definition
+    const def = definition[key]
+
+    if (!def) {
+      return value
+    }
+
+    const { setter } = def
+    const next = isFunction(setter) ? setter.call(context, value) : value
+
+    return next
+  }
+
   /**
    * validate type and vaidators
    * @param {*} key
@@ -59,6 +90,22 @@ export class Schema {
    */
   validate(key, value, context) {
     const definition = this.definition
+    const translate = (error, message, value) => {
+      let msg = error.message
+      if (message && isFunction(message)) {
+        msg = message.call(value, context)
+      }
+      else if (message) {
+        msg = message
+      }
+      if (isFunction(error.translate)) {
+        error.translate(msg, true)
+      }
+      else {
+        error.message = msg
+      }
+      return error
+    }
 
     if (isObject(key)) {
       context = value
@@ -66,20 +113,20 @@ export class Schema {
 
       const data = value
       const error = iterate(definition, (def, key) => {
-        const { rule, type } = def
+        const { rule, type, message } = def
         const value = data[key]
 
         if (isFunction(rule)) {
           const TyRule = rule(type)
           const error = TyRule.validate(value, key, data)
           if (error) {
-            return error
+            return translate(error, message, value)
           }
         }
         else {
           const error = this.validate(key, value, context)
           if (error) {
-            return error
+            return translate(error, message, value)
           }
         }
       })
@@ -87,17 +134,18 @@ export class Schema {
     }
 
     const def = definition[key]
-    const { type, validators } = def
+    const { type, validators, message } = def
     const info = { key, value }
 
     if (!def) {
-      return new TyError(`{keyPath} should not exist, which is not defined in schema.`, info)
+      return new TyError(`{keyPath} is not defined in schema.`, info)
     }
 
     var error = Ty.catch(value).by(type)
 
     if (error) {
       error = makeError(error, { ...info, should: [type] })
+      error = translate(error, message, value)
       return error
     }
 
@@ -192,7 +240,7 @@ export class Schema {
     const info = { key, value, level: 'schema', schema: this, action: 'ensure' }
 
     if (!def) {
-      throw new TyError(`[Schema]: '${key}' is not existing in schema definition when ensure.`, info)
+      throw new TyError(`[Schema]: '${key}' is not existing in schema.`, info)
     }
 
     const error = this.validate(key, value, context)

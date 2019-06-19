@@ -1,4 +1,4 @@
-import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray } from './utils.js'
+import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray, map } from './utils.js'
 import TyError from './error.js'
 import Schema from './schema.js'
 
@@ -40,7 +40,9 @@ export class Model {
       const subproxies = {}
       const handler = {
         get(state, key) {
-          const value = state[key]
+          const chain = [ ...parents, key ]
+          const path = makeKeyPath(chain)
+          const value = $this.get(path)
           if (isObject(value) || isArray(value)) {
             if (subproxies[key]) {
               return subproxies[key]
@@ -80,7 +82,9 @@ export class Model {
   }
 
   get(key) {
-    return parse(this.data, key)
+    const value = parse(this.data, key)
+    const output = this.schema.get(key, value, this)
+    return output
   }
 
   set(key, value) {
@@ -103,21 +107,28 @@ export class Model {
         const next = clone(current)
         assign(next, keyPath, value)
 
-        const error = this.schema.validate(root, next, this)
+        const coming = this.schema.set(root, next, this)
+        const error = this.schema.validate(root, coming, this)
         if (error) {
           throw error
         }
+
+        assign(this.data, root, coming)
       }
       else {
-        const error = this.schema.validate(root, value, this)
+        const coming = this.schema.set(root, value, this)
+        const error = this.schema.validate(root, coming, this)
         if (error) {
           throw error
         }
+
+        assign(this.data, root, coming)
       }
     }
-
-    // assign
-    assign(this.data, key, value)
+    // assign directly
+    else {
+      assign(this.data, key, value)
+    }
 
     // you should use `set` in `watch`
     if (this.__isDigesting) {
@@ -199,8 +210,13 @@ export class Model {
       Object.assign(this.__updators, data)
       clearTimeout(this.__isUpdating)
       this.__isUpdating = setTimeout(() => {
-        // check data first
-        const error = iterate(this.__updators, (value, key) => {
+        // format data first
+        const next = map(this.__updators, (value, key) => {
+          return this.schema.set(key, value, this)
+        })
+
+        // check data
+        const error = iterate(next, (value, key) => {
           const error = this.schema.validate(key, value, this)
           if (error) {
             return error
@@ -213,7 +229,7 @@ export class Model {
 
         // update data
         try {
-          Object.assign(this.data, this.__updators)
+          Object.assign(this.data, next)
           this.__updators = {}
           this.digest()
           resolve(this.data)
