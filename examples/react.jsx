@@ -1,9 +1,9 @@
 import React from 'react'
-import { Model, Schema } from 'tyshemo'
+import { Model } from 'tyshemo'
 
 class PersonFormModel extends Model {
   schema() {
-    return new Schema({
+    return {
       name: {
         type: String,
         default: '',
@@ -38,7 +38,7 @@ class PersonFormModel extends Model {
           },
         ],
       },
-    })
+    }
   }
 }
 
@@ -53,11 +53,19 @@ export class PersonFormPage extends React.Component {
     })
 
     this.submit = this.submit.bind(this)
+    this.reset = this.reset.bind(this)
   }
 
-  submit() {}
+  submit() {
+    const error = this.form.validate()
+    if (error) {
+      // ...
+    }
+  }
 
-  reset() {}
+  reset() {
+    this.form.restore()
+  }
 
   render() {
     const form = this.form
