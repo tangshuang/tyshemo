@@ -4,7 +4,7 @@ TySheMo
 An ECMAScript data type/schema describe system.
 
 - [API DOC](./docs)
-- ????
+- [中文文档](https://www.tangshuang.net/7101.html)
 
 TySheMo is a js runtime data type/schema describe system, which contains 5 parts: Prototype, Rule, Type, Schema and Model.
 
