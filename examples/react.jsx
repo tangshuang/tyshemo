@@ -11,13 +11,17 @@ class PersonFormModel extends Model {
       age: {
         type: Number,
         default: 0,
+        setter: value => !isNaN(+value) ? +value : 0,
+        getter: value => value ? value + '' : '',
       },
       height: {
         type: Number,
         default: 0,
         compute() {
-          return this.get('age') * 1.5
+          const age = this.data.age
+          return age > 0 ? age * 1.5 : 0
         },
+        getter: value => value ? value + '' : '',
       },
       tel: {
         type: String,
@@ -59,11 +63,13 @@ export class PersonFormPage extends React.Component {
   submit() {
     const error = this.form.validate()
     if (error) {
-      // ...
+      const data = this.form.plaindata()
+      // post data to backend api
     }
   }
 
   reset() {
+    // set to default values
     this.form.restore()
   }
 
