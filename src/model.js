@@ -65,6 +65,7 @@ export class Model {
           const path = makeKeyPath(chain)
           $this.set(path, value)
 
+          delete subproxies[key]
           return true
         },
         deleteProperty(state, key) {
