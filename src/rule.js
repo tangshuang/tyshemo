@@ -11,7 +11,7 @@ export class Rule {
    * @param {string|function} message
    */
   constructor(options = {}) {
-    var { name, validate, override, message, prepare, complete } = options
+    var { name, validate, override, message, prepare, complete, pattern } = options
 
     this._prepare = prepare
     this._complete = complete
@@ -21,6 +21,7 @@ export class Rule {
 
     this.isStrict = false
     this.name = name || 'Rule'
+    this.pattern = pattern
     this.options = options
   }
 

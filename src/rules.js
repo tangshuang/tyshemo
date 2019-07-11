@@ -1,6 +1,5 @@
 import Type from './type.js'
 import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from './utils.js'
-import TyError from './ty-error.js'
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
@@ -68,6 +67,7 @@ export function asynchronous(fn) {
   })
   Promise.resolve().then(() => fn()).then((res) => {
     pattern = res
+    rule.pattern = pattern
   })
   return rule
 }
@@ -134,7 +134,7 @@ export function determine(determine) {
  * @param {Rule|Type|Function} pattern
  * @param {String|Function} message
  */
-export function shouldmatch(pattern, message) {
+export function shouldmatch(pattern, message = '{keyPath} should match the type.') {
   function validate(value) {
     if (isFunction(pattern)) {
       return !!pattern(value)
@@ -163,6 +163,7 @@ export function shouldmatch(pattern, message) {
   return new Rule({
     name: 'shouldmatch',
     message,
+    pattern,
     validate,
   })
 }
@@ -171,7 +172,7 @@ export function shouldmatch(pattern, message) {
  * the passed value should not match patterns
  * @param {Pattern} pattern
  */
-export function shouldnotmatch(pattern, message) {
+export function shouldnotmatch(pattern, message = '{keyPath} should not match the type.') {
   function validate(value) {
     if (isFunction(pattern)) {
       return !pattern(value)
@@ -199,6 +200,7 @@ export function shouldnotmatch(pattern, message) {
   return new Rule({
     name: 'shouldnotmatch',
     message,
+    pattern,
     validate,
   })
 }
@@ -340,7 +342,7 @@ export function shouldnotexist(determine, pattern) {
     const { key, data } = target
 
     if (shouldNotExist && isExist) {
-      const error = new TyError({ type: 'overflow', key, value, name: 'rule:shouldnotexist', pattern })
+      const error = new Error('{keyPath} should not exist, but receive value.')
       return error
     }
 
@@ -367,7 +369,7 @@ export function shouldnotexist(determine, pattern) {
 
   return new Rule({
     name: 'shouldnotexist',
-    pattern: determine,
+    pattern,
     validate,
     prepare,
     complete,
@@ -382,7 +384,7 @@ export function instance(Constructor) {
   return new Rule({
     name: 'instance',
     pattern: Constructor,
-    message: v => v + ' should be instance of ' + (Constructor.name || Constructor.toString()),
+    message: v => '{keyPath} ' + v + ' should be instance of ' + (Constructor.name || Constructor.toString()),
     validate: value => isInstanceOf(value, Constructor, true),
   })
 }
@@ -395,7 +397,7 @@ export function equal(value) {
   return new Rule({
     name: 'equal',
     pattern: value,
-    message: v => v + ' should eqaul ' + value,
+    message: v => '{keyPath} ' + v + ' should eqaul ' + value,
     validate: v => isEqual(value, v),
   })
 }

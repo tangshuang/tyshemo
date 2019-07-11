@@ -77,7 +77,8 @@ export class TyError extends TypeError {
 
     const messages = traces.map((trace) => {
       if (!isInstanceOf(trace, TyError) && isInstanceOf(trace, Error)) {
-        const text = makeErrorMessage(trace.message, {}, words)
+        const params = trace.params || {}
+        const text = makeErrorMessage(trace.message, { ...params }, words)
         return text
       }
 
@@ -286,6 +287,7 @@ function makeErrorTraces(item, keyPath = [], traces = []) {
   }
   else if (isInstanceOf(error, Error)) {
     traces.push(error)
+    error.params = { keyPath: makeKeyPath(keyPath) }
     return traces
   }
   else {

@@ -1,5 +1,5 @@
 import Prototype from './prototype.js'
-import { isNull, isUndefined, isNumeric, isNumber, isNaN } from './utils.js'
+import { isNull, isUndefined, isNumeric, isNumber } from './utils.js'
 
 export const Null = new Prototype({
   name: 'Null',
@@ -49,9 +49,4 @@ export const Finity = new Prototype({
 export const Zero = new Prototype({
   name: 'Zero',
   validate: value => value === 0,
-})
-
-export const Nn = new Prototype({
-  name: 'Nn',
-  validate: value => isNaN(value),
 })
