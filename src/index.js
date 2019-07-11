@@ -25,7 +25,7 @@ export {
 } from './rules.js'
 
 export { Ty } from './ty.js'
-export { TyError } from './error.js'
+export { TyError } from './ty-error.js'
 
 export { Schema } from './schema.js'
 

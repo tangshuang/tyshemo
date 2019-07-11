@@ -1,9 +1,9 @@
 import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray } from './utils.js'
 
 const MESSAGES = {
-  exception: '{keyPath} should match {should}, but receive {receive}.',
-  unexcepted: '{keyPath} should not match {should}, but receive {receive}.',
-  dirty: '{keyPath} length does not match {should}, receive {receive}.',
+  exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
+  unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
+  dirty: '{keyPath} length does not match `{should}`, receive `{receive}`.',
   overflow: '{keyPath} should not exists.',
   missing: '{keyPath} is missing.',
 }
@@ -55,7 +55,7 @@ export class TyError extends TypeError {
   commit() {
     const traces = this.traces = []
     this.resources.forEach((item) => {
-      if (isInstanceOf(item, Error)) {
+      if (!isInstanceOf(item, TyError) && isInstanceOf(item, Error)) {
         traces.push(item)
         return
       }
@@ -76,7 +76,7 @@ export class TyError extends TypeError {
     }
 
     const messages = traces.map((trace) => {
-      if (isInstanceOf(trace, Error)) {
+      if (!isInstanceOf(trace, TyError) && isInstanceOf(trace, Error)) {
         const text = makeErrorMessage(trace.message, {}, words)
         return text
       }
@@ -105,6 +105,7 @@ export class TyError extends TypeError {
 
 TyError.shouldUseDetailMessage = true
 TyError.defaultMessages = MESSAGES
+TyError.breakLongMessageLine = true
 
 export default TyError
 
@@ -131,11 +132,19 @@ function makeValueString(value, useDetail, space = 2) {
     }
     return str
   }
-  const britems = (keys, start, end) => {
+  const britems = (items, start, end, space = 2) => {
+    if (!TyError.breakLongMessageLine) {
+      return start + items.join(',') + end
+    }
+
+    if (items.join(',').length < 25 && items.length < 6) {
+      return start + items.join(',') + end
+    }
+
     let str = start
     let spacestr = createspace(space)
-    keys.forEach((key) => {
-      str += '\n    ' + spacestr + key + ','
+    items.forEach((item) => {
+      str += '\n    ' + spacestr + item + ','
     })
     str += '\n    ' + createspace(space - 2) + end
     return str
@@ -143,6 +152,16 @@ function makeValueString(value, useDetail, space = 2) {
   const stringify = (value, space = 2) => {
     if (isObject(value)) {
       let str = '{'
+
+      if (!TyError.breakLongMessageLine) {
+        each(value, (value, key) => {
+          str += key + ':' + stringify(value) + ','
+        })
+        str = str.substr(0, str.length - 1)
+        str += '}'
+        return str
+      }
+
       let spacestr = createspace(space)
       each(value, (value, key) => {
         str += '\n    ' + spacestr + key + ': ' + stringify(value, space + 2) + ','
@@ -152,6 +171,16 @@ function makeValueString(value, useDetail, space = 2) {
     }
     else if (isArray(value)) {
       let str = '['
+
+      if (!TyError.breakLongMessageLine) {
+        value.forEach((item) => {
+          str += stringify(item)
+        })
+        str = str.substr(0, str.length - 1)
+        str += ']'
+        return str
+      }
+
       let spacestr = createspace(space)
       value.forEach((item) => {
         str += '\n    ' + spacestr + stringify(item, space + 2) + ','
@@ -178,19 +207,19 @@ function makeValueString(value, useDetail, space = 2) {
   }
   else if (isArray(value)) {
     let items = value.map(item => makeValueString(item, useDetail, space + 2))
-    let output = britems(items, '[', ']')
+    let output = britems(items, '[', ']', space)
     return output
   }
   else if (isObject(value)) {
     let keys = Object.keys(value)
-    let output = useDetail ? stringify(value) : britems(keys, '{', '}')
+    let output = useDetail ? stringify(value) : britems(keys, '{', '}', space)
     return output
   }
   else if (typeof value === 'object') { // for class instances
     // type or rule
     if (inObject('pattern', value)) {
       const name = value.name
-      const output = makeValueString(value.pattern, useDetail, space + 2)
+      const output = makeValueString(value.pattern, useDetail, space)
       return isString(name) ? name + '(' + output + ')' : output
     }
     else {
@@ -253,6 +282,10 @@ function makeErrorTraces(item, keyPath = [], traces = []) {
   if (isInstanceOf(error, TyError)) {
     const { resources } = error
     resources.forEach(item => makeErrorTraces(item, [...keyPath], traces))
+    return traces
+  }
+  else if (isInstanceOf(error, Error)) {
+    traces.push(error)
     return traces
   }
   else {

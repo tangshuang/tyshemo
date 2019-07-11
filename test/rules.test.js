@@ -37,6 +37,25 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ should: false, body: null })).not.toThrowError()
     expect(() => SomeType.assert({ should: true, body: null })).toThrowError()
   })
+  test('shouldmatch', () => {
+    const msg1 = 'It should be a string.'
+    const SomeType = new Dict({
+      some: shouldmatch(String, msg1),
+    })
+
+    expect(() => SomeType.assert({ some: '123' })).not.toThrowError()
+    expect(SomeType.catch({ some: 123 }).message).toBe(msg1)
+
+    const msg2 = 'It should be a number string.'
+    const Some2Type = new Dict({
+      some: shouldmatch(Numeric, msg2),
+    })
+
+    expect(() => Some2Type.assert({ some: '123' })).not.toThrowError()
+    expect(() => Some2Type.assert({ some: '12a' })).toThrowError()
+    expect(Some2Type.catch({ some: 123 }).message).toBe(msg2)
+  })
+
   test('match + shouldmatch+shouldnotmatch', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'

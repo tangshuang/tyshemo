@@ -81,7 +81,9 @@ export function match(patterns) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
       const error = catchErrorBy(this, pattern, value)
-      return error
+      if (error) {
+        return error
+      }
     }
   }
   return new Rule({
@@ -141,7 +143,8 @@ export function shouldmatch(pattern, message) {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
-      return !pattern.validate(value)
+      const res = pattern.validate(value)
+      return res === true || res === undefined || res === null
     }
     else if (isInstanceOf(pattern, Type)) {
       if (this.isStrict && !pattern.isStrict) {

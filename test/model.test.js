@@ -122,12 +122,8 @@ describe('Model', () => {
     // del method
     person.set('testkey', 'some')
     expect(state.testkey).toBe('some')
-    expect(() => {
-      person.del('testkey')
-    }).not.toThrowError()
-    expect(() => {
-      person.del('body.feet')
-    }).toThrowError()
+    expect(() => person.del('testkey')).not.toThrowError()
+    expect(() => person.del('body.feet', true)).toThrowError()
 
     // delete state
     state.testkey = 'some'
@@ -137,6 +133,6 @@ describe('Model', () => {
     }).not.toThrowError()
     expect(() => {
       delete state.body.feet
-    }).toThrowError()
+    }).not.toThrowError()
   })
 })

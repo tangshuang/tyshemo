@@ -17,7 +17,7 @@ export class Rule {
     this._complete = complete
     this._validate = validate
     this._override = override
-    this._message = message || 'exception'
+    this._message = message
 
     this.isStrict = false
     this.name = name || 'Rule'
