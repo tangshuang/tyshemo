@@ -1,5 +1,5 @@
 import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray, map } from './utils.js'
-import TyError from './error.js'
+import TyError from './ty-error.js'
 import Schema from './schema.js'
 
 export class Model {
@@ -112,7 +112,8 @@ export class Model {
         const current = this.get(root)
 
         if (!isObject(current)) {
-          throw new TyError(`{keyPath} is not an object.`, { key: root, value: current, should: [Object] })
+          const error = new TyError({ key: root, value: current, pattern: Object })
+          return error
         }
 
         const keyPath = makeKeyPath(chain)

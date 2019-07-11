@@ -1,4 +1,4 @@
-import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray, repeatString } from './utils.js'
+import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray } from './utils.js'
 
 const Messages = {
   exception: '{keyPath} should match {should}, but receive {receive}.',
@@ -9,27 +9,22 @@ const Messages = {
 }
 
 export class TyError extends TypeError {
-  constructor(message) {
+  constructor(resource) {
     super()
     this.resources = []
     this.traces = []
 
-    this.init(message)
+    this.init(resource)
   }
 
-  init(message) {
-    this.__message = message
-    this.__params = {}
+  init(resource) {
+    this.add(resource)
+    this.commit()
   }
 
   get message() {
     if (this._message) {
       return this._message
-    }
-
-    if (this.__message) {
-      const message = makeErrorMessage(this.__message, this.__params, Messages)
-      return message
     }
 
     const message = this.translate(Messages)
@@ -51,10 +46,6 @@ export class TyError extends TypeError {
 
   keep() {
     // do nothing
-  }
-
-  feed(params = {}) {
-    this.__params = params
   }
 
   commit() {

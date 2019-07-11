@@ -337,9 +337,7 @@ export function shouldnotexist(determine, pattern) {
     const { key, data } = target
 
     if (shouldNotExist && isExist) {
-      const error = new TyError()
-      error.add({ type: 'overflow', key, value, name: 'rule:shouldnotexist', pattern })
-      error.commit()
+      const error = new TyError({ type: 'overflow', key, value, name: 'rule:shouldnotexist', pattern })
       return error
     }
 
