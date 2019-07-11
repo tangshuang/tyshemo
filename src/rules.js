@@ -1,6 +1,6 @@
 import Type from './type.js'
 import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from './utils.js'
-import TyError, { makeError } from './error.js'
+import TyError from './ty-error.js'
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
@@ -20,25 +20,31 @@ export function catchErrorBy(context, pattern, value, key, data) {
     if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
-    let error = error = pattern.validate(value, key, data)
-    error = makeError(error, { ...info, should: [pattern.name, pattern.pattern], context })
+    const error = pattern.validate(value, key, data)
+    if (error) {
+      error.pattern = pattern
+    }
     return error
   }
   else if (isInstanceOf(pattern, Type)) {
     if (context.isStrict && !pattern.isStrict) {
       pattern = pattern.strict
     }
-    let error = pattern.catch(value)
-    error = makeError(error, { ...info, should: [pattern.name, pattern.pattern], context })
+    const error = pattern.catch(value)
+    if (error) {
+      error.pattern = pattern
+    }
     return error
   }
   else {
-    let type = Ty.create(pattern)
+    const type = Ty.create(pattern)
     if (context.isStrict) {
       type.toBeStrict()
     }
-    let error = type.catch(value)
-    error = makeError(error, { ...info, should: [pattern], context })
+    const error = type.catch(value)
+    if (error) {
+      error.pattern = pattern
+    }
     return error
   }
 }
@@ -48,9 +54,9 @@ export function catchErrorBy(context, pattern, value, key, data) {
  * @param {Function} fn which can be an async function and should return a pattern
  */
 export function asynchronous(fn) {
+  let pattern = null
   function validate(value) {
-    const pattern = this.pattern
-    if (pattern === undefined) {
+    if (pattern === null) {
       return null
     }
     const error = catchErrorBy(this, pattern, value)
@@ -60,8 +66,8 @@ export function asynchronous(fn) {
     name: 'asynchronous',
     validate,
   })
-  Promise.resolve().then(() => fn()).then((pattern) => {
-    rule.pattern = pattern
+  Promise.resolve().then(() => fn()).then((res) => {
+    pattern = res
   })
   return rule
 }
@@ -75,15 +81,11 @@ export function match(patterns) {
     for (let i = 0, len = patterns.length; i < len; i ++) {
       const pattern = patterns[i]
       const error = catchErrorBy(this, pattern, value)
-      if (error) {
-        return error
-      }
+      return error
     }
-    return null
   }
   return new Rule({
     name: 'match',
-    pattern: patterns,
     validate,
   })
 }
@@ -109,7 +111,7 @@ export function determine(determine) {
   }
   function validate(value) {
     if (!isReady) {
-      return new TyError('determine can not be used in this situation.')
+      return new Error('determine can not be used in this situation.')
     }
 
     const { key, data } = target
@@ -119,7 +121,6 @@ export function determine(determine) {
 
   return new Rule({
     name: 'determine',
-    pattern: determine,
     validate,
     prepare,
     complete,
@@ -131,7 +132,7 @@ export function determine(determine) {
  * @param {Rule|Type|Function} pattern
  * @param {String|Function} message
  */
-export function shouldmatch(pattern, message = 'mistaken') {
+export function shouldmatch(pattern, message) {
   function validate(value) {
     if (isFunction(pattern)) {
       return !!pattern(value)
@@ -158,7 +159,6 @@ export function shouldmatch(pattern, message = 'mistaken') {
   }
   return new Rule({
     name: 'shouldmatch',
-    pattern,
     message,
     validate,
   })
@@ -168,7 +168,7 @@ export function shouldmatch(pattern, message = 'mistaken') {
  * the passed value should not match patterns
  * @param {Pattern} pattern
  */
-export function shouldnotmatch(pattern, message = 'mistaken') {
+export function shouldnotmatch(pattern, message) {
   function validate(value) {
     if (isFunction(pattern)) {
       return !pattern(value)
@@ -195,7 +195,6 @@ export function shouldnotmatch(pattern, message = 'mistaken') {
   }
   return new Rule({
     name: 'shouldnotmatch',
-    pattern,
     message,
     validate,
   })
@@ -225,7 +224,7 @@ export function ifexist(pattern) {
   }
   function validate(value) {
     if (!isReady) {
-      return new TyError('ifexist can not be used in this situation.')
+      return new Error('ifexist can not be used in this situation.')
     }
     if (!isExist) {
       return null
@@ -269,10 +268,9 @@ export function ifnotmatch(pattern, callback) {
 }
 
 /**
- * Advance version of ifexist, determine whether a key can not exist with a determine function,
- * if the key is existing, use the passed type to check.
+ * Advance version of ifexist, determine whether a key need to exist with a determine function.
  * @param {Function} determine the function to return true or false,
- * if true, it means the key should must exists and will use the second parameter to check data type,
+ * if true, it means the key should MUST exist and will use the second parameter to check data type,
  * if false, it means the key can not exist
  * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
@@ -284,7 +282,7 @@ export function shouldexist(determine, pattern) {
 
   function validate(value) {
     if (!isReady) {
-      return new TyError('shouldexist can not be used in this situation.')
+      return new Error('shouldexist can not be used in this situation.')
     }
 
     // can not exist and it does not exist, do nothing
@@ -319,12 +317,11 @@ export function shouldexist(determine, pattern) {
 }
 
 /**
- * Advance version of ifexist, determine whether a key can not exist with a determine function,
- * if the key is existing, use the passed type to check.
+ * Advance version of ifexist, determine whether a key can not exist with a determine function.
  * @param {Function} determine the function to return true or false,
- * if true, it means the key should must exists and will use the second parameter to check data type,
- * if false, it means the key can not exist
- * @param {Function} determine when the determine function return true, use this to check data type
+ * if true, it means the key should NOT exists,
+ * if false, it means the key can not exist and will use the second parameter to check data type
+ * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
 export function shouldnotexist(determine, pattern) {
   let isReady = false
@@ -334,18 +331,23 @@ export function shouldnotexist(determine, pattern) {
 
   function validate(value) {
     if (!isReady) {
-      return new TyError('shouldnotexist can not be used in this situation.')
+      return new Error('shouldnotexist can not be used in this situation.')
     }
 
+    const { key, data } = target
+
     if (shouldNotExist && isExist) {
-      return new TyError('overflow', { value, should: [this.name, ''] })
+      const error = new TyError()
+      error.add({ type: 'overflow', key, value, name: 'rule:shouldnotexist', pattern })
+      error.commit()
+      return error
     }
 
     if (!shouldNotExist && !isExist) {
       return null
     }
 
-    const { key, data } = target
+
     const error = catchErrorBy(this, pattern, value, key, data)
     return error
   }
@@ -379,7 +381,7 @@ export function instance(Constructor) {
   return new Rule({
     name: 'instance',
     pattern: Constructor,
-    message: 'mistaken',
+    message: v => v + ' should be instance of ' + (Constructor.name || Constructor.toString()),
     validate: value => isInstanceOf(value, Constructor, true),
   })
 }
@@ -392,7 +394,7 @@ export function equal(value) {
   return new Rule({
     name: 'equal',
     pattern: value,
-    message: 'mistaken',
+    message: v => v + ' should eqaul ' + value,
     validate: v => isEqual(value, v),
   })
 }
@@ -404,7 +406,7 @@ export function equal(value) {
  */
 export function lambda(InputType, OutputType) {
   if (!isInstanceOf(InputType, Tuple)) {
-    throw new TyError('lambda InputType should be a Tuple')
+    throw new Error('lambda InputType should be a Tuple')
   }
   if (!isInstanceOf(OutputType, Type)) {
     OutputType = makeType(OutputType)
@@ -413,11 +415,11 @@ export function lambda(InputType, OutputType) {
   let isReady = false
   function validate(value) {
     if (!isReady) {
-      return new TyError('lambda is can not be used in this situation.')
+      return new Error('lambda is can not be used in this situation.')
     }
 
     if (!isFunction(value)) {
-      return new TyError('mistaken', { value, should: [this.name, Function] })
+      return new Error('lambda should receive a function.')
     }
   }
   function prepare(value, key, target) {

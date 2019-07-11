@@ -1,6 +1,6 @@
 import Type from './type.js'
 import { isArray, isEmpty } from './utils.js'
-import TyError, { makeError } from './error.js'
+import TyError from './ty-error.js'
 
 export class List extends Type {
   constructor(pattern) {
@@ -13,18 +13,24 @@ export class List extends Type {
   }
   catch(value) {
     const pattern = this.pattern
-    const info = { value, should: [this.name, pattern], context: this }
+    const tyerr = new TyError()
 
     if (!isArray(value)) {
-      return new TyError('mistaken', info)
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     }
-
-    if (isEmpty(pattern)) {
+    else if (isEmpty(pattern)) {
       return null
     }
+    else {
+      const error = this.validate(value, pattern)
+      if (error) {
+        tyerr.replace(error)
+      }
+    }
 
-    const error = this.validate(value, pattern)
-    return makeError(error, info)
+    tyerr.commit()
+
+    return tyerr.count ? tyerr : null
   }
 }
 

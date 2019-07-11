@@ -261,8 +261,8 @@ export class TyError extends TypeError {
 }
 
 TyError.messages = {
-  mistaken: '{keyPath} should match {should}, but receive {receive}.',
-  unexcepted: '{keyPath} should not match {should}, but receive {receive}.',
+  exception: '{keyPath} should match {should}, but receive {receive}.',
+  exception: '{keyPath} should not match {should}, but receive {receive}.',
   dirty: '{keyPath} length does not match {should}, receive {receive}.',
   overflow: '{keyPath} should not exists.',
   missing: '{keyPath} is missing.',

@@ -1,6 +1,6 @@
 import Type from './type.js'
 import { inObject, isObject, isNumber } from './utils.js'
-import TyError from './error.js'
+import TyError from './ty-error.js'
 
 export class Range extends Type {
   constructor(pattern) {
@@ -17,26 +17,29 @@ export class Range extends Type {
     }
 
     super(pattern)
+    this.name = 'Range'
   }
   catch(value) {
     const pattern = this.pattern
-    const info = { value, should: ['Range', pattern], context: this }
-
-    if (!isNumber(value)) {
-      return new TyError('mistaken', info)
-    }
-
+    const tyerr = new TyError()
     const { min, max, minBound, maxBound } = pattern
 
-    if ((minBound && value < min) || (!minBound && value <= min)) {
-      return new TyError('mistaken', info)
+    if (!isNumber(value)) {
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
+    }
+    else if ((minBound && value < min) || (!minBound && value <= min)) {
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     }
     else if ((maxBound && value > max) || (!maxBound && value >= max)) {
-      return new TyError('mistaken', info)
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     }
     else {
       return null
     }
+
+    tyerr.commit()
+
+    return tyerr.count ? tyerr : null
   }
 }
 

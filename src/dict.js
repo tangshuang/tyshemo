@@ -1,6 +1,6 @@
 import Type from './type.js'
 import { isObject, getConstructor, isEmpty } from './utils.js'
-import TyError, { makeError } from './error.js'
+import TyError from './ty-error.js'
 
 export class Dict extends Type {
   constructor(pattern) {
@@ -14,18 +14,24 @@ export class Dict extends Type {
 
   catch(value) {
     const pattern = this.pattern
-    const info = { value, should: [this.name, pattern], context: this }
-
-    if (!isObject(value)) {
-      return new TyError('mistaken', info)
-    }
+    const tyerr = new TyError()
 
     if (isEmpty(pattern)) {
       return null
     }
+    else if (!isObject(value)) {
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
+    }
+    else {
+      const error = this.validate(value, pattern)
+      if (error) {
+        tyerr.replace(error)
+      }
+    }
 
-    const error = this.validate(value, pattern)
-    return makeError(error, info)
+    tyerr.commit()
+
+    return tyerr.count ? tyerr : null
   }
 
   extend(fields) {

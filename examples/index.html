@@ -7,7 +7,7 @@
 
     <script src="./bundle.js"></script>
     <script>
-      const { Model, Schema, ifexist, dict, shouldmatch, TyError } = window['tyshemo']
+      const { Model, Schema, ifexist, dict, shouldmatch, TyError, Enum, list, range, tuple } = window['tyshemo']
       function test(fn) {
         try {
           fn()
@@ -21,45 +21,53 @@
     </script>
     <script>
       const SomeType = dict({
-        name: String,
-        some: {
-          sub: ifexist(String),
-          get: shouldmatch(Function),
-        },
+        some: ifexist(tuple([ new Enum([String, Boolean]), Number])),
       })
-      // nested object
       test(() => SomeType.assert({
-        name: 'tomy',
-        some: {
-          sub: 0,
-          get: null,
-        },
+        some: [1],
       }))
-      // dict error
-      test(() => SomeType.assert({
-        name: 'tomy',
-        some: null,
-      }))
-      // wrong attr
-      const data3 = {
-        name: {
-          start: true,
-          end: false,
-        },
-        some: null,
-      }
-      test(() => SomeType.assert(data3))
-      // rule error
-      test(() => SomeType.assert({
-        some: {
-          sub: 122,
-          get: true,
-        },
-        name: 'ok',
-      }))
+    </script>
+    <script>
+      // const SomeType = dict({
+      //   name: String,
+      //   some: {
+      //     sub: ifexist(String),
+      //     get: shouldmatch(Function),
+      //   },
+      // })
+      // // nested object
+      // test(() => SomeType.assert({
+      //   name: 'tomy',
+      //   some: {
+      //     sub: 0,
+      //     get: null,
+      //   },
+      // }))
+      // // dict error
+      // test(() => SomeType.assert({
+      //   name: 'tomy',
+      //   some: null,
+      // }))
+      // // wrong attr
+      // const data3 = {
+      //   name: {
+      //     start: true,
+      //     end: false,
+      //   },
+      //   some: null,
+      // }
+      // test(() => SomeType.assert(data3))
+      // // rule error
+      // test(() => SomeType.assert({
+      //   some: {
+      //     sub: 122,
+      //     get: true,
+      //   },
+      //   name: 'ok',
+      // }))
 
-      const error = SomeType.catch(data3)
-      console.log(error.message, error.traces)
+      // const error = SomeType.catch(data3)
+      // console.log(error.message, error.traces)
     </script>
     <script>
 

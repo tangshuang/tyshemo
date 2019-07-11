@@ -1,6 +1,6 @@
 import Prototype from './prototype.js'
 import Rule from './rule.js'
-import TyError, { makeError } from './error.js'
+import TyError from './ty-error.js'
 import { isArray, isObject, isInstanceOf, inArray, getConstructor, inObject } from './utils.js'
 
 export class Type {
@@ -25,152 +25,141 @@ export class Type {
       pattern = this.pattern
     }
 
+    const tyerr = new TyError()
+
     // check array
     if (isArray(pattern)) {
       if (!isArray(value)) {
-        return new TyError('mistaken', { value, should: ['List', pattern] })
+        tyerr.replace({ type: 'exception', value, name: 'List', pattern })
       }
-
       // can be empty array
-      if (!value.length) {
-        return null
+      else if (value.length) {
+        const patterns = pattern
+        const values = value
+        const count = values.length
+        const enumerate = (value, patterns) => {
+          for (let i = 0, len = patterns.length; i < len; i ++) {
+            const pattern = patterns[i]
+            // nested Type
+            if (isInstanceOf(pattern, Type)) {
+              if (this.isStrict && !pattern.isStrict) {
+                pattern = pattern.strict
+              }
+              const error = pattern.catch(value)
+              if (!error) {
+                return true
+              }
+            }
+            // normal validate
+            else {
+              const error = this.validate(value, pattern)
+              if (!error) {
+                return true
+              }
+            }
+          }
+          return false
+        }
+
+        for (let i = 0; i < count; i ++) {
+          const value = values[i]
+          const bool = enumerate(value, patterns)
+          if (!bool) {
+            tyerr.add({ type: 'exception', index: i, value, name: 'enum', pattern: patterns })
+          }
+        }
       }
+    }
+    // check object
+    else if (isObject(pattern)) {
+      if (!isObject(value)) {
+        tyerr.replace({ type: 'exception', value, name: 'Dict', pattern })
+      }
+      else {
+        const patterns = pattern
+        const data = value
+        const patternKeys = Object.keys(patterns)
+        const dataKeys = Object.keys(data)
 
-      let patterns = pattern
-      let items = value
-      let itemCount = items.length
+        // in strict mode, keys should absolutely equal
+        // properties should be absolutely same
+        if (this.isStrict) {
+          for (let i = 0, len = dataKeys.length; i < len; i ++) {
+            const key = dataKeys[i]
+            if (!inArray(key, patternKeys)) {
+              tyerr.add({ type: 'overflow', key })
+            }
+          }
+        }
 
-      const enumerate = (value, index, patterns) => {
-        for (let i = 0, len = patterns.length; i < len; i ++) {
-          let pattern = patterns[i]
-          // nested Type
-          if (isInstanceOf(pattern, Type)) {
+        for (let i = 0, len = patternKeys.length; i < len; i ++) {
+          const key = patternKeys[i]
+          const value = data[key]
+          const pattern = patterns[key]
+
+          const isRule = isInstanceOf(pattern, Rule)
+          if (isRule) {
             if (this.isStrict && !pattern.isStrict) {
               pattern = pattern.strict
             }
-            let error = pattern.catch(value)
+
+            const error = pattern.validate(value, key, data)
             if (!error) {
-              return null
+              continue
+            }
+
+            // after validate, the property may create by validate
+            if (!inObject(key, data)) {
+              tyerr.add({ type: 'missing', key })
+            }
+            else {
+              const info = { type: 'exception', key, value, name: 'rule:' + pattern.name, error }
+              if (error.pattern) {
+                info.pattern = error.pattern
+              }
+              tyerr.add(info)
+            }
+          }
+          // not found some key in data
+          // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
+          else if (!inObject(key, data)) {
+            tyerr.add({ type: 'missing', key })
+          }
+          // nested Type
+          else if (isInstanceOf(pattern, Type)) {
+            if (this.isStrict && !pattern.isStrict) {
+              pattern = pattern.strict
+            }
+            const error = pattern.catch(value)
+            if (error) {
+              tyerr.add({ type: 'exception', key, value, name: pattern.name, pattern: pattern.pattern, error })
             }
           }
           // normal validate
           else {
-            let error = this.validate(value, pattern)
-            if (!error) {
-              return null
+            const error = this.validate(value, pattern)
+            if (error) {
+              tyerr.add({ type: 'exception', key, value, pattern, error })
             }
           }
         }
-        return new TyError('mistaken', { index, value, should: ['Enum', patterns] })
       }
-      for (let i = 0; i < itemCount; i ++) {
-        let value = items[i]
-        let error = enumerate(value, i, patterns)
-        if (error) {
-          return makeError(error, { index: i, value })
-        }
-      }
-
-      return null
     }
-
-    // check object
-    if (isObject(pattern)) {
-      if (!isObject(value)) {
-        return new TyError('mistaken', { value, should: ['Dict', pattern] })
-      }
-
-      const patterns = pattern
-      const data = value
-      const patternKeys = Object.keys(patterns)
-      const dataKeys = Object.keys(data)
-
-      // in strict mode, keys should absolutely equal
-      // properties should be absolutely same
-      if (this.isStrict) {
-        for (let i = 0, len = patternKeys.length; i < len; i ++) {
-          let key = patternKeys[i]
-          if (!inArray(key, dataKeys)) {
-            return new TyError('missing', { key })
-          }
-        }
-        for (let i = 0, len = dataKeys.length; i < len; i ++) {
-          let key = dataKeys[i]
-          if (!inArray(key, patternKeys)) {
-            return new TyError('overflow', { key })
-          }
-        }
-      }
-
-      for (let i = 0, len = patternKeys.length; i < len; i ++) {
-        let key = patternKeys[i]
-        let value = data[key]
-        let pattern = patterns[key]
-
-        let isRule = isInstanceOf(pattern, Rule)
-        if (isRule) {
-          if (this.isStrict && !pattern.isStrict) {
-            pattern = pattern.strict
-          }
-
-          let error = pattern.validate(value, key, data)
-          if (!error) {
-            continue
-          }
-
-          // after validate, the property may create by validate
-          if (!inObject(key, data)) {
-            return new TyError('missing', { key })
-          }
-
-          return makeError(error, { key, value, should: [pattern.name, pattern.pattern] })
-        }
-        else {
-          // not found some key in data
-          // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
-          if (!inObject(key, data)) {
-            return new TyError('missing', { key })
-          }
-        }
-
-        // nested Type
-        if (isInstanceOf(pattern, Type)) {
-          if (this.isStrict && !pattern.isStrict) {
-            pattern = pattern.strict
-          }
-          let error = pattern.catch(value)
-          if (error) {
-            return makeError(error, { key, value, should: [pattern.name, pattern.pattern] })
-          }
-        }
-        // normal validate
-        else {
-          let error = this.validate(value, pattern)
-          if (error) {
-            return makeError(error, { key, value, should: [pattern] })
-          }
-        }
-      }
-
-      return null
-    }
-
-
     // check prototypes
-    if (Prototype.is(pattern).existing()) {
+    else if (Prototype.is(pattern).existing()) {
       const res = Prototype.is(pattern).typeof(value)
-      if (res === true) {
-        return null
+      if (res !== true) {
+        tyerr.replace({ type: 'exception', value, pattern })
       }
-      return new TyError('mistaken', { value, should: [pattern] })
     }
-
     // check single value
-    if (Prototype.is(value).equal(pattern)) {
-      return null
+    else if (!Prototype.is(value).equal(pattern)) {
+      tyerr.replace({ type: 'exception', value, name: 'equal', pattern })
     }
 
-    return new TyError('mistaken', { value, should: [pattern] })
+    tyerr.commit()
+
+    return tyerr.count ? tyerr : null
   }
 
   assert(value) {
@@ -182,7 +171,7 @@ export class Type {
   catch(value) {
     const pattern = this.pattern
     const error = this.validate(value, pattern)
-    return makeError(error, { value, should: [this.name, pattern], context: this })
+    return error
   }
   test(value) {
     let error = this.catch(value)

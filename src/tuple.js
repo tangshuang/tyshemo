@@ -1,7 +1,7 @@
 import Type from './type.js'
 import Rule from './rule.js'
 import { isInstanceOf, isArray, inObject } from './utils.js'
-import TyError, { makeError } from './error.js'
+import TyError from './ty-error.js'
 
 export class Tuple extends Type {
   constructor(pattern) {
@@ -14,72 +14,68 @@ export class Tuple extends Type {
   }
   catch(value) {
     const pattern = this.pattern
-    const info = { value, params: [this.name, pattern], context: this }
-
-    if (!isArray(value)) {
-      return new TyError('mistaken', info)
-    }
+    const tyerr = new TyError()
 
     const items = value
     const patterns = pattern
-    const patternCount = patterns.length
-    const itemCount = items.length
 
-    if (this.isStrict && itemCount !== patternCount) {
-      return new TyError('dirty', { length: itemCount, should: ['length', patternCount], context: this })
+    if (!isArray(value)) {
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
+    }
+    else if (items.length != patterns.length) {
+      tyerr.replace({ type: 'dirty', value, name: this.name, pattern })
+    }
+    else {
+      for (let i = 0, len = patterns.length; i < len; i ++) {
+        const value = items[i]
+        const pattern = patterns[i]
+        const index = i
+
+        const isRule = isInstanceOf(pattern, Rule)
+        if (isRule) {
+          if (this.isStrict && !pattern.isStrict) {
+            pattern = pattern.strict
+          }
+
+          const error = pattern.validate(value, index, items)
+          if (!error) {
+            continue
+          }
+
+          // after validate, the property may create by validate
+          if (!inObject(index, items)) {
+            tyerr.add({ type: 'missing', index })
+          }
+          else {
+            tyerr.add({ type: 'exception', value, index, name: pattern.name, error })
+          }
+        }
+        else if (!inObject(index, items)) {
+          tyerr.add({ type: 'missing', index })
+        }
+        // nested type
+        else if (isInstanceOf(pattern, Type)) {
+          if (this.isStrict && !pattern.isStrict) {
+            pattern = pattern.strict
+          }
+          let error = pattern.catch(value)
+          if (error) {
+            tyerr.add({ type: 'exception', index, value, name: pattern.name, pattern: pattern.pattern, error })
+          }
+        }
+        // normal validate
+        else {
+          let error = this.validate(value, pattern)
+          if (error) {
+            tyerr.add({ type: 'exception', index, value, pattern, error })
+          }
+        }
+      }
     }
 
-    for (let i = 0; i < itemCount; i ++) {
-      let value = items[i]
-      let pattern = patterns[i]
-      let index = i
-      let info2 = { index, value, should: [pattern], context: this }
+    tyerr.commit()
 
-      let isRule = isInstanceOf(pattern, Rule)
-      if (isRule) {
-        if (this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-
-        let error = pattern.validate(value, index, items)
-        if (!error) {
-          continue
-        }
-
-        // after validate, the property may create by validate
-        if (!inObject(index, items)) {
-          return new TyError('missing', { index, context: this })
-        }
-
-        return makeError(error, info2)
-      }
-      else {
-        // not gave index
-        if (!inObject(index, items)) {
-          return new TyError('missing', { index, context: this })
-        }
-      }
-
-      // nested type
-      if (isInstanceOf(pattern, Type)) {
-        if (this.isStrict && !pattern.isStrict) {
-          pattern = pattern.strict
-        }
-        let error = pattern.catch(value)
-        if (error) {
-          return makeError(error, info2)
-        }
-      }
-      // normal validate
-      else {
-        let error = this.validate(value, pattern)
-        if (error) {
-          return makeError(error, info2)
-        }
-      }
-    }
-
-    return null
+    return tyerr.count ? tyerr : null
   }
 }
 

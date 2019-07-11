@@ -1,5 +1,5 @@
 import Type from './type.js'
-import TyError from './error.js'
+import TyError from './ty-error.js'
 import { isArray, isInstanceOf } from './utils.js'
 
 export class Enum extends Type {
@@ -13,8 +13,8 @@ export class Enum extends Type {
   }
   catch(value) {
     const pattern = this.pattern
-    const info = { value, should: [this.name, pattern], context: this }
     const patterns = pattern
+    const tyerr = new TyError()
 
     for (let i = 0, len = patterns.length; i < len; i ++) {
       let pattern = patterns[i]
@@ -37,7 +37,10 @@ export class Enum extends Type {
       }
     }
 
-    return new TyError('mistaken', info)
+    tyerr.replace({ type: 'exception', value, name: this.name, pattern })
+    tyerr.commit()
+
+    return tyerr
   }
 }
 

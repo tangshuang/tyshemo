@@ -1,5 +1,4 @@
 import { isFunction, isBoolean, isInstanceOf } from './utils.js'
-import TyError, { makeError } from './error.js'
 
 export class Rule {
   /**
@@ -12,17 +11,16 @@ export class Rule {
    * @param {string|function} message
    */
   constructor(options = {}) {
-    var { name, validate, override, message, prepare, complete, pattern } = options
+    var { name, validate, override, message, prepare, complete } = options
 
     this._prepare = prepare
     this._complete = complete
     this._validate = validate
     this._override = override
-    this._message = message || 'mistaken'
+    this._message = message || 'exception'
 
     this.isStrict = false
     this.name = name || 'Rule'
-    this.pattern = pattern
     this.options = options
   }
 
@@ -38,17 +36,17 @@ export class Rule {
     }
 
     if (isFunction(this._validate)) {
-      const info = { value, should: [this.name, this.pattern], context: this }
-      let res = this._validate.call(this, value)
+      const res = this._validate.call(this, value)
       if (isBoolean(res)) {
         if (!res) {
-          let msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : 'mistaken'
-          let error = new TyError(msg, info)
+          const msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : '{keyPath} not match rule ' + this.name
+          const error = new Error(msg)
           return error
         }
       }
       else if (isInstanceOf(res, Error)) {
-        return makeError(res, info)
+        const error = res
+        return error
       }
     }
 
@@ -62,7 +60,6 @@ export class Rule {
    * @param {*} data
    */
   validate2(value, key, data) {
-    const info = { key, value, should: [this.name, this.pattern], context: this }
     if (isFunction(this._prepare)) {
       this._prepare.call(this, { value, key, data })
     }
@@ -75,12 +72,12 @@ export class Rule {
     if (isFunction(this._complete)) {
       this._complete.call(this, { value, key, data })
     }
-    return makeError(error, info)
+    return error
   }
 
   clone() {
     const Constructor = getConstructor(this)
-    const ins = new Constructor(this.pattern)
+    const ins = new Constructor(this.options)
     return ins
   }
 

@@ -30,6 +30,7 @@ module.exports = {
     usedExports: true,
     sideEffects: true,
   },
+  devtool: 'source-map',
 
   devServer: {
     contentBase: __dirname + '/examples',
