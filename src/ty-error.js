@@ -1,6 +1,6 @@
 import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray } from './utils.js'
 
-const Messages = {
+const MESSAGES = {
   exception: '{keyPath} should match {should}, but receive {receive}.',
   unexcepted: '{keyPath} should not match {should}, but receive {receive}.',
   dirty: '{keyPath} length does not match {should}, receive {receive}.',
@@ -18,8 +18,11 @@ export class TyError extends TypeError {
   }
 
   init(resource) {
-    this.add(resource)
-    this.commit()
+    if (resource) {
+      this.add(resource)
+      this.commit()
+      this.translate()
+    }
   }
 
   get message() {
@@ -27,8 +30,9 @@ export class TyError extends TypeError {
       return this._message
     }
 
-    const message = this.translate(Messages)
+    const message = this.translate()
     this._message = message
+
     return message
   }
 
@@ -61,7 +65,9 @@ export class TyError extends TypeError {
     })
   }
 
-  translate(templates, seprateor = '\nx: >> ') {
+  translate(templates = {}, seprateor = '\nx: >> ', write = true) {
+    const words = { ...MESSAGES, ...templates }
+
     const traces = this.traces
 
     // make more friendly
@@ -71,7 +77,7 @@ export class TyError extends TypeError {
 
     const messages = traces.map((trace) => {
       if (isInstanceOf(trace, Error)) {
-        const text = makeErrorMessage(trace.message, {}, templates)
+        const text = makeErrorMessage(trace.message, {}, words)
         return text
       }
 
@@ -84,17 +90,21 @@ export class TyError extends TypeError {
         receive: inObject('value', trace) ? makeErrorReceive(value) : '',
       }
 
-      const text = seprateor + makeErrorMessage(type, params, templates)
+      const text = seprateor + makeErrorMessage(type, params, words)
       return text
     })
     const message = messages.join('')
+
+    if (write) {
+      this._message = message
+    }
 
     return message
   }
 }
 
 TyError.shouldUseDetailMessage = true
-TyError.defaultMessages = Messages
+TyError.defaultMessages = MESSAGES
 
 export default TyError
 

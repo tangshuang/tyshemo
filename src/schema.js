@@ -1,5 +1,5 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf } from './utils.js'
-import TyError, { makeError } from './error.js'
+import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf, inObject } from './utils.js'
+import TyError from './ty-error.js'
 import Ty from './ty.js'
 import { ifexist } from './rules.js'
 
@@ -91,58 +91,60 @@ export class Schema {
    */
   validate(key, value, context) {
     const definition = this.definition
-    const translate = (error, message, value) => {
-      let msg = error.message
-      if (message && isFunction(message)) {
-        msg = message.call(value, context)
-      }
-      else if (message) {
-        msg = message
-      }
-      if (isFunction(error.translate)) {
-        error.translate(msg, true)
-      }
-      else {
-        error.message = msg
-      }
-      return error
-    }
 
+    // validate the whole data
     if (isObject(key)) {
       context = value
       value = key
 
+      const tyerr = new TyError()
       const data = value
-      const error = iterate(definition, (def, key) => {
-        const { rule, type, message } = def
+      each(definition, (def, key) => {
+        const { rule, type } = def
         const value = data[key]
 
         if (isFunction(rule)) {
           const TyRule = rule(type)
           const error = TyRule.validate(value, key, data)
           if (error) {
-            return translate(error, message, value)
+            tyerr.add(error)
           }
         }
         else {
           const error = this.validate(key, value, context)
           if (error) {
-            return translate(error, message, value)
+            tyerr.add(error)
           }
         }
       })
+
+      tyerr.commit()
+      return tyerr.count ? tyerr : null
+    }
+
+    // validate single key
+    const def = definition[key]
+    const { type, rule, validators, message } = def
+    const handle = def.catch
+
+    const transform = (error, message, key, value, context) => {
+      let msg = error.message
+      if (message && isFunction(message)) {
+        msg = message.call(context, value, key, error)
+        error = new Error(msg)
+      }
+      else if (message) {
+        msg = message
+        error = new Error(msg)
+      }
       return error
     }
 
-    const def = definition[key]
-    const { type, rule, validators, message } = def
-    const info = { key, value }
-
     if (!def) {
-      return new TyError(`{keyPath} is not defined in schema.`, info)
+      return new Error(`[Schema]: '${key}' is not defined in schema.`)
     }
 
-    var error = Ty.catch(value).by(type)
+    let error = Ty.catch(value).by(type)
 
     // ignore ifexist when have no value
     if (error && rule === ifexist && value === undefined) {
@@ -150,44 +152,46 @@ export class Schema {
     }
 
     if (error) {
-      error = makeError(error, { ...info, should: [type] })
-      error = translate(error, message, value)
-      return error
+      error = transform(error, message, key, value, context)
     }
 
-    if (isArray(validators)) {
+    // validators
+    else if (isArray(validators)) {
       error = iterate(validators, (validator) => {
         const { validate, determine, message } = validator
-        if (isFunction(determine) && !determine.call(context, value)) {
+        if (isFunction(determine) && !determine.call(context, value, key)) {
           return null
         }
         if (isBoolean(determine) && !determine) {
           return null
         }
 
-        const res = validate.call(context, value)
+        const res = validate.call(context, value, key)
         if (isBoolean(res) && res) {
           return null
         }
 
-        if (isInstanceOf(res, Error)) {
-          message = res.message
-        }
-
         let msg = message
 
-        if (isFunction(message)) {
-          msg = message.call(context, value)
+        if (isInstanceOf(res, Error)) {
+          msg = res.message
         }
 
-        let error = new TyError(msg, { ...info, should: ['validate()'] })
+
+        if (isFunction(message)) {
+          msg = message.call(context, value, key, error)
+        }
+
+        const error = new Error(msg)
         return error
       })
+    }
 
-      if (error) {
-        error = makeError(error, { ...info, should: ['validators[]'] })
-        return error
+    if (error) {
+      if (isFunction(handle)) {
+        handle.call(context, error, key, value)
       }
+      return error
     }
 
     return null
@@ -218,7 +222,7 @@ export class Schema {
           const error = TyRule.validate(value, key, data)
           if (error) {
             if (isFunction(handle)) {
-              handle.call(context, error)
+              handle.call(context, error, key, value)
             }
             return defaultValue
           }
@@ -233,7 +237,7 @@ export class Schema {
         }
         catch (e) {
           if (isFunction(handle)) {
-            handle.call(context, error)
+            handle.call(context, error, key, value)
           }
           return defaultValue
         }
@@ -243,16 +247,15 @@ export class Schema {
     }
 
     const def = definition[key]
-    const info = { key, value, level: 'schema', schema: this, action: 'ensure' }
 
     if (!def) {
-      throw new TyError(`[Schema]: '${key}' is not existing in schema.`, info)
+      throw new Error(`[Schema]: '${key}' is not existing in schema.`)
     }
 
     const error = this.validate(key, value, context)
     if (error) {
       if (isFunction(handle)) {
-        handle.call(context, error)
+        handle.call(context, error, key, value)
       }
       return defaultValue
     }
@@ -269,7 +272,7 @@ export class Schema {
   digest(data, context, fn) {
     const definition = this.definition
     const getComputedValue = (def) => {
-      const { compute } = def
+      const { compute, key } = def
       const handle = def.catch
       const defaultValue = def.default
       try {
@@ -278,7 +281,7 @@ export class Schema {
       }
       catch (error) {
         if (isFunction(handle)) {
-          handle.call(context, error)
+          handle.call(context, error, key)
         }
         return defaultValue
       }
@@ -348,7 +351,7 @@ export class Schema {
         }
         catch (error) {
           if (isFunction(handle)) {
-            handle.call(context, error)
+            handle.call(context, error, key, value)
           }
           return defaultValue
         }
@@ -391,7 +394,7 @@ export class Schema {
         }
         catch (error) {
           if (isFunction(handle)) {
-            handle.call(context, error)
+            handle.call(context, error, key, value)
           }
           return def.default
         }

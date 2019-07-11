@@ -1,5 +1,4 @@
 import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray, map } from './utils.js'
-import TyError from './ty-error.js'
 import Schema from './schema.js'
 
 export class Model {
@@ -97,23 +96,22 @@ export class Model {
    * set key value
    * @param {*} key
    * @param {*} value
-   * @param {*} ensure validate before set, if not pass throw an error
+   * @param {*} ensure validate before set, throw an error when not pass
    */
   set(key, value, ensure = false) {
     // you should not use `set` in `compute`
     if (this.__isComputing || this.__isCallbacking) {
-      return
+      return this
     }
 
     const chain = makeKeyChain(key)
     const root = chain.shift()
     if (this.schema.has(root)) {
       if (chain.length) {
-        const current = this.get(root)
+        let current = parse(this.data, root)
 
         if (!isObject(current)) {
-          const error = new TyError({ key: root, value: current, pattern: Object })
-          return error
+          current = {}
         }
 
         const keyPath = makeKeyPath(chain)
@@ -151,17 +149,19 @@ export class Model {
 
     // you should use `set` in `watch`
     if (this.__isDigesting) {
-      return
+      return this
     }
 
     // compute and trigger watchers
     this.digest()
+
+    return this
   }
 
-  del(key) {
+  del(key, ensure = false) {
     // you should not use `set` in `compute`
     if (this.__isComputing || this.__isCallbacking) {
-      return
+      return this
     }
 
     const chain = makeKeyChain(key)
@@ -169,14 +169,14 @@ export class Model {
 
     if (this.schema.has(root)) {
       if (!chain.length) {
-        throw new TyError(`{keyPath} should not be deleted.`, { key })
+        throw new Error(`[Model]: ${key} can not be deleted.`)
       }
 
       const current = this.get(root)
 
       // do nothing is the property is not an object
       if (!isObject(current)) {
-        return
+        return this
       }
 
       const next = clone(current)
@@ -185,13 +185,16 @@ export class Model {
       const target = parse(next, keyPath)
 
       if (!isObject(target)) {
-        return
+        return this
       }
 
       delete target[tailKey]
-      const error = this.schema.validate(root, next, this)
-      if (error) {
-        throw error
+
+      if (ensure) {
+        const error = this.schema.validate(root, next, this)
+        if (error) {
+          throw error
+        }
       }
 
       // assign new data which property deleted
@@ -204,10 +207,12 @@ export class Model {
 
     // you should use `set` in `watch`
     if (this.__isDigesting) {
-      return
+      return this
     }
 
     this.digest()
+
+    return this
   }
 
   update(data) {
@@ -222,7 +227,7 @@ export class Model {
         throw error
       }
       this.digest()
-      return
+      return Promise.resolve(this.data)
     }
 
     return new Promise((resolve, reject) => {
