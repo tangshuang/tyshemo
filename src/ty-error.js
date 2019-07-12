@@ -3,7 +3,7 @@ import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject,
 const MESSAGES = {
   exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
   unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
-  dirty: '{keyPath} length does not match `{should}`, receive `{receive}`.',
+  dirty: '{keyPath} receive `{receive}`, whose length does not match `{should}`.',
   overflow: '{keyPath} should not exists.',
   missing: '{keyPath} is missing.',
 }
@@ -25,7 +25,7 @@ export class TyError extends TypeError {
     if (resource) {
       this.add(resource)
       this.commit()
-      this.generate()
+      this.format()
     }
   }
 
@@ -34,7 +34,7 @@ export class TyError extends TypeError {
       return this._message
     }
 
-    const message = this.generate()
+    const message = this.format()
     this._message = message
 
     return message
@@ -73,7 +73,7 @@ export class TyError extends TypeError {
     const traces = this.traces = []
     const items = makeErrorResources(this)
     traces.push(...items)
-    this.generate()
+    this.format()
     return this
   }
 
@@ -81,15 +81,13 @@ export class TyError extends TypeError {
     return this.count ? this : null
   }
 
-  generate() {
-    const bands = { ...MESSAGES, ...this._templates }
+  format(templates = {}, breaklinetag = '\n', breakline = true) {
+    const bands = { ...MESSAGES, ...templates }
     const traces = this.traces
-
-    let breakline = this._breaklinetag
 
     // make more friendly
     if (traces.length < 2) {
-      breakline = ''
+      breaklinetag = ''
     }
 
     const messages = traces.map((trace, i) => {
@@ -99,30 +97,17 @@ export class TyError extends TypeError {
       const params = {
         i: i + 1,
         keyPath: makeKeyPath(keyPath),
-        should: info.length ? makeErrorShould(info, this._breakline) : '',
-        receive: inObject('value', trace) ? makeErrorReceive(value, this._breakline) : '',
+        should: info.length ? makeErrorShould(info, breakline) : '',
+        receive: inObject('value', trace) ? makeErrorReceive(value, breakline) : '',
       }
 
-      const text = makeErrorMessage(breakline, params, bands) + makeErrorMessage(type, params, bands)
+      const text = makeErrorMessage(breaklinetag, params, bands) + makeErrorMessage(type, params, bands)
       return text
     })
     const message = messages.join('')
 
     this._message = message
     return message
-  }
-
-  format(templates, breaklinetag, breakline = true) {
-    if (isObject(templates)) {
-      this._templates = { ...this._templates, ...templates }
-    }
-    if (isString(breaklinetag)) {
-      this._breaklinetag = breaklinetag
-    }
-    this._breakline = breakline
-
-    this.generate()
-    return this
   }
 }
 
