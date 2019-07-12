@@ -1,22 +1,10 @@
 import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray } from './utils.js'
 
-const MESSAGES = {
-  exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
-  unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
-  dirty: '{keyPath} receive `{receive}`, whose length does not match `{should}`.',
-  overflow: '{keyPath} should not exists.',
-  missing: '{keyPath} is missing.',
-}
-
 export class TyError extends TypeError {
   constructor(resource) {
     super()
     this.resources = []
     this.traces = []
-
-    this._templates = {}
-    this._breaklinetag = '\n'
-    this._breakline = TyError.breakLongMessageLine
 
     this.init(resource)
   }
@@ -81,13 +69,21 @@ export class TyError extends TypeError {
     return this.count ? this : null
   }
 
-  format(templates = {}, breaklinetag = '\n', breakline = true) {
-    const bands = { ...MESSAGES, ...templates }
+  format(templates = {}, breaktag = '\n', breakline, sensitive) {
+    const bands = { ...TyError.defaultMessages, ...templates }
     const traces = this.traces
+
+    if (breakline === undefined) {
+      breakline = TyError.shouldBreakLongMessage
+    }
+
+    if (sensitive === undefined) {
+      sensitive = TyError.shouldUseSensitiveData
+    }
 
     // make more friendly
     if (traces.length < 2) {
-      breaklinetag = ''
+      breaktag = ''
     }
 
     const messages = traces.map((trace, i) => {
@@ -98,10 +94,10 @@ export class TyError extends TypeError {
         i: i + 1,
         keyPath: makeKeyPath(keyPath),
         should: info.length ? makeErrorShould(info, breakline) : '',
-        receive: inObject('value', trace) ? makeErrorReceive(value, breakline) : '',
+        receive: inObject('value', trace) ? makeErrorReceive(value, breakline, sensitive) : '',
       }
 
-      const text = makeErrorMessage(breaklinetag, params, bands) + makeErrorMessage(type, params, bands)
+      const text = makeErrorMessage(breaktag, params, bands) + makeErrorMessage(type, params, bands)
       return text
     })
     const message = messages.join('')
@@ -111,9 +107,15 @@ export class TyError extends TypeError {
   }
 }
 
-TyError.shouldUserSensitiveData = true
-TyError.defaultMessages = MESSAGES
-TyError.breakLongMessageLine = true
+TyError.shouldUseSensitiveData = true
+TyError.shouldBreakLongMessage = true
+TyError.defaultMessages = {
+  exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
+  unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
+  dirty: '{keyPath} receive `{receive}` whose length does not match `{should}`.',
+  overflow: '{keyPath} should not exists.',
+  missing: '{keyPath} is missing.',
+}
 
 export default TyError
 
@@ -125,12 +127,7 @@ function makeErrorMessage(type, params, templates) {
   return text
 }
 
-export function makeValueString(value, useDetail, space = 2, breakline = true) {
-  // defualt can be change
-  if (useDetail === undefined) {
-    useDetail = !!TyError.shouldUserSensitiveData
-  }
-
+export function makeValueString(value, sensitive = true, breakline = true, space = 2) {
   const totype = typeof value
 
   const createspace = (count) => {
@@ -197,7 +194,7 @@ export function makeValueString(value, useDetail, space = 2, breakline = true) {
       return str
     }
     else {
-      return makeValueString(value, useDetail, space)
+      return makeValueString(value, sensitive, breakline, space)
     }
   }
 
@@ -205,29 +202,29 @@ export function makeValueString(value, useDetail, space = 2, breakline = true) {
     return value + ''
   }
   else if (totype === 'number') {
-    return useDetail ? value + '' : 'number:***'
+    return sensitive ? value + '' : '***'
   }
   else if (totype === 'string') {
-    return JSON.stringify(useDetail ? value : '***')
+    return JSON.stringify(sensitive ? value : '***')
   }
   else if (isFunction(value)) {
     return value.name + '()'
   }
   else if (isArray(value)) {
-    let items = value.map(item => makeValueString(item, useDetail, space + 2))
+    let items = value.map(item => makeValueString(item, sensitive, breakline, space + 2))
     let output = britems(items, '[', ']', space)
     return output
   }
   else if (isObject(value)) {
     let keys = Object.keys(value)
-    let output = useDetail ? stringify(value) : britems(keys, '{', '}', space)
+    let output = sensitive ? stringify(value) : britems(keys, '{', '}', space)
     return output
   }
   else if (typeof value === 'object') { // for class instances
     // type or rule
     if (inObject('pattern', value)) {
       const name = value.name
-      const output = makeValueString(value.pattern, useDetail, space)
+      const output = makeValueString(value.pattern, sensitive, breakline, space)
       return isString(name) ? name + '(' + output + ')' : output
     }
     else {
@@ -243,8 +240,8 @@ export function makeValueString(value, useDetail, space = 2, breakline = true) {
   }
 }
 
-function makeErrorReceive(value, breakline = true) {
-  const output = makeValueString(value, undefined, undefined, breakline)
+function makeErrorReceive(value, breakline = true, sensitive = true) {
+  const output = makeValueString(value, sensitive, breakline)
   return output
 }
 
@@ -254,11 +251,11 @@ function makeErrorShould(info, breakline = true) {
   }
 
   if (info.length === 1) {
-    return makeValueString(info[0], true, undefined, breakline)
+    return makeValueString(info[0], true, breakline)
   }
 
   const [name, pattern] = info
-  const output = name + '(' + makeValueString(pattern, true, undefined, breakline) + ')'
+  const output = name + '(' + makeValueString(pattern, true, breakline) + ')'
   return output
 }
 
