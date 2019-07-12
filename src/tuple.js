@@ -22,7 +22,7 @@ export class Tuple extends Type {
     if (!isArray(value)) {
       tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     }
-    else if (items.length != patterns.length) {
+    else if (this.isStrict && items.length != patterns.length) {
       tyerr.replace({ type: 'dirty', value, name: this.name, pattern })
     }
     else {
