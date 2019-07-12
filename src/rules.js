@@ -281,7 +281,9 @@ export function ifnotmatch(pattern, callback) {
  * Advance version of ifexist, determine whether a key need to exist with a determine function.
  * @param {Function} determine the function to return true or false,
  * if true, it means the key should MUST exist and will use the second parameter to check data type,
- * if false, it means the key can not exist
+ * if false:
+ *  a) when exist, will use the second parameter to check data type.
+ *  b) when not exit, ignore
  * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
 export function shouldexist(determine, pattern) {
@@ -329,7 +331,9 @@ export function shouldexist(determine, pattern) {
  * Advance version of ifexist, determine whether a key can not exist with a determine function.
  * @param {Function} determine the function to return true or false,
  * if true, it means the key should NOT exists,
- * if false, it means the key can not exist and will use the second parameter to check data type
+ * if false:
+ *  a) when exist, will use the second parameter to check data type.
+ *  b) when not exit, ignore
  * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
 export function shouldnotexist(determine, pattern) {
@@ -353,7 +357,6 @@ export function shouldnotexist(determine, pattern) {
     if (!shouldNotExist && !isExist) {
       return null
     }
-
 
     const error = catchErrorBy(this, pattern, value, key, data)
     return error
