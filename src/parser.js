@@ -1,18 +1,42 @@
 import Ty from './ty.js'
 import List from './list.js'
 import Enum from './enum.js'
-import Rule from './rule.js'
+import Tuple from './tuple.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity } from './prototypes.js'
-import { ifexist, shouldnotmatch, equal } from './rules.js'
-import { map, isArray, isObject, isString, inObject, isInstanceOf, inArray } from './utils.js'
-import Type from './type.js'
+import { ifexist, shouldnotmatch, equal, match } from './rules.js'
+import { map, isArray, isObject, isString } from './utils.js'
 
 export class Parser {
   constructor(types = {}) {
     this.types = { ...Parser.defaultTypes, ...types }
   }
 
-  // structure may be from backend through restful api
+  /**
+   * parse idl by using string
+   * @param {*} structure should must be an object
+   * {
+   *   __def__: [
+   *     {
+   *       name: 'book',
+   *       def: { name: 'string', price: 'float' },
+   *     },
+   *   ],
+   *   name: 'string',
+   *   age: 'number',
+   *   has_football: '?boolean', // ifexist
+   *   sex: 'F|M',
+   *   dot: '=xxxxx', // equal
+   *   belong: '?=animal', // ifexist equal
+   *   vioce: '!number', // should not match
+   *   num: 'string,numeric', // match multiple
+   *   parents: ['string', 'string'], // tuple
+   *   books: 'book[]', // list, use defined 'book'
+   *   body: {
+   *     head: 'boolean',
+   *     neck: 'boolean',
+   *   },
+   * }
+   */
   parse(structure) {
     const types = this.types
     const rules = {
@@ -33,19 +57,21 @@ export class Parser {
       }
       checkRule()
 
-      const items = def.split('|').map((item) => {
-        let lastTwoChars = item.substr(-2)
-        if (lastTwoChars === '[]') {
-          item = item.substr(0, item.length - 2)
-          const prototype = types[item]
-          return prototype ? new List([prototype]) : Array
-        }
-        else {
-          const prototype = types[item]
-          return prototype ? prototype : item
-        }
+      const items = def.split('|').map((word) => {
+        const words = word.split(',').map((item) => {
+          const lastTwoChars = item.substr(-2)
+          if (lastTwoChars === '[]') {
+            item = item.substr(0, item.length - 2)
+            const prototype = types[item]
+            return prototype ? new List([prototype]) : Array
+          }
+          else {
+            const prototype = types[item]
+            return prototype ? prototype : item
+          }
+        })
+        return words.length > 1 ? match(words) : words[0]
       })
-
       const type = items.length > 1 ? new Enum(items) : items[0]
 
       exp.reverse()
@@ -58,9 +84,24 @@ export class Parser {
       return pattern
     }
 
-    const pattern = map(structure, (def) => {
-      if (isArray(def) || isObject(def)) {
-        return this.parse(def)
+    let parser = this
+    const target = { ...structure }
+    const { __def__ } = target
+    delete target.__def__
+
+    if (__def__) {
+      __def__.forEach(({ name, def }) => {
+        const type = parser.parse(def)
+        parser = new Parser({ ...types, [name]: type })
+      })
+    }
+
+    const pattern = map(target, (def) => {
+      if (isObject(def)) {
+        return parser.parse(def)
+      }
+      else if (isArray(def)) {
+        return new Tuple(def.map(item => parse(item)))
       }
       else if (isString(def)) {
         return parse(def)
@@ -68,49 +109,6 @@ export class Parser {
     })
     const type = Ty.create(pattern)
     return type
-  }
-
-  json(type) {
-    const types = this.types
-    const rules = {
-      ifexist: '?',
-      equal: '=',
-      shouldnotmatch: '!',
-    }
-    const strs = Object.keys(types)
-    const pros = Object.values(types)
-
-    const getPattern = (type) => {
-      let { pattern } = type
-      if (isInstanceOf(pattern, Type) || isInstanceOf(pattern, Rule)) {
-        pattern = getPattern(pattern)
-      }
-      return pattern
-    }
-    const getJSON = (pattern) => {
-      const json = map(pattern, (def) => {
-        let str = ''
-        if (isInstanceOf(def, Rule)) {
-          const { name, pattern } = def
-          if (rules[name]) {
-            str += rules[name]
-          }
-          const proto = getPattern(pattern)
-          const index = pros.findIndex(item => item === proto || (isNaN(item) && isNaN(proto)))
-          const alias = index > -1 ? strs[index] : ''
-          str += alias
-        }
-        else if (isInstanceOf(def, Type)) {
-          const { name, pattern } = def
-          const subpattern = getJSON(pattern)
-        }
-      })
-      return json
-    }
-
-    const pattern = getPattern(type)
-    const json = getJSON(pattern)
-    return json
   }
 }
 
