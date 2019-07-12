@@ -39,7 +39,6 @@ export class Enum extends Type {
 
     tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     tyerr.commit()
-
     return tyerr
   }
 }

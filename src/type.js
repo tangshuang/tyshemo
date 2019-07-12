@@ -113,11 +113,7 @@ export class Type {
               tyerr.add({ type: 'missing', key })
             }
             else {
-              const info = { type: 'exception', key, value, name: 'rule:' + pattern.name, error }
-              if (error.pattern) {
-                info.pattern = error.pattern
-              }
-              tyerr.add(info)
+              tyerr.add({ error, key })
             }
           }
           // not found some key in data
@@ -132,14 +128,14 @@ export class Type {
             }
             const error = pattern.catch(value)
             if (error) {
-              tyerr.add({ type: 'exception', key, value, name: pattern.name, pattern: pattern.pattern, error })
+              tyerr.add({ error, key })
             }
           }
           // normal validate
           else {
             const error = this.validate(value, pattern)
             if (error) {
-              tyerr.add({ type: 'exception', key, value, pattern, error })
+              tyerr.add({ error, key })
             }
           }
         }
@@ -158,8 +154,7 @@ export class Type {
     }
 
     tyerr.commit()
-
-    return tyerr.count ? tyerr : null
+    return tyerr.error()
   }
 
   assert(value) {

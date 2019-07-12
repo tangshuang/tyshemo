@@ -11,7 +11,7 @@ export class Rule {
    * @param {string|function} message
    */
   constructor(options = {}) {
-    var { name, validate, override, message, prepare, complete, pattern } = options
+    var { name, validate, override, message, prepare, complete } = options
 
     this._prepare = prepare
     this._complete = complete
@@ -21,7 +21,6 @@ export class Rule {
 
     this.isStrict = false
     this.name = name || 'Rule'
-    this.pattern = pattern
     this.options = options
   }
 
@@ -40,7 +39,7 @@ export class Rule {
       const res = this._validate.call(this, value)
       if (isBoolean(res)) {
         if (!res) {
-          const msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : '{keyPath} not match rule ' + this.name
+          const msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : 'exception'
           const error = new Error(msg)
           return error
         }

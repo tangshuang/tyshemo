@@ -47,7 +47,7 @@ export class Tuple extends Type {
             tyerr.add({ type: 'missing', index })
           }
           else {
-            tyerr.add({ type: 'exception', value, index, name: pattern.name, error })
+            tyerr.add({ error, index })
           }
         }
         else if (!inObject(index, items)) {
@@ -60,14 +60,14 @@ export class Tuple extends Type {
           }
           let error = pattern.catch(value)
           if (error) {
-            tyerr.add({ type: 'exception', index, value, name: pattern.name, pattern: pattern.pattern, error })
+            tyerr.add({ error, index })
           }
         }
         // normal validate
         else {
           let error = this.validate(value, pattern)
           if (error) {
-            tyerr.add({ type: 'exception', index, value, pattern, error })
+            tyerr.add({ error, index })
           }
         }
       }

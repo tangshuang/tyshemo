@@ -3,6 +3,7 @@ import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from '
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
+import TyError, { makeValueString } from './ty-error.js'
 
 export function catchErrorBy(context, pattern, value, key, data) {
   const info = { value, context }
@@ -20,9 +21,6 @@ export function catchErrorBy(context, pattern, value, key, data) {
       pattern = pattern.strict
     }
     const error = pattern.validate(value, key, data)
-    if (error) {
-      error.pattern = pattern
-    }
     return error
   }
   else if (isInstanceOf(pattern, Type)) {
@@ -30,9 +28,6 @@ export function catchErrorBy(context, pattern, value, key, data) {
       pattern = pattern.strict
     }
     const error = pattern.catch(value)
-    if (error) {
-      error.pattern = pattern
-    }
     return error
   }
   else {
@@ -41,9 +36,6 @@ export function catchErrorBy(context, pattern, value, key, data) {
       type.toBeStrict()
     }
     const error = type.catch(value)
-    if (error) {
-      error.pattern = pattern
-    }
     return error
   }
 }
@@ -54,8 +46,9 @@ export function catchErrorBy(context, pattern, value, key, data) {
  */
 export function asynchronous(fn) {
   let pattern = null
+  let isReady = false
   function validate(value) {
-    if (pattern === null) {
+    if (!isReady) {
       return null
     }
     const error = catchErrorBy(this, pattern, value)
@@ -67,7 +60,7 @@ export function asynchronous(fn) {
   })
   Promise.resolve().then(() => fn()).then((res) => {
     pattern = res
-    rule.pattern = pattern
+    isReady = true
   })
   return rule
 }
@@ -134,36 +127,43 @@ export function determine(determine) {
  * @param {Rule|Type|Function} pattern
  * @param {String|Function} message
  */
-export function shouldmatch(pattern, message = '{keyPath} should match the type.') {
+export function shouldmatch(pattern, message) {
   function validate(value) {
+    let bool = true
     if (isFunction(pattern)) {
-      return !!pattern(value)
+      bool = !!pattern(value)
     }
     else if (isInstanceOf(pattern, Rule)) {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
       const res = pattern.validate(value)
-      return res === true || res === undefined || res === null
+      bool = (res === true || res === undefined || res === null)
     }
     else if (isInstanceOf(pattern, Type)) {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
-      return pattern.test(value)
+      bool = pattern.test(value)
     }
     else {
       const type = Ty.create(pattern)
       if (this.isStrict) {
         type.toBeStrict()
       }
-      return type.test(value)
+      bool = type.test(value)
+    }
+
+    if (message) {
+      return bool
+    }
+    else {
+      return new TyError({ type: 'exception', pattern, value })
     }
   }
   return new Rule({
     name: 'shouldmatch',
     message,
-    pattern,
     validate,
   })
 }
@@ -172,35 +172,42 @@ export function shouldmatch(pattern, message = '{keyPath} should match the type.
  * the passed value should not match patterns
  * @param {Pattern} pattern
  */
-export function shouldnotmatch(pattern, message = '{keyPath} should not match the type.') {
+export function shouldnotmatch(pattern, message) {
   function validate(value) {
+    let bool = true
     if (isFunction(pattern)) {
-      return !pattern(value)
+      bool = !pattern(value)
     }
     else if (isInstanceOf(pattern, Rule)) {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
-      return !!pattern.validate(value)
+      bool = !!pattern.validate(value)
     }
     else if (isInstanceOf(pattern, Type)) {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
-      return !pattern.test(value)
+      bool = !pattern.test(value)
     }
     else {
       const type = Ty.create(pattern)
       if (this.isStrict) {
         type.toBeStrict()
       }
-      return !type.test(value)
+      bool = !type.test(value)
+    }
+
+    if (message) {
+      return bool
+    }
+    else {
+      return new TyError({ type: 'unexcepted', pattern, value })
     }
   }
   return new Rule({
     name: 'shouldnotmatch',
     message,
-    pattern,
     validate,
   })
 }
@@ -242,7 +249,6 @@ export function ifexist(pattern) {
 
   return new Rule({
     name: 'ifexist',
-    pattern,
     validate,
     prepare,
     complete,
@@ -257,7 +263,7 @@ export function ifexist(pattern) {
  */
 export function ifnotmatch(pattern, callback) {
   function override({ value, key, data }) {
-    data[key] = isFunction(callback) ? callback({ value, key, data }) : callback
+    data[key] = isFunction(callback) ? callback({ value, key, data, pattern }) : callback
   }
   function validate(value) {
     const error = catchErrorBy(this, pattern, value)
@@ -266,7 +272,6 @@ export function ifnotmatch(pattern, callback) {
 
   return new Rule({
     name: 'ifnotmatch',
-    pattern,
     validate,
     override,
   })
@@ -314,7 +319,6 @@ export function shouldexist(determine, pattern) {
 
   return new Rule({
     name: 'shouldexist',
-    pattern,
     validate,
     prepare,
     complete,
@@ -342,7 +346,7 @@ export function shouldnotexist(determine, pattern) {
     const { key, data } = target
 
     if (shouldNotExist && isExist) {
-      const error = new Error('{keyPath} should not exist, but receive value.')
+      const error = new TyError({ type: 'overflow', key })
       return error
     }
 
@@ -369,7 +373,6 @@ export function shouldnotexist(determine, pattern) {
 
   return new Rule({
     name: 'shouldnotexist',
-    pattern,
     validate,
     prepare,
     complete,
@@ -380,25 +383,21 @@ export function shouldnotexist(determine, pattern) {
  * Whether the value is an instance of given class
  * @param {Constructor} Cons should be a class constructor
  */
-export function instance(Constructor) {
+export function beof(pattern) {
   return new Rule({
-    name: 'instance',
-    pattern: Constructor,
-    message: v => '{keyPath} ' + v + ' should be instance of ' + (Constructor.name || Constructor.toString()),
-    validate: value => isInstanceOf(value, Constructor, true),
+    name: 'beof',
+    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'beof' }),
   })
 }
 
 /**
  * Whether the value is eqaul to the given value
- * @param {Any} value
+ * @param {Any} target
  */
-export function equal(value) {
+export function equal(pattern) {
   return new Rule({
     name: 'equal',
-    pattern: value,
-    message: v => '{keyPath} ' + v + ' should eqaul ' + value,
-    validate: v => isEqual(value, v),
+    validate: value => isEqual(value, pattern) ? null : new TyError({ type: 'exception', value, pattern, name: 'equal' }),
   })
 }
 

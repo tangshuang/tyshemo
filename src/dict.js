@@ -30,8 +30,7 @@ export class Dict extends Type {
     }
 
     tyerr.commit()
-
-    return tyerr.count ? tyerr : null
+    return tyerr.error()
   }
 
   extend(fields) {

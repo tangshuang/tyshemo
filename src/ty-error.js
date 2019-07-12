@@ -40,58 +40,64 @@ export class TyError extends TypeError {
     return this.resources.length
   }
 
+  /**
+   * @param {string|error|object} resource
+   */
   add(resource) {
-    this.resources.push(resource)
+    if (isString(resource)) {
+      resource = new Error(resource)
+    }
+    if (isInstanceOf(resource, Error) || isObject(resource)) {
+      this.resources.push(resource)
+    }
+
+    return this
   }
 
   replace(resource) {
-    this.resources = [resource]
+    this.resources = []
+    this.add(resource)
+    return this
   }
 
   keep() {
     // do nothing
+    return this
   }
 
   commit() {
     const traces = this.traces = []
-    this.resources.forEach((item) => {
-      if (!isInstanceOf(item, TyError) && isInstanceOf(item, Error)) {
-        traces.push(item)
-        return
-      }
-
-      const innerTraces = makeErrorTraces(item)
-      traces.push(...innerTraces)
-    })
+    const items = makeErrorResources(this)
+    traces.push(...items)
+    this.translate()
+    return this
   }
 
-  translate(templates = {}, seprateor = '\nx: >> ', write = true) {
-    const words = { ...MESSAGES, ...templates }
+  error() {
+    return this.count ? this : null
+  }
+
+  translate(templates = {}, breaktag = '\nx: >> ', write = true) {
+    const bands = { ...MESSAGES, ...templates }
 
     const traces = this.traces
 
     // make more friendly
     if (traces.length < 2) {
-      seprateor = ''
+      breaktag = ''
     }
 
     const messages = traces.map((trace) => {
-      if (!isInstanceOf(trace, TyError) && isInstanceOf(trace, Error)) {
-        const params = trace.params || {}
-        const text = makeErrorMessage(trace.message, { ...params }, words)
-        return text
-      }
-
       const { type, keyPath, value, name, pattern } = trace
       const info = name && pattern ? [name, pattern] : name ? [name] : pattern ? [pattern] : []
 
       const params = {
         keyPath: makeKeyPath(keyPath),
-        should: isArray(info) ? makeErrorShould(info) : '',
+        should: info.length ? makeErrorShould(info) : '',
         receive: inObject('value', trace) ? makeErrorReceive(value) : '',
       }
 
-      const text = seprateor + makeErrorMessage(type, params, words)
+      const text = breaktag + makeErrorMessage(type, params, bands)
       return text
     })
     const message = messages.join('')
@@ -118,7 +124,7 @@ function makeErrorMessage(type, params, templates) {
   return text
 }
 
-function makeValueString(value, useDetail, space = 2) {
+export function makeValueString(value, useDetail, space = 2) {
   // defualt can be change
   if (useDetail === undefined) {
     useDetail = !!TyError.shouldUseDetailMessage
@@ -255,14 +261,28 @@ function makeErrorShould(info) {
   return output
 }
 
-function makeErrorTraces(item, keyPath = [], traces = []) {
-  if (isInstanceOf(item, TyError)) {
-    const items = item.traces ? item.traces : []
+function makeErrorResources(tyerr, keyPath = []) {
+  const { resources } = tyerr
+  const traces = []
+  resources.forEach((resource) => {
+    const innerTraces = makeErrorTraces(resource, [...keyPath])
+    traces.push(...innerTraces)
+  })
+  return traces
+}
+
+function makeErrorTraces(resource, keyPath = [], traces = []) {
+  if (isInstanceOf(resource, TyError)) {
+    const items = makeErrorResources(resource, [...keyPath])
     traces.push(...items)
     return traces
   }
+  else if (isInstanceOf(resource, Error)) {
+    traces.push({ type: resource.message, keyPath })
+    return traces
+  }
 
-  const { key, index, type, value, name, pattern, error } = item
+  const { key, index, type, value, name, pattern, error } = resource
 
   if (key !== undefined) {
     keyPath.push(key)
@@ -275,19 +295,18 @@ function makeErrorTraces(item, keyPath = [], traces = []) {
     traces.push({ type, keyPath, name, value, pattern })
     return traces
   }
+
   if (!error) {
     traces.push({ type, keyPath, value, name, pattern })
     return traces
   }
-
-  if (isInstanceOf(error, TyError)) {
-    const { resources } = error
-    resources.forEach(item => makeErrorTraces(item, [...keyPath], traces))
+  else if (isInstanceOf(error, TyError)) {
+    const items = makeErrorResources(error, [...keyPath])
+    traces.push(...items)
     return traces
   }
   else if (isInstanceOf(error, Error)) {
-    traces.push(error)
-    error.params = { keyPath: makeKeyPath(keyPath) }
+    traces.push({ type: error.message, keyPath })
     return traces
   }
   else {
