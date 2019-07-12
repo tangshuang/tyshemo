@@ -14,6 +14,10 @@ export class TyError extends TypeError {
     this.resources = []
     this.traces = []
 
+    this._templates = {}
+    this._breaklinetag = '\n'
+    this._breakline = TyError.breakLongMessageLine
+
     this.init(resource)
   }
 
@@ -21,7 +25,7 @@ export class TyError extends TypeError {
     if (resource) {
       this.add(resource)
       this.commit()
-      this.translate()
+      this.generate()
     }
   }
 
@@ -30,7 +34,7 @@ export class TyError extends TypeError {
       return this._message
     }
 
-    const message = this.translate()
+    const message = this.generate()
     this._message = message
 
     return message
@@ -69,7 +73,7 @@ export class TyError extends TypeError {
     const traces = this.traces = []
     const items = makeErrorResources(this)
     traces.push(...items)
-    this.translate()
+    this.generate()
     return this
   }
 
@@ -77,40 +81,52 @@ export class TyError extends TypeError {
     return this.count ? this : null
   }
 
-  translate(templates = {}, breaktag = '\nx: >> ', write = true) {
-    const bands = { ...MESSAGES, ...templates }
-
+  generate() {
+    const bands = { ...MESSAGES, ...this._templates }
     const traces = this.traces
+
+    let breakline = this._breaklinetag
 
     // make more friendly
     if (traces.length < 2) {
-      breaktag = ''
+      breakline = ''
     }
 
-    const messages = traces.map((trace) => {
+    const messages = traces.map((trace, i) => {
       const { type, keyPath, value, name, pattern } = trace
       const info = name && pattern ? [name, pattern] : name ? [name] : pattern ? [pattern] : []
 
       const params = {
+        i: i + 1,
         keyPath: makeKeyPath(keyPath),
-        should: info.length ? makeErrorShould(info) : '',
-        receive: inObject('value', trace) ? makeErrorReceive(value) : '',
+        should: info.length ? makeErrorShould(info, this._breakline) : '',
+        receive: inObject('value', trace) ? makeErrorReceive(value, this._breakline) : '',
       }
 
-      const text = breaktag + makeErrorMessage(type, params, bands)
+      const text = makeErrorMessage(breakline, params, bands) + makeErrorMessage(type, params, bands)
       return text
     })
     const message = messages.join('')
 
-    if (write) {
-      this._message = message
-    }
-
+    this._message = message
     return message
+  }
+
+  format(templates, breaklinetag, breakline = true) {
+    if (isObject(templates)) {
+      this._templates = { ...this._templates, ...templates }
+    }
+    if (isString(breaklinetag)) {
+      this._breaklinetag = breaklinetag
+    }
+    this._breakline = breakline
+
+    this.generate()
+    return this
   }
 }
 
-TyError.shouldUseDetailMessage = true
+TyError.shouldUserSensitiveData = true
 TyError.defaultMessages = MESSAGES
 TyError.breakLongMessageLine = true
 
@@ -124,10 +140,10 @@ function makeErrorMessage(type, params, templates) {
   return text
 }
 
-export function makeValueString(value, useDetail, space = 2) {
+export function makeValueString(value, useDetail, space = 2, breakline = true) {
   // defualt can be change
   if (useDetail === undefined) {
-    useDetail = !!TyError.shouldUseDetailMessage
+    useDetail = !!TyError.shouldUserSensitiveData
   }
 
   const totype = typeof value
@@ -140,7 +156,7 @@ export function makeValueString(value, useDetail, space = 2) {
     return str
   }
   const britems = (items, start, end, space = 2) => {
-    if (!TyError.breakLongMessageLine) {
+    if (!breakline) {
       return start + items.join(',') + end
     }
 
@@ -160,7 +176,7 @@ export function makeValueString(value, useDetail, space = 2) {
     if (isObject(value)) {
       let str = '{'
 
-      if (!TyError.breakLongMessageLine) {
+      if (!breakline) {
         each(value, (value, key) => {
           str += key + ':' + stringify(value) + ','
         })
@@ -179,7 +195,7 @@ export function makeValueString(value, useDetail, space = 2) {
     else if (isArray(value)) {
       let str = '['
 
-      if (!TyError.breakLongMessageLine) {
+      if (!breakline) {
         value.forEach((item) => {
           str += stringify(item)
         })
@@ -242,22 +258,22 @@ export function makeValueString(value, useDetail, space = 2) {
   }
 }
 
-function makeErrorReceive(value) {
-  const output = makeValueString(value)
+function makeErrorReceive(value, breakline = true) {
+  const output = makeValueString(value, undefined, undefined, breakline)
   return output
 }
 
-function makeErrorShould(info) {
+function makeErrorShould(info, breakline = true) {
   if (info.length === 0) {
     return '%unknown'
   }
 
   if (info.length === 1) {
-    return makeValueString(info[0], true)
+    return makeValueString(info[0], true, undefined, breakline)
   }
 
   const [name, pattern] = info
-  const output = name + '(' + makeValueString(pattern) + ')'
+  const output = name + '(' + makeValueString(pattern, true, undefined, breakline) + ')'
   return output
 }
 

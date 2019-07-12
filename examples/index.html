@@ -13,18 +13,33 @@
           fn()
         }
         catch (e) {
+          const templates = {
+            exception: '{keyPath} 应该是 {should}，但拿到的是 {receive}。'
+          }
+          e.format(templates, '\n{i}. ', true)
           console.error(e)
         }
       }
-
-      // TyError.shouldShowDetail = false
     </script>
     <script>
       const SomeType = dict({
-        some: ifexist(tuple([ new Enum([String, Boolean]), Number])),
+        a: ifexist(tuple([
+          new Enum([String, Boolean]),
+          Number,
+        ])),
+        b: {
+          title: String,
+          count: Number,
+        },
+        c: shouldmatch(dict({
+          name: String,
+          age: Number,
+        }), '{keyPath} 不是一个用户。'),
       })
       test(() => SomeType.assert({
-        some: [1],
+        a: [1],
+        b: 'null',
+        c: null,
       }))
     </script>
     <script>
