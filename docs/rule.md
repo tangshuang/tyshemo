@@ -186,7 +186,7 @@ If the target not match passed rule, you can set a value to replace.
 Only works for dict.
 
 - @param {Pattern} pattern
-- @param {Function|Any} replace
+- @param {Function|Any} callback
 
 ```js
 const SomeType = dict({
@@ -271,15 +271,15 @@ const SomeType = dict({
 })
 ```
 
-**implement**
+**beof**
 
 The value should be an instance of given class:
 
 ```js
 class MyPattern {}
 const MyType = dict({
-  someObj: implement(MyPattern),
-  age: implement(Number),
+  someObj: beof(MyPattern),
+  age: beof(Number),
 })
 
 let myins = new MyPattern()

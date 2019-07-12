@@ -4,7 +4,7 @@ import {
   shouldmatch, shouldnotmatch,
   ifexist, ifnotmatch,
   shouldexist, shouldnotexist,
-  instance, equal,
+  beof, equal,
 } from '../src/rules.js'
 import Dict from '../src/dict.js'
 
@@ -55,7 +55,21 @@ describe('Rule Generators', () => {
     expect(() => Some2Type.assert({ some: '12a' })).toThrowError()
     expect(Some2Type.catch({ some: 123 }).message).toBe(msg2)
   })
+  test('shouldnotmatch', () => {
+    const msg1 = 'It should not be a string.'
+    const SomeType = new Dict({
+      some: shouldnotmatch(String, msg1),
+      it: shouldnotmatch(Number),
+    })
 
+    expect(() => SomeType.assert({
+      some: 123,
+      it: '123',
+    })).not.toThrowError()
+    expect(SomeType.catch({
+      some: '123',
+    }).message).toBe(msg1)
+  })
   test('match + shouldmatch+shouldnotmatch', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'
@@ -111,8 +125,8 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ shouldnotexist: false, name: 'tomy' })).not.toThrowError()
   })
 
-  test('instance', () => {
-    const StringRule = instance(String)
+  test('beof', () => {
+    const StringRule = beof(String)
     const StringType = new Dict({
       some: StringRule,
     })

@@ -3,7 +3,7 @@ import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from '
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
-import TyError, { makeValueString } from './ty-error.js'
+import TyError from './ty-error.js'
 
 export function catchErrorBy(context, pattern, value, key, data) {
   const info = { value, context }
@@ -157,7 +157,7 @@ export function shouldmatch(pattern, message) {
     if (message) {
       return bool
     }
-    else {
+    else if (!bool) {
       return new TyError({ type: 'exception', pattern, value })
     }
   }
@@ -201,7 +201,7 @@ export function shouldnotmatch(pattern, message) {
     if (message) {
       return bool
     }
-    else {
+    else if (!bool) {
       return new TyError({ type: 'unexcepted', pattern, value })
     }
   }

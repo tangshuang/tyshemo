@@ -32,7 +32,7 @@ describe('Parser', () => {
       sex: 'F',
       dot: 'xxxxx',
       belong: 'animal',
-      vioce: 'string',
+      vioce: '123',
       num: '123',
       parents: ['Jhon', 'Lucy'],
       books: [

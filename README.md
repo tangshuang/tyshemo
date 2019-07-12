@@ -162,7 +162,7 @@ In TySheMo, we have defined rules:
 - ifnotmatch: if the property does not match the given type, use the given data to replace the property
 - shouldexist: determine whether the property should exist, if exists, check with the given type
 - shouldnotexist: determine whether the property should not exist
-- instance: the property should be an instance of the given class
+- beof: the property should be an instance of the given class
 - equal: the property should deep equal the given value
 - lambda: the property should be a function, and the input and output should match the given types
 
