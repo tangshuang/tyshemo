@@ -108,7 +108,7 @@ export class TyError extends TypeError {
 }
 
 TyError.shouldUseSensitiveData = true
-TyError.shouldBreakLongMessage = true
+TyError.shouldBreakLongMessage = false
 TyError.defaultMessages = {
   exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
   unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
