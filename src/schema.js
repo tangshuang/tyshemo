@@ -119,7 +119,7 @@ export class Schema {
       })
 
       tyerr.commit()
-      return tyerr.count ? tyerr : null
+      return tyerr.error()
     }
 
     // validate single key

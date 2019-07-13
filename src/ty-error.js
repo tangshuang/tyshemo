@@ -127,7 +127,7 @@ function makeErrorMessage(type, params, templates) {
   return text
 }
 
-export function makeValueString(value, sensitive = true, breakline = true, space = 2) {
+function makeValueString(value, sensitive = true, breakline = true, space = 2) {
   const totype = typeof value
 
   const createspace = (count) => {
