@@ -57,8 +57,8 @@ export class Parser {
       }
       checkRule()
 
-      const items = def.split('|').map((word) => {
-        const words = word.split(',').map((item) => {
+      const items = def.split(',').map((word) => {
+        const words = word.split('|').map((item) => {
           const lastTwoChars = item.substr(-2)
           if (lastTwoChars === '[]') {
             item = item.substr(0, item.length - 2)
@@ -70,9 +70,9 @@ export class Parser {
             return prototype ? prototype : item
           }
         })
-        return words.length > 1 ? match(words) : words[0]
+        return words.length > 1 ? new Enum(words) : words[0]
       })
-      const type = items.length > 1 ? new Enum(items) : items[0]
+      const type = items.length > 1 ? match(items) : items[0]
 
       exp.reverse()
 
