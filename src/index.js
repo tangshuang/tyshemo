@@ -29,6 +29,8 @@ export { TyError } from './ty-error.js'
 
 export { Schema } from './schema.js'
 
+export { Store } from './store.js'
+
 import { Model } from './model.js'
 export { Model }
 export default Model

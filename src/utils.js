@@ -302,6 +302,30 @@ export function assign(obj, path, value) {
   return obj
 }
 
+export function remove(obj, path) {
+  let chain = makeKeyChain(path)
+
+  if (!chain.length) {
+    return obj
+  }
+
+  if (chain.length === 1) {
+    delete obj[path]
+    return obj
+  }
+
+  let tail = chain.pop()
+  let keyPath = makeKeyPath(chain)
+  let target = parse(obj, keyPath)
+
+  if (!isObject(target) && !isArray(target)) {
+    return obj
+  }
+
+  delete target[tail]
+  return obj
+}
+
 export function sortBy(items, keyPath) {
   let res = [].concat(items)
   res.sort((a, b) => {

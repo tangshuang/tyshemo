@@ -43,18 +43,13 @@ export class Model {
     this.restore(data)
 
     function createProxy(data, parents = []) {
-      const subproxies = {}
       const handler = {
         get(state, key) {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
           const value = $this.get(path)
           if (isObject(value) || isArray(value)) {
-            if (subproxies[key]) {
-              return subproxies[key]
-            }
             const proxy = createProxy(value, [ ...parents, key ])
-            subproxies[key] = proxy
             return proxy
           }
           else {
@@ -65,16 +60,12 @@ export class Model {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
           $this.set(path, value)
-
-          delete subproxies[key]
           return true
         },
         deleteProperty(state, key) {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
           $this.del(path)
-
-          delete subproxies[key]
           return true
         },
       }
@@ -155,7 +146,7 @@ export class Model {
     }
 
     // compute and trigger watchers
-    this.digest()
+    this._digest()
 
     return this
   }
@@ -212,7 +203,7 @@ export class Model {
       return this
     }
 
-    this.digest()
+    this._digest()
 
     return this
   }
@@ -228,7 +219,7 @@ export class Model {
       if (error) {
         throw error
       }
-      this.digest()
+      this._digest()
       return Promise.resolve(this.data)
     }
 
@@ -257,7 +248,7 @@ export class Model {
         try {
           Object.assign(this.data, next)
           this._updators = {}
-          this.digest()
+          this._digest()
           resolve(this.data)
         }
         catch (e) {
@@ -284,7 +275,7 @@ export class Model {
     })
   }
 
-  compute() {
+  _compute() {
     this._isComputing = true
     this.schema.digest(this.data, this, (key, value) => {
       this.data[key] = value
@@ -292,7 +283,7 @@ export class Model {
     this._isComputing = false
   }
 
-  digest() {
+  _digest() {
     this._isDigesting = true
 
     var listeners = this._listeners.filter(({ key }) => key !== '*')
@@ -308,7 +299,7 @@ export class Model {
 
       // run computing before all watchers run
       // because the properties which are watched may based on computed properties
-      this.compute()
+      this._compute()
 
       listeners.forEach(({ key, fn }) => {
         const current = this.get(key)
@@ -412,7 +403,7 @@ export class Model {
 
     // use assign to recover, because developer may append some non-defined property to state
     Object.assign(this.data, making)
-    this.compute()
+    this._compute()
 
     return this.data
   }
