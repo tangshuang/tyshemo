@@ -408,6 +408,10 @@ export class Model {
     return this.data
   }
 
+  clone() {
+    return clone(this.data)
+  }
+
 }
 
 export default Model
