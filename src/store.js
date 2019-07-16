@@ -80,11 +80,23 @@ export class Store {
     })
   }
   watch(keyPath, fn, deep = false) {
+    if (isArray(keyPath)) {
+      const keyPaths = keyPath
+      keyPaths.forEach(keyPath => this.watch(keyPath, fn, deep))
+      return this
+    }
+
     const items = this._listeners
     items.push({ keyPath, fn, deep })
     return this
   }
   unwatch(keyPath, fn) {
+    if (isArray(keyPath)) {
+      const keyPaths = keyPath
+      keyPaths.forEach(keyPath => this.unwatch(keyPath, fn))
+      return this
+    }
+
     const items = this._listeners
     items.forEach((item, i) => {
       if (item.keyPath === keyPath && (item.fn === fn || fn === undefined)) {
@@ -122,10 +134,6 @@ export class Store {
     emitters.forEach(({ fn }) => {
       fn.call(this, newData, oldData, [keyPath, newValue, oldValue])
     })
-  }
-
-  clone() {
-    return clone(this.data)
   }
 }
 

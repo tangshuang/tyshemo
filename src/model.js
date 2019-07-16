@@ -259,20 +259,36 @@ export class Model {
   }
 
   watch(key, fn, priority = 10) {
+    if (isArray(key)) {
+      const keys = key
+      keys.forEach(key => this.watch(key, fn, priority))
+      return this
+    }
+
     const current = this.get(key)
     const value = clone(current)
 
     assign(this._cache, key, value)
     this._listeners.push({ key, fn, priority })
+
+    return this
   }
 
   unwatch(key, fn) {
+    if (isArray(key)) {
+      const keys = key
+      keys.forEach(key => this.unwatch(key, fn))
+      return this
+    }
+
     const listeners = this._listeners
     listeners.forEach((item, i) => {
       if (key === item.key && (item.fn === fn || fn === undefined)) {
         callbacks.splice(i, 1)
       }
     })
+
+    return this
   }
 
   _compute() {
@@ -405,11 +421,7 @@ export class Model {
     Object.assign(this.data, making)
     this._digest()
 
-    return this.data
-  }
-
-  clone() {
-    return clone(this.data)
+    return this
   }
 
 }
