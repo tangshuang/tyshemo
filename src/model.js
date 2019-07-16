@@ -403,7 +403,7 @@ export class Model {
 
     // use assign to recover, because developer may append some non-defined property to state
     Object.assign(this.data, making)
-    this._compute()
+    this._digest()
 
     return this.data
   }
