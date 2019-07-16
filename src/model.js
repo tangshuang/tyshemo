@@ -383,7 +383,7 @@ export class Model {
     const error = this.schema.validate(key, value, this)
     const message = error ? error.message : ''
 
-    this._errors[key] = error.message
+    this._errors[key] = message
     setTimeout(() => {
       delete this._errors[key]
     })
