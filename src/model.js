@@ -284,7 +284,7 @@ export class Model {
     const listeners = this._listeners
     listeners.forEach((item, i) => {
       if (key === item.key && (item.fn === fn || fn === undefined)) {
-        callbacks.splice(i, 1)
+        listeners.splice(i, 1)
       }
     })
 
