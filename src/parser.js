@@ -19,7 +19,7 @@ export class Parser {
    * parse idl by using string
    * @param {*} description should must be an object
    * {
-   *   __def__: [
+   *   $_def: [
    *     {
    *       name: 'book',
    *       def: { name: 'string', price: 'float' },
@@ -90,11 +90,11 @@ export class Parser {
 
     let parser = this
     const target = { ...description }
-    const { __def__ } = target
-    delete target.__def__
+    const { $_def } = target
+    delete target.$_def
 
-    if (__def__) {
-      __def__.forEach(({ name, def }) => {
+    if ($_def) {
+      $_def.forEach(({ name, def }) => {
         const type = parser.parse(def)
         parser = new Parser({ ...types, [name]: type })
       })
