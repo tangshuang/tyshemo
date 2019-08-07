@@ -1,3 +1,5 @@
+const express = require('express')
+
 module.exports = {
   mode: 'none',
   entry: __dirname + '/src/index.js',
@@ -36,5 +38,8 @@ module.exports = {
     contentBase: __dirname + '/examples',
     index: 'index.html',
     port: 9000,
+    before(app) {
+      app.use(express.static(__dirname + '/src'))
+    },
   },
 }

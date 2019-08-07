@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+
+<script type="module">
+import Dict from './dict.js'
+import List from './list.js'
+import Tuple from './tuple.js'
+import Enum from './enum.js'
+import Range from './range.js'
+
+import { Float } from './index.js'
+
+import Generator from './generator.js'
+
+const book = new Dict({
+  name: String,
+  price: Float,
+})
+const parents = new Tuple([String, String])
+const sex = new Enum(['F', 'M'])
+const height = new Range({ min: 120, max: 200 })
+const dict = new Dict({
+  name: String,
+  age: Number,
+  books: [book],
+  parents,
+  sex,
+  height,
+})
+
+const generator = new Generator()
+const description = generator.describe(dict)
+
+console.log(description)
+</script>

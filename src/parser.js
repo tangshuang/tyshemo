@@ -7,13 +7,17 @@ import { ifexist, shouldnotmatch, equal, match } from './rules.js'
 import { map, isArray, isObject, isString } from './utils.js'
 
 export class Parser {
-  constructor(types = {}) {
+  constructor(types) {
+    this.init(types)
+  }
+
+  init(types = {}) {
     this.types = { ...Parser.defaultTypes, ...types }
   }
 
   /**
    * parse idl by using string
-   * @param {*} structure should must be an object
+   * @param {*} description should must be an object
    * {
    *   __def__: [
    *     {
@@ -37,7 +41,7 @@ export class Parser {
    *   },
    * }
    */
-  parse(structure) {
+  parse(description) {
     const types = this.types
     const rules = {
       '?': ifexist,
@@ -85,7 +89,7 @@ export class Parser {
     }
 
     let parser = this
-    const target = { ...structure }
+    const target = { ...description }
     const { __def__ } = target
     delete target.__def__
 
