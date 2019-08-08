@@ -1,5 +1,5 @@
 import Prototype from './prototype.js'
-import { isNull, isUndefined, isNumeric, isNumber } from './utils.js'
+import { isNull, isUndefined, isNumeric, isNumber, isString } from './utils.js'
 
 export const Null = new Prototype({
   name: 'Null',
@@ -49,4 +49,29 @@ export const Finity = new Prototype({
 export const Zero = new Prototype({
   name: 'Zero',
   validate: value => value === 0,
+})
+
+export const String8 = new Prototype({
+  name: 'String8',
+  validate: value => isString(value) && value.length <= 8,
+})
+
+export const String16 = new Prototype({
+  name: 'String16',
+  validate: value => isString(value) && value.length <= 16,
+})
+
+export const String32 = new Prototype({
+  name: 'String32',
+  validate: value => isString(value) && value.length <= 32,
+})
+
+export const String64 = new Prototype({
+  name: 'String64',
+  validate: value => isString(value) && value.length <= 64,
+})
+
+export const String128 = new Prototype({
+  name: 'String128',
+  validate: value => isString(value) && value.length <= 128,
 })

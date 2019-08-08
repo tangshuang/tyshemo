@@ -7,12 +7,13 @@ import Tuple from './tuple.js'
 import Enum from './enum.js'
 import Range from './range.js'
 
-import { Float, ifexist, equal, shouldnotmatch, match } from './index.js'
+import { Float, ifexist, equal, shouldnotmatch, match, String8 } from './index.js'
 
 import Parser from './parser.js'
+import Mocker from './mocker.js'
 
 const book = new Dict({
-  name: String,
+  name: String8,
   price: Float,
 })
 const parents = new Tuple([String, String])
@@ -39,4 +40,8 @@ console.log(JSON.stringify(description, null, 2))
 
 const type = parser.parse(description)
 console.log(type)
+
+const mocker = new Mocker()
+const data = mocker.mock(dict)
+console.log(JSON.stringify(data, null, 2))
 </script>

@@ -1,5 +1,4 @@
 import Ty from './ty.js'
-import Type from './type.js'
 import Dict from './dict.js'
 import List from './list.js'
 import Enum from './enum.js'
@@ -21,6 +20,7 @@ export class Parser {
 
   define(target, text) {
     this.types[text] = target
+    return this
   }
 
   /**
