@@ -9,7 +9,7 @@ import Range from './range.js'
 
 import { Float } from './index.js'
 
-import Generator from './generator.js'
+import Parser from './parser.js'
 
 const book = new Dict({
   name: String,
@@ -17,7 +17,7 @@ const book = new Dict({
 })
 const parents = new Tuple([String, String])
 const sex = new Enum(['F', 'M'])
-const height = new Range({ min: 120, max: 200 })
+const height = new Range({ min: 120, max: 200, maxBound: false, minBound: true })
 const dict = new Dict({
   name: String,
   age: Number,
@@ -27,8 +27,10 @@ const dict = new Dict({
   height,
 })
 
-const generator = new Generator()
-const description = generator.describe(dict)
-
+const parser = new Parser()
+const description = parser.describe(dict)
 console.log(description)
+
+const type = parser.parse(description)
+console.log(type)
 </script>
