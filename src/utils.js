@@ -29,6 +29,10 @@ export function isFunction(value) {
     && (value + '').indexOf('_classCallCheck(this,') === -1 // for babel transfered class
 }
 
+export function isPromise(value) {
+  return isInstanceOf(value, Promise)
+}
+
 export function isSymbol(value) {
   return typeof value === 'symbol'
 }

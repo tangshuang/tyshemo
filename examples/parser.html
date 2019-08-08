@@ -7,7 +7,7 @@ import Tuple from './tuple.js'
 import Enum from './enum.js'
 import Range from './range.js'
 
-import { Float } from './index.js'
+import { Float, ifexist, equal, shouldnotmatch, match } from './index.js'
 
 import Parser from './parser.js'
 
@@ -25,11 +25,17 @@ const dict = new Dict({
   parents,
   sex,
   height,
+
+  ifexist: ifexist(book),
+  equal: equal({ color: 'white' }),
+  shouldnotmatch: shouldnotmatch(Object),
+  match: match([Number, Float]),
+  nest: shouldnotmatch(equal(Number))
 })
 
 const parser = new Parser()
 const description = parser.describe(dict)
-console.log(description)
+console.log(JSON.stringify(description, null, 2))
 
 const type = parser.parse(description)
 console.log(type)

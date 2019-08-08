@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from './utils.js'
+import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual, isNumber } from './utils.js'
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
@@ -57,10 +57,12 @@ export function asynchronous(fn) {
   const rule = new Rule({
     name: 'asynchronous',
     validate,
+    pattern: fn,
   })
   Promise.resolve().then(() => fn()).then((res) => {
     pattern = res
     isReady = true
+    rule._pattern = pattern
   })
   return rule
 }
@@ -82,6 +84,7 @@ export function match(patterns) {
   return new Rule({
     name: 'match',
     validate,
+    pattern: patterns,
   })
 }
 
@@ -89,13 +92,21 @@ export function match(patterns) {
  * determine which pattern to use.
  * @param {Function} determine a function to receive parent node of current key, and return a pattern
  */
-export function determine(determine) {
+export function determine(determine, patterns = []) {
   let isReady = false
   let pattern = null
   let target = {}
 
   function prepare({ value, key, data }) {
-    pattern = determine({ value, key, data })
+    const index = determine({ value, key, data })
+
+    if (isNumber(index) && patterns) {
+      pattern = patterns[index]
+    }
+    else {
+      pattern = index
+    }
+
     isReady = true
     target = { key, data }
   }
@@ -119,6 +130,7 @@ export function determine(determine) {
     validate,
     prepare,
     complete,
+    pattern: patterns,
   })
 }
 
@@ -165,6 +177,7 @@ export function shouldmatch(pattern, message) {
     name: 'shouldmatch',
     message,
     validate,
+    pattern,
   })
 }
 
@@ -209,6 +222,7 @@ export function shouldnotmatch(pattern, message) {
     name: 'shouldnotmatch',
     message,
     validate,
+    pattern,
   })
 }
 
@@ -252,6 +266,7 @@ export function ifexist(pattern) {
     validate,
     prepare,
     complete,
+    pattern,
   })
 }
 
@@ -274,6 +289,7 @@ export function ifnotmatch(pattern, callback) {
     name: 'ifnotmatch',
     validate,
     override,
+    pattern,
   })
 }
 
@@ -324,6 +340,7 @@ export function shouldexist(determine, pattern) {
     validate,
     prepare,
     complete,
+    pattern,
   })
 }
 
@@ -379,6 +396,7 @@ export function shouldnotexist(determine, pattern) {
     validate,
     prepare,
     complete,
+    pattern,
   })
 }
 
@@ -390,6 +408,7 @@ export function beof(pattern) {
   return new Rule({
     name: 'beof',
     validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'beof' }),
+    pattern,
   })
 }
 
@@ -401,6 +420,7 @@ export function equal(pattern) {
   return new Rule({
     name: 'equal',
     validate: value => isEqual(value, pattern) ? null : new TyError({ type: 'exception', value, pattern, name: 'equal' }),
+    pattern,
   })
 }
 

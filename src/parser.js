@@ -8,7 +8,7 @@ import Range from './range.js'
 import Rule from './rule.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
-import { map, each, isInstanceOf, isArray, isObject, isString, isEqual } from './utils.js'
+import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction } from './utils.js'
 
 export class Parser {
   constructor(types) {
@@ -17,6 +17,10 @@ export class Parser {
 
   init(types = {}) {
     this.types = { ...Parser.defaultTypes, ...types }
+  }
+
+  define(target, text) {
+    this.types[text] = target
   }
 
   /**
@@ -53,20 +57,20 @@ export class Parser {
       '=': equal,
       '!': shouldnotmatch,
     }
-    const parse = (def) => {
+    const parse = (description) => {
       const exp = []
 
       const checkRule = () => {
-        let firstChar = def.charAt(0)
+        let firstChar = description.charAt(0)
         if (rules[firstChar]) {
           exp.push(rules[firstChar])
-          def = def.substr(1)
+          description = description.substr(1)
           checkRule()
         }
       }
       checkRule()
 
-      const items = def.split(',').map((word) => {
+      const items = description.split(',').map((word) => {
         const words = word.split('|').map((item) => {
           const lastTwoChars = item.substr(-2)
           if (lastTwoChars === '[]') {
@@ -107,22 +111,22 @@ export class Parser {
     delete target.__def__
 
     if (__def__) {
-      __def__.forEach(({ name, def }) => {
-        const type = parser.parse(def)
+      __def__.forEach(({ name, def, origin }) => {
+        const type = origin ? def : parser.parse(def)
         types = { ...types, [name]: type }
         parser = new Parser(types)
       })
     }
 
-    const pattern = map(target, (def) => {
-      if (isObject(def)) {
-        return parser.parse(def)
+    const pattern = map(target, (description) => {
+      if (isObject(description)) {
+        return parser.parse(description)
       }
-      else if (isArray(def)) {
-        return new Tuple(def.map(item => parse(item)))
+      else if (isArray(description)) {
+        return new Tuple(description.map(item => parse(item)))
       }
-      else if (isString(def)) {
-        return parse(def)
+      else if (isString(description)) {
+        return parse(description)
       }
     })
     const type = Ty.create(pattern)
@@ -140,82 +144,140 @@ export class Parser {
       const type = types.find(item => item[1] === value)
       return type ? type[0] : null
     }
-    const define = (v) => {
+    const define = (v, origin = false) => {
       if (v && typeof v === 'object') {
-        const i = __def__.length + 1
-        const name = '$' + i
-        __def__.push({
-          name,
-          def: v,
-        })
-        return name
-      }
-      else {
         const existing = __def__.find(item => isEqual(item.def, v))
         if (existing) {
           return existing.name
         }
+
+        const i = __def__.length + 1
+        const name = '$' + i
+        const def = {
+          name,
+          def: v,
+        }
+        if (origin) {
+          def.origin = true
+        }
+        __def__.push(def)
+        return name
+      }
+      else {
         return v
       }
     }
 
+    const create = (value) => {
+      let proto = get(value)
+      if (!proto) {
+        if (isInstanceOf(value, Dict)) {
+          proto = build(value.pattern)
+        }
+        else if (isInstanceOf(value, Tuple)) {
+          proto = build(value.pattern)
+        }
+        else if (isInstanceOf(value, List)) {
+          const { pattern } = value
+          const items = pattern.map(build)
+          const desc = items.map(item => define(item) + '[]').join('|')
+          proto = desc
+        }
+        else if (isInstanceOf(value, Enum)) {
+          const { pattern } = value
+          const items = pattern.map(build)
+          const desc = items.join('|')
+          proto = desc
+        }
+        else if (isInstanceOf(value, Range)) {
+          const { pattern } = value
+          const { min, max, minBound, maxBound } = pattern
+          const desc = `${min}${minBound ? '<' : ''}-${maxBound ? '>' : ''}${max}`
+          proto = desc
+        }
+        else if (isInstanceOf(value, Rule)) {
+          const { name } = value
+          const pattern = value._pattern
+
+          if (name === 'ifexist') {
+            const inner = create(pattern)
+            proto = '?' + define(inner)
+          }
+          else if (name === 'equal') {
+            const inner = create(pattern)
+            proto = '=' + define(inner, true)
+          }
+          else if (name === 'shouldnotmatch') {
+            const inner = create(pattern)
+            proto = '!' + define(inner)
+          }
+          else if (name === 'match') {
+            const items = build(pattern)
+            proto = items.join(',')
+          }
+          else if (name === 'asynchronous') {
+            proto = create(pattern)
+          }
+          else if (name === 'determine') {
+            const items = build(pattern)
+            proto = items.join('|')
+          }
+          else if (name === 'shouldmatch') {
+            proto = create(pattern)
+          }
+          else if (name === 'ifnotmatch') {
+            proto = create(pattern)
+          }
+          else if (name === 'shouldexist') {
+            const inner = create(pattern)
+            proto = '?' + define(inner)
+          }
+          else if (name === 'shouldnotexist') {
+            const inner = create(pattern)
+            proto = '?' + define(inner)
+          }
+          else if (name === 'beof') {
+            proto = create(pattern)
+          }
+          else if (name === 'lambda') {
+            proto = 'function'
+          }
+          else {
+            proto = ':' + name
+          }
+        }
+        else if (isObject(value)) {
+          proto = build(value)
+        }
+        else if (isArray(value)) {
+          const items = build(value)
+          const desc = items.map(item => define(item) + '[]').join('|')
+          proto = desc
+        }
+      }
+      return proto
+    }
     const build = (pattern) => {
       const proto = get(pattern)
       if (proto) {
         return proto
       }
 
-      const description = isArray(pattern) ? [] : {}
+      const desc = isArray(pattern) ? [] : {}
       each(pattern, (value, key) => {
-        let proto = get(value)
-        if (!proto) {
-          if (isInstanceOf(value, Dict)) {
-            proto = build(value.pattern)
-          }
-          else if (isInstanceOf(value, Tuple)) {
-            proto = build(value.pattern)
-          }
-          else if (isInstanceOf(value, List)) {
-            const { pattern } = value
-            const items = pattern.map(build)
-            const desc = items.map(item => define(item) + '[]').join('|')
-            proto = desc
-          }
-          else if (isInstanceOf(value, Enum)) {
-            const { pattern } = value
-            const items = pattern.map(build)
-            const desc = items.join('|')
-            proto = desc
-          }
-          else if (isInstanceOf(value, Range)) {
-            const { pattern } = value
-            const { min, max, minBound, maxBound } = pattern
-            const desc = `${min}${minBound ? '<' : ''}-${maxBound ? '>' : ''}${max}`
-            proto = desc
-          }
-          else if (isInstanceOf(value, Rule)) {
-
-          }
-          else if (isObject(value)) {
-            proto = build(value)
-          }
-          else if (isArray(value)) {
-            const items = build(value)
-            const desc = items.map(item => define(item) + '[]').join('|')
-            proto = desc
-          }
-        }
-        description[key] = proto
+        const proto = create(value)
+        desc[key] = proto
       })
-      return description
+      return desc
     }
 
     const description = build(pattern)
     if (__def__.length) {
-      description.__def__ = __def__
+      return { __def__, ...description }
     }
-
-    return description
+    else {
+      return description
+    }
   }
 }
 

@@ -11,13 +11,14 @@ export class Rule {
    * @param {string|function} message
    */
   constructor(options = {}) {
-    var { name, validate, override, message, prepare, complete } = options
+    var { name, validate, override, message, prepare, complete, pattern } = options
 
     this._prepare = prepare
     this._complete = complete
     this._validate = validate
     this._override = override
     this._message = message
+    this._pattern = pattern
 
     this.isStrict = false
     this.name = name || 'Rule'
