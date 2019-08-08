@@ -14,7 +14,7 @@ export class Mocker {
     this.init(loaders)
   }
   init(loaders = []) {
-    this.loaders = [...Mocker.defaultLoaders, ...loaders]
+    this.loaders = [...loaders, ...Mocker.defaultLoaders]
   }
 
   define(target, loader) {
