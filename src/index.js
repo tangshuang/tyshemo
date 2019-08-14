@@ -15,16 +15,18 @@ export { Range, range } from './range.js'
 export { Rule } from './rule.js'
 export {
   asynchronous,
+  ifexist,
   match,
   determine,
   shouldmatch,
   shouldnotmatch,
-  ifexist,
   ifnotmatch,
+  ifmatch,
   shouldexist,
   shouldnotexist,
   beof,
   equal,
+  nullor,
   lambda,
 } from './rules.js'
 

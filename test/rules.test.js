@@ -2,9 +2,9 @@ import { Any, Numeric } from '../src/prototypes.js'
 import {
   asynchronous, determine, match,
   shouldmatch, shouldnotmatch,
-  ifexist, ifnotmatch,
+  ifexist, ifnotmatch, ifmatch,
   shouldexist, shouldnotexist,
-  beof, equal,
+  beof, equal, nullor,
 } from '../src/rules.js'
 import Dict from '../src/dict.js'
 
@@ -149,6 +149,21 @@ describe('Rule Generators', () => {
       some: 'lucy',
     })).toThrowError()
   })
+  test('nullor', () => {
+    const SomeRule = nullor(String)
+    const SomeType = new Dict({
+      some: SomeRule,
+    })
+    expect(() => SomeType.assert({
+      some: 'lucy',
+    })).not.toThrowError()
+    expect(() => SomeType.assert({
+      some: null,
+    })).not.toThrowError()
+    expect(() => SomeType.assert({
+      some: 111,
+    })).toThrowError()
+  })
 
   test('ifexist + ifnotmatch', () => {
     const SomeRule = ifexist(ifnotmatch(String, ''))
@@ -158,6 +173,20 @@ describe('Rule Generators', () => {
 
     const data = {
       some: 10,
+    }
+    expect(() => SomeType.assert(data)).not.toThrowError()
+    expect(data.some).toBe('')
+    expect(() => SomeType.assert({})).not.toThrowError()
+  })
+
+  test('ifmatch', () => {
+    const SomeRule = ifmatch(null, '')
+    const SomeType = new Dict({
+      some: SomeRule,
+    })
+
+    const data = {
+      some: null,
     }
     expect(() => SomeType.assert(data)).not.toThrowError()
     expect(data.some).toBe('')

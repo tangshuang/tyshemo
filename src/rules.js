@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual, isNumber } from './utils.js'
+import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual, isNumber, isEmpty } from './utils.js'
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'
@@ -271,7 +271,7 @@ export function ifexist(pattern) {
 }
 
 /**
- * If the value not match pattern, use defaultValue as value.
+ * If the value not match pattern, use callback as value.
  * Notice, this will modify original data, which may cause error, so be careful.
  * @param {Pattern} pattern
  * @param {Function|Any} callback a function to return new value with origin old value
@@ -289,6 +289,39 @@ export function ifnotmatch(pattern, callback) {
     name: 'ifnotmatch',
     validate,
     override,
+    pattern,
+  })
+}
+
+/**
+ * If the value match pattern, use callback as value.
+ * @param {*} pattern
+ * @param {*} callback
+ */
+export function ifmatch(pattern, callback) {
+  let isOverrided = false
+
+  function override({ value, key, data }) {
+    data[key] = isFunction(callback) ? callback({ value, key, data, pattern }) : callback
+    isOverrided = true
+  }
+  function validate(value) {
+    if (isOverrided) {
+      return null
+    }
+
+    const error = catchErrorBy(this, pattern, value)
+    return !!error
+  }
+  function complete() {
+    isOverrided = false
+  }
+
+  return new Rule({
+    name: 'ifmatch',
+    validate,
+    override,
+    complete,
     pattern,
   })
 }
@@ -420,6 +453,24 @@ export function equal(pattern) {
   return new Rule({
     name: 'equal',
     validate: value => isEqual(value, pattern) ? null : new TyError({ type: 'exception', value, pattern, name: 'equal' }),
+    pattern,
+  })
+}
+
+/**
+ * Can be null, or match the passed pattern
+ * @param {*} pattern
+ */
+export function nullor(pattern) {
+  return new Rule({
+    name: 'nullor',
+    validate: function(value) {
+      if (value === null) {
+        return null
+      }
+      const error = catchErrorBy(this, pattern, value)
+      return error
+    },
     pattern,
   })
 }
