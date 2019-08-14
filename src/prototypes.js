@@ -51,6 +51,11 @@ export const Zero = new Prototype({
   validate: value => value === 0,
 })
 
+export const Natural = new Prototype({
+  name: 'Natural',
+  validate: value => isNumber(value) && Number.isInteger(value) && value >= 0,
+})
+
 export const String8 = new Prototype({
   name: 'String8',
   validate: value => isString(value) && value.length <= 8,

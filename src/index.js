@@ -1,7 +1,8 @@
 export { Prototype } from './prototype.js'
 export {
-  Null, Undefined, Numeric, Any,
-  Int, Float, Negative, Positive, Finity, Zero,
+  Null, Undefined, Any,
+  Numeric,
+  Int, Float, Negative, Positive, Natural, Finity, Zero,
   String8, String16, String32, String64, String128,
 } from './prototypes.js'
 
