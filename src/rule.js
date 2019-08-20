@@ -11,7 +11,9 @@ export class Rule {
    * @param {string|function} message
    */
   constructor(options = {}) {
-    var { name, validate, override, message, prepare, complete, pattern } = options
+    let { name, validate, override, message, prepare, complete, pattern } = options
+
+    this._listeners = []
 
     this._prepare = prepare
     this._complete = complete
@@ -23,6 +25,27 @@ export class Rule {
     this.isStrict = false
     this.name = name || 'Rule'
     this.options = options
+  }
+
+  bind(fn) {
+    if (isFunction(fn)) {
+      this._listeners.push(fn)
+    }
+    return this
+  }
+  unbind(fn) {
+    this._listeners.forEach((item, i) => {
+      if (item === fn) {
+        this._listeners.splice(i, 1)
+      }
+    })
+    return this
+  }
+  dispatch(error) {
+    this._listeners.forEach((fn) => {
+      Promise.resolve().then(() => fn.call(this, error))
+    })
+    return this
   }
 
   /**
@@ -42,11 +65,13 @@ export class Rule {
         if (!res) {
           const msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : 'exception'
           const error = new Error(msg)
+          this.dispatch(error)
           return error
         }
       }
       else if (isInstanceOf(res, Error)) {
         const error = res
+        this.dispatch(error)
         return error
       }
     }
