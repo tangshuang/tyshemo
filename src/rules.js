@@ -62,7 +62,7 @@ export function asynchronous(fn) {
   Promise.resolve().then(() => fn()).then((res) => {
     pattern = res
     isReady = true
-    rule._pattern = pattern
+    rule.pattern = pattern
   })
   return rule
 }

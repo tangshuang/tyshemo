@@ -20,8 +20,8 @@ export class Rule {
     this._validate = validate
     this._override = override
     this._message = message
-    this._pattern = pattern
 
+    this.pattern = pattern
     this.isStrict = false
     this.name = name || 'Rule'
     this.options = options

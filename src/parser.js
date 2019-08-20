@@ -8,6 +8,7 @@ import Rule from './rule.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
 import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction } from './utils.js'
+import Type from './type.js'
 
 export class Parser {
   constructor(types) {
@@ -133,7 +134,6 @@ export class Parser {
     return type
   }
   describe(dict) {
-    const { pattern } = dict
     const __def__ = []
 
     const types = Object.entries(this.types)
@@ -196,8 +196,7 @@ export class Parser {
           proto = desc
         }
         else if (isInstanceOf(value, Rule)) {
-          const { name } = value
-          const pattern = value._pattern
+          const { name, pattern } = value
 
           if (name === 'ifexist') {
             const inner = create(pattern)
@@ -257,12 +256,13 @@ export class Parser {
       }
       return proto
     }
-    const build = (pattern) => {
-      const proto = get(pattern)
+    const build = (type) => {
+      const proto = get(type)
       if (proto) {
         return proto
       }
 
+      const pattern = isInstanceOf(type, Type) || isInstanceOf(type, Rule) ? type.pattern : type
       const desc = isArray(pattern) ? [] : {}
       each(pattern, (value, key) => {
         const proto = create(value)
@@ -271,7 +271,7 @@ export class Parser {
       return desc
     }
 
-    const description = build(pattern)
+    const description = build(dict)
     if (__def__.length) {
       return { __def__, ...description }
     }

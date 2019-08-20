@@ -22,7 +22,7 @@ const height = new Range({ min: 120, max: 200, maxBound: false, minBound: true }
 const dict = new Dict({
   name: String,
   age: Number,
-  books: [book],
+  books: new List([book]),
   parents,
   sex,
   height,
@@ -36,12 +36,13 @@ const dict = new Dict({
 
 const parser = new Parser()
 const description = parser.describe(dict)
+console.log(description)
 console.log(JSON.stringify(description, null, 2))
 
-const type = parser.parse(description)
-console.log(type)
+// const type = parser.parse(description)
+// console.log(type)
 
-const mocker = new Mocker()
-const data = mocker.mock(dict)
-console.log(JSON.stringify(data, null, 2))
+// const mocker = new Mocker()
+// const data = mocker.mock(dict)
+// console.log(JSON.stringify(data, null, 2))
 </script>

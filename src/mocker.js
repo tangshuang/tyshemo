@@ -72,8 +72,7 @@ export class Mocker {
         }
       }
       else if (isInstanceOf(target, Rule)) {
-        const { name } = target
-        const pattern = target._pattern
+        const { name, pattern } = target
         const determine = () => !!(parseInt(Math.random() * 10, 10) % 2)
 
         if (name === 'ifexist' || name === 'shouldexist' || name === 'shouldnotexist') {
