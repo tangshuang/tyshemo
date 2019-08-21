@@ -4,6 +4,7 @@ import List from './list.js'
 import Enum from './enum.js'
 import Tuple from './tuple.js'
 import Range from './range.js'
+import Mapping from './mapping.js'
 import Rule from './rule.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
@@ -73,8 +74,7 @@ export class Parser {
 
       const items = description.split(',').map((word) => {
         const words = word.split('|').map((item) => {
-          const lastTwoChars = item.substr(-2)
-          if (lastTwoChars === '[]') {
+          if (item.substr(-2) === '[]') {
             item = item.substr(0, item.length - 2)
             const prototype = types[item]
             return prototype ? new List([prototype]) : Array
@@ -86,6 +86,13 @@ export class Parser {
             const minBound = item.indexOf('<-') > 0
             const maxBound = item.indexOf('->') > 0
             return new Range({ min, max, minBound, maxBound })
+          }
+          else if (item.charAt(0) === '{' && item.substr(-1) === '}' && item.indexOf(':') > 0) {
+            const [k, v] = item.split(/\{\:\}/).filter(item => !!item)
+            const kp = types[k] || String
+            const vp = types[v] || String
+            const t = new Mapping([kp, vp])
+            return t
           }
           else {
             const prototype = types[item]
@@ -193,6 +200,14 @@ export class Parser {
           const { pattern } = value
           const { min, max, minBound, maxBound } = pattern
           const desc = `${min}${minBound ? '<' : ''}-${maxBound ? '>' : ''}${max}`
+          proto = desc
+        }
+        else if (isInstanceOf(value, Mapping)) {
+          const { pattern } = value
+          const [k, v] = pattern
+          const kp = build(k)
+          const vp = build(v)
+          const desc = `{${kp}:${vp}}`
           proto = desc
         }
         else if (isInstanceOf(value, Rule)) {
