@@ -12,7 +12,7 @@ export class Type {
   constructor(pattern) {
     this.isStrict = false
     this.pattern = pattern
-    this.name =  'Type'
+    this.name = 'Type'
   }
 
   /**

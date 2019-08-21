@@ -1,4 +1,4 @@
-import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray } from './utils.js'
+import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray, makeKeyChain } from './utils.js'
 
 export class TyError extends TypeError {
   constructor(resource) {
@@ -92,6 +92,7 @@ export class TyError extends TypeError {
 
       const params = {
         i: i + 1,
+        key: makeKeyChain(keyPath).pop(),
         keyPath: makeKeyPath(keyPath),
         should: info.length ? makeErrorShould(info, breakline) : '',
         receive: inObject('value', trace) ? makeErrorReceive(value, breakline, sensitive) : '',
@@ -115,6 +116,7 @@ TyError.defaultMessages = {
   dirty: '{keyPath} receive `{receive}` whose length does not match `{should}`.',
   overflow: '{keyPath} should not exists.',
   missing: '{keyPath} is missing.',
+  illegal: 'key `{key}` at {keyPath} should match `{should}`',
 }
 
 export default TyError
@@ -289,7 +291,7 @@ function makeErrorTraces(resource, keyPath = [], traces = []) {
     keyPath.push(index)
   }
 
-  if (inArray(type, ['dirty', 'overflow', 'missing'])) {
+  if (inArray(type, ['dirty', 'overflow', 'missing', 'illegal'])) {
     traces.push({ type, keyPath, name, value, pattern })
     return traces
   }

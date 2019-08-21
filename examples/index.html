@@ -7,7 +7,7 @@
 
     <script src="./bundle.js"></script>
     <script>
-      const { Model, Schema, ifexist, dict, shouldmatch, TyError, Enum, list, range, tuple } = window['tyshemo']
+      const { Model, Schema, ifexist, dict, shouldmatch, TyError, Enum, list, range, tuple, mapping, Numeric } = window['tyshemo']
       function test(fn) {
         try {
           fn()
@@ -22,25 +22,25 @@
       }
     </script>
     <script>
-      const SomeType = dict({
-        a: ifexist(tuple([
-          new Enum([String, Boolean]),
-          Number,
-        ])),
-        b: {
-          title: String,
-          count: Number,
-        },
-        c: shouldmatch(dict({
-          name: String,
-          age: Number,
-        }), '{keyPath} 不是一个用户。'),
-      })
-      test(() => SomeType.assert({
-        a: [1],
-        b: 'null',
-        c: null,
-      }))
+      // const SomeType = dict({
+      //   a: ifexist(tuple([
+      //     new Enum([String, Boolean]),
+      //     Number,
+      //   ])),
+      //   b: {
+      //     title: String,
+      //     count: Number,
+      //   },
+      //   c: shouldmatch(dict({
+      //     name: String,
+      //     age: Number,
+      //   }), '{keyPath} 不是一个用户。'),
+      // })
+      // test(() => SomeType.assert({
+      //   a: [1],
+      //   b: 'null',
+      //   c: null,
+      // }))
     </script>
     <script>
       // const SomeType = dict({
@@ -130,6 +130,16 @@
 
       // console.log(person.data)
       // console.log(person.state)
+    </script>
+    <script>
+      const SomeMapping = mapping([Numeric, String])
+      const a = {
+        2019: 'ghi',
+        2019: 123,
+        abc: 'jkl',
+        def: 123,
+      }
+      SomeMapping.assert(a)
     </script>
   </body>
 </html>

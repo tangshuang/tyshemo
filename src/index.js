@@ -12,6 +12,7 @@ export { List, list } from './list.js'
 export { Tuple, tuple } from './tuple.js'
 export { Enum, enumerate } from './enum.js'
 export { Range, range } from './range.js'
+export { Mapping, mapping } from './mapping.js'
 
 export { Rule } from './rule.js'
 export {
