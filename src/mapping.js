@@ -3,7 +3,7 @@ import { isObject, isArray, each } from './utils.js'
 import TyError from './ty-error.js'
 
 export class Mapping extends Type {
-  constructor(pattern) {
+  constructor(pattern = [String, String]) {
     if (!isArray(pattern)) {
       throw new Error('[Mapping]: pattern should be an array.')
     }
