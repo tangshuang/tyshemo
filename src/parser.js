@@ -8,7 +8,7 @@ import Mapping from './mapping.js'
 import Rule from './rule.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
-import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction } from './utils.js'
+import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction, inObject } from './utils.js'
 import Type from './type.js'
 
 export class Parser {
@@ -38,13 +38,15 @@ export class Parser {
    *   name: 'string',
    *   age: 'number',
    *   has_football: '?boolean', // ifexist
-   *   sex: 'F|M',
+   *   sex: 'F|M', // enum
    *   dot: '=xxxxx', // equal
    *   belong: '?=animal', // ifexist equal
    *   vioce: '!number', // should not match
    *   num: 'string,numeric', // match multiple
-   *   parents: ['string', 'string'], // tuple
-   *   books: 'book[]', // list, use defined 'book'
+   *   parents: '[string,string]', // tuple
+   *   books: 'book[]', // list, use defined 'book', recommended
+   *   books2: ['book'], // list
+   *   books3: ['book1', 'book2'], // = 'book1[]|book2[]'
    *   body: {
    *     head: 'boolean',
    *     neck: 'boolean',
@@ -59,26 +61,39 @@ export class Parser {
       '=': equal,
       '!': shouldnotmatch,
     }
-    const parse = (description) => {
+    const parse = (text) => {
       const exp = []
 
       const checkRule = () => {
-        let firstChar = description.charAt(0)
+        let firstChar = text.charAt(0)
         if (rules[firstChar]) {
           exp.push(rules[firstChar])
-          description = description.substr(1)
+          text = text.substr(1)
           checkRule()
         }
       }
       checkRule()
 
-      const items = description.split(',').map((word) => {
+      // prepare for '[a,b]' tuple
+      text = text.replace(/\[.*?\]/g, (item) => {
+        return item.replace(/,/g, ':::')
+      })
+      const items = text.split(',').map((word) => {
         const words = word.split('|').map((item) => {
-          if (item.substr(-2) === '[]') {
+          // tuple
+          if (item.charAt(0) === '[' && item.substr(-1) === ']' && item.indexOf(':::') > 0) {
+            item = item.substr(1, item.length - 2)
+            const texts = item.split(':::')
+            const prototypes = texts.map(item => parse(item))
+            return new List(prototypes)
+          }
+          // list
+          else if (item.substr(-2) === '[]') {
             item = item.substr(0, item.length - 2)
-            const prototype = types[item]
+            const prototype = types[item] || item
             return prototype ? new List([prototype]) : Array
           }
+          // range
           else if (item.indexOf('-') > 0) {
             const [minStr, maxStr] = item.split(/<{0,1}\->{0,1}/)
             const min = +minStr
@@ -87,6 +102,7 @@ export class Parser {
             const maxBound = item.indexOf('->') > 0
             return new Range({ min, max, minBound, maxBound })
           }
+          // mapping
           else if (item.charAt(0) === '{' && item.substr(-1) === '}' && item.indexOf(':') > 0) {
             const [k, v] = item.split(/\{\:\}/).filter(item => !!item)
             const kp = types[k] || String
@@ -94,6 +110,7 @@ export class Parser {
             const t = new Mapping([kp, vp])
             return t
           }
+          // normal
           else {
             const prototype = types[item]
             return prototype ? prototype : item
@@ -126,22 +143,24 @@ export class Parser {
       })
     }
 
-    const pattern = map(target, (description) => {
-      if (isObject(description)) {
-        return parser.parse(description)
+    const build = (value) => {
+      if (isObject(value)) {
+        return parser.parse(value)
       }
-      else if (isArray(description)) {
-        return new Tuple(description.map(item => parse(item)))
+      else if (isArray(value)) {
+        return new List(value.map(item => build(item)))
       }
-      else if (isString(description)) {
-        return parse(description)
+      else if (isString(value)) {
+        return parse(value)
       }
-    })
+    }
+    const pattern = map(target, build)
     const type = Ty.create(pattern)
     return type
   }
-  describe(dict) {
+  describe(dict, options = {}) {
     const __def__ = []
+    const { arrayStyle } = options
 
     const types = Object.entries(this.types)
     const get = (value) => {
@@ -174,6 +193,9 @@ export class Parser {
         return v
       }
     }
+    const buildArray = (items, type = 0) => {
+      return type ? items.map(item => define(item) + '[]').join(',') : items.map(item => build(item))
+    }
 
     const create = (value) => {
       let proto = get(value)
@@ -182,12 +204,15 @@ export class Parser {
           proto = build(value.pattern)
         }
         else if (isInstanceOf(value, Tuple)) {
-          proto = build(value.pattern)
+          const { pattern } = value
+          const items = pattern.map(build)
+          const desc = '[' + items.map(item => define(item)).join(',') + ']'
+          proto = desc
         }
         else if (isInstanceOf(value, List)) {
           const { pattern } = value
           const items = pattern.map(build)
-          const desc = items.map(item => define(item) + '[]').join('|')
+          const desc = buildArray(items, arrayStyle)
           proto = desc
         }
         else if (isInstanceOf(value, Enum)) {
@@ -265,7 +290,7 @@ export class Parser {
         }
         else if (isArray(value)) {
           const items = build(value)
-          const desc = items.map(item => define(item) + '[]').join('|')
+          const desc = buildArray(items)
           proto = desc
         }
       }
