@@ -75,17 +75,17 @@ export class Parser {
       checkRule()
 
       // prepare for '[a,b]' tuple
-      text = text.replace(/\[.*?\]/g, (item) => {
-        return item.replace(/,/g, ':::')
+      text = text.replace(/\[.*\]/g, (item) => {
+        return item.replace(/,/g, '::')
       })
       const items = text.split(',').map((word) => {
         const words = word.split('|').map((item) => {
           // tuple
-          if (item.charAt(0) === '[' && item.substr(-1) === ']' && item.indexOf(':::') > 0) {
+          if (item.charAt(0) === '[' && item.substr(-1) === ']') {
             item = item.substr(1, item.length - 2)
-            const texts = item.split(':::')
+            const texts = item.split('::')
             const prototypes = texts.map(item => parse(item))
-            return new List(prototypes)
+            return new Tuple(prototypes)
           }
           // list
           else if (item.substr(-2) === '[]') {
@@ -105,15 +105,15 @@ export class Parser {
           // mapping
           else if (item.charAt(0) === '{' && item.substr(-1) === '}' && item.indexOf(':') > 0) {
             const [k, v] = item.split(/\{\:\}/).filter(item => !!item)
-            const kp = types[k] || String
-            const vp = types[v] || String
+            const kp = types[k] || k
+            const vp = types[v] || v
             const t = new Mapping([kp, vp])
             return t
           }
           // normal
           else {
-            const prototype = types[item]
-            return prototype ? prototype : item
+            const prototype = types[item] || item
+            return prototype
           }
         })
         return words.length > 1 ? new Enum(words) : words[0]
@@ -153,6 +153,9 @@ export class Parser {
       else if (isString(value)) {
         return parse(value)
       }
+      else {
+        return value
+      }
     }
     const pattern = map(target, build)
     const type = Ty.create(pattern)
@@ -163,12 +166,12 @@ export class Parser {
     const { arrayStyle } = options
 
     const types = Object.entries(this.types)
-    const get = (value) => {
+    const getProto = (value) => {
       if (isString(value)) {
         return value
       }
       const type = types.find(item => item[1] === value)
-      return type ? type[0] : null
+      return type
     }
     const define = (v, origin = false) => {
       if (v && typeof v === 'object') {
@@ -198,34 +201,38 @@ export class Parser {
     }
 
     const create = (value) => {
-      let proto = get(value)
-      if (!proto) {
+      const proto = getProto(value)
+      if (proto) {
+        return proto[0]
+      }
+      else {
+        let sign = value
         if (isInstanceOf(value, Dict)) {
-          proto = build(value.pattern)
+          sign = build(value.pattern)
         }
         else if (isInstanceOf(value, Tuple)) {
           const { pattern } = value
           const items = pattern.map(build)
           const desc = '[' + items.map(item => define(item)).join(',') + ']'
-          proto = desc
+          sign = desc
         }
         else if (isInstanceOf(value, List)) {
           const { pattern } = value
           const items = pattern.map(build)
           const desc = buildArray(items, arrayStyle)
-          proto = desc
+          sign = desc
         }
         else if (isInstanceOf(value, Enum)) {
           const { pattern } = value
           const items = pattern.map(build)
           const desc = items.join('|')
-          proto = desc
+          sign = desc
         }
         else if (isInstanceOf(value, Range)) {
           const { pattern } = value
           const { min, max, minBound, maxBound } = pattern
           const desc = `${min}${minBound ? '<' : ''}-${maxBound ? '>' : ''}${max}`
-          proto = desc
+          sign = desc
         }
         else if (isInstanceOf(value, Mapping)) {
           const { pattern } = value
@@ -233,80 +240,80 @@ export class Parser {
           const kp = build(k)
           const vp = build(v)
           const desc = `{${kp}:${vp}}`
-          proto = desc
+          sign = desc
         }
         else if (isInstanceOf(value, Rule)) {
           const { name, pattern } = value
 
           if (name === 'ifexist') {
             const inner = create(pattern)
-            proto = '?' + define(inner)
+            sign = '?' + define(inner)
           }
           else if (name === 'equal') {
             const inner = create(pattern)
-            proto = '=' + define(inner, true)
+            sign = '=' + define(inner, true)
           }
           else if (name === 'shouldnotmatch') {
             const inner = create(pattern)
-            proto = '!' + define(inner)
+            sign = '!' + define(inner)
           }
           else if (name === 'match') {
             const items = build(pattern)
-            proto = items.join(',')
+            sign = items.join(',')
           }
           else if (name === 'asynchronous') {
-            proto = create(pattern)
+            sign = create(pattern)
           }
           else if (name === 'determine') {
             const items = build(pattern)
-            proto = items.join('|')
+            sign = items.join('|')
           }
           else if (name === 'shouldmatch') {
-            proto = create(pattern)
+            sign = create(pattern)
           }
           else if (name === 'ifnotmatch') {
-            proto = create(pattern)
+            sign = create(pattern)
           }
           else if (name === 'shouldexist') {
             const inner = create(pattern)
-            proto = '?' + define(inner)
+            sign = '?' + define(inner)
           }
           else if (name === 'shouldnotexist') {
             const inner = create(pattern)
-            proto = '?' + define(inner)
+            sign = '?' + define(inner)
           }
           else if (name === 'beof') {
-            proto = create(pattern)
+            sign = create(pattern)
           }
           else if (name === 'lambda') {
-            proto = 'function'
+            sign = 'function'
           }
           else {
-            proto = ':' + name
+            sign = ':' + name
           }
         }
         else if (isObject(value)) {
-          proto = build(value)
+          sign = build(value)
         }
         else if (isArray(value)) {
           const items = build(value)
           const desc = buildArray(items)
-          proto = desc
+          sign = desc
         }
+        return sign
       }
-      return proto
     }
     const build = (type) => {
-      const proto = get(type)
+      const proto = getProto(type)
       if (proto) {
-        return proto
+        return proto[0]
       }
 
       const pattern = isInstanceOf(type, Type) || isInstanceOf(type, Rule) ? type.pattern : type
       const desc = isArray(pattern) ? [] : {}
       each(pattern, (value, key) => {
-        const proto = create(value)
-        desc[key] = proto
+        const sign = create(value)
+        desc[key] = sign
       })
       return desc
     }
