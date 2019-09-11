@@ -74,26 +74,40 @@ export class Parser {
       }
       checkRule()
 
-      // prepare for '[a,b]' tuple
+      // prepare for '(a,b)' and '[a|b]'
       text = text.replace(/\[.*\]/g, (item) => {
+        return item.replace(/\|/g, '::')
+      })
+      text = text.replace(/\(.*\)/g, (item) => {
         return item.replace(/,/g, '::')
       })
       const items = text.split(',').map((word) => {
         const words = word.split('|').map((item) => {
-          // tuple
-          if (item.charAt(0) === '[' && item.substr(-1) === ']') {
+          // tuple (a,b)
+          if (item.charAt(0) === '(' && item.substr(-1) === ')') {
             item = item.substr(1, item.length - 2)
             const texts = item.split('::')
             const prototypes = texts.map(item => parse(item))
             return new Tuple(prototypes)
           }
-          // list
+          // list [a|b]
+          else if (item.charAt(0) === '[' && item.substr(-1) === ']') {
+            item = item.substr(1, item.length - 2)
+            // empty list []
+            if (!item) {
+              return Array
+            }
+            const texts = item.split('::')
+            const prototypes = texts.map(item => parse(item))
+            return new List(prototypes)
+          }
+          // list a[]
           else if (item.substr(-2) === '[]') {
             item = item.substr(0, item.length - 2)
             const prototype = types[item] || item
             return prototype ? new List([prototype]) : Array
           }
-          // range
+          // range 10<-20
           else if (item.indexOf('-') > 0) {
             const [minStr, maxStr] = item.split(/<{0,1}\->{0,1}/)
             const min = +minStr
@@ -102,7 +116,7 @@ export class Parser {
             const maxBound = item.indexOf('->') > 0
             return new Range({ min, max, minBound, maxBound })
           }
-          // mapping
+          // mapping {string:array}
           else if (item.charAt(0) === '{' && item.substr(-1) === '}' && item.indexOf(':') > 0) {
             const [k, v] = item.split(/\{\:\}/).filter(item => !!item)
             const kp = types[k] || k
@@ -196,8 +210,12 @@ export class Parser {
         return v
       }
     }
-    const buildArray = (items, type = 0) => {
-      return type ? items.map(item => define(item) + '[]').join(',') : items.map(item => build(item))
+    const buildList = (items, type = 0) => {
+      return type === 2
+        ? items.map(item => define(item) + '[]').join(',')
+        : type === 1
+          ? '[' + items.map(item => define(item)).join(',') + ']'
+          : items.map(item => build(item))
     }
 
     const create = (value) => {
@@ -213,13 +231,13 @@ export class Parser {
         else if (isInstanceOf(value, Tuple)) {
           const { pattern } = value
           const items = pattern.map(build)
-          const desc = '[' + items.map(item => define(item)).join(',') + ']'
+          const desc = '(' + items.map(item => define(item)).join(',') + ')'
           sign = desc
         }
         else if (isInstanceOf(value, List)) {
           const { pattern } = value
           const items = pattern.map(build)
-          const desc = buildArray(items, arrayStyle)
+          const desc = buildList(items, arrayStyle)
           sign = desc
         }
         else if (isInstanceOf(value, Enum)) {
@@ -297,7 +315,7 @@ export class Parser {
         }
         else if (isArray(value)) {
           const items = build(value)
-          const desc = buildArray(items)
+          const desc = buildList(items)
           sign = desc
         }
         return sign
