@@ -69,22 +69,17 @@ export class TyError extends TypeError {
     return this.count ? this : null
   }
 
-  format(templates = {}, breaktag = '\n', breakline, sensitive) {
-    const bands = { ...TyError.defaultMessages, ...templates }
+  format(options = {}) {
     const traces = this.traces
 
-    if (breakline === undefined) {
-      breakline = TyError.shouldBreakLongMessage
-    }
-
-    if (sensitive === undefined) {
-      sensitive = TyError.shouldUseSensitiveData
-    }
-
-    // make more friendly
-    if (traces.length < 2) {
-      breaktag = ''
-    }
+    const {
+      keyPathPrefix = TyError.keyPathPrefix,
+      breaktag = traces.length < 2 ? '' : '\n',
+      breakline = TyError.shouldBreakLongMessage,
+      sensitive = TyError.shouldUseSensitiveData,
+      templates = {},
+    } = options
+    const bands = { ...TyError.defaultMessages, ...templates }
 
     const messages = traces.map((trace, i) => {
       const { type, keyPath, value, name, pattern } = trace
@@ -93,7 +88,7 @@ export class TyError extends TypeError {
       const params = {
         i: i + 1,
         key: makeKeyChain(keyPath).pop(),
-        keyPath: makeKeyPath(keyPath),
+        keyPath: keyPathPrefix + makeKeyPath(keyPath),
         should: info.length ? makeErrorShould(info, breakline) : '',
         receive: inObject('value', trace) ? makeErrorReceive(value, breakline, sensitive) : '',
       }
@@ -118,6 +113,7 @@ TyError.defaultMessages = {
   missing: '{keyPath} is missing.',
   illegal: 'key `{key}` at {keyPath} should match `{should}`',
 }
+TyError.keyPathPrefix = '$.'
 
 export default TyError
 
