@@ -245,6 +245,7 @@ export class Model {
         }
 
         // update data
+        const backup = clone(this.data)
         try {
           Object.assign(this.data, next)
           this._updators = {}
@@ -252,6 +253,7 @@ export class Model {
           resolve(this.data)
         }
         catch (e) {
+          this.data = backup // recover
           reject(e)
         }
       })
