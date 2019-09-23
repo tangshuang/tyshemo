@@ -1,8 +1,8 @@
-import { isObject, assign, parse, remove, isEqual, clone, makeKeyPath, isArray, each } from './utils.js'
+import { isObject, assign, parse, remove, isEqual, clone, makeKeyPath, isArray, each, map } from './utils.js'
 
 export class Store {
-  constructor(data = {}) {
-    this.data = data
+  constructor(data = {},) {
+    this.data = { ...data }
 
     this._listeners = []
     this._cache = clone(data)
@@ -11,14 +11,12 @@ export class Store {
     this.init(data)
   }
   init(data) {
-    const $this = this
-
-    function createProxy(data, parents = []) {
+    const createProxy = (data, parents = []) => {
       const handler = {
-        get(state, key) {
+        get: (node, key) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
-          const value = $this.get(path)
+          const value = this.get(path)
           if (isObject(value) || isArray(value)) {
             const proxy = createProxy(value, [ ...parents, key ])
             return proxy
@@ -27,16 +25,16 @@ export class Store {
             return value
           }
         },
-        set(state, key, value) {
+        set: (state, key, value) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
-          $this.set(path, value)
+          this.set(path, value)
           return true
         },
-        deleteProperty(state, key) {
+        deleteProperty: (state, key) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
-          $this.del(path)
+          this.del(path)
           return true
         },
       }
@@ -44,18 +42,62 @@ export class Store {
     }
 
     this.state = createProxy(this.data)
+
+    // find out computed properties
+    const descriptors = map(data, (value, key) => {
+      const descriptor = Object.getOwnPropertyDescriptor(data, key)
+
+      if (!descriptor) {
+        return
+      }
+
+      const desc = {}
+      let flag = false
+
+      if (descriptor.get) {
+        desc.get = descriptor.get
+        flag = true
+      }
+      if (descriptor.set) {
+        desc.set = descriptor.set
+        flag = true
+      }
+
+      if (flag) {
+        return desc
+      }
+    })
+
+    this.descriptors = descriptors
   }
   set(keyPath, value) {
-    const oldValue = parse(this.data, keyPath)
-    assign(this.data, keyPath, value)
-    this._dispatch(keyPath, value, oldValue)
+    const oldValue = this.get(keyPath)
+
+    // use setter
+    const descriptor = this.descriptors[keyPath]
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(this.data, value)
+    }
+
+    // use getter to set new cache value
+    const newValue = descriptor && descriptor.get ? descriptor.get.call(this.data) : value
+
+    assign(this.data, keyPath, newValue)
+    this._dispatch(keyPath, newValue, oldValue)
     return this
   }
   get(keyPath) {
+    // will use computed value's cache on this.data
     return parse(this.data, keyPath)
   }
   del(keyPath) {
     const oldValue = parse(this.data, keyPath)
+
+    // remove computed property
+    if (this.descriptors[keyPath]) {
+      delete this.descriptors[keyPath]
+    }
+
     remove(this.data, keyPath)
     this._dispatch(keyPath, undefined, oldValue)
     return this

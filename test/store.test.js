@@ -67,4 +67,27 @@ describe('Model', () => {
     delete state.testkey
     expect(store.data.testkey).toBeUndefined()
   })
+
+  test('computed', () => {
+    const computedStore = new Store({
+      name: 'computed',
+      age: 10,
+      get weight() {
+        return this.age * 5
+      },
+      set weight(value) {
+        this.age = value / 5
+      },
+    })
+
+    const { state } = computedStore
+    expect(state.weight).toBe(50)
+
+    state.weight = 100
+    expect(state.age).toBe(20)
+    expect(state.weight).toBe(100)
+
+    delete state.weight
+    expect(state.weight).toBeUndefined()
+  })
 })
