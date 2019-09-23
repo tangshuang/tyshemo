@@ -108,6 +108,7 @@ export class Store {
       clearTimeout(this._isUpdating)
       this._isUpdating = setTimeout(() => {
         // update data
+        const backup = clone(this.data)
         try {
           each(this._updators, (value, key) => {
             this.set(key, value)
@@ -116,6 +117,7 @@ export class Store {
           resolve(this.data)
         }
         catch (e) {
+          this.data = backup // recover
           reject(e)
         }
       })
