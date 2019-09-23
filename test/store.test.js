@@ -87,6 +87,11 @@ describe('Model', () => {
     expect(state.age).toBe(20)
     expect(state.weight).toBe(100)
 
+    computedStore.define('height', function() {
+      return 100 / this.weight * this.age * 8
+    })
+    expect(state.height).toBe(160)
+
     delete state.weight
     expect(state.weight).toBeUndefined()
   })

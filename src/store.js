@@ -1,16 +1,50 @@
-import { isObject, assign, parse, remove, isEqual, clone, makeKeyPath, isArray, each, map } from './utils.js'
+import { isObject, assign, parse, remove, isEqual, clone, makeKeyPath, isArray, each, map, isFunction } from './utils.js'
 
 export class Store {
   constructor(data = {},) {
-    this.data = { ...data }
+    this.data = {}
 
     this._listeners = []
-    this._cache = clone(data)
     this._updators = {}
 
     this.init(data)
+    this._mirror = clone(this.data)
   }
   init(data) {
+    // computed properties
+    const values = {}
+    const descriptors = map(data, (value, key) => {
+      const descriptor = Object.getOwnPropertyDescriptor(data, key)
+
+      if (!descriptor) {
+        return
+      }
+
+      const desc = {}
+      let flag = false
+
+      if (descriptor.get) {
+        desc.get = descriptor.get
+        flag = true
+      }
+      if (descriptor.set) {
+        desc.set = descriptor.set
+        flag = true
+      }
+
+      // add property to data
+      if (descriptor.value) {
+        values[key] = value
+      }
+
+      if (flag) {
+        return desc
+      }
+    })
+    this._descriptors = descriptors
+    this.data = values
+
+    // state
     const createProxy = (data, parents = []) => {
       const handler = {
         get: (node, key) => {
@@ -40,64 +74,84 @@ export class Store {
       }
       return new Proxy(data, handler)
     }
-
     this.state = createProxy(this.data)
+  }
 
-    // find out computed properties
-    const descriptors = map(data, (value, key) => {
-      const descriptor = Object.getOwnPropertyDescriptor(data, key)
-
-      if (!descriptor) {
-        return
-      }
-
+  // define a computed property
+  define(key, options) {
+    if (isFunction(options)) {
+      const get = options
+      delete this.data[key]
+      this._descriptors[key] = { get }
+    }
+    else if (isObject(options)) {
+      const { get, set } = options
       const desc = {}
       let flag = false
 
-      if (descriptor.get) {
-        desc.get = descriptor.get
+      if (isFunction(get)) {
+        desc.get = get
         flag = true
       }
-      if (descriptor.set) {
-        desc.set = descriptor.set
+      if (isFunction(set)) {
+        desc.set = set
         flag = true
       }
-
       if (flag) {
-        return desc
+        delete this.data[key]
+        this._descriptors[key] = desc
       }
-    })
-
-    this.descriptors = descriptors
+    }
   }
+
   set(keyPath, value) {
     const oldValue = this.get(keyPath)
+    let newValue = value
 
-    // use setter
-    const descriptor = this.descriptors[keyPath]
-    if (descriptor && descriptor.set) {
-      descriptor.set.call(this.data, value)
+    // computed property
+    const descriptor = this._descriptors[keyPath]
+    if (descriptor) {
+      // do not allowed to set value when has no setter
+      if (!descriptor.set) {
+        return this
+      }
+
+      descriptor.set.call(this.state, value)
+
+      // when there is no getter, the value will always be undefined, and no need to trigger dispatchers
+      if (!descriptor.get) {
+        return this
+      }
+
+      newValue = descriptor.get.call(this.state)
+    }
+    else {
+      assign(this.data, keyPath, value)
     }
 
-    // use getter to set new cache value
-    const newValue = descriptor && descriptor.get ? descriptor.get.call(this.data) : value
-
-    assign(this.data, keyPath, newValue)
     this._dispatch(keyPath, newValue, oldValue)
     return this
   }
   get(keyPath) {
-    // will use computed value's cache on this.data
+    // computed property
+    const descriptor = this._descriptors[keyPath]
+    if (descriptor) {
+      // always return undefined when has no getter
+      if (!descriptor.get) {
+        return
+      }
+      return descriptor.get.call(this.state)
+    }
+
     return parse(this.data, keyPath)
   }
   del(keyPath) {
-    const oldValue = parse(this.data, keyPath)
-
     // remove computed property
-    if (this.descriptors[keyPath]) {
-      delete this.descriptors[keyPath]
+    if (this._descriptors[keyPath]) {
+      delete this._descriptors[keyPath]
     }
 
+    const oldValue = parse(this.data, keyPath)
     remove(this.data, keyPath)
     this._dispatch(keyPath, undefined, oldValue)
     return this
@@ -154,11 +208,14 @@ export class Store {
       return
     }
 
-    assign(this._cache, keyPath, clone(newValue))
+    const newData = this.data
+    const oldData = clone(this._mirror)
 
-    const items = this._listeners
+    assign(this._mirror, keyPath, clone(newValue))
 
-    const callbacks = items.filter((item) => {
+    const listeners = this._listeners
+
+    const callbacks = listeners.filter((item) => {
       if (item.keyPath === keyPath) {
         return true
       }
@@ -171,10 +228,7 @@ export class Store {
       fn.call(this, newValue, oldValue)
     })
 
-    const newData = this.data
-    const oldData = this._cache
-
-    const emitters = items.filter(item => item.keyPath === '*')
+    const emitters = listeners.filter(item => item.keyPath === '*')
     emitters.forEach(({ fn }) => {
       fn.call(this, newData, oldData, [keyPath, newValue, oldValue])
     })
