@@ -102,6 +102,7 @@ export class Store {
         this._descriptors[key] = desc
       }
     }
+    return this
   }
 
   set(keyPath, value) {
