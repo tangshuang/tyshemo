@@ -107,10 +107,6 @@ export function getConstructor(ins) {
 }
 
 /**
- * 求数组的并集
- * @param {*} a
- * @param {*} b
- * @example
  * unionArray([1, 2], [1, 3]) => [1, 2, 3]
  */
 export function unionArray(a, b) {

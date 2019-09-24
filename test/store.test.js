@@ -69,7 +69,7 @@ describe('Model', () => {
   })
 
   test('computed', () => {
-    const computedStore = new Store({
+    const store = new Store({
       name: 'computed',
       age: 10,
       get weight() {
@@ -78,21 +78,33 @@ describe('Model', () => {
       set weight(value) {
         this.age = value / 5
       },
+      get length() {
+        return this.weight + 120
+      },
     })
 
-    const { state } = computedStore
+    const { state } = store
     expect(state.weight).toBe(50)
 
-    state.weight = 100
-    expect(state.age).toBe(20)
-    expect(state.weight).toBe(100)
-
-    computedStore.define('height', function() {
-      return 100 / this.weight * this.age * 8
+    // define a new computed property
+    store.define('height', function() {
+      return this.age * 8 + this.weight / 100 * 10
     })
-    expect(state.height).toBe(160)
+    expect(state.height).toBe(85)
 
-    delete state.weight
-    expect(state.weight).toBeUndefined()
+    // change the basic dependency
+    state.age = 20
+    expect(state.weight).toBe(100)
+    expect(state.height).toBe(170)
+
+    // change by setter
+    state.weight = 200
+    expect(state.age).toBe(40)
+    expect(state.weight).toBe(200)
+    expect(state.height).toBe(340)
+
+    // delete computed property
+    delete state.height
+    expect(state.height).toBeUndefined()
   })
 })
