@@ -55,13 +55,13 @@ export class Store {
             return value
           }
         },
-        set: (state, key, value) => {
+        set: (node, key, value) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
           this.set(path, value)
           return true
         },
-        deleteProperty: (state, key) => {
+        deleteProperty: (node, key) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
           this.del(path)
@@ -71,6 +71,7 @@ export class Store {
       return new Proxy(data, handler)
     }
     this.state = createProxy(this.data)
+    Object.defineProperty(this.state, '__store__', { value: this })
 
     // collecting dependencies
     each(descriptors, (item, key) => {

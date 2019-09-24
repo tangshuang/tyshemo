@@ -39,15 +39,14 @@ export class Model {
   }
 
   init(data) {
-    const $this = this
     this.restore(data)
 
-    function createProxy(data, parents = []) {
+    const createProxy = (data, parents = []) => {
       const handler = {
-        get(state, key) {
+        get: (node, key) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
-          const value = $this.get(path)
+          const value = this.get(path)
           if (isObject(value) || isArray(value)) {
             const proxy = createProxy(value, [ ...parents, key ])
             return proxy
@@ -56,16 +55,16 @@ export class Model {
             return value
           }
         },
-        set(state, key, value) {
+        set: (node, key, value) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
-          $this.set(path, value)
+          this.set(path, value)
           return true
         },
-        deleteProperty(state, key) {
+        deleteProperty: (node, key) => {
           const chain = [ ...parents, key ]
           const path = makeKeyPath(chain)
-          $this.del(path)
+          this.del(path)
           return true
         },
       }
@@ -73,6 +72,7 @@ export class Model {
     }
 
     this.state = createProxy(this.data)
+    Object.defineProperty(this.state, '__model__', { value: this })
   }
 
   schema() {
