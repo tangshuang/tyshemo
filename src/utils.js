@@ -399,8 +399,9 @@ export function iterate(obj, fn) {
     const key = keys[i]
     const value = obj[key]
     const res = fn(value, key, obj)
-    if (res !== undefined) {
+    if (res !== undefined && res !== null) {
       return res
     }
   }
+  return null
 }

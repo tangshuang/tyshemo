@@ -154,21 +154,20 @@ export class Schema {
     if (error) {
       error = transform(error, message, key, value, context)
     }
-
     // validators
     else if (isArray(validators)) {
       error = iterate(validators, (validator) => {
         const { validate, determine, message } = validator
         if (isFunction(determine) && !determine.call(context, value, key)) {
-          return null
+          return
         }
         if (isBoolean(determine) && !determine) {
-          return null
+          return
         }
 
         const res = validate.call(context, value, key)
         if (isBoolean(res) && res) {
-          return null
+          return
         }
 
         let msg = message
@@ -176,7 +175,6 @@ export class Schema {
         if (isInstanceOf(res, Error)) {
           msg = res.message
         }
-
 
         if (isFunction(message)) {
           msg = message.call(context, value, key, error)

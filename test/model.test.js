@@ -135,4 +135,32 @@ describe('Model', () => {
       delete state.body.feet
     }).not.toThrowError()
   })
+
+  test('validate', () => {
+    class SomeModel extends Model {
+      schema() {
+        return {
+          some: {
+            type: Number,
+            default: 0,
+            validators: [
+              {
+                determine: true,
+                validate: v => v > 0,
+                message: 'Should bigger than 0.',
+              },
+            ],
+          },
+        }
+      }
+    }
+    const some = new SomeModel({
+      some: 0,
+    })
+    const error = some.validate()
+    expect(error).toBeInstanceOf(Error)
+
+    const message = some.message('some')
+    expect(message).toBe('Should bigger than 0.')
+  })
 })

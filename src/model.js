@@ -1,4 +1,4 @@
-import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray, map, inObject } from './utils.js'
+import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray, map, inObject, isString } from './utils.js'
 import Schema from './schema.js'
 
 export class Model {
@@ -233,12 +233,7 @@ export class Model {
         })
 
         // check data
-        const error = iterate(next, (value, key) => {
-          const error = this.schema.validate(key, value, this)
-          if (error) {
-            return error
-          }
-        })
+        const error = iterate(next, (value, key) => this.schema.validate(key, value, this))
         if (error) {
           reject(error)
           return
@@ -386,26 +381,36 @@ export class Model {
     return formdata
   }
 
-  validate() {
+  validate(key) {
+    if (isArray(key)) {
+      const keys = key
+      const error = iterate(keys, key => this.validate(key))
+      return error
+    }
+    if (isString(key)) {
+      if (inObject(key, this._errors)) {
+        return this._errors[key]
+      }
+
+      const value = parse(this.data, key)
+      const error = this.schema.validate(key, value, this)
+
+      this._errors[key] = error
+      setTimeout(() => {
+        delete this._errors[key]
+      })
+
+      return error
+    }
+
     const data = this.data
     const error = this.schema.validate(data, this)
     return error
   }
 
   message(key) {
-    if (inObject(key, this._errors)) {
-      return this._errors[key]
-    }
-
-    const value = parse(this.data, key)
-    const error = this.schema.validate(key, value, this)
+    const error = this.validate(key)
     const message = error ? error.message : ''
-
-    this._errors[key] = message
-    setTimeout(() => {
-      delete this._errors[key]
-    })
-
     return message
   }
 
