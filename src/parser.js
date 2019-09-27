@@ -181,11 +181,13 @@ export class Parser {
 
     const types = Object.entries(this.types)
     const getProto = (value) => {
+      const type = types.find(item => item[1] === value)
+      if (type) {
+        return type[0]
+      }
       if (isString(value)) {
         return value
       }
-      const type = types.find(item => item[1] === value)
-      return type
     }
     const define = (v, origin = false) => {
       if (v && typeof v === 'object') {
@@ -221,114 +223,113 @@ export class Parser {
     const create = (value) => {
       const proto = getProto(value)
       if (proto) {
-        return proto[0]
+        return proto
       }
-      else {
-        let sign = value
-        if (isInstanceOf(value, Dict)) {
-          sign = build(value.pattern)
-        }
-        else if (isInstanceOf(value, Tuple)) {
-          const { pattern } = value
-          const items = pattern.map(build)
-          const desc = '(' + items.map(item => define(item)).join(',') + ')'
-          sign = desc
-        }
-        else if (isInstanceOf(value, List)) {
-          const { pattern } = value
-          const items = pattern.map(build)
-          const desc = buildList(items, arrayStyle)
-          sign = desc
-        }
-        else if (isInstanceOf(value, Enum)) {
-          const { pattern } = value
-          const items = pattern.map(build)
-          const desc = items.join('|')
-          sign = desc
-        }
-        else if (isInstanceOf(value, Range)) {
-          const { pattern } = value
-          const { min, max, minBound, maxBound } = pattern
-          const desc = `${min}${minBound ? '<' : ''}-${maxBound ? '>' : ''}${max}`
-          sign = desc
-        }
-        else if (isInstanceOf(value, Mapping)) {
-          const { pattern } = value
-          const [k, v] = pattern
-          const kp = build(k)
-          const vp = build(v)
-          const desc = `{${kp}:${vp}}`
-          sign = desc
-        }
-        else if (isInstanceOf(value, Rule)) {
-          const { name, pattern } = value
 
-          if (name === 'ifexist') {
-            const inner = create(pattern)
-            sign = '?' + define(inner)
-          }
-          else if (name === 'equal') {
-            const inner = create(pattern)
-            sign = '=' + define(inner, true)
-          }
-          else if (name === 'shouldnotmatch') {
-            const inner = create(pattern)
-            sign = '!' + define(inner)
-          }
-          else if (name === 'match') {
-            const items = build(pattern)
-            sign = items.join(',')
-          }
-          else if (name === 'asynchronous') {
-            sign = create(pattern)
-          }
-          else if (name === 'determine') {
-            const items = build(pattern)
-            sign = items.join('|')
-          }
-          else if (name === 'shouldmatch') {
-            sign = create(pattern)
-          }
-          else if (name === 'ifnotmatch') {
-            sign = create(pattern)
-          }
-          else if (name === 'shouldexist') {
-            const inner = create(pattern)
-            sign = '?' + define(inner)
-          }
-          else if (name === 'shouldnotexist') {
-            const inner = create(pattern)
-            sign = '?' + define(inner)
-          }
-          else if (name === 'beof') {
-            sign = create(pattern)
-          }
-          else if (name === 'lambda') {
-            sign = 'function'
-          }
-          else {
-            sign = ':' + name
-          }
-        }
-        else if (isObject(value)) {
-          sign = build(value)
-        }
-        else if (isArray(value)) {
-          const items = build(value)
-          const desc = buildList(items)
-          sign = desc
-        }
-        return sign
+      let sign = value
+      if (isInstanceOf(value, Dict)) {
+        sign = build(value.pattern)
       }
+      else if (isInstanceOf(value, Tuple)) {
+        const { pattern } = value
+        const items = pattern.map(build)
+        const desc = '(' + items.map(item => define(item)).join(',') + ')'
+        sign = desc
+      }
+      else if (isInstanceOf(value, List)) {
+        const { pattern } = value
+        const items = pattern.map(build)
+        const desc = buildList(items, arrayStyle)
+        sign = desc
+      }
+      else if (isInstanceOf(value, Enum)) {
+        const { pattern } = value
+        const items = pattern.map(build)
+        const desc = items.join('|')
+        sign = desc
+      }
+      else if (isInstanceOf(value, Range)) {
+        const { pattern } = value
+        const { min, max, minBound, maxBound } = pattern
+        const desc = `${min}${minBound ? '<' : ''}-${maxBound ? '>' : ''}${max}`
+        sign = desc
+      }
+      else if (isInstanceOf(value, Mapping)) {
+        const { pattern } = value
+        const [k, v] = pattern
+        const kp = build(k)
+        const vp = build(v)
+        const desc = `{${kp}:${vp}}`
+        sign = desc
+      }
+      else if (isInstanceOf(value, Rule)) {
+        const { name, pattern } = value
+        if (name === 'ifexist') {
+          const inner = create(pattern)
+          sign = '?' + define(inner)
+        }
+        else if (name === 'equal') {
+          const inner = create(pattern)
+          sign = '=' + define(inner, true)
+        }
+        else if (name === 'shouldnotmatch') {
+          const inner = create(pattern)
+          sign = '!' + define(inner)
+        }
+        else if (name === 'match') {
+          const items = build(pattern)
+          sign = items.join(',')
+        }
+        else if (name === 'asynchronous') {
+          sign = create(pattern)
+        }
+        else if (name === 'determine') {
+          const items = build(pattern)
+          sign = items.join('|')
+        }
+        else if (name === 'shouldmatch') {
+          sign = create(pattern)
+        }
+        else if (name === 'ifnotmatch') {
+          sign = create(pattern)
+        }
+        else if (name === 'shouldexist') {
+          const inner = create(pattern)
+          sign = '?' + define(inner)
+        }
+        else if (name === 'shouldnotexist') {
+          const inner = create(pattern)
+          sign = '?' + define(inner)
+        }
+        else if (name === 'beof') {
+          sign = create(pattern)
+        }
+        else if (name === 'lambda') {
+          sign = 'function'
+        }
+        else {
+          sign = ':' + name
+        }
+      }
+      else if (isObject(value)) {
+        sign = build(value)
+      }
+      else if (isArray(value)) {
+        const items = build(value)
+        const desc = buildList(items)
+        sign = desc
+      }
+      return sign
     }
     const build = (type) => {
       const proto = getProto(type)
       if (proto) {
-        return proto[0]
+        return proto
       }
 
       const pattern = isInstanceOf(type, Type) || isInstanceOf(type, Rule) ? type.pattern : type
       const desc = isArray(pattern) ? [] : {}
+
       each(pattern, (value, key) => {
         const sign = create(value)
         desc[key] = sign

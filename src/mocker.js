@@ -147,7 +147,6 @@ Mocker.defaultLoaders = [
   [Number, function() {
     const random = createRandom()
     const maxNum = Number.MAX_SAFE_INTEGER
-    console.log(random, maxNum)
     return random * maxNum
   }],
   [Boolean, function() {
