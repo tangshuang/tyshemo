@@ -39,6 +39,7 @@ export { Schema } from './schema.js'
 
 export { Store } from './store.js'
 
-import { Model } from './model.js'
-export { Model }
-export default Model
+export { Model } from './model.js'
+
+export { Parser } from './parser.js'
+export { Mocker } from './mocker.js'
