@@ -150,7 +150,7 @@ Mocker.defaultLoaders = [
     return random * maxNum
   }],
   [Boolean, function() {
-    return !!(Math.random() * 10 % 2)
+    return !!(parseInt(Math.random() * 100, 10) % 2)
   }],
   [Null, function() {
     return null
@@ -194,7 +194,7 @@ Mocker.defaultLoaders = [
     return parseInt(createRandom(5) * Number.MAX_SAFE_INTEGER, 10)
   }],
   [Float, function() {
-    return createRandom(5) * Number.MAX_SAFE_INTEGER * 0.1
+    return createRandom(5) * Number.MAX_SAFE_INTEGER * 0.12
   }],
   [Negative, function() {
     return - createRandom(5) * Number.MAX_SAFE_INTEGER
