@@ -7,7 +7,7 @@ import Tuple from './tuple.js'
 import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
-import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity, String8, String16, String32, String64, String128 } from './prototypes.js'
+import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Natural, Any, Finity, String8, String16, String32, String64, String128 } from './prototypes.js'
 import { isNaN, isArray, isFunction, isInstanceOf, map, isObject, isEqual } from './utils.js'
 
 export class Mocker {
@@ -205,6 +205,9 @@ Mocker.defaultLoaders = [
   [Zero, function() {
     return 0
   }],
+  [Natural, function() {
+    return parseInt(createRandom(5) * Number.MAX_SAFE_INTEGER, 10) + 1
+  }],
   [Any, function() {
     return this.mock([String, Number, Boolean, Date, Promise, Array, Object])
   }],
@@ -282,6 +285,8 @@ function create(target, loaders) {
       }
     }
   }
+
+  return target
 }
 
 export default Mocker

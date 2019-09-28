@@ -6,7 +6,7 @@ import Tuple from './tuple.js'
 import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
-import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity } from './prototypes.js'
+import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity, String8, String16, String32, String64, String128, Natural } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
 import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction, inObject } from './utils.js'
 import Type from './type.js'
@@ -351,6 +351,11 @@ export default Parser
 
 Parser.defaultTypes = {
   'string': String,
+  'string8': String8,
+  'string16': String16,
+  'string32': String32,
+  'string64': String64,
+  'string128': String128,
   'number': Number,
   'boolean': Boolean,
   'null': Null,
@@ -365,6 +370,7 @@ Parser.defaultTypes = {
   'negative': Negative,
   'positive': Positive,
   'zero': Zero,
+  'natural': Natural,
   'any': Any,
   'nn': NaN,
   'infinity': Infinity,
