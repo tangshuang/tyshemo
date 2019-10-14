@@ -283,10 +283,6 @@ export class Parser {
         else if (name === 'asynchronous') {
           sign = create(pattern)
         }
-        else if (name === 'determine') {
-          const items = build(pattern)
-          sign = items.join('|')
-        }
         else if (name === 'shouldmatch') {
           sign = create(pattern)
         }
@@ -308,7 +304,8 @@ export class Parser {
           sign = 'function'
         }
         else {
-          sign = ':' + name
+          const items = build(pattern)
+          sign = isArray(items) ? items.join('|') : items
         }
       }
       else if (isObject(value)) {
