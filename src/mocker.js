@@ -8,7 +8,7 @@ import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Natural, Any, Finity, String8, String16, String32, String64, String128 } from './prototypes.js'
-import { isNaN, isArray, isFunction, isInstanceOf, map, isObject, isEqual } from './utils.js'
+import { isNaN, isArray, isFunction, isInstanceOf, map, isObject, isEqual, parse, isNumber, assign, makeKeyPath } from './utils.js'
 
 export class Mocker {
   constructor(loaders) {
@@ -29,38 +29,40 @@ export class Mocker {
   }
 
   mock(type) {
-    const makeEnum = (pattern) => {
+    const asyncs = []
+    const makePath = (path, key) => path ? path + '.' + key : key
+    const makeEnum = (pattern, path) => {
       const count = pattern.length
       const index = parseInt(Math.random() * 10, 10) % count
       const t = pattern[index]
-      return createValue(t)
+      return createValue(t, path)
     }
-    const makeObj = (pattern) => {
-      const output = map(pattern, (value) => {
-        const o = createValue(value)
+    const makeObj = (pattern, path) => {
+      const output = map(pattern, (value, key) => {
+        const o = createValue(value, makePath(path, key))
         return o
       })
       return output
     }
-    const makeArr = (pattern) => {
+    const makeArr = (pattern, path) => {
       const output = []
       const length = parseInt(Math.random() * 15, 10)
       for (let i = 0; i < length; i ++) {
-        output.push(makeEnum(pattern))
+        output.push(makeEnum(pattern, makePath(path, i)))
       }
       return output
     }
-    const createValue = (target) => {
+    const createValue = (target, path = '') => {
       if (isInstanceOf(target, Type)) {
         const { pattern } = target
         if (isInstanceOf(target, Dict) || isInstanceOf(target, Tuple)) {
-          return makeObj(pattern)
+          return makeObj(pattern, path)
         }
         else if (isInstanceOf(target, List)) {
-          return makeArr(pattern)
+          return makeArr(pattern, path)
         }
         else if (isInstanceOf(target, Enum)) {
-          return makeEnum(pattern)
+          return makeEnum(pattern, path)
         }
         else if (isInstanceOf(target, Range)) {
           const { min, max } = pattern
@@ -74,22 +76,22 @@ export class Mocker {
           const mapping = {}
           for (let i = 0; i < count; i ++) {
             const key = createValue(k)
-            const value = createValue(v)
+            const value = createValue(v, makePath(path, k))
             mapping[key] = value
           }
           return mapping
         }
         else {
-          return createValue(pattern)
+          return createValue(pattern, path)
         }
       }
       else if (isInstanceOf(target, Rule)) {
-        const { name, pattern } = target
-        const determine = () => !!(parseInt(Math.random() * 10, 10) % 2)
+        const { name, pattern, determine } = target
+        const rand = () => !!(parseInt(Math.random() * 10, 10) % 2)
 
         if (name === 'ifexist' || name === 'shouldexist' || name === 'shouldnotexist') {
-          if (determine()) {
-            return createValue(pattern)
+          if (rand()) {
+            return createValue(pattern, path)
           }
           else {
             return undefined
@@ -100,27 +102,47 @@ export class Mocker {
         }
         else if (name === 'shouldnotmatch') {
           const allowed = [String, Number, Boolean, Date, Promise, Array, Object].filter(item => !isEqual(item, pattern))
-          return makeEnum(allowed)
+          return makeEnum(allowed, path)
         }
         else if (name === 'match') {
-          return makeEnum(pattern)
+          return makeEnum(pattern, path)
+        }
+        else if (name === 'determine') {
+          const chain = path.split('.')
+          const key = chain.pop()
+          asyncs.push({
+            path: chain.join('.'), // need to reback up level
+            key,
+            determine,
+          })
         }
         else {
-          return createValue(pattern)
+          return createValue(pattern, path)
         }
       }
       else if (isObject(target)) {
-        return makeObj(target)
+        return makeObj(target, path)
       }
       else if (isArray(target)) {
-        return makeArr(target)
+        return makeArr(target, path)
       }
       else {
         return create.call(this, target, this.loaders)
       }
     }
 
-    return isArray(type) ? makeEnum(type) : createValue(type)
+    const output = isArray(type) ? makeEnum(type) : createValue(type)
+
+    if (asyncs.length) {
+      asyncs.forEach(({ path, key, determine }) => {
+        const data = parse(output, path)
+        const type = determine(data)
+        const v = createValue(type)
+        assign(output, makeKeyPath([path, key]), v)
+      })
+    }
+
+    return output
   }
 }
 

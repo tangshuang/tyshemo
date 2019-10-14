@@ -1,9 +1,8 @@
 TySheMo
 =======
 
-An ECMAScript data type/schema describe system.
+An ECMAScript data type/schema description system.
 
-- [API DOC](./docs)
 - [中文文档](https://www.tangshuang.net/7101.html)
 
 TySheMo is a js runtime data type/schema describe system, which contains 5 parts: Prototype, Rule, Type, Schema and Model.
@@ -15,6 +14,7 @@ You can use TySheMo for:
 - formulated data
 - data change watcher
 - responsive data model
+- data mock and docs generating
 
 ## Install
 
@@ -49,18 +49,6 @@ bundle file (umd):
 <script>
 const { Ty } = window['tyshemo']
 </script>
-```
-
-If you want to use some sub modules, you can use files in `dist` dir.
-
-```js
-const { Dict } = require('tyshemo/dist/dict.js')
-```
-
-or use source code:
-
-```js
-import Dict from 'tyshemo/src/dict.js'
 ```
 
 ## Concepts
@@ -102,10 +90,15 @@ And we extended some prototypes:
 - Positive
 - Finity
 - Zero
-- Numeric: string which is number
-- Null
-- Undefined
-- Any: any value in javascript
+- Numeric: number string
+- String8: string max-length 8
+- String16
+- String32
+- String64
+- String128
+- Null: null
+- Undefined: undefined
+- Any
 
 However, these do not contains all of what we want, we want more.
 After you learn more about `Prototype`, you will be able to extend your own prototypes.
@@ -127,6 +120,7 @@ We have defined types:
 - Tuple
 - Enum
 - Range
+- Mapping
 
 ```
 +-------------+----------+----------+--
@@ -141,6 +135,8 @@ We have defined types:
 |    Tuple    |          |   tuple  |  immutable determined array
 +-------------+----------+----------+------------------------------
 |    Range    |          |          |
++-------------+----------+----------+------------------------------
+|   Mapping   |   Map    |          |
 +-------------+----------+----------+------------------------------
 ```
 
@@ -164,6 +160,7 @@ In TySheMo, we have defined rules:
 - shouldnotexist: determine whether the property should not exist
 - beof: the property should be an instance of the given class
 - equal: the property should deep equal the given value
+- nullor: can be null or what you passed into
 - lambda: the property should be a function, and the input and output should match the given types
 
 After you learn more about `Rule`, you will be able to extend your own rules.

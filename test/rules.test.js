@@ -21,7 +21,7 @@ describe('Rule Generators', () => {
     })
   })
   test('determine', () => {
-    const SomeRule = determine(({ data }) => {
+    const SomeRule = determine((data) => {
       if (data.should) {
         return Object
       }
@@ -106,7 +106,7 @@ describe('Rule Generators', () => {
     expect(obj.name).toBe('')
   })
   test('shouldexist', () => {
-    const SomeRule = shouldexist(({ data }) => data.has, String)
+    const SomeRule = shouldexist((data) => data.has, String)
     const SomeType = new Dict({
       has: Boolean,
       name: SomeRule,
@@ -116,7 +116,7 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ has: false })).not.toThrowError()
   })
   test('shouldnotexist', () => {
-    const SomeRule = shouldnotexist(({ data }) => data.shouldnotexist, String)
+    const SomeRule = shouldnotexist((data) => data.shouldnotexist, String)
     const SomeType = new Dict({
       shouldnotexist: Boolean,
       name: SomeRule,

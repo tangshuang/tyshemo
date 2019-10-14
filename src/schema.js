@@ -30,10 +30,10 @@ export class Schema {
    *       return a + '' + b
    *     },
    *
-   *     prepare: ({ value, key, data }) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
+   *     prepare: (value, key, data) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
    *
-   *     drop: ({ value, key, data }) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
-   *     map: ({ value, key, data }) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
+   *     drop: (value, key, data) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
+   *     map: (value, key, data) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
    *
    *     getter: (value) => newValue, // format this property value when get
    *     setter: (value) => value, // format this property value when set
@@ -344,7 +344,7 @@ export class Schema {
 
       if (isFunction(prepare)) {
         try {
-          const coming = prepare.call(context, { value, key, data })
+          const coming = prepare.call(context, value, key, data)
           return coming
         }
         catch (error) {
@@ -378,7 +378,7 @@ export class Schema {
       const { drop, map } = def
       const handle = def.catch
 
-      if (isFunction(drop) && drop.call(context, { value, key, data })) {
+      if (isFunction(drop) && drop.call(context, value, key, data)) {
         return
       }
       if (isBoolean(drop) && drop) {
@@ -387,7 +387,7 @@ export class Schema {
 
       if (isFunction(map)) {
         try {
-          const res = map.call(context, { value, key, data })
+          const res = map.call(context, value, key, data)
           return res
         }
         catch (error) {

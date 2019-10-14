@@ -92,21 +92,13 @@ export function match(patterns) {
  * determine which pattern to use.
  * @param {Function} determine a function to receive parent node of current key, and return a pattern
  */
-export function determine(determine, patterns = []) {
+export function determine(determine) {
   let isReady = false
   let pattern = null
   let target = {}
 
-  function prepare({ value, key, data }) {
-    const index = determine({ value, key, data })
-
-    if (isNumber(index) && patterns) {
-      pattern = patterns[index]
-    }
-    else {
-      pattern = index
-    }
-
+  function prepare(value, key, data) {
+    pattern = determine(data)
     isReady = true
     target = { key, data }
   }
@@ -125,13 +117,14 @@ export function determine(determine, patterns = []) {
     return error
   }
 
-  return new Rule({
+  const rule = new Rule({
     name: 'determine',
     validate,
     prepare,
     complete,
-    pattern: patterns,
   })
+  rule.determine = determine
+  return rule
 }
 
 /**
@@ -236,7 +229,7 @@ export function ifexist(pattern) {
   let isExist = false
   let target = {}
 
-  function prepare({ key, data }) {
+  function prepare(value, key, data) {
     isReady = true
     if (inObject(key, data)) {
       isExist = true
@@ -277,8 +270,8 @@ export function ifexist(pattern) {
  * @param {Function|Any} callback a function to return new value with origin old value
  */
 export function ifnotmatch(pattern, callback) {
-  function override({ value, key, data }) {
-    data[key] = isFunction(callback) ? callback({ value, key, data, pattern }) : callback
+  function override(value, key, data) {
+    data[key] = isFunction(callback) ? callback(value, key, data) : callback
   }
   function validate(value) {
     const error = catchErrorBy(this, pattern, value)
@@ -301,8 +294,8 @@ export function ifnotmatch(pattern, callback) {
 export function ifmatch(pattern, callback) {
   let isOverrided = false
 
-  function override({ value, key, data }) {
-    data[key] = isFunction(callback) ? callback({ value, key, data, pattern }) : callback
+  function override(value, key, data) {
+    data[key] = isFunction(callback) ? callback(value, key, data) : callback
     isOverrided = true
   }
   function validate(value) {
@@ -355,8 +348,8 @@ export function shouldexist(determine, pattern) {
     const error = catchErrorBy(this, pattern, value, key, data)
     return error
   }
-  function prepare({ value, key, data }) {
-    shouldExist = determine({ value, key, data })
+  function prepare(value, key, data) {
+    shouldExist = determine(data)
     isReady = true
     isExist = inObject(key, data)
     target = { key, data }
@@ -368,13 +361,15 @@ export function shouldexist(determine, pattern) {
     target = {}
   }
 
-  return new Rule({
+  const rule = new Rule({
     name: 'shouldexist',
     validate,
     prepare,
     complete,
     pattern,
   })
+  rule.determine = determine
+  return rule
 }
 
 /**
@@ -411,8 +406,8 @@ export function shouldnotexist(determine, pattern) {
     const error = catchErrorBy(this, pattern, value, key, data)
     return error
   }
-  function prepare({ value, key, data }) {
-    shouldNotExist = determine({ value, key, data })
+  function prepare(value, key, data) {
+    shouldNotExist = determine(data)
     isReady = true
     isExist = inObject(key, data)
     target = { key, data }
@@ -424,13 +419,15 @@ export function shouldnotexist(determine, pattern) {
     target = {}
   }
 
-  return new Rule({
+  const rule = new Rule({
     name: 'shouldnotexist',
     validate,
     prepare,
     complete,
     pattern,
   })
+  rule.determine = determine
+  return rule
 }
 
 /**

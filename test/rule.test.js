@@ -30,7 +30,7 @@ describe('Rule', () => {
           return new Error(value + ' is not an object')
         }
       },
-      override({ key, data }) {
+      override(value, key, data) {
         data[key] = {}
       },
     })

@@ -107,7 +107,7 @@ describe('Schema', () => {
       key1: {
         type: String,
         default: '',
-        prepare({ data }) {
+        prepare(value, key, data) {
           return data.prop1
         },
       },
@@ -123,7 +123,7 @@ describe('Schema', () => {
       key2: {
         type: String,
         default: '',
-        map({ value }) {
+        map(value, key, data) {
           return value + '!'
         },
       },

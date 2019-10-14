@@ -87,16 +87,16 @@ export class Rule {
    */
   validate2(value, key, data) {
     if (isFunction(this._prepare)) {
-      this._prepare.call(this, { value, key, data })
+      this._prepare.call(this, value, key, data)
     }
     let error = this.validate(value)
     if (error && isFunction(this._override)) {
-      this._override.call(this, { value, key, data })
+      this._override.call(this, value, key, data)
       value = data[key]
       error = this.validate(value)
     }
     if (isFunction(this._complete)) {
-      this._complete.call(this, { value, key, data })
+      this._complete.call(this, value, key, data)
     }
     return error
   }
