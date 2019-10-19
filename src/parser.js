@@ -6,9 +6,10 @@ import Tuple from './tuple.js'
 import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
+import Model from './model.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity, String8, String16, String32, String64, String128, Natural } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
-import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction, inObject } from './utils.js'
+import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction, inObject, isInheritedOf } from './utils.js'
 import Type from './type.js'
 
 export class Parser {
@@ -227,6 +228,15 @@ export class Parser {
       }
 
       let sign = value
+      if (isInheritedOf(value, Model)) {
+        const schemaFn = value.prototype.schema
+        const schema = schemaFn()
+        const pattern = map(schema, (node) => {
+          const { type } = node
+          return type
+        })
+        sign = build(pattern)
+      }
       if (isInstanceOf(value, Dict)) {
         sign = build(value.pattern)
       }
@@ -322,6 +332,15 @@ export class Parser {
       const proto = getProto(type)
       if (proto) {
         return proto
+      }
+
+      if (isInheritedOf(type, Model)) {
+        const schemaFn = type.prototype.schema
+        const schema = schemaFn()
+        type = map(schema, (node) => {
+          const { type } = node
+          return type
+        })
       }
 
       const pattern = isInstanceOf(type, Type) || isInstanceOf(type, Rule) ? type.pattern : type
