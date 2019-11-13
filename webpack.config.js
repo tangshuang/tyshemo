@@ -1,6 +1,6 @@
 const express = require('express')
 
-module.exports = {
+const config = {
   mode: 'none',
   entry: __dirname + '/src/index.js',
   output: {
@@ -8,7 +8,7 @@ module.exports = {
     filename: 'bundle.js',
     library: 'tyshemo',
     libraryTarget: 'umd',
-    globalObject: 'typeof window !== undefined ? window : typeof global !== undefined ? global : typeof self !== undefined ? self : this',
+    globalObject: `typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this`,
   },
   module: {
     rules: [
@@ -43,3 +43,20 @@ module.exports = {
     },
   },
 }
+
+const mini = {
+  ...config,
+  output: {
+    ...config.output,
+    filename: 'bundle.min.js',
+  },
+  optimization: {
+    ...config.optimization,
+    minimize: true,
+  },
+}
+
+module.exports = [
+  config,
+  mini,
+]
