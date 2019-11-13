@@ -41,15 +41,23 @@ export class Parser {
    *   has_football: '?boolean', // ifexist
    *   sex: 'F|M', // enum
    *   dot: '=xxxxx', // equal
+   *   __belong: 'comments of `belong`',
    *   belong: '?=animal', // ifexist equal
    *   vioce: '!number', // should not match
    *   num: 'string,numeric', // match multiple
+   *   __parents: [
+   *     'first line comment',
+   *     'second line comment',
+   *   ],
    *   parents: '[string,string]', // tuple
    *   books: 'book[]', // list, use defined 'book', recommended
    *   books2: ['book'], // list
+   *   '__books3[0]': 'comment of first child of books3',
    *   books3: ['book1', 'book2'], // = 'book1[]|book2[]'
+   *   '__body.neck': 'comment for body.neck',
    *   body: {
    *     head: 'boolean',
+   *     __neck: 'comment of neck',
    *     neck: 'boolean',
    *   },
    * }
@@ -158,12 +166,35 @@ export class Parser {
       })
     }
 
-    const build = (value) => {
-      if (isObject(value)) {
-        return parser.parse(value)
+    const comments = {}
+    const build = (value, key) => {
+      if (key && key.indexOf('__') === 0) {
+        comments[key.substr(2)] = value
+      }
+      else if (isObject(value)) {
+        const subtype = parser.parse(value)
+        const subcomments = subtype.__comments
+        if (key && subcomments) {
+          each(subcomments, (m, k) => {
+            comments[key + '.' + k] = m
+          })
+        }
+        return subtype
       }
       else if (isArray(value)) {
-        return new List(value.map(item => build(item)))
+        return new List(value.map((item, i) => {
+          const subtype = build(item)
+          if (typeof subtype !== 'object') {
+            return subtype
+          }
+          const subcomments = subtype.__comments
+          if (key && subcomments) {
+            each(subcomments, (m, k) => {
+              comments[key + '[' + i + ']' + '.' + k] = m
+            })
+          }
+          return subtype
+        }))
       }
       else if (isString(value)) {
         return parse(value)
@@ -174,6 +205,7 @@ export class Parser {
     }
     const pattern = map(target, build)
     const type = Ty.create(pattern)
+    type.__comments = comments
     return type
   }
   describe(dict, options = {}) {
