@@ -57,14 +57,15 @@ export class Store {
 
     // state
     this.state = createProxy(this.data, {
-      get: ([data, keyPath, proxy]) => {
+      get: ([data, keyPath]) => {
         // when call Symbol.for([[Store]]), return the current store
         if (keyPath === PROXY_STORE) {
           return this
         }
 
-        const v = this.get(keyPath) // to collect dependencies
-        return typeof proxy === 'object' ? proxy : v
+        // to collect dependencies
+        const value = this.get(keyPath)
+        return value
       },
       set: ([data, keyPath, value]) => {
         this.set(keyPath, value)

@@ -62,46 +62,15 @@ export class Model {
 
   init(data) {
     this.restore(data)
-
-    const _createProxy = (data, parents = []) => {
-      const handler = {
-        get: (node, key) => {
-          const chain = [ ...parents, key ]
-          const path = makeKeyPath(chain)
-          const value = this.get(path)
-          if (isObject(value) || isArray(value)) {
-            const proxy = createProxy(value, [ ...parents, key ])
-            return proxy
-          }
-          else {
-            return value
-          }
-        },
-        set: (node, key, value) => {
-          const chain = [ ...parents, key ]
-          const path = makeKeyPath(chain)
-          this.set(path, value)
-          return true
-        },
-        deleteProperty: (node, key) => {
-          const chain = [ ...parents, key ]
-          const path = makeKeyPath(chain)
-          this.del(path)
-          return true
-        },
-      }
-      return new Proxy(data, handler)
-    }
-
     this.state = createProxy(this.data, {
-      get: ([data, keyPath, proxy]) => {
+      get: ([data, keyPath]) => {
         // when call Symbol.for([[Model]]), return the current model
         if (keyPath === PROXY_MODEL) {
           return this
         }
 
-        const v = this.get(keyPath)
-        return typeof proxy === 'object' ? proxy : v
+        const value = this.get(keyPath)
+        return value
       },
       set: ([data, keyPath, value]) => {
         this.set(keyPath, value)
