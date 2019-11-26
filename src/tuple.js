@@ -1,6 +1,6 @@
 import Type from './type.js'
 import Rule from './rule.js'
-import { isInstanceOf, isArray, inObject } from './utils.js'
+import { isInstanceOf, isArray, inObject } from 'ts-fns'
 import TyError from './ty-error.js'
 
 export class Tuple extends Type {

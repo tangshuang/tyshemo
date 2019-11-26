@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { inObject, isObject, isNumber } from './utils.js'
+import { inObject, isObject, isNumber } from 'ts-fns'
 import TyError from './ty-error.js'
 
 export class Range extends Type {

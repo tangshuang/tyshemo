@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isObject, getConstructor, isEmpty } from './utils.js'
+import { isObject, getConstructor, isEmpty } from 'ts-fns'
 import TyError from './ty-error.js'
 
 export class Dict extends Type {

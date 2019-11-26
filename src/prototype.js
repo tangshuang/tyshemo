@@ -1,4 +1,4 @@
-import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isInterface, isFinite } from './utils.js'
+import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isConstructor, isFinite } from 'ts-fns'
 
 export class Prototype {
   constructor({ name, validate }) {
@@ -43,7 +43,7 @@ Prototype.find = proto => prototypes.find(item => item.proto === proto)
 Prototype.is = proto => ({
 
   // Prototype.is(Number).existing()
-  existing: () => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isInterface(proto) || !!Prototype.find(proto),
+  existing: () => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isConstructor(proto) || !!Prototype.find(proto),
 
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
@@ -65,7 +65,7 @@ Prototype.is = proto => ({
       return isString(value) && proto.test(value)
     }
 
-    if (isInterface(proto)) {
+    if (isConstructor(proto)) {
       return isInstanceOf(value, proto)
     }
 

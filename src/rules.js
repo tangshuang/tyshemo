@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual, isNumber, isEmpty } from './utils.js'
+import { isFunction, isInstanceOf, inObject, isArray, isObject, isEqual } from 'ts-fns'
 import Rule from './rule.js'
 import Tuple from './tuple.js'
 import Ty from './ty.js'

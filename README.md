@@ -39,13 +39,13 @@ import { Ty } from 'tyshemo/src/index.js'
 commonjs:
 
 ```js
-const { Ty } = require('tyshemo')
+const { Ty } = require('tyshemo/cjs/index.js')
 ```
 
 bundle file (umd):
 
 ```html
-<script src="/node_modules/tyshemo/dist/bundle.js"></script>
+<script src="/node_modules/tyshemo/umd/tyshemo.js"></script>
 <script>
 const { Ty } = window['tyshemo']
 </script>

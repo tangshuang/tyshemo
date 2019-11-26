@@ -1,4 +1,4 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf, inObject } from './utils.js'
+import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf } from 'ts-fns'
 import TyError from './ty-error.js'
 import Ty from './ty.js'
 import { ifexist } from './rules.js'

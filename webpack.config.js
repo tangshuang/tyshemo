@@ -1,11 +1,16 @@
 const express = require('express')
+const babelConfig = require('./babel.config')
+
+// make effect
+babelConfig.presets[0][1].modules = false
+babelConfig.plugins[0][1] = { useESModules: true }
 
 const config = {
   mode: 'none',
   entry: __dirname + '/src/index.js',
   output: {
-    path: __dirname + '/dist',
-    filename: 'bundle.js',
+    path: __dirname + '/umd',
+    filename: 'tyshemo.js',
     library: 'tyshemo',
     libraryTarget: 'umd',
     globalObject: `typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this`,
@@ -15,16 +20,7 @@ const config = {
       {
         test: /\.js$/,
         loader: 'babel-loader',
-        options: {
-          presets: [
-            ['@babel/preset-env', {
-              targets: {
-                ie: '8',
-              },
-              modules: false,
-            }]
-          ],
-        },
+        options: babelConfig,
       },
     ],
   },
@@ -48,7 +44,7 @@ const mini = {
   ...config,
   output: {
     ...config.output,
-    filename: 'bundle.min.js',
+    filename: 'tyshemo.min.js',
   },
   optimization: {
     ...config.optimization,

@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isObject, isArray, each } from './utils.js'
+import { isObject, isArray, each } from 'ts-fns'
 import TyError from './ty-error.js'
 
 export class Mapping extends Type {

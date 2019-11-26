@@ -1,5 +1,5 @@
 import Type from './type.js'
-import { isArray, isEmpty } from './utils.js'
+import { isArray, isEmpty } from 'ts-fns'
 import TyError from './ty-error.js'
 
 export class List extends Type {

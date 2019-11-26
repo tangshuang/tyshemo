@@ -1,4 +1,18 @@
-import { isObject, assign, parse, remove, isEqual, clone, makeKeyPath, isArray, each, map, isFunction, makeKeyChain } from './utils.js'
+import {
+  isObject,
+  assign,
+  parse,
+  remove,
+  isEqual,
+  clone,
+  isArray,
+  each,
+  isFunction,
+  makeKeyChain,
+  createProxy,
+} from 'ts-fns'
+
+export const PROXY_STORE = Symbol.for('[[Store]]')
 
 export class Store {
   constructor(data = {},) {
@@ -15,7 +29,8 @@ export class Store {
   }
   init(data) {
     // computed properties
-    const descriptors = map(data, (value, key) => {
+    const descriptors = {}
+    each(data, (value, key) => {
       const descriptor = Object.getOwnPropertyDescriptor(data, key)
 
       if (!descriptor) {
@@ -35,43 +50,31 @@ export class Store {
       }
 
       if (flag) {
-        return desc
+        descriptors[key] = desc
       }
     })
     this._descriptors = descriptors
 
     // state
-    const createProxy = (data, parents = []) => {
-      const handler = {
-        get: (node, key) => {
-          const chain = [ ...parents, key ]
-          const path = makeKeyPath(chain)
-          const value = this.get(path)
-          if (isObject(value) || isArray(value)) {
-            const proxy = createProxy(value, [ ...parents, key ])
-            return proxy
-          }
-          else {
-            return value
-          }
-        },
-        set: (node, key, value) => {
-          const chain = [ ...parents, key ]
-          const path = makeKeyPath(chain)
-          this.set(path, value)
-          return true
-        },
-        deleteProperty: (node, key) => {
-          const chain = [ ...parents, key ]
-          const path = makeKeyPath(chain)
-          this.del(path)
-          return true
-        },
-      }
-      return new Proxy(data, handler)
-    }
-    this.state = createProxy(this.data)
-    Object.defineProperty(this.state, '__store__', { value: this })
+    this.state = createProxy(this.data, {
+      get: ([data, keyPath, proxy]) => {
+        // when call Symbol.for([[Store]]), return the current store
+        if (keyPath === PROXY_STORE) {
+          return this
+        }
+
+        const v = this.get(keyPath) // to collect dependencies
+        return typeof proxy === 'object' ? proxy : v
+      },
+      set: ([data, keyPath, value]) => {
+        this.set(keyPath, value)
+        return false
+      },
+      del: ([data, keyPath]) => {
+        this.del(keyPath)
+        return false
+      },
+    })
 
     // collecting dependencies
     each(descriptors, (item, key) => {

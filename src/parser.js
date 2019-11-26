@@ -9,7 +9,7 @@ import Rule from './rule.js'
 import Model from './model.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity, String8, String16, String32, String64, String128, Natural } from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
-import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isFunction, inObject, isInheritedOf } from './utils.js'
+import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isInheritedOf } from 'ts-fns'
 import Type from './type.js'
 
 export class Parser {

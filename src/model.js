@@ -1,5 +1,27 @@
-import { isObject, isInstanceOf, assign, parse, flatObject, isEqual, isInheritedOf, clone, getConstructor, each, sortBy, iterate, makeKeyChain, makeKeyPath, isArray, map, inObject, isString } from './utils.js'
+import {
+  isObject,
+  isInstanceOf,
+  assign,
+  parse,
+  flatObject,
+  isEqual,
+  isInheritedOf,
+  clone,
+  getConstructor,
+  each,
+  sortArray,
+  iterate,
+  makeKeyChain,
+  makeKeyPath,
+  isArray,
+  map,
+  inObject,
+  isString,
+  createProxy,
+} from 'ts-fns'
 import Schema from './schema.js'
+
+export const PROXY_MODEL = Symbol.for('[[Model]]')
 
 export class Model {
   constructor(data = {}) {
@@ -41,7 +63,7 @@ export class Model {
   init(data) {
     this.restore(data)
 
-    const createProxy = (data, parents = []) => {
+    const _createProxy = (data, parents = []) => {
       const handler = {
         get: (node, key) => {
           const chain = [ ...parents, key ]
@@ -71,8 +93,25 @@ export class Model {
       return new Proxy(data, handler)
     }
 
-    this.state = createProxy(this.data)
-    Object.defineProperty(this.state, '__model__', { value: this })
+    this.state = createProxy(this.data, {
+      get: ([data, keyPath, proxy]) => {
+        // when call Symbol.for([[Model]]), return the current model
+        if (keyPath === PROXY_MODEL) {
+          return this
+        }
+
+        const v = this.get(keyPath)
+        return typeof proxy === 'object' ? proxy : v
+      },
+      set: ([data, keyPath, value]) => {
+        this.set(keyPath, value)
+        return false
+      },
+      del: ([data, keyPath]) => {
+        this.del(keyPath)
+        return false
+      },
+    })
   }
 
   schema() {
@@ -300,7 +339,7 @@ export class Model {
     this._isDigesting = true
 
     var listeners = this._listeners.filter(({ key }) => key !== '*')
-    listeners = sortBy(listeners, 'priority')
+    listeners = sortArray(listeners, 'priority')
 
     const cache = this._cache
 
@@ -342,7 +381,7 @@ export class Model {
     if (!isEqual(this._latest, this.data)) {
       this._isCallbacking = true
       var callbacks = this._listeners.filter(({ key }) => key === '*')
-      callbacks = sortBy(callbacks, 'priority')
+      callbacks = sortArray(callbacks, 'priority')
       callbacks.forEach(({ fn }) => {
         fn.call(this, this.data, this._latest)
       })
