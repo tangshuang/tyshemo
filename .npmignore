@@ -1,7 +1,9 @@
 node_modules/
 test/
-.babelrc
+examples/
 docs/
+
+babel.config.js
 gulpfile.js
 webpack.config.js
-examples/
+jest.config.js

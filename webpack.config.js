@@ -1,9 +1,13 @@
 const express = require('express')
-const babelConfig = require('./babel.config')
 
-// make effect
-babelConfig.presets[0][1].modules = false
-babelConfig.plugins[0][1] = { useESModules: true }
+const babelConfig = {
+  presets: [
+    ['@babel/preset-env', { modules: false }],
+  ],
+  plugins: [
+    ['@babel/plugin-transform-runtime', { useESModules: true }],
+  ],
+}
 
 const config = {
   mode: 'none',
@@ -14,6 +18,11 @@ const config = {
     library: 'tyshemo',
     libraryTarget: 'umd',
     globalObject: `typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this`,
+  },
+  resolve: {
+    alias: {
+      'ts-fns': 'ts-fns/es/index.js',
+    },
   },
   module: {
     rules: [

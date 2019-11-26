@@ -1,15 +1,8 @@
 module.exports = {
-  "presets": [
-    ["@babel/preset-env", {
-      "targets": [
-        "last 1 version",
-        "> 1%",
-        "maintained node versions",
-        "not dead"
-      ]
-    }]
+  presets: [
+    '@babel/preset-env',
   ],
-  "plugins": [
-    ["@babel/plugin-transform-runtime"]
+  plugins: [
+    '@babel/plugin-transform-runtime',
   ]
 }
