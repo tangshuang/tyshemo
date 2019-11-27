@@ -33,6 +33,9 @@ const config = {
       },
     ],
   },
+  externals: {
+    'ts-fns': true,
+  },
   optimization: {
     usedExports: true,
     sideEffects: true,
@@ -61,7 +64,27 @@ const mini = {
   },
 }
 
+const bundle = {
+  ...config,
+  output: {
+    ...config.output,
+    path: __dirname + '/dist',
+  },
+  externals: undefined,
+}
+
+const dist = {
+  ...mini,
+  output: {
+    ...mini.output,
+    path: __dirname + '/dist',
+  },
+  externals: undefined,
+}
+
 module.exports = [
   config,
   mini,
+  bundle,
+  dist,
 ]

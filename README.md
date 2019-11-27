@@ -14,13 +14,19 @@ You can use TySheMo for:
 - formulated data
 - data change watcher
 - responsive data model
-- data mock and docs generating
+- data mock
+- docs generating
 
 ## Install
 
 ```
 npm i tyshemo
 ```
+
+- src: source code
+- cjs: commonjs
+- umd: umd modules
+- dist: umd bundles, can be run in browsers
 
 ## Usage
 
