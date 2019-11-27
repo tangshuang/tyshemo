@@ -21,7 +21,7 @@ import {
 } from 'ts-fns'
 import Schema from './schema.js'
 
-export const PROXY_MODEL = Symbol.for('[[Model]]')
+const PROXY_MODEL = Symbol.for('[[Model]]')
 
 export class Model {
   constructor(data = {}) {

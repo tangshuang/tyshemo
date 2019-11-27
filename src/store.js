@@ -12,7 +12,7 @@ import {
   createProxy,
 } from 'ts-fns'
 
-export const PROXY_STORE = Symbol.for('[[Store]]')
+const PROXY_STORE = Symbol.for('[[Store]]')
 
 export class Store {
   constructor(data = {},) {
