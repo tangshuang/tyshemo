@@ -63,20 +63,34 @@ export class Model {
   init(data) {
     this.restore(data)
     this.state = createProxy(this.data, {
-      get: ([data, keyPath]) => {
-        // when call Symbol.for([[Model]]), return the current model
-        if (keyPath === PROXY_MODEL) {
+      get: ({ target, key, keyPath, keyChain }) => {
+        // when call Symbol.for([[Store]]), return the current store
+        if (key === PROXY_MODEL) {
           return this
         }
 
-        const value = this.get(keyPath)
-        return value
+        // array primitive operation
+        if (isArray(target) && inArray(key, ['push', 'pop', 'unshift', 'shift', 'splice', 'sort', 'reverse', 'fill'])) {
+          const chain = [...keyChain]
+          chain.pop()
+          const targetKeyPath = makeKeyPath(chain)
+          // return a function which trigger change
+          return (...args) => {
+            const newValue = [...target]
+            newValue[key](...args)
+            this.set(targetKeyPath, newValue)
+          }
+        }
+
+        // to collect dependencies
+        const v = this.get(keyPath)
+        return v
       },
-      set: ([data, keyPath, value]) => {
+      set: ({ keyPath, value }) => {
         this.set(keyPath, value)
         return false
       },
-      del: ([data, keyPath]) => {
+      del: ({ keyPath }) => {
         this.del(keyPath)
         return false
       },

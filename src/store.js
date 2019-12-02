@@ -10,6 +10,8 @@ import {
   isFunction,
   makeKeyChain,
   createProxy,
+  inArray,
+  makeKeyPath,
 } from 'ts-fns'
 
 export const PROXY_STORE = Symbol.for('[[Store]]')
@@ -57,21 +59,34 @@ export class Store {
 
     // state
     this.state = createProxy(this.data, {
-      get: ([data, keyPath]) => {
+      get: ({ target, key, keyPath, keyChain }) => {
         // when call Symbol.for([[Store]]), return the current store
-        if (keyPath === PROXY_STORE) {
+        if (key === PROXY_STORE) {
           return this
         }
 
+        // array primitive operation
+        if (isArray(target) && inArray(key, ['push', 'pop', 'unshift', 'shift', 'splice', 'sort', 'reverse', 'fill'])) {
+          const chain = [...keyChain]
+          chain.pop()
+          const targetKeyPath = makeKeyPath(chain)
+          // return a function which trigger change
+          return (...args) => {
+            const newValue = [...target]
+            newValue[key](...args)
+            this.set(targetKeyPath, newValue)
+          }
+        }
+
         // to collect dependencies
-        const value = this.get(keyPath)
-        return value
+        const v = this.get(keyPath)
+        return v
       },
-      set: ([data, keyPath, value]) => {
+      set: ({ keyPath, value }) => {
         this.set(keyPath, value)
         return false
       },
-      del: ([data, keyPath]) => {
+      del: ({ keyPath }) => {
         this.del(keyPath)
         return false
       },

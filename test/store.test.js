@@ -107,4 +107,22 @@ describe('Model', () => {
     delete state.height
     expect(state.height).toBeUndefined()
   })
+
+  test('push, shift', () => {
+    const store = new Store({
+      items: [1, 2],
+    })
+    let count = 0
+    store.watch('*', () => count ++)
+    const { state } = store
+    const { items } = state
+
+    items.push(3)
+    expect(count).toBe(1)
+    expect(items[2]).toBe(3)
+
+    items.shift()
+    expect(count).toBe(2)
+    expect(items[0]).toBe(2)
+  })
 })
