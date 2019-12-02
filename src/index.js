@@ -37,9 +37,8 @@ export { TyError } from './ty-error.js'
 
 export { Schema } from './schema.js'
 
-export { Store, PROXY_STORE } from './store.js'
-export { Model, PROXY_MODEL } from './model.js'
-export { PROXY_TARGET } from 'ts-fns'
+export { Store } from './store.js'
+export { Model } from './model.js'
 
 export { Parser } from './parser.js'
 export { Mocker } from './mocker.js'
