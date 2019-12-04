@@ -86,7 +86,15 @@ export class Model {
         const v = this.get(keyPath)
         return v
       },
-      set: ({ keyPath, value }) => {
+      set: ({ target, key, keyPath, value }) => {
+        // specail array.length
+        if (isArray(target) && key === 'length') {
+          const newValue = [...target]
+          newValue.length = value
+          this.set(keyPath, newValue)
+          return false
+        }
+
         this.set(keyPath, value)
         return false
       },
