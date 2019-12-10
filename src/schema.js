@@ -197,7 +197,7 @@ export class Schema {
   }
 
   /**
-   * make sure very property is fit type and validators
+   * make sure each property is fit type and validators
    * @param {*} key
    * @param {*} value
    * @param {*} context
@@ -326,7 +326,7 @@ export class Schema {
   }
 
   /**
-   * rebuild data by passed data
+   * rebuild data by passed data with `prepare` option, you'd better to call ensure to after rebuild to make sure your data is fix with type
    * @param {*} data
    * @param {*} context
    */

@@ -1,6 +1,7 @@
 import {
   isObject,
   isInstanceOf,
+  isBoolean,
   assign,
   parse,
   flatObject,
@@ -238,7 +239,13 @@ export class Model {
     return this
   }
 
-  update(data) {
+  update(data, sync = false) {
+    // invoke like this.update(true)
+    if (isBoolean(data)) {
+      sync = data
+      data = undefined
+    }
+
     // if do not pass any data
     // example:
     // data.a = 1
@@ -250,7 +257,31 @@ export class Model {
         throw error
       }
       this._digest()
-      return Promise.resolve(this.data)
+      return sync ? this.data : Promise.resolve(this.data)
+    }
+
+    // when pass sync=true
+    // use this to update data
+    if (sync) {
+      const next = map(data, (value, key) => this.schema.set(key, value, this))
+
+      // check data
+      const error = iterate(next, (value, key) => this.schema.validate(key, value, this))
+      if (error) {
+        throw error
+      }
+
+      // update data
+      const backup = clone(this.data)
+      try {
+        Object.assign(this.data, next)
+        this._digest()
+        return this.data
+      }
+      catch (e) {
+        this.data = backup // recover
+        throw e
+      }
     }
 
     return new Promise((resolve, reject) => {
@@ -258,9 +289,7 @@ export class Model {
       clearTimeout(this._isUpdating)
       this._isUpdating = setTimeout(() => {
         // format data first
-        const next = map(this._updators, (value, key) => {
-          return this.schema.set(key, value, this)
-        })
+        const next = map(this._updators, (value, key) => this.schema.set(key, value, this))
 
         // check data
         const error = iterate(next, (value, key) => this.schema.validate(key, value, this))

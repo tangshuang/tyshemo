@@ -272,7 +272,22 @@ export class Store {
 
     return this
   }
-  update(data = {}) {
+  update(data = {}, sync = false) {
+    if (sync) {
+      // update data
+      const backup = clone(this.data)
+      try {
+        each(data, (value, key) => {
+          this.set(key, value)
+        })
+        return this.data
+      }
+      catch (e) {
+        this.data = backup // recover
+        throw e
+      }
+    }
+
     return new Promise((resolve, reject) => {
       Object.assign(this._updators, data)
       clearTimeout(this._isUpdating)
