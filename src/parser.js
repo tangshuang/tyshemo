@@ -41,23 +41,23 @@ export class Parser {
    *   has_football: '?boolean', // ifexist
    *   sex: 'F|M', // enum
    *   dot: '=xxxxx', // equal
-   *   __belong: 'comments of `belong`',
+   *   '#belong': 'comments of `belong`',
    *   belong: '?=animal', // ifexist equal
    *   vioce: '!number', // should not match
    *   num: 'string,numeric', // match multiple
-   *   __parents: [
+   *   '#parents': [
    *     'first line comment',
    *     'second line comment',
    *   ],
    *   parents: '[string,string]', // tuple
    *   books: 'book[]', // list, use defined 'book', recommended
    *   books2: ['book'], // list
-   *   '__books3[0]': 'comment of first child of books3',
+   *   '#books3[0]': 'comment of first child of books3',
    *   books3: ['book1', 'book2'], // = 'book1[]|book2[]'
-   *   '__body.neck': 'comment for body.neck',
+   *   '#body.neck': 'comment for body.neck',
    *   body: {
    *     head: 'boolean',
-   *     __neck: 'comment of neck',
+   *     '#neck': 'comment of neck',
    *     neck: 'boolean',
    *   },
    * }
@@ -168,12 +168,12 @@ export class Parser {
 
     const comments = {}
     const build = (value, key) => {
-      if (key && key.indexOf('__') === 0) {
+      if (key && key.indexOf('#') === 0) {
         comments[key.substr(2)] = value
       }
       else if (isObject(value)) {
         const subtype = parser.parse(value)
-        const subcomments = subtype.__comments
+        const subcomments = subtype.__comments__
         if (key && subcomments) {
           each(subcomments, (m, k) => {
             comments[key + '.' + k] = m
@@ -187,7 +187,7 @@ export class Parser {
           if (typeof subtype !== 'object') {
             return subtype
           }
-          const subcomments = subtype.__comments
+          const subcomments = subtype.__comments__
           if (key && subcomments) {
             each(subcomments, (m, k) => {
               comments[key + '[' + i + ']' + '.' + k] = m
@@ -205,7 +205,7 @@ export class Parser {
     }
     const pattern = map(target, build)
     const type = Ty.create(pattern)
-    type.__comments = comments
+    type.__comments__ = comments
     return type
   }
   describe(dict, options = {}) {
@@ -398,33 +398,33 @@ export class Parser {
 export default Parser
 
 Parser.defaultTypes = {
-  'string': String,
-  'string8': String8,
-  'string16': String16,
-  'string32': String32,
-  'string64': String64,
-  'string128': String128,
-  'number': Number,
-  'boolean': Boolean,
-  'null': Null,
-  'undefined': Undefined,
-  'symbol': Symbol,
-  'function': Function,
-  'array': Array,
-  'object': Object,
-  'numeric': Numeric,
-  'int': Int,
-  'float': Float,
-  'negative': Negative,
-  'positive': Positive,
-  'zero': Zero,
-  'natural': Natural,
-  'any': Any,
-  'nn': NaN,
-  'infinity': Infinity,
-  'finity': Finity,
-  'date': Date,
-  'promise': Promise,
-  'error': Error,
-  'regexp': RegExp,
+  string: String,
+  string8: String8,
+  string16: String16,
+  string32: String32,
+  string64: String64,
+  string128: String128,
+  number: Number,
+  boolean: Boolean,
+  null: Null,
+  undefined: Undefined,
+  symbol: Symbol,
+  function: Function,
+  array: Array,
+  object: Object,
+  numeric: Numeric,
+  int: Int,
+  float: Float,
+  negative: Negative,
+  positive: Positive,
+  zero: Zero,
+  natural: Natural,
+  any: Any,
+  nn: NaN,
+  infinity: Infinity,
+  finity: Finity,
+  date: Date,
+  promise: Promise,
+  error: Error,
+  regexp: RegExp,
 }

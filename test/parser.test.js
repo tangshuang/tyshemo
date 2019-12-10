@@ -48,25 +48,25 @@ describe('Parser', () => {
   })
   test('parse comments', () => {
     const def = {
-      __name: 'the name of someone',
+      '#name': 'the name of someone',
       name: 'string',
-      '__books[0].price': 'the price of this book',
+      '#books[0].price': 'the price of this book',
       books: [
         {
-          __name: 'the name of this book',
+          '#name': 'the name of this book',
           name: 'string',
           price: 'number',
         },
       ],
-      '__son.age': 'the age of son',
+      '#son.age': 'the age of son',
       son: {
-        __name: 'the name of son',
+        '#name': 'the name of son',
         name: 'string',
         age: 'number',
       },
     }
     const type = new Parser().parse(def)
-    const comments = type.__comments
+    const comments = type.__comments__
     const keys = Object.keys(comments)
     expect(keys.length).toBe(5)
   })

@@ -34,6 +34,7 @@ export class Schema {
    *
    *     drop: (value, key, data) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
    *     map: (value, key, data) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
+   *     flat: (value, key, data) => ({ newProp: newValue }), // optional, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original data
    *
    *     getter: (value) => newValue, // format this property value when get
    *     setter: (value) => value, // format this property value when set
@@ -373,10 +374,16 @@ export class Schema {
       throw new Error(`[Schema]: data should be an object when rebuild.`)
     }
 
+    const patch = {}
     const output = map(definition, (def, key) => {
       const value = data[key]
-      const { drop, map } = def
+      const { drop, map, flat } = def
       const handle = def.catch
+
+      if (isFunction(flat)) {
+        const res = flat.call(context, value, key, data) || {}
+        Object.assign(patch, res)
+      }
 
       if (isFunction(drop) && drop.call(context, value, key, data)) {
         return
@@ -401,7 +408,8 @@ export class Schema {
       return value
     })
 
-    return output
+    const result = Object.assign(output, patch)
+    return result
   }
 
   extend(fields) {
