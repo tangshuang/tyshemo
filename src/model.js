@@ -31,7 +31,7 @@ export class Model {
       throw new Error('Model should be extended.')
     }
 
-    var schema = this.schema()
+    let schema = this.schema()
 
     if (isObject(schema)) {
       schema = new Schema(schema)
@@ -63,6 +63,11 @@ export class Model {
 
   init(data) {
     this.restore(data)
+    this.initState(data)
+    this.initVisitor(data)
+  }
+
+  initState(data) {
     this.state = createProxy(this.data, {
       get: ({ target, key, keyPath, keyChain }) => {
         // when call Symbol.for([[Store]]), return the current store
@@ -101,6 +106,40 @@ export class Model {
       },
       del: ({ keyPath }) => {
         this.del(keyPath)
+        return false
+      },
+    })
+  }
+
+  initVisitor(data) {
+    const { schema, state } = this
+    this.visitor = new Proxy({}, {
+      get: (target, key) => {
+	const node = {}
+        Object.defineProperties(node, {
+          value: {
+            get: () => state[key],
+            set: v => state[key] = v,
+          },
+          required: {
+            get: () => schema.required(key, this),
+          },
+          disabled: {
+            get: () => schema.disabled(key, this),
+          },
+          readonly: {
+            get: () => schema.readonly(key, this),
+          },
+          error: {
+            get: () => this.validate(key),
+          }, 
+        })
+        return node
+      },
+      set(target, key, value) {
+        return false
+      },
+      deleteProperty(target, key) {
         return false
       },
     })
@@ -465,12 +504,6 @@ export class Model {
     const data = this.data
     const error = this.schema.validate(data, this)
     return error
-  }
-
-  message(key) {
-    const error = this.validate(key)
-    const message = error ? error.message : ''
-    return message
   }
 
   // parse data before restore, should be override

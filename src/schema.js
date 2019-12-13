@@ -38,6 +38,10 @@ export class Schema {
    *
    *     getter: (value) => newValue, // format this property value when get
    *     setter: (value) => value, // format this property value when set
+   *     
+   *     required() {}, // use schema.required(field) to check
+   *     disabled() {}, // use schema.disabled(field) to check
+   *     readonly() {}, // use schema.readonly(field) to check
    *   },
    * }
    */
@@ -54,6 +58,57 @@ export class Schema {
 
   has(key) {
     return !!this.definition[key]
+  }
+
+  required(key, context) {
+    const { definition } = this
+    const def = definition[key]
+
+    if (!def) {
+      return false
+    }
+
+    const { required } = def
+    
+    if (!required) {
+      return false
+    }
+
+    return !!required.call(context)
+  }
+
+  disabled(key, context) {
+    const { definition } = this
+    const def = definition[key]
+
+    if (!def) {
+      return false
+    }
+
+    const { disabled } = def
+
+    if (!disabled) {
+      return false
+    }
+
+    return !!disabled.call(context)
+  }
+
+  readonly(key, context) {
+    const { difinition } = this
+    const def = definition[key]
+
+    if (!def) {
+      return false
+    }
+
+    const { readonly } = def
+
+    if (!readonly) {
+      return false
+    }
+
+    return !!readonly.call(context)
   }
 
   get(key, value, context) {
