@@ -58,6 +58,6 @@ describe('others', () => {
 
     some.state.some = 12
 
-    expect(some.message('some')).toBe('it should be a string')
+    expect(some.visitor.some.error.message).toBe('it should be a string')
   })
 })

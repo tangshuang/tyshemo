@@ -19,6 +19,7 @@ import {
   inObject,
   isString,
   createProxy,
+  inArray,
 } from 'ts-fns'
 import Schema from './schema.js'
 
@@ -34,7 +35,16 @@ export class Model {
     let schema = this.schema()
 
     if (isObject(schema)) {
-      schema = new Schema(schema)
+      const defs = map(schema, (def) => {
+        if (isInheritedOf(def, Model)) {
+          return Model.toSchemaDef(def, false)
+        }
+        if (isArray(def) && isInheritedOf(def[0], Model)) {
+          return Model.toSchemaDef(def[0], true)
+        }
+        return def
+      })
+      schema = new Schema(defs)
     }
 
     if (!isInstanceOf(schema, Schema)) {
@@ -67,7 +77,7 @@ export class Model {
     this.initVisitor(data)
   }
 
-  initState(data) {
+  initState() {
     this.state = createProxy(this.data, {
       get: ({ target, key, keyPath, keyChain }) => {
         // when call Symbol.for([[Store]]), return the current store
@@ -111,11 +121,11 @@ export class Model {
     })
   }
 
-  initVisitor(data) {
+  initVisitor() {
     const { schema, state } = this
     this.visitor = new Proxy({}, {
       get: (target, key) => {
-	const node = {}
+        const node = {}
         Object.defineProperties(node, {
           value: {
             get: () => state[key],
@@ -132,14 +142,14 @@ export class Model {
           },
           error: {
             get: () => this.validate(key),
-          }, 
+          },
         })
         return node
       },
-      set(target, key, value) {
+      set() {
         return false
       },
-      deleteProperty(target, key) {
+      deleteProperty() {
         return false
       },
     })
@@ -162,6 +172,12 @@ export class Model {
    * @param {*} ensure validate before set, throw an error when not pass
    */
   set(key, value, ensure = false) {
+    // can not change this value
+    const visitor = this.visitor[key]
+    if (visitor && (visitor.readonly || visitor.disabled)) {
+      return this
+    }
+
     // you should not use `set` in `compute`
     if (this._isComputing || this._isCallbacking) {
       return this
@@ -222,6 +238,12 @@ export class Model {
   }
 
   del(key, ensure = false) {
+    // can not change this value
+    const visitor = this.visitor[key]
+    if (visitor && (visitor.readonly || visitor.disabled)) {
+      return this
+    }
+
     // you should not use `set` in `compute`
     if (this._isComputing || this._isCallbacking) {
       return this
@@ -302,7 +324,17 @@ export class Model {
     // when pass sync=true
     // use this to update data
     if (sync) {
-      const next = map(data, (value, key) => this.schema.set(key, value, this))
+      const next = map(data, (value, key) => {
+        // can not change this value
+        const visitor = this.visitor[key]
+        if (visitor && (visitor.readonly || visitor.disabled)) {
+          // return original value
+          return data[key]
+        }
+        else {
+          return this.schema.set(key, value, this)
+        }
+      })
 
       // check data
       const error = iterate(next, (value, key) => this.schema.validate(key, value, this))
@@ -523,6 +555,34 @@ export class Model {
     return this
   }
 
+  static toSchemaDef(Model, isList) {
+    if (isList) {
+      return {
+        default: [],
+        type: [Model],
+        validators: [
+          {
+            validate: ms => iterate(ms, m => m.validate() || undefined) || true,
+          },
+        ],
+        prepare: vs => vs.map(v => new Model(v)),
+        map: ms => ms.map(m => m.jsondata()),
+      }
+    }
+    else {
+      return {
+        default: new Model({}),
+        type: Model,
+        validators: [
+          {
+            validate: m => m.validate(),
+          },
+        ],
+        prepare: v => new Model(v),
+        map: m => m.jsondata(),
+      }
+    }
+  }
 }
 
 export default Model

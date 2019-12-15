@@ -38,7 +38,7 @@ export class Schema {
    *
    *     getter: (value) => newValue, // format this property value when get
    *     setter: (value) => value, // format this property value when set
-   *     
+   *
    *     required() {}, // use schema.required(field) to check
    *     disabled() {}, // use schema.disabled(field) to check
    *     readonly() {}, // use schema.readonly(field) to check
@@ -69,7 +69,7 @@ export class Schema {
     }
 
     const { required } = def
-    
+
     if (!required) {
       return false
     }
@@ -95,7 +95,7 @@ export class Schema {
   }
 
   readonly(key, context) {
-    const { difinition } = this
+    const { definition } = this
     const def = definition[key]
 
     if (!def) {
@@ -112,7 +112,7 @@ export class Schema {
   }
 
   get(key, value, context) {
-    const definition = this.definition
+    const { definition } = this
     const def = definition[key]
 
     if (!def) {
@@ -126,7 +126,7 @@ export class Schema {
   }
 
   set(key, value, context) {
-    const definition = this.definition
+    const { definition } = this
     const def = definition[key]
 
     if (!def) {
@@ -146,7 +146,7 @@ export class Schema {
    * @param {*} context
    */
   validate(key, value, context) {
-    const definition = this.definition
+    const { definition } = this
 
     // validate the whole data
     if (isObject(key)) {
@@ -229,7 +229,7 @@ export class Schema {
         let msg = message
 
         if (isInstanceOf(res, Error)) {
-          msg = res.message
+          return res
         }
 
         if (isFunction(message)) {
@@ -258,7 +258,7 @@ export class Schema {
    * @param {*} context
    */
   ensure(key, value, context) {
-    const definition = this.definition
+    const { definition } = this
 
     if (isObject(key)) {
       context = value
@@ -306,6 +306,7 @@ export class Schema {
       throw new Error(`[Schema]: '${key}' is not existing in schema.`)
     }
 
+    const handle = def.catch
     const error = this.validate(key, value, context)
     if (error) {
       if (isFunction(handle)) {
@@ -324,7 +325,7 @@ export class Schema {
    * @param {function} [fn]
    */
   digest(data, context, fn) {
-    const definition = this.definition
+    const { definition } = this
     const getComputedValue = (def) => {
       const { compute, key } = def
       const handle = def.catch
@@ -386,7 +387,7 @@ export class Schema {
    * @param {*} context
    */
   rebuild(data, context) {
-    const definition = this.definition
+    const { definition } = this
 
     if (!isObject(data)) {
       throw new Error(`[Schema]: data should be an object when rebuild.`)
@@ -423,7 +424,7 @@ export class Schema {
    * @param {*} context
    */
   formulate(data, context) {
-    const definition = this.definition
+    const { definition } = this
 
     if (!isObject(data)) {
       throw new Error(`[Schema]: data should be an object when rebuild.`)
@@ -465,6 +466,13 @@ export class Schema {
 
     const result = Object.assign(output, patch)
     return result
+  }
+
+  override(key, def) {
+    const { definition } = this
+    const exist = definition[key] || {}
+    Object.assign(exist, def)
+    return this
   }
 
   extend(fields) {

@@ -159,8 +159,39 @@ describe('Model', () => {
     })
     const error = some.validate()
     expect(error).toBeInstanceOf(Error)
+    expect(error.message).toBe('Should bigger than 0.')
+  })
 
-    const message = some.message('some')
-    expect(message).toBe('Should bigger than 0.')
+  test('use model as schema', () => {
+    class SomeModel extends Model {
+      schema() {
+        return {
+          num: {
+            type: Number,
+            default: 0,
+          }
+        }
+      }
+    }
+    class AnyModel extends Model {
+      schema() {
+        return {
+          some: SomeModel,
+          listd: [SomeModel],
+        }
+      }
+    }
+
+    const any = new AnyModel()
+    expect(any.state.some.state.num).toBe(0)
+    expect(any.state.listd.length).toBe(0)
+
+    any.restore({
+      listd: [{ num: 10 }],
+    })
+
+    expect(any.state.some.state.num).toBe(0)
+    expect(any.state.listd.length).toBe(1)
+    expect(any.state.listd[0].state.num).toBe(10)
   })
 })
