@@ -74,7 +74,7 @@ export class Model {
   init(data) {
     this.restore(data)
     this.initState(data)
-    this.initVisitor(data)
+    this.initView(data)
   }
 
   initState() {
@@ -121,30 +121,10 @@ export class Model {
     })
   }
 
-  initVisitor() {
-    const { schema, state } = this
-    this.visitor = new Proxy({}, {
+  initView() {
+    this.view = new Proxy({}, {
       get: (target, key) => {
-        const node = {}
-        Object.defineProperties(node, {
-          value: {
-            get: () => state[key],
-            set: v => state[key] = v,
-          },
-          required: {
-            get: () => schema.required(key, this),
-          },
-          disabled: {
-            get: () => schema.disabled(key, this),
-          },
-          readonly: {
-            get: () => schema.readonly(key, this),
-          },
-          error: {
-            get: () => this.validate(key),
-          },
-        })
-        return node
+        return this.take(key)
       },
       set() {
         return false
@@ -157,6 +137,30 @@ export class Model {
 
   schema() {
     throw new Error('[Model]: schema method should be override.')
+  }
+
+  take(key) {
+    const { schema, state } = this
+    const node = {}
+    Object.defineProperties(node, {
+      value: {
+        get: () => state[key],
+        set: v => state[key] = v,
+      },
+      required: {
+        get: () => schema.required(key, this),
+      },
+      disabled: {
+        get: () => schema.disabled(key, this),
+      },
+      readonly: {
+        get: () => schema.readonly(key, this),
+      },
+      error: {
+        get: () => this.validate(key),
+      },
+    })
+    return node
   }
 
   get(key) {
