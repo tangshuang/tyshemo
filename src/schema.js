@@ -468,7 +468,7 @@ export class Schema {
     return result
   }
 
-  override(key, def) {
+  use(key, def) {
     const { definition } = this
     const exist = definition[key] || {}
     Object.assign(exist, def)
