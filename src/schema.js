@@ -11,6 +11,14 @@ export class Schema {
    *   property: {
    *     default: '', // required
    *
+   *     // optional, computed property, will compute at each time digest end
+   *     // when it is a compute property, it is not able to use set to update value
+   *     compute: function() {
+   *       const a = this.get('a')
+   *       const b = this.get('b')
+   *       return a + '' + b
+   *     },
+   *
    *     type: String, // required, notice: `default` and result of `compute` should match type
    *     rule: ifexist, // optional, which rule to use, only `ifexist` `instance` and `equal` allowed
    *     message: '', // the message when type checking and required checking fail
@@ -23,25 +31,19 @@ export class Schema {
    *     ],
    *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error, always by using `ensure`
    *
-   *     // computed property, will compute at each time digest end
-   *     compute: function() {
-   *       const a = this.get('a')
-   *       const b = this.get('b')
-   *       return a + '' + b
-   *     },
    *
-   *     prepare: (data) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
+   *     prepare: (data) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
    *
-   *     drop: (value, key, data) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
-   *     map: (value, key, data) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
-   *     flat: (value, key, data) => ({ newProp: newValue }), // optional, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original data
+   *     drop: (value, key, data) => Boolean, // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
+   *     map: (value, key, data) => newValue, // optional, function, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
+   *     flat: (value, key, data) => ({ newProp: newValue }), // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original data
    *
-   *     getter: (value) => newValue, // format this property value when get
-   *     setter: (value) => value, // format this property value when set
+   *     getter: (value) => newValue, // optional, function, format this property value when get
+   *     setter: (value) => value, // optional, function, format this property value when set
    *
-   *     required() {}, // use schema.required(field) to check, will be invoked by validate
-   *     disabled() {}, // use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
-   *     readonly() {}, // use schema.readonly(field) to check, will disable set
+   *     required() {}, // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
+   *     disabled() {}, // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
+   *     readonly() {}, // optional, function or boolean, use schema.readonly(field) to check, will disable set
    *   },
    * }
    */
@@ -74,7 +76,7 @@ export class Schema {
       return false
     }
 
-    return !!required.call(context)
+    return isFunction(required) ? !!required.call(context) : !!required
   }
 
   disabled(key, context) {
@@ -91,7 +93,7 @@ export class Schema {
       return false
     }
 
-    return !!disabled.call(context)
+    return isFunction(disabled) ? !!disabled.call(context) : !!disabled
   }
 
   readonly(key, context) {
@@ -108,7 +110,7 @@ export class Schema {
       return false
     }
 
-    return !!readonly.call(context)
+    return isFunction(readonly) ? !!readonly.call(context) : !!readonly
   }
 
   get(key, value, context) {
@@ -131,7 +133,7 @@ export class Schema {
       const prev = this.get(key, context)
       return prev
     }
-    
+
     const { definition } = this
     const def = definition[key]
 
@@ -139,7 +141,12 @@ export class Schema {
       return value
     }
 
-    const { setter } = def
+    const { setter, compute } = def
+    
+    if (compute) {
+      throw new Error(`[Schema]: ${key} is a computed property, is not allowed to set value.`)
+    }
+    
     const next = isFunction(setter) ? setter.call(context, value) : value
 
     return next
@@ -359,8 +366,8 @@ export class Schema {
     }
     const output = { ...data }
 
-    var dirty = false
-    var count = 0
+    let dirty = false
+    let count = 0
 
     const digest = () => {
       dirty = false
