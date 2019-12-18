@@ -30,7 +30,7 @@ export class Schema {
    *       return a + '' + b
    *     },
    *
-   *     prepare: (value, key, data) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
+   *     prepare: (data) => !!data.on_market, // optional, used by `rebuild`, `data` is the parameter of `rebuild`
    *
    *     drop: (value, key, data) => Boolean, // optional, whether to not use this property when invoke `jsondata` and `formdata`
    *     map: (value, key, data) => newValue, // optional, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
@@ -401,7 +401,7 @@ export class Schema {
 
       if (isFunction(prepare)) {
         try {
-          const coming = prepare.call(context, value, key, data)
+          const coming = prepare.call(context, data)
           return coming
         }
         catch (error) {
