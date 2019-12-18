@@ -575,6 +575,7 @@ export class Model {
         ],
         prepare: vs => vs.map(v => new Model(v)),
         map: ms => ms.map(m => m.jsondata()),
+        getter: ms => ms.map(m => m.state),
       }
     }
     else {
@@ -588,6 +589,7 @@ export class Model {
         ],
         prepare: v => new Model(v),
         map: m => m.jsondata(),
+        getter: m => m.state,
       }
     }
   }
