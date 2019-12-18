@@ -29,8 +29,6 @@ export class Schema {
    *         message: '', // the message of error which throw when validate not pass
    *       },
    *     ],
-   *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error, always by using `ensure`
-   *
    *
    *     prepare: (value, key, data) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
    *
@@ -47,6 +45,8 @@ export class Schema {
    *     // the difference between `disabled` and `readonly`: 
    *     // disabled is to disable this property, so that it should not be used(shown) in your application, could not be changed, validate will not work, and will be dropped when formulate,
    *     // readonly means the property can only be read/validate/formulate, but could not be changed.
+   *
+   *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error
    *   },
    * }
    */
@@ -137,16 +137,22 @@ export class Schema {
     if (!def) {
       return value
     }
+    
+    const { setter, compute, catch: handle } = def
 
     if (this.disabled(key, context)) {
-      throw new Error(`[Schema]: ${key} is disabled.`)
+      if (isFunction(handle)) {
+        handle(new Error(`[Schema]: ${key} is disabled.`))
+      }
+      return
     }
     
     if (this.readonly(key, context)) {
-      throw new Error(`[Schema]: ${key} is readonly`)
+      if (isFunction(handle)) {
+        handle(new Error(`[Schema]: ${key} is readonly.`))
+      }
+      return
     }
-
-    const { setter, compute } = def
     
     if (compute) {
       throw new Error(`[Schema]: ${key} is a computed property, is not allowed to set value.`)
