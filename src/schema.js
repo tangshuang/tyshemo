@@ -1,4 +1,4 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf } from 'ts-fns'
+import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf, isEmpty } from 'ts-fns'
 import TyError from './ty-error.js'
 import Ty from './ty.js'
 import { ifexist } from './rules.js'
@@ -32,7 +32,7 @@ export class Schema {
    *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error, always by using `ensure`
    *
    *
-   *     prepare: (data) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
+   *     prepare: (value, key, data) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
    *
    *     drop: (value, key, data) => Boolean, // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
    *     map: (value, key, data) => newValue, // optional, function, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
@@ -41,9 +41,9 @@ export class Schema {
    *     getter: (value) => newValue, // optional, function, format this property value when get
    *     setter: (value) => value, // optional, function, format this property value when set
    *
-   *     required() {}, // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
-   *     disabled() {}, // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
-   *     readonly() {}, // optional, function or boolean, use schema.readonly(field) to check, will disable set
+   *     required: () => Boolean, // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
+   *     disabled: () => Boolean, // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
+   *     readonly: () => Boolean, // optional, function or boolean, use schema.readonly(field) to check, will disable set
    *     // the difference between `disabled` and `readonly`: 
    *     // disabled is to disable this property, so that it should not be used(shown) in your application, could not be changed, validate will not work, and will be dropped when formulate,
    *     // readonly means the property can only be read/validate/formulate, but could not be changed.
@@ -131,17 +131,19 @@ export class Schema {
   }
 
   set(key, value, context) {
-    // you are not allowed to change the value
-    if (this.disabled(key, context) || this.readonly(key, context)) {
-      const prev = this.get(key, context)
-      return prev
-    }
-
     const { definition } = this
     const def = definition[key]
 
     if (!def) {
       return value
+    }
+
+    if (this.disabled(key, context)) {
+      throw new Error(`[Schema]: ${key} is disabled.`)
+    }
+    
+    if (this.readonly(key, context)) {
+      throw new Error(`[Schema]: ${key} is readonly`)
     }
 
     const { setter, compute } = def
@@ -229,7 +231,7 @@ export class Schema {
     }
     
     // if required is set, it should check before validators
-    if (!error && this.required(key, context)) {
+    if (!error && this.required(key, context) && isEmpty(value)) {
       error = new Error(`[Schema]: ${key} is required.`)
     }
 
@@ -427,7 +429,7 @@ export class Schema {
 
       if (isFunction(prepare)) {
         try {
-          const coming = prepare.call(context, data)
+          const coming = prepare.call(context, value, key data)
           return coming
         }
         catch (error) {
