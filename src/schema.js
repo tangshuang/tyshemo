@@ -13,7 +13,7 @@ export class Schema {
    *
    *     type: String, // required, notice: `default` and result of `compute` should match type
    *     rule: ifexist, // optional, which rule to use, only `ifexist` `instance` and `equal` allowed
-   *     message: '', // the message when type checking fail
+   *     message: '', // the message when type checking and required checking fail
    *     validators: [ // optional
    *       {
    *         determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
@@ -39,9 +39,9 @@ export class Schema {
    *     getter: (value) => newValue, // format this property value when get
    *     setter: (value) => value, // format this property value when set
    *
-   *     required() {}, // use schema.required(field) to check
-   *     disabled() {}, // use schema.disabled(field) to check
-   *     readonly() {}, // use schema.readonly(field) to check
+   *     required() {}, // use schema.required(field) to check, will be invoked by validate
+   *     disabled() {}, // use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
+   *     readonly() {}, // use schema.readonly(field) to check, will disable set
    *   },
    * }
    */
@@ -126,6 +126,12 @@ export class Schema {
   }
 
   set(key, value, context) {
+    // you are not allowed to change the value
+    if (this.disabled(key, context) || this.readonly(key, context)) {
+      const prev = this.get(key, context)
+      return prev
+    }
+    
     const { definition } = this
     const def = definition[key]
 
@@ -177,6 +183,11 @@ export class Schema {
       tyerr.commit()
       return tyerr.error()
     }
+    
+    // if the property is disabled, there is no need to validate it
+    if (this.disabled(key, context)) {
+      return null
+    }
 
     // validate single key
     const def = definition[key]
@@ -205,6 +216,11 @@ export class Schema {
     // ignore ifexist when have no value
     if (error && rule === ifexist && value === undefined) {
       error = null
+    }
+    
+    // if required is set, it should check before validators
+    if (!error && this.required(key, context)) {
+      error = new Error(`[Schema]: ${key} is required.`)
     }
 
     if (error) {
@@ -441,6 +457,11 @@ export class Schema {
         Object.assign(patch, res)
       }
 
+      // do not to post it to backend, so drop it before all
+      if (this.disabled(key, context)) {
+        return
+      }
+
       if (isFunction(drop) && drop.call(context, value, key, data)) {
         return
       }
@@ -468,10 +489,18 @@ export class Schema {
     return result
   }
 
-  use(key, def) {
+  define(key, def, force = false) {
     const { definition } = this
-    const exist = definition[key] || {}
-    Object.assign(exist, def)
+    
+    if (force) {
+      definition[key] = def
+    }
+    else {
+      const exist = definition[key] || {}
+      Object.assign(exist, def)
+      definition[key] = exist
+    }
+
     return this
   }
 
