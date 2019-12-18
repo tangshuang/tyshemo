@@ -157,7 +157,20 @@ export class Model {
         get: () => schema.readonly(key, this),
       },
       error: {
-        get: () => this.validate(key),
+        get: () => {
+          if (inObject(key, this._errors)) {
+            return this._errors[key]
+          }
+          
+          const error = this.validate(key)
+
+          this._errors[key] = error
+          setTimeout(() => {
+            delete this._errors[key]
+          })
+          
+          return error
+        },
       },
     })
     return node
@@ -433,13 +446,13 @@ export class Model {
   _digest() {
     this._isDigesting = true
 
-    var listeners = this._listeners.filter(({ key }) => key !== '*')
+    let listeners = this._listeners.filter(({ key }) => key !== '*')
     listeners = sortArray(listeners, 'priority')
 
     const cache = this._cache
 
-    var dirty = false
-    var count = 0
+    let dirty = false
+    let count = 0
 
     const digest = () => {
       dirty = false
@@ -496,7 +509,6 @@ export class Model {
     const data = this.data
     const output = this.schema.formulate(data, this)
     const result = this.serialize(output)
-
     return result
   }
 
@@ -521,25 +533,17 @@ export class Model {
       const error = iterate(keys, key => this.validate(key))
       return error
     }
-    if (isString(key)) {
-      if (inObject(key, this._errors)) {
-        return this._errors[key]
-      }
-
+    else if (isString(key)) {
       const value = parse(this.data, key)
       const error = this.schema.validate(key, value, this)
 
-      this._errors[key] = error
-      setTimeout(() => {
-        delete this._errors[key]
-      })
-
       return error
     }
-
-    const data = this.data
-    const error = this.schema.validate(data, this)
-    return error
+    else {
+      const data = this.data
+      const error = this.schema.validate(data, this)
+      return error
+    }
   }
 
   // parse data before restore, should be override
