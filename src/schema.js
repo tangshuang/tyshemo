@@ -44,6 +44,9 @@ export class Schema {
    *     required() {}, // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
    *     disabled() {}, // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
    *     readonly() {}, // optional, function or boolean, use schema.readonly(field) to check, will disable set
+   *     // the difference between `disabled` and `readonly`: 
+   *     // disabled is to disable this property, so that it should not be used(shown) in your application, could not be changed, validate will not work, and will be dropped when formulate,
+   *     // readonly means the property can only be read/validate/formulate, but could not be changed.
    *   },
    * }
    */
