@@ -1,4 +1,20 @@
-import { inArray, isInstanceOf, makeKeyPath, isString, isObject, each, inObject, isNaN, isFunction, isArray, makeKeyChain } from 'ts-fns'
+import {
+  inArray,
+  isInstanceOf,
+  isString,
+  isObject,
+  inObject,
+  isNaN,
+  isFunction,
+  isArray,
+} from 'ts-fns/es/is.js'
+import {
+  makeKeyChain,
+  makeKeyPath,
+} from 'ts-fns/es/key-path.js'
+import {
+  each,
+} from 'ts-fns/es/object.js'
 
 export class TyError extends TypeError {
   constructor(resource) {

@@ -1,5 +1,11 @@
 import Prototype from './prototype.js'
-import { isNull, isUndefined, isNumeric, isNumber, isString } from 'ts-fns'
+import {
+  isNull,
+  isUndefined,
+  isNumeric,
+  isNumber,
+  isString,
+} from 'ts-fns/es/is.js'
 
 export const Null = new Prototype({
   name: 'Null',

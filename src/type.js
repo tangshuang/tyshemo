@@ -1,7 +1,8 @@
 import Prototype from './prototype.js'
 import Rule from './rule.js'
 import TyError from './ty-error.js'
-import { isArray, isObject, isInstanceOf, inArray, getConstructor, inObject } from 'ts-fns'
+import { isArray, isObject, isInstanceOf, inArray, inObject } from 'ts-fns/es/is.js'
+import { getConstructor } from 'ts-fns/es/class.js'
 
 export class Type {
 

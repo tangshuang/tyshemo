@@ -8,7 +8,16 @@ import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
 import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Natural, Any, Finity, String8, String16, String32, String64, String128 } from './prototypes.js'
-import { isNaN, isArray, isFunction, isInstanceOf, map, isObject, isEqual, parse, assign, makeKeyPath } from 'ts-fns'
+import {
+  isNaN,
+  isArray,
+  isFunction,
+  isInstanceOf,
+  isObject,
+  isEqual,
+} from 'ts-fns/es/is.js'
+import { parse, assign, makeKeyPath } from 'ts-fns/es/key-path.js'
+import { map } from 'ts-fns/es/object.js'
 
 export class Mocker {
   constructor(loaders) {

@@ -4,40 +4,40 @@ import { dict } from '../src/dict.js'
 
 describe('Model', () => {
   class PersonModel extends Model {
-    schema() {
-      return new Schema({
-        name: {
-          default: '',
-          type: String,
-        },
-        age: {
-          default: 0,
-          type: Number,
-        },
-        body: {
-          default: {
-            head: true,
-            hands: true,
-            feet: true,
-          },
-          type: dict({
-            head: Boolean,
-            hands: Boolean,
-            feet: Boolean,
-          }),
-        },
-        height: {
-          type: Number,
-          default: 0,
-          compute() {
-            return this.get('body.feet') ? 120 : 60
-          },
-        },
-        weight: {
-          type: Number,
-          default: 20,
-        },
-      })
+    static name = {
+      default: '',
+      type: String,
+    }
+
+    static age = {
+      default: 0,
+      type: Number,
+    }
+
+    static body = {
+      default: {
+        head: true,
+        hands: true,
+        feet: true,
+      },
+      type: dict({
+        head: Boolean,
+        hands: Boolean,
+        feet: Boolean,
+      }),
+    }
+
+    static height = {
+      type: Number,
+      default: 0,
+      compute() {
+        return this.get('body.feet') ? 120 : 60
+      },
+    }
+
+    static weight = {
+      type: Number,
+      default: 20,
     }
   }
 
@@ -138,20 +138,16 @@ describe('Model', () => {
 
   test('validate', () => {
     class SomeModel extends Model {
-      schema() {
-        return {
-          some: {
-            type: Number,
-            default: 0,
-            validators: [
-              {
-                determine: true,
-                validate: v => v > 0,
-                message: 'Should bigger than 0.',
-              },
-            ],
+      static some = {
+        type: Number,
+        default: 0,
+        validators: [
+          {
+            determine: true,
+            validate: v => v > 0,
+            message: 'Should bigger than 0.',
           },
-        }
+        ],
       }
     }
     const some = new SomeModel({
@@ -164,22 +160,14 @@ describe('Model', () => {
 
   test('use model as schema', () => {
     class SomeModel extends Model {
-      schema() {
-        return {
-          num: {
-            type: Number,
-            default: 0,
-          }
-        }
+      static num = {
+        type: Number,
+        default: 0,
       }
     }
     class AnyModel extends Model {
-      schema() {
-        return {
-          some: SomeModel,
-          listd: [SomeModel],
-        }
-      }
+      static some = SomeModel
+      static listd = [SomeModel]
     }
 
     const any = new AnyModel()

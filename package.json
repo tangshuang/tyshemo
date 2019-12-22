@@ -37,6 +37,6 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.7.6",
-    "ts-fns": "^3.0.2"
+    "ts-fns": "^3.0.3"
   }
 }

@@ -1,18 +1,22 @@
 import {
   isObject,
+  isEqual,
+  isArray,
+  isFunction,
+  inArray,
+} from 'ts-fns/es/is.js'
+import {
   assign,
   parse,
   remove,
-  isEqual,
-  clone,
-  isArray,
-  each,
-  isFunction,
   makeKeyChain,
-  createProxy,
-  inArray,
   makeKeyPath,
-} from 'ts-fns'
+} from 'ts-fns/es/key-path.js'
+import {
+  clone,
+  each,
+} from 'ts-fns/es/object.js'
+import { createProxy } from 'ts-fns/es/proxy.js'
 
 const PROXY_STORE = Symbol.for('[[Store]]')
 

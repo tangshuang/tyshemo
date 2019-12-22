@@ -7,9 +7,24 @@ import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
 import Model from './model.js'
-import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Any, Finity, String8, String16, String32, String64, String128, Natural } from './prototypes.js'
+import {
+  Null, Undefined, Any,
+  Numeric, Int, Float, Negative, Positive, Zero, Finity, Natural,
+  String8, String16, String32, String64, String128,
+} from './prototypes.js'
 import { ifexist, shouldnotmatch, equal, match } from './rules.js'
-import { map, each, isInstanceOf, isArray, isObject, isString, isEqual, isInheritedOf } from 'ts-fns'
+import {
+  isInstanceOf,
+  isArray,
+  isObject,
+  isString,
+  isEqual,
+  isInheritedOf,
+} from 'ts-fns/es/is.js'
+import {
+  map,
+  each,
+} from 'ts-fns/es/object.js'
 import Type from './type.js'
 
 export class Parser {

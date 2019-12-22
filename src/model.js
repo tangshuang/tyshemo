@@ -1,70 +1,113 @@
 import {
   isObject,
-  isInstanceOf,
   isBoolean,
-  assign,
-  parse,
-  flatObject,
   isEqual,
   isInheritedOf,
-  clone,
-  getConstructor,
-  each,
-  sortArray,
-  iterate,
-  makeKeyChain,
-  makeKeyPath,
   isArray,
-  map,
   inObject,
   isString,
-  createProxy,
   inArray,
-} from 'ts-fns'
+  isInstanceOf,
+} from 'ts-fns/es/is.js'
+import {
+  assign,
+  parse,
+  makeKeyChain,
+  makeKeyPath,
+} from 'ts-fns/es/key-path.js'
+import {
+  sortArray,
+} from 'ts-fns/es/array.js'
+import {
+  map,
+  each,
+  iterate,
+  clone,
+  flatObject,
+} from 'ts-fns/es/object.js'
+import {
+  getConstructor,
+} from 'ts-fns/es/class.js'
+import {
+  createProxy,
+} from 'ts-fns/es/proxy.js'
 import Schema from './schema.js'
 
 const PROXY_MODEL = Symbol.for('[[Model]]')
 
 export class Model {
-  constructor(data = {}) {
+  constructor(data = {}, options = {}) {
     const Constructor = getConstructor(this)
+
+    // check sub model
     if (!isInheritedOf(Constructor, Model)) {
       throw new Error('Model should be extended.')
     }
 
-    let schema = this.schema()
+    // create schema by model's static properties
+    const defs = map(Constructor, (def) => {
+      /**
+       * class SomeModel extends Model {
+       *   static some = OtherModel
+       * }
+       */
+      if (isInheritedOf(def, Model)) {
+        return convertModelToSchemaDef(def, false, this)
+      }
 
-    if (isObject(schema)) {
-      const defs = map(schema, (def) => {
-        if (isInheritedOf(def, Model)) {
-          return Model.toSchemaDef(def, false)
+      /**
+       * class SomeModel extends Model {
+       *   static some = [OtherModel]
+       * }
+       */
+      if (isArray(def) && isInheritedOf(def[0], Model)) {
+        return convertModelToSchemaDef(def[0], true, this)
+      }
+
+      /**
+       * class SomeModel extends Model {
+       *   static some = {
+       *     type: OtherModel,
+       *     drop: true,
+       *   }
+       * }
+       */
+      if (isInheritedOf(def.type, Model)) {
+        return {
+          ...def,
+          ...convertModelToSchemaDef(def.type, false, this),
         }
-        if (isArray(def) && isInheritedOf(def[0], Model)) {
-          return Model.toSchemaDef(def[0], true)
+      }
+
+      /**
+       * class SomeModel extends Model {
+       *   static some = {
+       *     type: [OtherModel],
+       *     drop: true,
+       *   }
+       * }
+       */
+      if (isArray(def.type) && isInheritedOf(def.type[0], Model)) {
+        return {
+          ...def,
+          ...convertModelToSchemaDef(def.type[0], true, this),
         }
-        return def
-      })
-      schema = new Schema(defs)
-    }
+      }
 
-    if (!isInstanceOf(schema, Schema)) {
-      throw new Error('[Model]: schema should be an object or an instance of Schema.')
-    }
+      return def
+    })
+    this.schema = new Schema(defs)
 
-    this.schema = schema
     this.data = {}
+    this.parent = options.parent
 
     this._errors = {}
-
     this._listeners = []
-
     this._isComputing = false
     this._isDigesting = false
     this._isCallbacking = false
-
     this._updators = {}
     this._isUpdating = null
-
     this._cache = {} // use for property watching
     this._latest = null // use for global watching
 
@@ -72,12 +115,10 @@ export class Model {
   }
 
   init(data) {
+    // create setup data to make it work at the beginning of all
     this.restore(data)
-    this.initState(data)
-    this.initView(data)
-  }
 
-  initState() {
+    // create a state object
     this.state = createProxy(this.data, {
       get: ({ target, key, keyPath, keyChain }) => {
         // when call Symbol.for([[Store]]), return the current store
@@ -119,12 +160,11 @@ export class Model {
         return false
       },
     })
-  }
 
-  initView() {
+    // create a view object
     this.view = new Proxy({}, {
       get: (target, key) => {
-        return this.take(key)
+        return this.use(key)
       },
       set() {
         return false
@@ -135,11 +175,7 @@ export class Model {
     })
   }
 
-  schema() {
-    throw new Error('[Model]: schema method should be override.')
-  }
-
-  take(key) {
+  use(key) {
     const { schema, state } = this
     const node = {}
     Object.defineProperties(node, {
@@ -161,14 +197,14 @@ export class Model {
           if (inObject(key, this._errors)) {
             return this._errors[key]
           }
-          
+
           const error = this.validate(key)
 
           this._errors[key] = error
           setTimeout(() => {
             delete this._errors[key]
           })
-          
+
           return error
         },
       },
@@ -562,37 +598,35 @@ export class Model {
 
     return this
   }
-
-  static toSchemaDef(Model, isList) {
-    if (isList) {
-      return {
-        default: [],
-        type: [Model],
-        validators: [
-          {
-            validate: ms => iterate(ms, m => m.validate() || undefined) || true,
-          },
-        ],
-        prepare: vs => vs.map(v => new Model(v)),
-        map: ms => ms.map(m => m.jsondata()),
-        getter: ms => ms.map(m => m.state),
-      }
-    }
-    else {
-      return {
-        default: new Model({}),
-        type: Model,
-        validators: [
-          {
-            validate: m => m.validate(),
-          },
-        ],
-        prepare: v => new Model(v),
-        map: m => m.jsondata(),
-        getter: m => m.state,
-      }
-    }
-  }
 }
 
 export default Model
+
+function convertModelToSchemaDef(SomeModel, isList, parent) {
+  if (isList) {
+    return {
+      default: [],
+      type: [SomeModel],
+      validators: [
+        {
+          validate: ms => iterate(ms, m => m.validate() || undefined) || true,
+        },
+      ],
+      prepare: vs => vs.map(v => new SomeModel(v, { parent })),
+      map: ms => ms.map(m => m.jsondata()),
+    }
+  }
+  else {
+    return {
+      default: new SomeModel({}, { parent }),
+      type: SomeModel,
+      validators: [
+        {
+          validate: m => m.validate(),
+        },
+      ],
+      prepare: v => new SomeModel(v, { parent }),
+      map: m => m.jsondata(),
+    }
+  }
+}

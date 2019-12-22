@@ -1,4 +1,20 @@
-import { each, isObject, map, iterate, isArray, isFunction, isBoolean, isEqual, getConstructor, isInstanceOf, isEmpty } from 'ts-fns'
+import {
+  isObject,
+  isArray,
+  isFunction,
+  isBoolean,
+  isEqual,
+  isInstanceOf,
+  isEmpty,
+} from 'ts-fns'
+import {
+  each,
+  map,
+  iterate,
+} from 'ts-fns/es/object.js'
+import {
+  getConstructor,
+} from 'ts-fns/es/class.js'
 import TyError from './ty-error.js'
 import Ty from './ty.js'
 import { ifexist } from './rules.js'
@@ -42,7 +58,7 @@ export class Schema {
    *     required: () => Boolean, // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
    *     disabled: () => Boolean, // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
    *     readonly: () => Boolean, // optional, function or boolean, use schema.readonly(field) to check, will disable set
-   *     // the difference between `disabled` and `readonly`: 
+   *     // the difference between `disabled` and `readonly`:
    *     // disabled is to disable this property, so that it should not be used(shown) in your application, could not be changed, validate will not work, and will be dropped when formulate,
    *     // readonly means the property can only be read/validate/formulate, but could not be changed.
    *
@@ -50,7 +66,6 @@ export class Schema {
    *   },
    * }
    */
-
   constructor(definition) {
     each(definition, (def, key) => {
       if (!isObject(def)) {
@@ -137,27 +152,21 @@ export class Schema {
     if (!def) {
       return value
     }
-    
-    const { setter, compute, catch: handle } = def
+
+    const { setter, compute } = def
 
     if (this.disabled(key, context)) {
-      if (isFunction(handle)) {
-        handle(new Error(`[Schema]: ${key} is disabled.`))
-      }
-      return
+      throw new Error(`[Schema]: ${key} is disabled.`)
     }
-    
+
     if (this.readonly(key, context)) {
-      if (isFunction(handle)) {
-        handle(new Error(`[Schema]: ${key} is readonly.`))
-      }
-      return
+      throw new Error(`[Schema]: ${key} is readonly.`)
     }
-    
+
     if (compute) {
       throw new Error(`[Schema]: ${key} is a computed property, is not allowed to set value.`)
     }
-    
+
     const next = isFunction(setter) ? setter.call(context, value) : value
 
     return next
@@ -201,7 +210,7 @@ export class Schema {
       tyerr.commit()
       return tyerr.error()
     }
-    
+
     // if the property is disabled, there is no need to validate it
     if (this.disabled(key, context)) {
       return null
@@ -235,7 +244,7 @@ export class Schema {
     if (error && rule === ifexist && value === undefined) {
       error = null
     }
-    
+
     // if required is set, it should check before validators
     if (!error && this.required(key, context) && isEmpty(value)) {
       error = new Error(`[Schema]: ${key} is required.`)
@@ -509,7 +518,7 @@ export class Schema {
 
   define(key, def, force = false) {
     const { definition } = this
-    
+
     if (force) {
       definition[key] = def
     }

@@ -1,4 +1,4 @@
-import { isFunction, isObject, isArray, isInstanceOf } from 'ts-fns'
+import { isFunction, isObject, isArray, isInstanceOf } from 'ts-fns/es/is.js'
 import Dict from './dict.js'
 import List from './list.js'
 import Type from './type.js'

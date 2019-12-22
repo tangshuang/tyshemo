@@ -1,4 +1,16 @@
-import { isInstanceOf, isNaN, isNumber, isBoolean, isString, isFunction, isArray, isObject, isSymbol, isConstructor, isFinite } from 'ts-fns'
+import {
+  isInstanceOf,
+  isNaN,
+  isNumber,
+  isBoolean,
+  isString,
+  isFunction,
+  isArray,
+  isObject,
+  isSymbol,
+  isConstructor,
+  isFinite,
+} from 'ts-fns/es/is.js'
 
 export class Prototype {
   constructor({ name, validate }) {

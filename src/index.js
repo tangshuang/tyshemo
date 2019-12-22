@@ -36,9 +36,8 @@ export { Ty } from './ty.js'
 export { TyError } from './ty-error.js'
 
 export { Schema } from './schema.js'
-
-export { Store } from './store.js'
 export { Model } from './model.js'
+export { Store } from './store.js'
 
 export { Parser } from './parser.js'
 export { Mocker } from './mocker.js'
