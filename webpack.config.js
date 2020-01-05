@@ -1,5 +1,5 @@
 const express = require('express')
-const DeepScope = require('webpack-deep-scope-plugin')
+const DeepScope = require('webpack-deep-scope-plugin').default
 
 const babelConfig = {
   presets: [

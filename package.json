@@ -5,7 +5,7 @@
   "main": "cjs/index.js",
   "scripts": {
     "prepublishOnly": "npm run test && npm run build",
-    "build": "node gulpfile.js && webpack",
+    "build": "rm -rf cjs && node gulpfile.js && rm -rf dist && webpack",
     "test": "jest",
     "start": "webpack-dev-server"
   },
