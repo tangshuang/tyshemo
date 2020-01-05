@@ -636,7 +636,7 @@ export default Model
 function convertModelToSchemaDef(SomeModel, isList) {
   if (isList) {
     return {
-      default: [],
+      default: () => [],
       type: [SomeModel],
       validators: [
         {
@@ -649,7 +649,7 @@ function convertModelToSchemaDef(SomeModel, isList) {
   }
   else {
     return {
-      default: new SomeModel({}),
+      default: () => new SomeModel(),
       type: SomeModel,
       validators: [
         {

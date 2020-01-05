@@ -317,7 +317,7 @@ export class Schema {
             if (isFunction(handle)) {
               handle.call(context, error, key, value)
             }
-            return defaultValue
+            return createDefaultValue(defaultValue)
           }
           else {
             return value
@@ -332,7 +332,7 @@ export class Schema {
           if (isFunction(handle)) {
             handle.call(context, error, key, value)
           }
-          return defaultValue
+          return createDefaultValue(defaultValue)
         }
       })
 
@@ -351,7 +351,7 @@ export class Schema {
       if (isFunction(handle)) {
         handle.call(context, error, key, value)
       }
-      return defaultValue
+      return createDefaultValue(defaultValue)
     }
 
     return value
@@ -376,7 +376,7 @@ export class Schema {
         if (isFunction(handle)) {
           handle.call(context, error, key)
         }
-        return defaultValue
+        return createDefaultValue(defaultValue)
       }
     }
 
@@ -443,7 +443,7 @@ export class Schema {
           if (isFunction(handle)) {
             handle.call(context, error, key, value)
           }
-          return defaultValue
+          return createDefaultValue(defaultValue)
         }
       }
       else {
@@ -496,7 +496,7 @@ export class Schema {
           if (isFunction(handle)) {
             handle.call(context, error, key, value)
           }
-          return defaultValue
+          return createDefaultValue(defaultValue)
         }
       }
 
@@ -547,3 +547,7 @@ export class Schema {
   }
 }
 export default Schema
+
+function createDefaultValue(defaultValue) {
+  return isFunction(defaultValue) ? defaultValue() : defaultValue
+}
