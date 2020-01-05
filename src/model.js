@@ -219,12 +219,9 @@ export class Model {
     const { schema, state, data } = this
     const node = {}
     Object.defineProperties(node, {
-      state: {
+      value: {
         get: () => state[key],
         set: v => state[key] = v,
-      },
-      data: {
-        get: () => data[key],
       },
       required: {
         get: () => schema.required(key, this),
