@@ -65,40 +65,6 @@ export class Model {
         return convertModelToSchemaDef(def[0], true)
       }
 
-      /**
-       * class SomeModel extends Model {
-       *   static some = {
-       *     type: OtherModel,
-       *     drop: true,
-       *   }
-       * }
-       */
-      if (isInheritedOf(def.type, Model)) {
-        const { type, ...options } = def
-        const modelSchemaDef = convertModelToSchemaDef(def.type, false)
-        return {
-          ...modelSchemaDef,
-          ...options,
-        }
-      }
-
-      /**
-       * class SomeModel extends Model {
-       *   static some = {
-       *     type: [OtherModel],
-       *     drop: true,
-       *   }
-       * }
-       */
-      if (isArray(def.type) && isInheritedOf(def.type[0], Model)) {
-        const { type, ...options } = def
-        const modelSchemaDef = convertModelToSchemaDef(def.type[0], true)
-        return {
-          ...modelSchemaDef,
-          ...options,
-        }
-      }
-
       return def
     })
     this.schema = new Schema(defs)
