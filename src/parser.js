@@ -165,10 +165,18 @@ export class Parser {
             const t = new Mapping([kp, vp])
             return t
           }
+          // other
+          else if (types[item]) {
+            return types[item]
+          }
           // normal
           else {
-            const prototype = types[item] || item
-            return prototype
+            try {
+              return JSON.parse(item)
+            }
+            catch (e) {
+              return item
+            }
           }
         })
         return words.length > 1 ? new Enum(words) : words[0]
