@@ -1,5 +1,4 @@
 import Model from '../src/model.js'
-import Schema from '../src/schema.js'
 import { dict } from '../src/dict.js'
 
 describe('Model', () => {
@@ -171,15 +170,15 @@ describe('Model', () => {
     }
 
     const any = new AnyModel()
-    expect(any.state.some.state.num).toBe(0)
-    expect(any.state.listd.length).toBe(0)
+    expect(any.some.num).toBe(0)
+    expect(any.listd.length).toBe(0)
 
     any.restore({
       listd: [{ num: 10 }],
     })
 
-    expect(any.state.some.state.num).toBe(0)
-    expect(any.state.listd.length).toBe(1)
-    expect(any.state.listd[0].state.num).toBe(10)
+    expect(any.some.num).toBe(0)
+    expect(any.listd.length).toBe(1)
+    expect(any.listd[0].num).toBe(10)
   })
 })

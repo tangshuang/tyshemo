@@ -1,4 +1,5 @@
 const express = require('express')
+const DeepScope = require('webpack-deep-scope-plugin')
 
 const babelConfig = {
   presets: [
@@ -6,15 +7,17 @@ const babelConfig = {
   ],
   plugins: [
     ['@babel/plugin-transform-runtime', { useESModules: true }],
+    '@babel/plugin-proposal-class-properties',
   ],
 }
 
+// umd
 const config = {
   mode: 'none',
   entry: __dirname + '/src/index.js',
   output: {
-    path: __dirname + '/umd',
-    filename: 'tyshemo.js',
+    path: __dirname + '/dist',
+    filename: 'tyshemo.umd.js',
     library: 'tyshemo',
     libraryTarget: 'umd',
     globalObject: `typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this`,
@@ -33,6 +36,9 @@ const config = {
       },
     ],
   },
+  plugins: [
+    new DeepScope(),
+  ],
   externals: {
     'ts-fns': true,
   },
@@ -52,11 +58,13 @@ const config = {
   },
 }
 
+// umd.min
 const mini = {
   ...config,
+  mode: 'production',
   output: {
     ...config.output,
-    filename: 'tyshemo.min.js',
+    filename: 'tyshemo.umd.min.js',
   },
   optimization: {
     ...config.optimization,
@@ -64,20 +72,24 @@ const mini = {
   },
 }
 
+// bundle
 const bundle = {
   ...config,
   output: {
     ...config.output,
     path: __dirname + '/dist',
+    filename: 'tyshemo.js',
   },
   externals: undefined,
 }
 
+// bundle.min
 const dist = {
   ...mini,
   output: {
     ...mini.output,
     path: __dirname + '/dist',
+    filename: 'tyshemo.min.js',
   },
   externals: undefined,
 }

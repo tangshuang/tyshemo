@@ -1,10 +1,9 @@
 import {
   isObject,
   isEmpty,
-} from 'ts-fns/es/is.js'
-import {
   getConstructor,
-} from 'ts-fns/es/class.js'
+} from 'ts-fns'
+
 import Type from './type.js'
 import TyError from './ty-error.js'
 

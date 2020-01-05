@@ -1,4 +1,8 @@
-import { isFunction, isBoolean, isInstanceOf } from 'ts-fns/es/is.js'
+import {
+  isFunction,
+  isBoolean,
+  isInstanceOf,
+} from 'ts-fns'
 
 export class Rule {
   /**

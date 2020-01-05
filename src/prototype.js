@@ -9,8 +9,8 @@ import {
   isObject,
   isSymbol,
   isConstructor,
-  isFinite,
-} from 'ts-fns/es/is.js'
+  isInfinite,
+} from 'ts-fns'
 
 export class Prototype {
   constructor({ name, validate }) {
@@ -28,7 +28,7 @@ export class Prototype {
 export default Prototype
 
 const prototypes = []
-Prototype.registry = (proto, validate) => {
+Prototype.register = (proto, validate) => {
   const item = prototypes.find(item => item.proto === proto)
   if (item) {
     item.validate = validate
@@ -37,7 +37,7 @@ Prototype.registry = (proto, validate) => {
     prototypes.push({ proto, validate })
   }
 }
-Prototype.unregistry = (proto) => {
+Prototype.unregister = (proto) => {
   if (arguments.length === 0) {
     prototypes.length = 0
     return
@@ -53,13 +53,11 @@ Prototype.unregistry = (proto) => {
 }
 Prototype.find = proto => prototypes.find(item => item.proto === proto)
 Prototype.is = proto => ({
-
   // Prototype.is(Number).existing()
   existing: () => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isConstructor(proto) || !!Prototype.find(proto),
 
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
-
     if (isInstanceOf(proto, Prototype)) {
       return proto.validate(value)
     }
@@ -82,19 +80,17 @@ Prototype.is = proto => ({
     }
 
     return false
-
   },
 
   // Prototype.is(10).equal(10)
   equal: value => proto === value,
-
 })
 
-Prototype.registry(Number, isNumber)
-Prototype.registry(String, isString)
-Prototype.registry(Boolean, isBoolean)
-Prototype.registry(Object, isObject)
-Prototype.registry(Array, isArray)
-Prototype.registry(Function, isFunction)
-Prototype.registry(Symbol, isSymbol)
-Prototype.registry(Infinity, value => !isFinite(value))
+Prototype.register(Number, isNumber)
+Prototype.register(String, isString)
+Prototype.register(Boolean, isBoolean)
+Prototype.register(Object, isObject)
+Prototype.register(Array, isArray)
+Prototype.register(Function, isFunction)
+Prototype.register(Symbol, isSymbol)
+Prototype.register(Infinity, isInfinite)

@@ -23,20 +23,23 @@
   },
   "homepage": "https://github.com/tangshuang/tyshemo#readme",
   "devDependencies": {
-    "@babel/core": "^7.7.5",
+    "@babel/core": "^7.7.7",
+    "@babel/plugin-proposal-class-properties": "^7.7.4",
     "@babel/plugin-transform-runtime": "^7.7.6",
-    "@babel/preset-env": "^7.7.6",
+    "@babel/preset-env": "^7.7.7",
     "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.6",
     "gulp": "^4.0.1",
     "gulp-babel": "^8.0.0",
     "jest": "^25.0.0",
-    "webpack": "^4.41.2",
+    "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10",
-    "webpack-dev-server": "^3.9.0"
+    "webpack-deep-scope-plugin": "^1.6.2",
+    "webpack-dev-server": "^3.10.1"
   },
   "dependencies": {
-    "@babel/runtime": "^7.7.6",
-    "ts-fns": "^3.0.3"
+    "@babel/runtime": "^7.7.7",
+    "ts-fns": "^4.0.0"
   }
 }

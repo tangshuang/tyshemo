@@ -1,3 +1,14 @@
+import {
+  isInstanceOf,
+  isArray,
+  isObject,
+  isString,
+  isEqual,
+  isInheritedOf,
+  map,
+  each,
+} from 'ts-fns'
+
 import Ty from './ty.js'
 import Dict from './dict.js'
 import List from './list.js'
@@ -8,23 +19,29 @@ import Mapping from './mapping.js'
 import Rule from './rule.js'
 import Model from './model.js'
 import {
-  Null, Undefined, Any,
-  Numeric, Int, Float, Negative, Positive, Zero, Finity, Natural,
-  String8, String16, String32, String64, String128,
+  Null,
+  Undefined,
+  Any,
+  Numeric,
+  Int,
+  Float,
+  Negative,
+  Positive,
+  Zero,
+  Finity,
+  Natural,
+  String8,
+  String16,
+  String32,
+  String64,
+  String128,
 } from './prototypes.js'
-import { ifexist, shouldnotmatch, equal, match } from './rules.js'
 import {
-  isInstanceOf,
-  isArray,
-  isObject,
-  isString,
-  isEqual,
-  isInheritedOf,
-} from 'ts-fns/es/is.js'
-import {
-  map,
-  each,
-} from 'ts-fns/es/object.js'
+  ifexist,
+  shouldnotmatch,
+  equal,
+  match,
+} from './rules.js'
 import Type from './type.js'
 
 export class Parser {
@@ -408,38 +425,38 @@ export class Parser {
       return description
     }
   }
+
+  static defaultTypes = {
+    string: String,
+    string8: String8,
+    string16: String16,
+    string32: String32,
+    string64: String64,
+    string128: String128,
+    number: Number,
+    boolean: Boolean,
+    null: Null,
+    undefined: Undefined,
+    symbol: Symbol,
+    function: Function,
+    array: Array,
+    object: Object,
+    numeric: Numeric,
+    int: Int,
+    float: Float,
+    negative: Negative,
+    positive: Positive,
+    zero: Zero,
+    natural: Natural,
+    any: Any,
+    nn: NaN,
+    infinity: Infinity,
+    finity: Finity,
+    date: Date,
+    promise: Promise,
+    error: Error,
+    regexp: RegExp,
+  }
 }
 
 export default Parser
-
-Parser.defaultTypes = {
-  string: String,
-  string8: String8,
-  string16: String16,
-  string32: String32,
-  string64: String64,
-  string128: String128,
-  number: Number,
-  boolean: Boolean,
-  null: Null,
-  undefined: Undefined,
-  symbol: Symbol,
-  function: Function,
-  array: Array,
-  object: Object,
-  numeric: Numeric,
-  int: Int,
-  float: Float,
-  negative: Negative,
-  positive: Positive,
-  zero: Zero,
-  natural: Natural,
-  any: Any,
-  nn: NaN,
-  infinity: Infinity,
-  finity: Finity,
-  date: Date,
-  promise: Promise,
-  error: Error,
-  regexp: RegExp,
-}

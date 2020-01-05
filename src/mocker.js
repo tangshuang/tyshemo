@@ -1,3 +1,15 @@
+import {
+  isNaN,
+  isArray,
+  isFunction,
+  isInstanceOf,
+  isObject,
+  isEqual,
+  parse,
+  assign,
+  makeKeyPath,
+  map,
+} from 'ts-fns'
 
 import Type from './type.js'
 import Dict from './dict.js'
@@ -7,17 +19,24 @@ import Tuple from './tuple.js'
 import Range from './range.js'
 import Mapping from './mapping.js'
 import Rule from './rule.js'
-import { Null, Undefined, Numeric, Int, Float, Negative, Positive, Zero, Natural, Any, Finity, String8, String16, String32, String64, String128 } from './prototypes.js'
 import {
-  isNaN,
-  isArray,
-  isFunction,
-  isInstanceOf,
-  isObject,
-  isEqual,
-} from 'ts-fns/es/is.js'
-import { parse, assign, makeKeyPath } from 'ts-fns/es/key-path.js'
-import { map } from 'ts-fns/es/object.js'
+  Null,
+  Undefined,
+  Numeric,
+  Int,
+  Float,
+  Negative,
+  Positive,
+  Zero,
+  Natural,
+  Any,
+  Finity,
+  String8,
+  String16,
+  String32,
+  String64,
+  String128,
+} from './prototypes.js'
 
 export class Mocker {
   constructor(loaders) {

@@ -1,4 +1,10 @@
-import { isFunction, isObject, isArray, isInstanceOf } from 'ts-fns/es/is.js'
+import {
+  isFunction,
+  isObject,
+  isArray,
+  isInstanceOf,
+} from 'ts-fns'
+
 import Dict from './dict.js'
 import List from './list.js'
 import Type from './type.js'
@@ -193,6 +199,22 @@ export class Ty {
     }
   }
 
+  static create(type) {
+    if (isObject(type)) {
+      type = new Dict(type)
+    }
+    else if (isArray(type)) {
+      type = new List(type)
+    }
+    else if (isInstanceOf(type, Type)) {
+      type = type.clone()
+    }
+    else {
+      type = new Type(type)
+    }
+
+    return type
+  }
 }
 
 export default Ty
@@ -206,20 +228,3 @@ Ty.trace = ty.trace.bind(ty)
 Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
 Ty.decorate = ty.decorate.bind(ty)
-
-Ty.create = function(type) {
-  if (isObject(type)) {
-    type = new Dict(type)
-  }
-  else if (isArray(type)) {
-    type = new List(type)
-  }
-  else if (isInstanceOf(type, Type)) {
-    type = type.clone()
-  }
-  else {
-    type = new Type(type)
-  }
-
-  return type
-}

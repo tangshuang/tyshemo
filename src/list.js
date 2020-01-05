@@ -1,7 +1,8 @@
 import {
   isArray,
   isEmpty,
-} from 'ts-fns/es/is.js'
+} from 'ts-fns'
+
 import Type from './type.js'
 import TyError from './ty-error.js'
 

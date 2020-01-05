@@ -4,21 +4,17 @@ import {
   isArray,
   isFunction,
   inArray,
-} from 'ts-fns/es/is.js'
-import {
   assign,
   parse,
   remove,
   makeKeyChain,
   makeKeyPath,
-} from 'ts-fns/es/key-path.js'
-import {
   clone,
   each,
-} from 'ts-fns/es/object.js'
-import { createProxy } from 'ts-fns/es/proxy.js'
+  createProxy,
+} from 'ts-fns'
 
-const PROXY_STORE = Symbol.for('[[Store]]')
+const PROXY_STORE = /*#__PURE__*/Symbol.for('[[Store]]')
 
 export class Store {
   constructor(data = {},) {

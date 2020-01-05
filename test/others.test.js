@@ -1,4 +1,4 @@
-import { Model, Schema } from '../src/index.js'
+import { Model } from '../src/index.js'
 
 describe('others', () => {
   test('format', async () => {
@@ -51,6 +51,6 @@ describe('others', () => {
 
     some.state.some = 12
 
-    expect(some.visitor.some.error.message).toBe('it should be a string')
+    expect(some.view.some.error.message).toBe('it should be a string')
   })
 })

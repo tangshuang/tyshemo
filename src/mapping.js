@@ -1,7 +1,11 @@
 import Type from './type.js'
+import {
+  isObject,
+  isArray,
+  each,
+} from 'ts-fns'
+
 import TyError from './ty-error.js'
-import { isObject, isArray } from 'ts-fns/es/is.js'
-import { each } from 'ts-fns/es/object.js'
 
 export class Mapping extends Type {
   constructor(pattern = [String, String]) {

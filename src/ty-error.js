@@ -7,14 +7,10 @@ import {
   isNaN,
   isFunction,
   isArray,
-} from 'ts-fns/es/is.js'
-import {
   makeKeyChain,
   makeKeyPath,
-} from 'ts-fns/es/key-path.js'
-import {
   each,
-} from 'ts-fns/es/object.js'
+} from 'ts-fns'
 
 export class TyError extends TypeError {
   constructor(resource) {
@@ -117,19 +113,19 @@ export class TyError extends TypeError {
     this._message = message
     return message
   }
-}
 
-TyError.shouldUseSensitiveData = true
-TyError.shouldBreakLongMessage = false
-TyError.defaultMessages = {
-  exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
-  unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
-  dirty: '{keyPath} receive `{receive}` whose length does not match `{should}`.',
-  overflow: '{keyPath} should not exists.',
-  missing: '{keyPath} is missing.',
-  illegal: 'key `{key}` at {keyPath} should match `{should}`',
+  static shouldUseSensitiveData = true
+  static shouldBreakLongMessage = false
+  static defaultMessages = {
+    exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
+    unexcepted: '{keyPath} should not match `{should}`, but receive `{receive}`.',
+    dirty: '{keyPath} receive `{receive}` whose length does not match `{should}`.',
+    overflow: '{keyPath} should not exists.',
+    missing: '{keyPath} is missing.',
+    illegal: 'key `{key}` at {keyPath} should match `{should}`',
+  }
+  static keyPathPrefix = '$.'
 }
-TyError.keyPathPrefix = '$.'
 
 export default TyError
 

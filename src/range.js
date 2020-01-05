@@ -1,10 +1,11 @@
-import Type from './type.js'
-import TyError from './ty-error.js'
 import {
   inObject,
   isObject,
   isNumber,
-} from 'ts-fns/es/is.js'
+} from 'ts-fns'
+
+import Type from './type.js'
+import TyError from './ty-error.js'
 
 export class Range extends Type {
   constructor(pattern) {

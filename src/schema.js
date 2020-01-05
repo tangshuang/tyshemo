@@ -6,18 +6,17 @@ import {
   isEqual,
   isInstanceOf,
   isEmpty,
-} from 'ts-fns/es/is.js'
-import {
   each,
   map,
   iterate,
-} from 'ts-fns/es/object.js'
-import {
   getConstructor,
-} from 'ts-fns/es/class.js'
+} from 'ts-fns'
+
 import TyError from './ty-error.js'
 import Ty from './ty.js'
-import { ifexist } from './rules.js'
+import {
+  ifexist,
+} from './rules.js'
 
 /**
  * new Schema({
@@ -43,7 +42,7 @@ import { ifexist } from './rules.js'
  *       },
  *     ],
  *
- *     prepare: (data) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
+ *     prepare: (data, key) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
  *
  *     drop: (value, key, data) => Boolean, // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
  *     map: (value, key, data) => newValue, // optional, function, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
@@ -139,7 +138,6 @@ export class Schema {
     }
 
     const next = isFunction(getter) ? getter.call(context, value) : value
-
     return next
   }
 
@@ -216,8 +214,7 @@ export class Schema {
 
     // validate single key
     const def = definition[key]
-    const { type, rule, validators, message } = def
-    const handle = def.catch
+    const { type, rule, validators, message, catch: handle } = def
 
     const transform = (error, message, key, value, context) => {
       let msg = error.message
@@ -255,9 +252,11 @@ export class Schema {
     else if (isArray(validators)) {
       error = iterate(validators, (validator) => {
         const { validate, determine, message } = validator
+
         if (isFunction(determine) && !determine.call(context, value, key)) {
           return
         }
+
         if (isBoolean(determine) && !determine) {
           return
         }
@@ -307,8 +306,7 @@ export class Schema {
 
       const data = value
       const output = map(definition, (def, key) => {
-        const defaultValue = def.default
-        const handle = def.catch
+        const { default: defaultValue, catch: handle } = def
         const { rule, type } = def
         const value = data[key]
 
@@ -347,9 +345,9 @@ export class Schema {
       throw new Error(`[Schema]: '${key}' is not existing in schema.`)
     }
 
-    const handle = def.catch
     const error = this.validate(key, value, context)
     if (error) {
+      const { catch: handle, default: defaultValue } = def
       if (isFunction(handle)) {
         handle.call(context, error, key, value)
       }
@@ -363,14 +361,13 @@ export class Schema {
    * get final computed properties.
    * @param {*} data
    * @param {*} context
-   * @param {function} [fn]
+   * @param {function} [fn] this will affect context
    */
   digest(data, context, fn) {
     const { definition } = this
+    const output = { ...data }
     const getComputedValue = (def) => {
-      const { compute, key } = def
-      const handle = def.catch
-      const defaultValue = def.default
+      const { compute, key, catch: handle, default: defaultValue } = def
       try {
         const res = compute.call(context)
         return res
@@ -382,7 +379,6 @@ export class Schema {
         return defaultValue
       }
     }
-    const output = { ...data }
 
     let dirty = false
     let count = 0
@@ -436,13 +432,11 @@ export class Schema {
 
     const output = map(definition, (def, key) => {
       const value = data[key]
-      const { prepare } = def
-      const handle = def.catch
-      const defaultValue = def.default
+      const { prepare, catch: handle, default: defaultValue } = def
 
       if (isFunction(prepare)) {
         try {
-          const coming = prepare.call(context, data)
+          const coming = prepare.call(context, data, key)
           return coming
         }
         catch (error) {
@@ -474,8 +468,7 @@ export class Schema {
     const patch = {}
     const output = map(definition, (def, key) => {
       const value = data[key]
-      const { drop, map, flat } = def
-      const handle = def.catch
+      const { drop, map, flat, catch: handle, default: defaultValue } = def
 
       if (isFunction(flat)) {
         const res = flat.call(context, value, key, data) || {}
@@ -503,7 +496,7 @@ export class Schema {
           if (isFunction(handle)) {
             handle.call(context, error, key, value)
           }
-          return def.default
+          return defaultValue
         }
       }
 
@@ -514,10 +507,10 @@ export class Schema {
     return result
   }
 
-  define(key, def, force = false) {
+  define(key, def, replace = false) {
     const { definition } = this
 
-    if (force) {
+    if (replace) {
       definition[key] = def
     }
     else {
@@ -536,6 +529,7 @@ export class Schema {
     const schema = new Constructor(next)
     return schema
   }
+
   extract(fields) {
     const current = this.definition
     const keys = Object.keys(fields)

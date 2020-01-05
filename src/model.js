@@ -4,39 +4,40 @@ import {
   isEqual,
   isInheritedOf,
   isArray,
-  inObject,
   isString,
   inArray,
-  isInstanceOf,
-} from 'ts-fns/es/is.js'
-import {
   assign,
   parse,
   makeKeyChain,
   makeKeyPath,
-} from 'ts-fns/es/key-path.js'
-import {
   sortArray,
-} from 'ts-fns/es/array.js'
-import {
   map,
   each,
   iterate,
   clone,
   flatObject,
-} from 'ts-fns/es/object.js'
-import {
   getConstructor,
-} from 'ts-fns/es/class.js'
-import {
   createProxy,
-} from 'ts-fns/es/proxy.js'
+  isInstanceOf,
+} from 'ts-fns'
+
 import Schema from './schema.js'
 
-const PROXY_MODEL = Symbol.for('[[Model]]')
+const PROXY_MODEL = /*#__PURE__*/Symbol.for('[[Model]]')
 
+/**
+ * class SomeModel extends Model {
+ *   static some = {
+ *     type: String,
+ *     default: '',
+ *   }
+ * }
+ *
+ * @keywords: schema, data, data, view, init, getParent, use, get, set, del, update,
+ *            watch, unwatch, serialize, jsondata, plaindata, formdata, validate, parse, restore
+ */
 export class Model {
-  constructor(data = {}, options = {}) {
+  constructor(data = {}) {
     const Constructor = getConstructor(this)
 
     // check sub model
@@ -52,7 +53,7 @@ export class Model {
        * }
        */
       if (isInheritedOf(def, Model)) {
-        return convertModelToSchemaDef(def, false, this)
+        return convertModelToSchemaDef(def, false)
       }
 
       /**
@@ -61,7 +62,7 @@ export class Model {
        * }
        */
       if (isArray(def) && isInheritedOf(def[0], Model)) {
-        return convertModelToSchemaDef(def[0], true, this)
+        return convertModelToSchemaDef(def[0], true)
       }
 
       /**
@@ -73,9 +74,11 @@ export class Model {
        * }
        */
       if (isInheritedOf(def.type, Model)) {
+        const { type, ...options } = def
+        const modelSchemaDef = convertModelToSchemaDef(def.type, false)
         return {
-          ...def,
-          ...convertModelToSchemaDef(def.type, false, this),
+          ...modelSchemaDef,
+          ...options,
         }
       }
 
@@ -88,9 +91,11 @@ export class Model {
        * }
        */
       if (isArray(def.type) && isInheritedOf(def.type[0], Model)) {
+        const { type, ...options } = def
+        const modelSchemaDef = convertModelToSchemaDef(def.type[0], true)
         return {
-          ...def,
-          ...convertModelToSchemaDef(def.type[0], true, this),
+          ...modelSchemaDef,
+          ...options,
         }
       }
 
@@ -99,9 +104,7 @@ export class Model {
     this.schema = new Schema(defs)
 
     this.data = {}
-    this.parent = options.parent
 
-    this._errors = {}
     this._listeners = []
     this._isComputing = false
     this._isDigesting = false
@@ -173,15 +176,55 @@ export class Model {
         return false
       },
     })
+
+    // patch properties on this
+    const Constructor = getConstructor(this)
+    each(Constructor, (def, key) => {
+      Object.defineProperty(this, key, {
+        get: () => this.state[key],
+        set: (v) => this.state[key] = v,
+      })
+    })
+  }
+
+  /**
+   * if current model is a submodel, use this method to find its parent model
+   * @param {*} root
+   */
+  getParent(root) {
+    const find = (parent, target) => {
+      if (!isInstanceOf(parent, Model)) {
+        return
+      }
+
+      const { data } = parent
+      const keys = Object.keys(data)
+      for (let i = 0, len = keys.length; i < len; i ++) {
+        const key = keys[i]
+        const node = data[key]
+        if (node === target) {
+          return parent
+        }
+
+        const next = find(node, target)
+        if (next) {
+          return next
+        }
+      }
+    }
+    return find(root, this)
   }
 
   use(key) {
-    const { schema, state } = this
+    const { schema, state, data } = this
     const node = {}
     Object.defineProperties(node, {
-      value: {
+      state: {
         get: () => state[key],
         set: v => state[key] = v,
+      },
+      data: {
+        get: () => data[key],
       },
       required: {
         get: () => schema.required(key, this),
@@ -193,20 +236,7 @@ export class Model {
         get: () => schema.readonly(key, this),
       },
       error: {
-        get: () => {
-          if (inObject(key, this._errors)) {
-            return this._errors[key]
-          }
-
-          const error = this.validate(key)
-
-          this._errors[key] = error
-          setTimeout(() => {
-            delete this._errors[key]
-          })
-
-          return error
-        },
+        get: () => this.validate(key),
       },
     })
     return node
@@ -226,8 +256,8 @@ export class Model {
    */
   set(key, value, ensure = false) {
     // can not change this value
-    const visitor = this.visitor[key]
-    if (visitor && (visitor.readonly || visitor.disabled)) {
+    const view = this.view[key]
+    if (view && (view.readonly || view.disabled)) {
       return this
     }
 
@@ -292,8 +322,8 @@ export class Model {
 
   del(key, ensure = false) {
     // can not change this value
-    const visitor = this.visitor[key]
-    if (visitor && (visitor.readonly || visitor.disabled)) {
+    const view = this.view[key]
+    if (view && (view.readonly || view.disabled)) {
       return this
     }
 
@@ -379,8 +409,8 @@ export class Model {
     if (sync) {
       const next = map(data, (value, key) => {
         // can not change this value
-        const visitor = this.visitor[key]
-        if (visitor && (visitor.readonly || visitor.disabled)) {
+        const view = this.view[key]
+        if (view && (view.readonly || view.disabled)) {
           // return original value
           return data[key]
         }
@@ -602,7 +632,7 @@ export class Model {
 
 export default Model
 
-function convertModelToSchemaDef(SomeModel, isList, parent) {
+function convertModelToSchemaDef(SomeModel, isList) {
   if (isList) {
     return {
       default: [],
@@ -612,20 +642,20 @@ function convertModelToSchemaDef(SomeModel, isList, parent) {
           validate: ms => iterate(ms, m => m.validate() || undefined) || true,
         },
       ],
-      prepare: vs => vs.map(v => new SomeModel(v, { parent })),
+      prepare: (data, key) => isArray(data[key]) ? data[key].map(v => isObject(v) ? new SomeModel(v) : new SomeModel()) : [],
       map: ms => ms.map(m => m.jsondata()),
     }
   }
   else {
     return {
-      default: new SomeModel({}, { parent }),
+      default: new SomeModel({}),
       type: SomeModel,
       validators: [
         {
           validate: m => m.validate(),
         },
       ],
-      prepare: v => new SomeModel(v, { parent }),
+      prepare: (data, key) => isObject(data[key]) ? new SomeModel(data[key]) : new SomeModel(),
       map: m => m.jsondata(),
     }
   }
