@@ -180,6 +180,10 @@ export class Model {
     // patch properties on this
     const Constructor = getConstructor(this)
     each(Constructor, (def, key) => {
+      // ignore keywords
+      if (this[key]) {
+        return
+      }
       Object.defineProperty(this, key, {
         get: () => this.state[key],
         set: (v) => this.state[key] = v,
