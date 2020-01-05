@@ -1,4 +1,5 @@
 import Type from './type.js'
+import Ty from './ty.js'
 import {
   isObject,
   isArray,
@@ -6,14 +7,12 @@ import {
 } from 'ts-fns'
 
 import TyError from './ty-error.js'
+import { Any } from './prototypes.js'
 
 export class Mapping extends Type {
-  constructor(pattern = [String, String]) {
-    if (!isArray(pattern)) {
-      throw new Error('[Mapping]: pattern should be an array.')
-    }
-    if (pattern.length !== 2) {
-      throw new Error('[Mapping]: pattern should has length of 2.')
+  constructor(pattern) {
+    if (!Ty.is(pattern).of({ key: Any, value: Any })) {
+      throw new Error('[Mapping]: pattern should be an object with { key, value }.')
     }
 
     super(pattern)
@@ -23,7 +22,7 @@ export class Mapping extends Type {
   catch(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
-    const [keyPattern, valuePattern] = pattern
+    const { key: keyPattern, value: valuePattern } = pattern
 
     if (!isObject(value)) {
       tyerr.replace({ type: 'exception', value, name: this.name, pattern: Object })

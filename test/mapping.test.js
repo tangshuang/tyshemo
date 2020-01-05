@@ -2,7 +2,7 @@ import { Mapping, Numeric } from '../src/index.js'
 
 describe('Mapping', () => {
   test('one level', () => {
-    const SomeMapping = new Mapping([Numeric, String])
+    const SomeMapping = new Mapping({ key: Numeric, value: String })
     const a = {
       2019: '92103',
     }
