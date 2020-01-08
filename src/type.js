@@ -47,7 +47,7 @@ export class Type {
         const count = values.length
         const enumerate = (value, patterns) => {
           for (let i = 0, len = patterns.length; i < len; i ++) {
-            const pattern = patterns[i]
+            let pattern = patterns[i]
             // nested Type
             if (isInstanceOf(pattern, Type)) {
               if (this.isStrict && !pattern.isStrict) {
@@ -73,7 +73,7 @@ export class Type {
           const value = values[i]
           const bool = enumerate(value, patterns)
           if (!bool) {
-            tyerr.add({ type: 'exception', index: i, value, name: 'enum', pattern: patterns })
+            tyerr.add({ type: 'exception', index: i, value, name: 'Enum', pattern: patterns })
           }
         }
       }
@@ -103,7 +103,8 @@ export class Type {
         for (let i = 0, len = patternKeys.length; i < len; i ++) {
           const key = patternKeys[i]
           const value = data[key]
-          const pattern = patterns[key]
+
+          let pattern = patterns[key]
 
           const isRule = isInstanceOf(pattern, Rule)
           if (isRule) {

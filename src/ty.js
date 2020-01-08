@@ -147,6 +147,7 @@ export class Ty {
    * @ty.decorate('input').with((value) => SomeType.assert(value))
    */
   decorate(what) {
+    const $this = this
     return {
       with: (type) => (target, prop, descriptor) => {
         // decorate class constructor function
@@ -154,7 +155,7 @@ export class Ty {
           if (what !== 'input' && what !== 'output') {
             return class extends target {
               constructor(...args) {
-                this.expect(args).to.be(type)
+                $this.expect(args).to.be(type)
                 super(...args)
               }
             }
@@ -175,13 +176,12 @@ export class Ty {
 
           // what
           if (typeof property === 'function' && (what === 'input' || what === 'output')) {
-            let property = descriptor.value
-            let $this = this
-            let wrapper = function(...args) {
+            const property = descriptor.value
+            const wrapper = function(...args) {
               if (what === 'input') {
                 $this.expect(args).to.be(type)
               }
-              let result = property.call(this, ...args)
+              const result = property.call(this, ...args)
               if (what === 'output') {
                 $this.expect(result).to.be(type)
               }
