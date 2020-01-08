@@ -5,9 +5,11 @@
   </head>
   <body>
 
-    <script src="./bundle.js"></script>
+    <script src="./tyshemo.js"></script>
     <script>
       const { Model, Schema, ifexist, dict, shouldmatch, TyError, Enum, list, range, tuple, mapping, Numeric } = window['tyshemo']
+      TyError.shouldBreakLongMessage = true
+      // TyError.shouldHideSensitiveData = false
       function test(fn) {
         try {
           fn()
@@ -132,14 +134,29 @@
       // console.log(person.state)
     </script>
     <script>
-      const SomeMapping = mapping([Numeric, String])
-      const a = {
-        2019: 'ghi',
-        2019: 123,
-        abc: 'jkl',
-        def: 123,
-      }
-      SomeMapping.assert(a)
+      // const SomeMapping = mapping({ key: Numeric, value: String })
+      // const a = {
+      //   2019: 'ghi',
+      //   2019: 123,
+      //   abc: 'jkl',
+      //   def: 123,
+      // }
+      // SomeMapping.assert(a)
+    </script>
+    <script>
+      const BookType = dict({
+        name: String,
+        price: Number,
+      })
+      const OneType = dict({
+        books: [
+          [BookType]
+        ],
+      })
+
+      OneType.assert({
+        books: true,
+      })
     </script>
   </body>
 </html>

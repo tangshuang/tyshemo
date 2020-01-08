@@ -3,10 +3,9 @@ const DeepScope = require('webpack-deep-scope-plugin').default
 
 const babelConfig = {
   presets: [
-    ['@babel/preset-env', { modules: false }],
+    ['@babel/preset-env', { modules: false, loose: true }],
   ],
   plugins: [
-    ['@babel/plugin-transform-runtime', { useESModules: true }],
     '@babel/plugin-proposal-class-properties',
   ],
 }
@@ -80,6 +79,7 @@ const bundle = {
     path: __dirname + '/dist',
     filename: 'tyshemo.js',
   },
+  resolve: undefined,
   externals: undefined,
 }
 
@@ -91,6 +91,7 @@ const dist = {
     path: __dirname + '/dist',
     filename: 'tyshemo.min.js',
   },
+  resolve: undefined,
   externals: undefined,
 }
 

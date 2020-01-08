@@ -9,6 +9,7 @@ import {
   assign,
   makeKeyPath,
   map,
+  createRandomString,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -287,15 +288,6 @@ function createRandom(f = 3) {
     random = random * Math.random() * 1/(i * 5 + 1)
   }
   return random
-}
-
-function createRandomString(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let text = ''
-  for (let i = 0; i < length; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return text
 }
 
 function create(target, loaders) {

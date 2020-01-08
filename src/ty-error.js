@@ -88,7 +88,7 @@ export class TyError extends TypeError {
       keyPathPrefix = TyError.keyPathPrefix,
       breaktag = traces.length < 2 ? '' : '\n',
       breakline = TyError.shouldBreakLongMessage,
-      sensitive = TyError.shouldUseSensitiveData,
+      sensitive = TyError.shouldHideSensitiveData,
       templates = {},
     } = options
     const bands = { ...TyError.defaultMessages, ...templates }
@@ -114,7 +114,7 @@ export class TyError extends TypeError {
     return message
   }
 
-  static shouldUseSensitiveData = true
+  static shouldHideSensitiveData = false
   static shouldBreakLongMessage = false
   static defaultMessages = {
     exception: '{keyPath} should match `{should}`, but receive `{receive}`.',
@@ -212,22 +212,22 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     return value + ''
   }
   else if (totype === 'number') {
-    return sensitive ? value + '' : '***'
+    return sensitive ? '***' : value + ''
   }
   else if (totype === 'string') {
-    return JSON.stringify(sensitive ? value : '***')
+    return JSON.stringify(sensitive ? '***' : value)
   }
   else if (isFunction(value)) {
     return value.name + '()'
   }
   else if (isArray(value)) {
-    let items = value.map(item => makeValueString(item, sensitive, breakline, space + 2))
-    let output = britems(items, '[', ']', space)
+    const items = value.map(item => makeValueString(item, sensitive, breakline, space + 2))
+    const output = britems(items, '[', ']', space)
     return output
   }
   else if (isObject(value)) {
-    let keys = Object.keys(value)
-    let output = sensitive ? stringify(value) : britems(keys, '{', '}', space)
+    const keys = Object.keys(value)
+    const output = sensitive ? britems(keys, '{', '}', space) : stringify(value, space)
     return output
   }
   else if (typeof value === 'object') { // for class instances
@@ -245,12 +245,12 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
   }
   else {
-    let output = value.toString()
+    const output = value.toString()
     return output
   }
 }
 
-function makeErrorReceive(value, breakline = true, sensitive = true) {
+function makeErrorReceive(value, breakline = true, sensitive = false) {
   const output = makeValueString(value, sensitive, breakline)
   return output
 }
@@ -261,11 +261,11 @@ function makeErrorShould(info, breakline = true) {
   }
 
   if (info.length === 1) {
-    return makeValueString(info[0], true, breakline)
+    return makeValueString(info[0], false, breakline)
   }
 
   const [name, pattern] = info
-  const output = name + '(' + makeValueString(pattern, true, breakline) + ')'
+  const output = name + '(' + makeValueString(pattern, false, breakline) + ')'
   return output
 }
 
