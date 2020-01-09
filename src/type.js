@@ -46,6 +46,7 @@ export class Type {
         const values = value
         const count = values.length
         const enumerate = (value, patterns) => {
+          const errors = []
           for (let i = 0, len = patterns.length; i < len; i ++) {
             let pattern = patterns[i]
             // nested Type
@@ -55,25 +56,38 @@ export class Type {
               }
               const error = pattern.catch(value)
               if (!error) {
-                return true
+                return null
+              }
+              else {
+                errors.push(error)
               }
             }
             // normal validate
             else {
               const error = this.validate(value, pattern)
               if (!error) {
-                return true
+                return null
+              }
+              else {
+                errors.push(error)
               }
             }
           }
-          return false
+          return errors
         }
 
         for (let i = 0; i < count; i ++) {
           const value = values[i]
-          const bool = enumerate(value, patterns)
-          if (!bool) {
-            tyerr.add({ type: 'exception', index: i, value, name: 'Enum', pattern: patterns })
+          const errors = enumerate(value, patterns)
+          if (errors) {
+            tyerr.add({
+              type: 'exception',
+              index: i,
+              value,
+              name: 'Enum',
+              pattern: patterns,
+              enum: errors,
+            })
           }
         }
       }

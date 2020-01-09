@@ -231,8 +231,14 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     return output
   }
   else if (typeof value === 'object') { // for class instances
+    // enum
+    if (inObject('enum', value)) {
+      const { name, errors } = value
+      const output = makeEnumString(errors, sensitive, breakline, space)
+      return isString(name) ? name + '(' + output + ')' : output
+    }
     // type or rule
-    if (inObject('pattern', value)) {
+    else if (inObject('pattern', value)) {
       const name = value.name
       const output = makeValueString(value.pattern, sensitive, breakline, space)
       return isString(name) ? name + '(' + output + ')' : output
@@ -248,6 +254,10 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     const output = value.toString()
     return output
   }
+}
+
+function makeEnumString(errors, sensitive, breakline, space) {
+
 }
 
 function makeErrorReceive(value, breakline = true, sensitive = false) {

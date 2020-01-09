@@ -19,6 +19,7 @@ export class Enum extends Type {
     const pattern = this.pattern
     const patterns = pattern
     const tyerr = new TyError()
+    const errors = []
 
     for (let i = 0, len = patterns.length; i < len; i ++) {
       let pattern = patterns[i]
@@ -27,21 +28,34 @@ export class Enum extends Type {
         if (this.isStrict && !pattern.isStrict) {
           pattern = pattern.strict
         }
-        let error = pattern.catch(value)
+
+        const error = pattern.catch(value)
         if (!error) {
           return null
+        }
+        else {
+          errors.push(error)
         }
       }
       // normal validate
       else {
-        let error = this.validate(value, pattern)
+        const error = this.validate(value, pattern)
         if (!error) {
           return null
+        }
+        else {
+          errors.push(error)
         }
       }
     }
 
-    tyerr.replace({ type: 'exception', value, name: this.name, pattern })
+    tyerr.replace({
+      type: 'exception',
+      value,
+      name: this.name,
+      pattern,
+      enum: errors,
+    })
     tyerr.commit()
     return tyerr
   }
