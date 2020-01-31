@@ -54,7 +54,7 @@ export class Enum extends Type {
       value,
       name: this.name,
       pattern,
-      enum: errors,
+      errors,
     })
     tyerr.commit()
     return tyerr

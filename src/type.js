@@ -86,7 +86,7 @@ export class Type {
               value,
               name: 'Enum',
               pattern: patterns,
-              enum: errors,
+              errors,
             })
           }
         }

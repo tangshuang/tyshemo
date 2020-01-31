@@ -300,7 +300,7 @@ function makeErrorTraces(resource, keyPath = [], traces = []) {
     return traces
   }
 
-  const { key, index, type, value, name, pattern, error } = resource
+  const { key, index, type, value, name, pattern, error, errors } = resource
 
   if (key !== undefined) {
     keyPath.push(key)
@@ -314,7 +314,7 @@ function makeErrorTraces(resource, keyPath = [], traces = []) {
     return traces
   }
 
-  if (!error) {
+  if (!error && !errors) {
     traces.push({ type, keyPath, value, name, pattern })
     return traces
   }
