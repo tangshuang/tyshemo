@@ -81,7 +81,7 @@ describe('Type', () => {
     })
     test('[]', () => {
       const SomeType = new Type([String, Number])
-      expect(() => SomeType.assert([10, 'Tomy'])).not.toThrowError()
+      expect(() => SomeType.assert(['Tomy', 10])).not.toThrowError()
       expect(() => SomeType.assert(null)).toThrowError()
     })
   })

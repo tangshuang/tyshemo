@@ -57,7 +57,7 @@ export class Type {
               }
               const error = pattern.catch(value)
               if (!error) {
-                return null
+                return []
               }
               else {
                 errors.push(error)
@@ -67,7 +67,7 @@ export class Type {
             else {
               const error = this.validate(value, pattern)
               if (!error) {
-                return null
+                return []
               }
               else {
                 errors.push(error)
@@ -81,12 +81,13 @@ export class Type {
           const value = values[i]
           const errors = enumerate(value, patterns)
           if (errors.length) {
-            tyerr.replace({
+            tyerr.add({
               type: 'notin',
               value,
               name: this.name,
               pattern,
               errors,
+              index: i,
             })
           }
         }
