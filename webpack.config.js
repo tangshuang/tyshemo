@@ -1,4 +1,3 @@
-const express = require('express')
 const DeepScope = require('webpack-deep-scope-plugin').default
 
 const babelConfig = {
@@ -46,15 +45,6 @@ const config = {
     sideEffects: true,
   },
   devtool: 'source-map',
-
-  devServer: {
-    contentBase: __dirname + '/examples',
-    index: 'index.html',
-    port: 9000,
-    before(app) {
-      app.use(express.static(__dirname + '/src'))
-    },
-  },
 }
 
 // umd.min
