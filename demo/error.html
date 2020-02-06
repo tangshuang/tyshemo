@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<script src="tyshemo.js"></script>
+<script>
+  const { TyError, Enum, Dict } = window.tyshemo
+  const SomeType = new Dict({
+    name: String,
+    age: Number,
+    body: {
+      head: Boolean,
+      foot: Boolean,
+      inner: {
+        doo: new Enum([0, 1]),
+        hee: new Enum([String, Number]),
+      },
+    },
+  })
+  const error = SomeType.assert({
+    name: 'tomy',
+    age: 10,
+    body: {
+      inner: {
+        doo: 2,
+      },
+    },
+  })
+  console.log(error.traces)
+  console.error(error)
+</script>

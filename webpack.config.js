@@ -10,7 +10,7 @@ const babelConfig = {
 }
 
 // umd
-const config = {
+const basic = {
   mode: 'none',
   entry: __dirname + '/src/index.js',
   output: {
@@ -49,23 +49,23 @@ const config = {
 
 // umd.min
 const mini = {
-  ...config,
+  ...basic,
   mode: 'production',
   output: {
-    ...config.output,
+    ...basic.output,
     filename: 'tyshemo.umd.min.js',
   },
   optimization: {
-    ...config.optimization,
+    ...basic.optimization,
     minimize: true,
   },
 }
 
 // bundle
 const bundle = {
-  ...config,
+  ...basic,
   output: {
-    ...config.output,
+    ...basic.output,
     path: __dirname + '/dist',
     filename: 'tyshemo.js',
   },
@@ -86,7 +86,7 @@ const dist = {
 }
 
 module.exports = [
-  config,
+  basic,
   mini,
   bundle,
   dist,

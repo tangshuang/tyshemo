@@ -49,13 +49,16 @@ export class Enum extends Type {
       }
     }
 
-    tyerr.replace({
-      type: 'exception',
-      value,
-      name: this.name,
-      pattern,
-      errors,
-    })
+    if (errors.length) {
+      tyerr.replace({
+        type: 'notin',
+        value,
+        name: this.name,
+        pattern,
+        errors,
+      })
+    }
+
     tyerr.commit()
     return tyerr
   }

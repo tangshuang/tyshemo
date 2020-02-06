@@ -45,6 +45,7 @@ export class Type {
         const patterns = pattern
         const values = value
         const count = values.length
+
         const enumerate = (value, patterns) => {
           const errors = []
           for (let i = 0, len = patterns.length; i < len; i ++) {
@@ -79,13 +80,12 @@ export class Type {
         for (let i = 0; i < count; i ++) {
           const value = values[i]
           const errors = enumerate(value, patterns)
-          if (errors) {
-            tyerr.add({
-              type: 'exception',
-              index: i,
+          if (errors.length) {
+            tyerr.replace({
+              type: 'notin',
               value,
-              name: 'Enum',
-              pattern: patterns,
+              name: this.name,
+              pattern,
               errors,
             })
           }

@@ -10,6 +10,7 @@ import {
   makeKeyChain,
   makeKeyPath,
   each,
+  isUndefined,
 } from 'ts-fns'
 
 export class TyError extends TypeError {
@@ -71,7 +72,7 @@ export class TyError extends TypeError {
 
   commit() {
     const traces = this.traces = []
-    const items = makeErrorResources(this)
+    const items = makeErrorTraces(this)
     traces.push(...items)
     this.format()
     return this
@@ -95,14 +96,14 @@ export class TyError extends TypeError {
 
     const messages = traces.map((trace, i) => {
       const { type, keyPath, value, name, pattern } = trace
-      const info = name && pattern ? [name, pattern] : name ? [name] : pattern ? [pattern] : []
+      const info = name && !isUndefined(pattern) ? [name, pattern] : name ? [name] : pattern ? [pattern] : []
 
       const params = {
         i: i + 1,
         key: makeKeyChain(keyPath).pop(),
         keyPath: keyPathPrefix + makeKeyPath(keyPath),
         should: info.length ? makeErrorShould(info, breakline) : '',
-        receive: inObject('value', trace) ? makeErrorReceive(value, breakline, sensitive) : '',
+        receive: inObject('value', trace) ? makeErrorReceive(value, breakline, 0, sensitive) : '',
       }
 
       const text = makeErrorMessage(breaktag, params, bands) + makeErrorMessage(type, params, bands)
@@ -123,6 +124,7 @@ export class TyError extends TypeError {
     overflow: '{keyPath} should not exists.',
     missing: '{keyPath} is missing.',
     illegal: 'key `{key}` at {keyPath} should match `{should}`',
+    notin: '{keyPath} recieve `{receive}` did not match `{should}` in enum.',
   }
   static keyPathPrefix = '$.'
 }
@@ -130,6 +132,18 @@ export class TyError extends TypeError {
 export default TyError
 
 // ====================
+
+function createSpace(count = 0) {
+  if (!count) {
+    return ''
+  }
+
+  let str = ''
+  for (let i = 0; i < count; i ++) {
+    str += ' '
+  }
+  return str
+}
 
 function makeErrorMessage(type, params, templates) {
   const message = templates[type] || type
@@ -139,14 +153,6 @@ function makeErrorMessage(type, params, templates) {
 
 function makeValueString(value, sensitive = true, breakline = true, space = 2) {
   const totype = typeof value
-
-  const createspace = (count) => {
-    let str = ''
-    for (let i = 0; i < count; i ++) {
-      str += ' '
-    }
-    return str
-  }
   const britems = (items, start, end, space = 2) => {
     if (!breakline) {
       return start + items.join(',') + end
@@ -157,11 +163,11 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     }
 
     let str = start
-    let spacestr = createspace(space)
+    let spacestr = createSpace(space)
     items.forEach((item) => {
       str += '\n    ' + spacestr + item + ','
     })
-    str += '\n    ' + createspace(space - 2) + end
+    str += '\n    ' + createSpace(space - 2) + end
     return str
   }
   const stringify = (value, space = 2) => {
@@ -177,11 +183,11 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
         return str
       }
 
-      let spacestr = createspace(space)
+      let spacestr = createSpace(space)
       each(value, (value, key) => {
         str += '\n    ' + spacestr + key + ': ' + stringify(value, space + 2) + ','
       })
-      str += '\n    ' + createspace(space - 2) + '}'
+      str += '\n    ' + createSpace(space - 2) + '}'
       return str
     }
     else if (isArray(value)) {
@@ -196,11 +202,11 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
         return str
       }
 
-      let spacestr = createspace(space)
+      let spacestr = createSpace(space)
       value.forEach((item) => {
         str += '\n    ' + spacestr + stringify(item, space + 2) + ','
       })
-      str += '\n    ' + createspace(space - 2) + ']'
+      str += '\n    ' + createSpace(space - 2) + ']'
       return str
     }
     else {
@@ -231,14 +237,8 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     return output
   }
   else if (typeof value === 'object') { // for class instances
-    // enum
-    if (inObject('enum', value)) {
-      const { name, errors } = value
-      const output = makeEnumString(errors, sensitive, breakline, space)
-      return isString(name) ? name + '(' + output + ')' : output
-    }
     // type or rule
-    else if (inObject('pattern', value)) {
+    if (inObject('pattern', value)) {
       const name = value.name
       const output = makeValueString(value.pattern, sensitive, breakline, space)
       return isString(name) ? name + '(' + output + ')' : output
@@ -256,42 +256,38 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
   }
 }
 
-function makeEnumString(errors, sensitive, breakline, space) {
-
-}
-
-function makeErrorReceive(value, breakline = true, sensitive = false) {
-  const output = makeValueString(value, sensitive, breakline)
+function makeErrorReceive(value, breakline = true, space = 0, sensitive = false) {
+  const output = makeValueString(value, sensitive, breakline, space)
   return output
 }
 
-function makeErrorShould(info, breakline = true) {
+function makeErrorShould(info, breakline = true, space = 0) {
   if (info.length === 0) {
     return '%unknown'
   }
 
   if (info.length === 1) {
-    return makeValueString(info[0], false, breakline)
+    return makeValueString(info[0], false, breakline, space)
   }
 
   const [name, pattern] = info
-  const output = name + '(' + makeValueString(pattern, false, breakline) + ')'
+  const output = name + '(' + makeValueString(pattern, false, breakline, space) + ')'
   return output
 }
 
-function makeErrorResources(tyerr, keyPath = []) {
+function makeErrorTraces(tyerr, keyPath = []) {
   const { resources } = tyerr
   const traces = []
   resources.forEach((resource) => {
-    const innerTraces = makeErrorTraces(resource, [...keyPath])
+    const innerTraces = _makeErrorInnerTraces(resource, [...keyPath])
     traces.push(...innerTraces)
   })
   return traces
 }
 
-function makeErrorTraces(resource, keyPath = [], traces = []) {
+function _makeErrorInnerTraces(resource, keyPath = [], traces = []) {
   if (isInstanceOf(resource, TyError)) {
-    const items = makeErrorResources(resource, [...keyPath])
+    const items = makeErrorTraces(resource, [...keyPath])
     traces.push(...items)
     return traces
   }
@@ -314,20 +310,22 @@ function makeErrorTraces(resource, keyPath = [], traces = []) {
     return traces
   }
 
-  if (!error && !errors) {
+  if (type === 'notin' && isArray(errors)) {
+    errors.forEach((error) => {
+      const items = makeErrorTraces(error, [...keyPath])
+      traces.push(...items.map(item => ({ ...item, type: 'notin' })))
+    })
+  }
+  else if (!error) {
     traces.push({ type, keyPath, value, name, pattern })
-    return traces
   }
   else if (isInstanceOf(error, TyError)) {
-    const items = makeErrorResources(error, [...keyPath])
+    const items = makeErrorTraces(error, [...keyPath])
     traces.push(...items)
-    return traces
   }
   else if (isInstanceOf(error, Error)) {
     traces.push({ type: error.message, keyPath })
-    return traces
   }
-  else {
-    return traces
-  }
+
+  return traces
 }

@@ -1,15 +1,17 @@
 const [
-    config,
-    mini,
-    bundle,
-    dist,
+  basic,
+  mini,
+  bundle,
+  dist,
 ] = require('../webpack.config')
 
-module.exports = {
-  ...dist,
+const config = {
+  ...bundle,
   devServer: {
-    contentBase: __dirname + '/examples',
+    contentBase: __dirname,
     index: 'index.html',
     port: 9001,
   },
 }
+
+module.exports = config
