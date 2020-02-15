@@ -12,6 +12,7 @@ import {
   clone,
   each,
   createProxy,
+  getProxied,
 } from 'ts-fns'
 
 const PROXY_STORE = /*#__PURE__*/Symbol.for('[[Store]]')
@@ -75,6 +76,37 @@ export class Store {
             const newValue = [...target]
             newValue[key](...args)
             this.set(targetKeyPath, newValue)
+          }
+        }
+        else if (isArray(target) && key === 'delete') {
+          const chain = [...keyChain]
+          chain.pop()
+          const targetKeyPath = makeKeyPath(chain)
+          // return a function which trigger change
+          return (i) => {
+            if (i > -1) {
+              const newValue = [...target]
+              newValue.splice(i, 1)
+              this.set(targetKeyPath, newValue)
+            }
+          }
+        }
+        else if (isArray(target) && key === 'remove') {
+          const chain = [...keyChain]
+          chain.pop()
+          const targetKeyPath = makeKeyPath(chain)
+          // return a function which trigger change
+          return (v) => {
+            const i = target.findIndex((item) => {
+              const a = item && typeof item === 'object' ? getProxied(item) : item
+              const b = v && typeof v === 'object' ? getProxied(v) : v
+              return a === b
+            })
+            if (i > -1) {
+              const newValue = [...target]
+              newValue.splice(i, 1)
+              this.set(targetKeyPath, newValue)
+            }
           }
         }
 
