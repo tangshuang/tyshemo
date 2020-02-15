@@ -108,6 +108,27 @@ describe('Model', () => {
     expect(state.height).toBeUndefined()
   })
 
+  test('spread', () => {
+    const store = new Store({
+      name: 'tomy',
+      books: [1, 2, 3, 4],
+    })
+    store.state.books.push(5)
+    store.state.books.push({
+      age: 10,
+    })
+
+    const another = {
+      ...store.state,
+      books: [...store.state.books],
+    }
+
+    expect(another.name).toBe('tomy')
+    expect(another.books[3]).toBe(4)
+    expect(another.books[4]).toBe(5)
+    expect(another.books[5].age).toBe(10)
+  })
+
   test('push, shift', () => {
     const store = new Store({
       items: [1, 2],
@@ -124,5 +145,30 @@ describe('Model', () => {
     items.shift()
     expect(count).toBe(2)
     expect(items[0]).toBe(2)
+  })
+
+  test('proxied array', () => {
+    const store = new Store({
+      items: [1, 2, 3],
+    })
+    const { state } = store
+    const { items } = state
+
+    const item = {
+      name: 'item',
+    }
+
+    items.push(item)
+    expect(items.length).toBe(4)
+    expect(items[3].name).toBe('item')
+
+    items.delete(0)
+    expect(items.length).toBe(3)
+    expect(items[2].name).toBe('item')
+
+    items.push(item)
+    expect(items.length).toBe(4)
+    items.remove(item)
+    expect(items.length).toBe(3)
   })
 })

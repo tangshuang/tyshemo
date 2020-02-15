@@ -60,52 +60,66 @@ export class Store {
 
     // state
     this.state = createProxy(this.data, {
-      get: ({ target, key, keyPath, keyChain }) => {
+      get: ({ target, key, keyPath, keyChain, rootTarget }) => {
         // when call Symbol.for([[Store]]), return the current store
         if (key === PROXY_STORE) {
           return this
         }
 
-        // array primitive operation
-        if (isArray(target) && inArray(key, ['push', 'pop', 'unshift', 'shift', 'splice', 'sort', 'reverse', 'fill'])) {
+        if (isArray(target)) {
           const chain = [...keyChain]
           chain.pop()
           const targetKeyPath = makeKeyPath(chain)
-          // return a function which trigger change
-          return (...args) => {
-            const newValue = [...target]
-            newValue[key](...args)
-            this.set(targetKeyPath, newValue)
-          }
-        }
-        else if (isArray(target) && key === 'delete') {
-          const chain = [...keyChain]
-          chain.pop()
-          const targetKeyPath = makeKeyPath(chain)
-          // return a function which trigger change
-          return (i) => {
-            if (i > -1) {
-              const newValue = [...target]
-              newValue.splice(i, 1)
+
+          // array primitive operation
+          if (isArray(target) && inArray(key, ['push', 'pop', 'unshift', 'shift', 'splice', 'sort', 'reverse', 'fill'])) {
+            // return a function which trigger change
+            return (...args) => {
+              // notice this line
+              // as we will use code like this:
+              // const { items } = state
+              // items.push(1)
+              // items.push(2)
+              // think more about this, the second time we use `items` it is the same as the first time, we should must use latest data
+              const current = parse(rootTarget, targetKeyPath)
+              const newValue = [...current]
+              newValue[key](...args)
               this.set(targetKeyPath, newValue)
             }
           }
-        }
-        else if (isArray(target) && key === 'remove') {
-          const chain = [...keyChain]
-          chain.pop()
-          const targetKeyPath = makeKeyPath(chain)
-          // return a function which trigger change
-          return (v) => {
-            const i = target.findIndex((item) => {
-              const a = item && typeof item === 'object' ? getProxied(item) : item
-              const b = v && typeof v === 'object' ? getProxied(v) : v
-              return a === b
-            })
-            if (i > -1) {
-              const newValue = [...target]
-              newValue.splice(i, 1)
-              this.set(targetKeyPath, newValue)
+          // create a delete method
+          else if (isArray(target) && key === 'delete') {
+            return (i) => {
+              const current = parse(rootTarget, targetKeyPath)
+              if (i > -1 && i < current.length) {
+                const newValue = [...current]
+                newValue.splice(i, 1)
+                this.set(targetKeyPath, newValue)
+              }
+            }
+          }
+          // create a remove method
+          else if (isArray(target) && key === 'remove') {
+            return (v, fn) => {
+              const current = parse(rootTarget, targetKeyPath)
+              const i = current.findIndex((item, i) => {
+                const a = item && typeof item === 'object' ? getProxied(item) : item
+                if (isFunction(v)) {
+                  // i.e. items.remove((item, i) => item === some)
+                  return v(a, i)
+                }
+                const b = v && typeof v === 'object' ? getProxied(v) : v
+                if (isFunction(fn)) {
+                  // i.e. items.remove(v, v => (item, i) => v === item)
+                  return fn(b)(a, i)
+                }
+                return a === b
+              })
+              if (i > -1) {
+                const newValue = [...current]
+                newValue.splice(i, 1)
+                this.set(targetKeyPath, newValue)
+              }
             }
           }
         }
