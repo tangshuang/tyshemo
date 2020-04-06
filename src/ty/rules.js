@@ -13,7 +13,7 @@ import Tuple from './tuple.js'
 import Ty from './ty.js'
 import TyError from './ty-error.js'
 
-export function catchErrorBy(context, pattern, value, key, data) {
+function catchErrorBy(context, pattern, value, key, data) {
   const info = { value, context }
   if (key) {
     if (isArray(data)) {
@@ -49,10 +49,10 @@ export function catchErrorBy(context, pattern, value, key, data) {
 }
 
 /**
- * asynchronous rule
+ * asyncof rule
  * @param {Function} fn which can be an async function and should return a pattern
  */
-export function asynchronous(fn) {
+export function asyncof(fn) {
   let pattern = null
   let isReady = false
   function validate(value) {
@@ -63,7 +63,7 @@ export function asynchronous(fn) {
     return error
   }
   const rule = new Rule({
-    name: 'asynchronous',
+    name: 'asyncof',
     validate,
     pattern: fn,
   })
@@ -247,7 +247,7 @@ export function ifexist(pattern) {
   function complete() {
     isReady = false
     isExist = false
-    target = []
+    target = {}
   }
   function validate(value) {
     if (!isReady) {
@@ -442,10 +442,10 @@ export function shouldnotexist(determine, pattern) {
  * Whether the value is an instance of given class
  * @param {Constructor} Cons should be a class constructor
  */
-export function beof(pattern) {
+export function oneof(pattern) {
   return new Rule({
-    name: 'beof',
-    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'beof' }),
+    name: 'oneof',
+    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'oneof' }),
     pattern,
   })
 }

@@ -12,15 +12,15 @@ import {
   createRandomString,
 } from 'ts-fns'
 
-import Type from './type.js'
-import Dict from './dict.js'
-import List from './list.js'
-import Enum from './enum.js'
-import Tuple from './tuple.js'
-import Range from './range.js'
-import Mapping from './mapping.js'
-import Rule from './rule.js'
 import {
+  Type,
+  Dict,
+  List,
+  Enum,
+  Tuple,
+  Range,
+  Mapping,
+  Rule,
   Null,
   Undefined,
   Numeric,
@@ -37,7 +37,7 @@ import {
   String32,
   String64,
   String128,
-} from './prototypes.js'
+} from './ty/index.js'
 
 export class Mocker {
   constructor(loaders) {
@@ -123,7 +123,7 @@ export class Mocker {
             return createValue(pattern, path)
           }
           else {
-            return undefined
+            return
           }
         }
         else if (name === 'equal') {
@@ -206,9 +206,7 @@ Mocker.defaultLoaders = [
   [Null, function() {
     return null
   }],
-  [Undefined, function() {
-    return undefined
-  }],
+  [Undefined, function() {}],
   [Symbol, function() {
     return Symbol()
   }],

@@ -1,7 +1,7 @@
 import {
   isObject,
   isEmpty,
-  getConstructor,
+  getConstructorOf,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -41,7 +41,7 @@ export class Dict extends Type {
   extend(fields) {
     const current = this.pattern
     const next = Object.assign({}, current, fields)
-    const Constructor = getConstructor(this)
+    const Constructor = getConstructorOf(this)
     const type = new Constructor(next)
     return type
   }
@@ -56,7 +56,7 @@ export class Dict extends Type {
       }
     })
 
-    const Constructor = getConstructor(this)
+    const Constructor = getConstructorOf(this)
     const type = new Constructor(next)
     return type
   }

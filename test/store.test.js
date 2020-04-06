@@ -1,7 +1,7 @@
-import { Store } from '../src/index.js'
+import { Store } from '../src/store.js'
 
-describe('Model', () => {
-  const store = new Store({
+describe('Store', () => {
+  const createData = () => ({
     name: 'tomy',
     age: 10,
     body: {
@@ -16,56 +16,75 @@ describe('Model', () => {
   })
 
   test('get', () => {
+    const store = new Store(createData())
     expect(store.get('name')).toBe('tomy')
     expect(store.get('body.head')).toBe(true)
     expect(store.get('books[1]')).toBe('See Blue')
   })
   test('set', () => {
+    const store = new Store(createData())
     store.set('body.feet', false)
     expect(store.get('body.feet')).toBe(false)
   })
-  test('update', async () => {
-    const data = store.data
+  test('update', () => {
+    const store = new Store(createData())
+    const state = store.state
 
-    await store.update({
+    store.update({
       name: 'tomi',
       age: 11,
     })
 
-    expect(data.name).toBe('tomi')
-    expect(data.age).toBe(11)
+    expect(state.name).toBe('tomi')
+    expect(state.age).toBe(11)
   })
   test('watch', () => {
-    const data = store.data
+    const store = new Store(createData())
+    const state = store.state
 
-    store.watch('age', function(age) {
-      this.set('weight', age * 2 + 20)
+    store.watch('age', function() {
+      this.weight = this.age * 2 + 20
     })
+
     store.set('age', 20)
-    expect(data.weight).toBe(60)
-    store.unwatch('age')
+
+    expect(state.weight).toBe(60)
+  })
+  test('watch *', () => {
+    const store = new Store(createData())
+    const state = store.state
+
+    let count = 0
+
+    store.watch('*', () => count ++)
+
+    state.age ++
+    state.body.head = false
+    delete state.name
+
+    expect(count).toBe(3)
   })
   test('state', () => {
+    const store = new Store(createData())
     const state = store.state
 
     store.watch('age', function(age) {
-      state.weight = age * 2 + 20
+      state.weight = state.age * 2 + 20
     })
 
     state.age = 40
     expect(state.weight).toBe(100)
-    store.unwatch('age')
   })
 
   test('delete', () => {
+    const store = new Store(createData())
     const state = store.state
 
-    // del method
     store.set('testkey', 'some')
     expect(state.testkey).toBe('some')
 
     delete state.testkey
-    expect(store.data.testkey).toBeUndefined()
+    expect(state.testkey).toBeUndefined()
   })
 
   test('computed', () => {
@@ -162,13 +181,8 @@ describe('Model', () => {
     expect(items.length).toBe(4)
     expect(items[3].name).toBe('item')
 
-    items.delete(0)
+    items.splice(0, 1)
     expect(items.length).toBe(3)
     expect(items[2].name).toBe('item')
-
-    items.push(item)
-    expect(items.length).toBe(4)
-    items.remove(item)
-    expect(items.length).toBe(3)
   })
 })

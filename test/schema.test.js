@@ -1,5 +1,6 @@
 import Schema from '../src/schema.js'
-import { ifexist } from '../src/rules.js'
+import { ifexist } from '../src/ty/index.js'
+import { isString } from 'ts-fns'
 
 describe('Schema', () => {
   const def = {
@@ -8,8 +9,7 @@ describe('Schema', () => {
       default: '',
     },
     number: {
-      type: Number,
-      rule: ifexist,
+      type: ifexist(Number),
       default: 0,
     },
     dict: {
@@ -27,92 +27,61 @@ describe('Schema', () => {
       validators: [
         {
           determine: value => !!value,
+          validate: isString,
+          message: 'should be a string',
+        },
+        {
+          determine: value => !!value,
           validate: value => /^[0-9]+$/.test(value),
-          message: '{keyPath} should be a number string',
+          message: 'should be a number string',
         },
       ],
     },
   }
 
-  test('validate key', () => {
-    const SomeSchema = new Schema(def)
-
-    expect(SomeSchema.validate('string', '')).not.toBeInstanceOf(Error)
-    expect(SomeSchema.validate('string', null)).toBeInstanceOf(Error)
-
-    expect(SomeSchema.validate('number', 10)).not.toBeInstanceOf(Error)
-    expect(SomeSchema.validate('number', null)).toBeInstanceOf(Error)
-
-    expect(SomeSchema.validate('dict', { name: '', age: 0 })).not.toBeInstanceOf(Error)
-    expect(SomeSchema.validate('dict', { name: '' })).toBeInstanceOf(Error)
-    expect(SomeSchema.validate('dict', { age: 0 })).toBeInstanceOf(Error)
-    expect(SomeSchema.validate('dict', null)).toBeInstanceOf(Error)
-    expect(SomeSchema.validate('dict', 'null')).toBeInstanceOf(Error)
-
-    expect(SomeSchema.validate('list', [])).not.toBeInstanceOf(Error)
-    expect(SomeSchema.validate('list', ['aa'])).not.toBeInstanceOf(Error)
-    expect(SomeSchema.validate('list', null)).toBeInstanceOf(Error)
-    expect(SomeSchema.validate('list', 'aa')).toBeInstanceOf(Error)
-    expect(SomeSchema.validate('list', ['aa', null])).toBeInstanceOf(Error)
-
-    expect(SomeSchema.validate('validators', '123')).not.toBeInstanceOf(Error)
-    expect(SomeSchema.validate('validators', 123)).toBeInstanceOf(Error)
-    expect(SomeSchema.validate('validators', 'aa')).toBeInstanceOf(Error)
-  })
-
   test('validate', () => {
     const SomeSchema = new Schema(def)
-    const some = {
-      string: 'ok',
-      number: 10,
-      dict: {
-        name: 'tomy',
-        age: 10,
-      },
-      list: ['ok'],
-      validators: '123',
-    }
-    expect(SomeSchema.validate(some)).not.toBeInstanceOf(Error)
 
-    // sub dict
-    const some2 = { ...some, dict: {} }
-    expect(SomeSchema.validate(some2)).toBeInstanceOf(Error)
+    expect(SomeSchema.validate('string', '').length).toBe(0)
+    expect(SomeSchema.validate('string', null).length).toBe(1)
 
-    // rule = ifexist
-    const some3 = { ...some }
-    delete some3.number
-    expect(SomeSchema.validate(some3)).not.toBeInstanceOf(Error)
+    expect(SomeSchema.validate('number', 10).length).toBe(0)
+    expect(SomeSchema.validate('number', null).length).toBe(1)
+
+    expect(SomeSchema.validate('dict', { name: '', age: 0 }).length).toBe(0)
+    expect(SomeSchema.validate('dict', { name: '' }).length).toBe(1)
+    expect(SomeSchema.validate('dict', { age: 0 }).length).toBe(1)
+    expect(SomeSchema.validate('dict', null).length).toBe(1)
+    expect(SomeSchema.validate('dict', 'null').length).toBe(1)
+    expect(SomeSchema.validate('dict', {}).length).toBe(1)
+
+    expect(SomeSchema.validate('list', []).length).toBe(0)
+    expect(SomeSchema.validate('list', ['aa']).length).toBe(0)
+    expect(SomeSchema.validate('list', null).length).toBe(1)
+    expect(SomeSchema.validate('list', 'aa').length).toBe(1)
+    expect(SomeSchema.validate('list', ['aa', null]).length).toBe(1)
+
+    expect(SomeSchema.validate('validators', '123').length).toBe(0)
+    expect(SomeSchema.validate('validators', 'aa').length).toBe(1)
+    expect(SomeSchema.validate('validators', 123).length).toBe(2)
   })
 
-  test('ensure', () => {
+  test('type is a rule', () => {
     const SomeSchema = new Schema(def)
-    const want = {
-      string: '',
-      dict: { name: '', age: 0 },
-      list: [],
-      validators: '',
-    }
-    expect(SomeSchema.ensure({})).toEqual(want)
-    expect(SomeSchema.ensure({
-      string: null,
-      number: null,
-    })).toEqual({
-      ...want,
-      number: 0,
-    })
+    expect(SomeSchema.validate('number', undefined).length).toBe(0)
   })
 
-  test('rebuild', () => {
+  test('restore', () => {
     const SomeSchema = new Schema({
       key1: {
         type: String,
         default: '',
-        prepare(data) {
+        create(data) {
           return data.prop1
         },
       },
     })
-    const data = SomeSchema.rebuild({
+    const data = SomeSchema.restore({
       prop1: 'xxx',
     })
     expect(data.key1).toBe('xxx')

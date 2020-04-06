@@ -66,7 +66,6 @@ const bundle = {
   ...basic,
   output: {
     ...basic.output,
-    path: __dirname + '/dist',
     filename: 'tyshemo.js',
   },
   resolve: undefined,
@@ -78,8 +77,29 @@ const dist = {
   ...mini,
   output: {
     ...mini.output,
-    path: __dirname + '/dist',
     filename: 'tyshemo.min.js',
+  },
+  resolve: undefined,
+  externals: undefined,
+}
+
+const ty = {
+  ...basic,
+  entry: __dirname + '/src/ty.js',
+  output: {
+    ...basic.output,
+    filename: 'ty.js',
+  },
+  resolve: undefined,
+  externals: undefined,
+}
+
+const tymini = {
+  ...mini,
+  entry: __dirname + '/src/ty.js',
+  output: {
+    ...mini.output,
+    filename: 'ty.mini.js',
   },
   resolve: undefined,
   externals: undefined,
@@ -90,4 +110,6 @@ module.exports = [
   mini,
   bundle,
   dist,
+  ty,
+  tymini,
 ]

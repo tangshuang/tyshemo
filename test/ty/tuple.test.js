@@ -1,4 +1,4 @@
-import Tuple from '../src/tuple'
+import { Tuple } from '../../src/ty/index.js'
 
 describe('Tuple', () => {
   describe('assert', () => {

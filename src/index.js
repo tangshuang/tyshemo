@@ -1,55 +1,6 @@
-export { Prototype } from './prototype.js'
-export {
-  Null,
-  Undefined,
-  Any,
-  Numeric,
-  Int,
-  Float,
-  Negative,
-  Positive,
-  Natural,
-  Finity,
-  Zero,
-  String8,
-  String16,
-  String32,
-  String64,
-  String128,
-} from './prototypes.js'
+export * from './ty/index.js'
 
-export { Type, type } from './type.js'
-export { Dict, dict } from './dict.js'
-export { List, list } from './list.js'
-export { Tuple, tuple } from './tuple.js'
-export { Enum, enumerate } from './enum.js'
-export { Range, range } from './range.js'
-export { Mapping, mapping } from './mapping.js'
-
-export { Rule } from './rule.js'
-export {
-  asynchronous,
-  ifexist,
-  match,
-  determine,
-  shouldmatch,
-  shouldnotmatch,
-  ifnotmatch,
-  ifmatch,
-  shouldexist,
-  shouldnotexist,
-  beof,
-  equal,
-  nullor,
-  lambda,
-} from './rules.js'
-
-export { Ty } from './ty.js'
-export { TyError } from './ty-error.js'
-
-export { Schema } from './schema.js'
-export { Model } from './model.js'
-export { Store } from './store.js'
-
-export { Parser } from './parser.js'
 export { Mocker } from './mocker.js'
+export { Parser } from './parser.js'
+export { Store } from './store.js'
+export { Schema } from './schema.js'

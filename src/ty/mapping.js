@@ -1,8 +1,8 @@
 import Type from './type.js'
 import Ty from './ty.js'
+
 import {
   isObject,
-  isArray,
   each,
 } from 'ts-fns'
 

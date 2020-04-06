@@ -1,5 +1,4 @@
-import { Null, Undefined, Numeric, Int, Float, Any } from '../src/prototypes.js'
-import Type from '../src/type.js'
+import { Null, Undefined, Numeric, Int, Float, Any, Type } from '../../src/ty/index.js'
 
 describe('Prototypes', () => {
   test('Null', () => {

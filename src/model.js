@@ -16,15 +16,13 @@ import {
   iterate,
   clone,
   flatObject,
-  getConstructor,
+  getConstructorOf,
   createProxy,
-  isInstanceOf,
-  getProxied,
+  define,
 } from 'ts-fns'
 
-import Schema from './schema.js'
-
-const PROXY_MODEL = /*#__PURE__*/Symbol.for('[[Model]]')
+import _Schema from './schema.js'
+import Store from './store.js'
 
 /**
  * class SomeModel extends Model {
@@ -34,18 +32,22 @@ const PROXY_MODEL = /*#__PURE__*/Symbol.for('[[Model]]')
  *   }
  * }
  *
- * @keywords: schema, data, data, view, init, getParent, use, get, set, del, update,
- *            watch, unwatch, serialize, jsondata, plaindata, formdata, validate, parse, restore
+ * @keywords: $schema, $data, $state, $view, init,
+ *            get, set, del, update,
+ *            watch, unwatch, validate, restore,
+ *            toJsonData, toFlatData, toFormData,
+ *            onInit, onParse, onExport,
  */
 export class Model {
   constructor(data = {}) {
-    const Constructor = getConstructor(this)
+    define(this, '$schema', this.schema())
 
-    // check sub model
-    if (!isInheritedOf(Constructor, Model)) {
-      throw new Error('Model should be extended.')
-    }
+    this.init(data)
+    this.onInit()
+  }
 
+  schema() {
+    const Constructor = getConstructorOf(this)
     // create schema by model's static properties
     const defs = map(Constructor, (def) => {
       /**
@@ -68,532 +70,212 @@ export class Model {
 
       return def
     })
-    this.schema = new Schema(defs)
 
-    this.data = {}
-
-    this._listeners = []
-    this._isComputing = false
-    this._isDigesting = false
-    this._isCallbacking = false
-    this._updators = {}
-    this._isUpdating = null
-    this._cache = {} // use for property watching
-    this._latest = null // use for global watching
-
-    this.init(data)
+    const model = this
+    class Schema extends _Schema {
+      onError(err) {
+        model.onError(err)
+      }
+    }
+    const schema = new Schema(defs)
+    return schema
   }
 
   init(data) {
-    // create setup data to make it work at the beginning of all
-    this.restore(data)
+    const schema = this.$schema
+    const keys = Object.keys(schema)
 
-    // create a state object
-    this.state = createProxy(this.data, {
-      get: ({ target, key, keyPath, keyChain, rootTarget }) => {
-        // when call Symbol.for([[Store]]), return the current store
-        if (key === PROXY_MODEL) {
-          return this
-        }
-
-        if (isArray(target)) {
-          const chain = [...keyChain]
-          chain.pop()
-          const targetKeyPath = makeKeyPath(chain)
-
-          // array primitive operation
-          if (isArray(target) && inArray(key, ['push', 'pop', 'unshift', 'shift', 'splice', 'sort', 'reverse', 'fill'])) {
-            // return a function which trigger change
-            return (...args) => {
-              // notice this line
-              // as we will use code like this:
-              // const { items } = state
-              // items.push(1)
-              // items.push(2)
-              // think more about this, the second time we use `items` it is the same as the first time, we should must use latest data
-              const current = parse(rootTarget, targetKeyPath)
-              const newValue = [...current]
-              newValue[key](...args)
-              this.set(targetKeyPath, newValue)
-            }
-          }
-          // create a delete method
-          else if (isArray(target) && key === 'delete') {
-            return (i) => {
-              const current = parse(rootTarget, targetKeyPath)
-              if (i > -1 && i < current.length) {
-                const newValue = [...current]
-                newValue.splice(i, 1)
-                this.set(targetKeyPath, newValue)
-              }
-            }
-          }
-          // create a remove method
-          else if (isArray(target) && key === 'remove') {
-            return (v, fn) => {
-              const current = parse(rootTarget, targetKeyPath)
-              const i = current.findIndex((item, i) => {
-                const a = item && typeof item === 'object' ? getProxied(item) : item
-                const b = v && typeof v === 'object' ? getProxied(v) : v
-                if (isFunction(fn)) {
-                  // i.e. items.remove(v, v => (item, i) => v === item)
-                  return fn(b)(a, i)
-                }
-                return a === b
-              })
-              if (i > -1) {
-                const newValue = [...current]
-                newValue.splice(i, 1)
-                this.set(targetKeyPath, newValue)
-              }
-            }
-          }
-        }
-
-        // to collect dependencies
-        const v = this.get(keyPath)
-        return v
-      },
-      set: ({ target, key, keyPath, value }) => {
-        // specail array.length
-        if (isArray(target) && key === 'length') {
-          const newValue = [...target]
-          newValue.length = value
-          this.set(keyPath, newValue)
-          return false
-        }
-
-        this.set(keyPath, value)
-        return false
-      },
-      del: ({ keyPath }) => {
-        this.del(keyPath)
-        return false
-      },
-    })
-
-    // create a view object
-    this.view = new Proxy({}, {
-      get: (target, key) => {
-        return this.use(key)
-      },
-      set() {
-        return false
-      },
-      deleteProperty() {
-        return false
-      },
-    })
-
-    // patch properties on this
-    const Constructor = getConstructor(this)
-    each(Constructor, (def, key) => {
-      // ignore keywords
-      if (this[key]) {
-        return
+    // create a store
+    const params = {}
+    keys.forEach((key) => {
+      const { compute } = schema[key]
+      if (compute) {
+        define(params, key, {
+          get: compute,
+          enumerable: true,
+        })
       }
-      Object.defineProperty(this, key, {
-        get: () => this.state[key],
-        set: (v) => this.state[key] = v,
+      else {
+        params[key] = schema.default(key)
+      }
+    })
+    const store = new Store(params)
+    define(this, '$store', store)
+
+    // patch keys to this
+    keys.forEach((key) => {
+      define(this, key, {
+        get: () => this.get(key),
+        set: (value) => this.set(key, value),
+        enumerable: true,
       })
     })
-  }
 
-  /**
-   * if current model is a submodel, use this method to find its parent model
-   * @param {*} root
-   */
-  getParent(root) {
-    const find = (parent, target) => {
-      if (!isInstanceOf(parent, Model)) {
-        return
-      }
-
-      const { data } = parent
-      const keys = Object.keys(data)
-      for (let i = 0, len = keys.length; i < len; i ++) {
-        const key = keys[i]
-        const node = data[key]
-        if (node === target) {
-          return parent
-        }
-
-        const next = find(node, target)
-        if (next) {
-          return next
-        }
-      }
-    }
-    return find(root, this)
-  }
-
-  use(key) {
-    const { schema, state, data } = this
-    const node = {}
-    Object.defineProperties(node, {
-      value: {
-        get: () => state[key],
-        set: v => state[key] = v,
-      },
-      required: {
-        get: () => schema.required(key, this),
-      },
-      disabled: {
-        get: () => schema.disabled(key, this),
-      },
-      readonly: {
-        get: () => schema.readonly(key, this),
-      },
-      error: {
-        get: () => this.validate(key),
-      },
+    // views
+    const views = {}
+    keys.forEach((key) => {
+      const view = Object.defineProperties({}, {
+        value: {
+          get: () => this.get(key),
+          set: (value) => this.set(key, value),
+        },
+        requried: {
+          get: () => this.$schema.requried(key, this),
+        },
+        disabled: {
+          get: () => this.$schema.disabled(key, this),
+        },
+        readonly: {
+          get: () => this.$schema.readonly(key, this),
+        },
+        errors: {
+          get: () => this.validate(key),
+        },
+        model: {
+          value: this,
+        },
+      })
+      define(views, key, {
+        value: view,
+        enumerable: true,
+      })
     })
-    return node
+    define(this, '$view', views)
+
+    // restore
+    this.restore(data)
   }
 
   get(key) {
-    const value = parse(this.data, key)
-    const output = this.schema.get(key, value, this)
-    return output
+    const value = this.$store.get(key)
+    const next = this.$schema.get(key, value, this)
+    return next
   }
 
-  /**
-   * set key value
-   * @param {*} key
-   * @param {*} value
-   * @param {*} ensure validate before set, throw an error when not pass
-   */
-  set(key, value, ensure = false) {
-    // can not change this value
-    const view = this.view[key]
-    if (view && (view.readonly || view.disabled)) {
-      return this
+  set(key, next) {
+    const def = this.$schema[key]
+    if (!def) {
+      return this.define(key, next)
     }
 
-    // you should not use `set` in `compute`
-    if (this._isComputing || this._isCallbacking) {
-      return this
-    }
+    this._check(key)
 
-    const chain = makeKeyChain(key)
-    const root = chain.shift()
-    if (this.schema.has(root)) {
-      if (chain.length) {
-        let current = parse(this.data, root)
+    const prev = this.$store.get(key)
+    const value = this.$schema.set(key, next, prev, this)
+    const coming = this.$store.set(key, value)
 
-        if (!isObject(current)) {
-          current = {}
-        }
+    this._ensure(key)
 
-        const keyPath = makeKeyPath(chain)
-        const next = clone(current)
-        assign(next, keyPath, value)
-
-        const coming = this.schema.set(root, next, this)
-
-        if (ensure) {
-          const error = this.schema.validate(root, coming, this)
-          if (error) {
-            throw error
-          }
-        }
-
-        assign(this.data, root, coming)
-      }
-      else {
-        const coming = this.schema.set(root, value, this)
-
-        if (ensure) {
-          const error = this.schema.validate(root, coming, this)
-          if (error) {
-            throw error
-          }
-        }
-
-        assign(this.data, root, coming)
-      }
-    }
-    // assign directly
-    else {
-      assign(this.data, key, value)
-    }
-
-    // you should use `set` in `watch`
-    if (this._isDigesting) {
-      return this
-    }
-
-    // compute and trigger watchers
-    this._digest()
-
-    return this
+    return coming
   }
 
-  del(key, ensure = false) {
-    // can not change this value
-    const view = this.view[key]
-    if (view && (view.readonly || view.disabled)) {
-      return this
+  define(key, value) {
+    if (this.$schema[key]) {
+      return this[key]
     }
 
-    // you should not use `set` in `compute`
-    if (this._isComputing || this._isCallbacking) {
-      return this
+    // delete this key
+    if (isUndefined(value)) {
+      delete this[key]
+      this.$store.del(key)
+      return
     }
 
-    const chain = makeKeyChain(key)
-    const root = chain.shift()
-
-    if (this.schema.has(root)) {
-      if (!chain.length) {
-        throw new Error(`[Model]: ${key} can not be deleted.`)
-      }
-
-      const current = this.get(root)
-
-      // do nothing is the property is not an object
-      if (!isObject(current)) {
-        return this
-      }
-
-      const next = clone(current)
-      const tailKey = chain.pop()
-      const keyPath = makeKeyPath(chain)
-      const target = parse(next, keyPath)
-
-      if (!isObject(target)) {
-        return this
-      }
-
-      delete target[tailKey]
-
-      if (ensure) {
-        const error = this.schema.validate(root, next, this)
-        if (error) {
-          throw error
-        }
-      }
-
-      // assign new data which property deleted
-      assign(this.data, root, next)
-    }
-    // not in schema
-    else {
-      delete this.data[root]
-    }
-
-    // you should use `set` in `watch`
-    if (this._isDigesting) {
-      return this
-    }
-
-    this._digest()
-
-    return this
-  }
-
-  update(data, sync = false) {
-    // invoke like this.update(true)
-    if (isBoolean(data)) {
-      sync = data
-      data = undefined
-    }
-
-    // if do not pass any data
-    // example:
-    // data.a = 1
-    // data.b = 2
-    // model.update()
-    if (!data || !isObject(data)) {
-      const error = this.schema.validate(this.data)
-      if (error) {
-        throw error
-      }
-      this._digest()
-      return sync ? this.data : Promise.resolve(this.data)
-    }
-
-    // when pass sync=true
-    // use this to update data
-    if (sync) {
-      const next = map(data, (value, key) => {
-        // can not change this value
-        const view = this.view[key]
-        if (view && (view.readonly || view.disabled)) {
-          // return original value
-          return data[key]
-        }
-        else {
-          return this.schema.set(key, value, this)
-        }
-      })
-
-      // check data
-      const error = iterate(next, (value, key) => this.schema.validate(key, value, this))
-      if (error) {
-        throw error
-      }
-
-      // update data
-      const backup = clone(this.data)
-      try {
-        Object.assign(this.data, next)
-        this._digest()
-        return this.data
-      }
-      catch (e) {
-        this.data = backup // recover
-        throw e
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      Object.assign(this._updators, data)
-      clearTimeout(this._isUpdating)
-      this._isUpdating = setTimeout(() => {
-        // format data first
-        const next = map(this._updators, (value, key) => this.schema.set(key, value, this))
-
-        // check data
-        const error = iterate(next, (value, key) => this.schema.validate(key, value, this))
-        if (error) {
-          reject(error)
-          return
-        }
-
-        // update data
-        const backup = clone(this.data)
-        try {
-          Object.assign(this.data, next)
-          this._updators = {}
-          this._digest()
-          resolve(this.data)
-        }
-        catch (e) {
-          this.data = backup // recover
-          reject(e)
-        }
-      })
+    Object.defineProperty(this, key, {
+      get: () => this.$store.get(key),
+      set: value => this.$store.set(key, value),
+      configurable: true,
+      enumerable: true,
     })
+
+    const coming = this.$store.set(key, value)
+    return coming
   }
 
-  watch(key, fn, priority = 10) {
-    if (isArray(key)) {
-      const keys = key
-      keys.forEach(key => this.watch(key, fn, priority))
-      return this
-    }
-
-    const current = this.get(key)
-    const value = clone(current)
-
-    assign(this._cache, key, value)
-    this._listeners.push({ key, fn, priority })
-
+  watch(key, fn) {
+    this.$store.watch(key, fn, true)
     return this
   }
 
   unwatch(key, fn) {
-    if (isArray(key)) {
-      const keys = key
-      keys.forEach(key => this.unwatch(key, fn))
-      return this
-    }
-
-    const listeners = this._listeners
-    listeners.forEach((item, i) => {
-      if (key === item.key && (item.fn === fn || fn === undefined)) {
-        listeners.splice(i, 1)
-      }
-    })
-
+    this.$store.unwatch(key, fn)
     return this
   }
 
-  _compute() {
-    this._isComputing = true
-    this.schema.digest(this.data, this, (key, value) => {
-      this.data[key] = value
+  validate(key) {
+    // validate all properties once together
+    if (!key) {
+      this._check(null, true)
+      const errors = []
+      each(this.$schema, (def, key) => {
+        const errs = this.validate(key)
+        errors.push(...errs)
+      })
+      return errors
+    }
+
+    this._check(key, true)
+    const value = this.$store.get(key)
+    const errors = this.$schema.validate(key, value, this)
+    return errors
+  }
+
+  restore(data = {}) {
+    const entry = this.onParse(data)
+    const created = this.$schema.restore(entry, this)
+
+    const coming = {}
+
+    each(this.$schema, (def, key) => {
+      const value = created[key]
+      coming[key] = value
     })
-    this._isComputing = false
-  }
 
-  _digest() {
-    this._isDigesting = true
-
-    let listeners = this._listeners.filter(({ key }) => key !== '*')
-    listeners = sortArray(listeners, 'priority')
-
-    const cache = this._cache
-
-    let dirty = false
-    let count = 0
-
-    const digest = () => {
-      dirty = false
-
-      // run computing before all watchers run
-      // because the properties which are watched may based on computed properties
-      this._compute()
-
-      listeners.forEach(({ key, fn }) => {
-        const current = this.get(key)
-        const previous = parse(cache, key)
-
-        if (!isEqual(current, previous)) {
-          fn.call(this, current, previous)
-          dirty = true
-          const value = clone(current)
-          assign(cache, key, value)
-        }
-      })
-
-      count ++
-      if (count > 15) {
-        throw new Error(`[Model]: digest over 15 times.`)
+    each(data, (value, key) => {
+      if (coming[key]) {
+        return
       }
 
-      if (dirty) {
-        digest()
-      }
-    }
-
-    digest()
-
-    // if data changed, trigger global watchers
-    if (!isEqual(this._latest, this.data)) {
-      this._isCallbacking = true
-      var callbacks = this._listeners.filter(({ key }) => key === '*')
-      callbacks = sortArray(callbacks, 'priority')
-      callbacks.forEach(({ fn }) => {
-        fn.call(this, this.data, this._latest)
+      define(this, key, {
+        get: () => this.get(key),
+        set: (value) => this.set(key, value),
+        enumerable: true,
+        configurable: true,
       })
-      this._latest = clone(this.data)
-      this._isCallbacking = false
-    }
 
-    this._isDigesting = false
+      coming[key] = value
+    })
+
+    each(this, (value, key) => {
+      if (coming[key]) {
+        return
+      }
+
+      this.$store.del(key)
+      delete this[key]
+    })
+
+    // TODO make it silent
+    const next = this.$store.update(coming)
+    this._ensure()
+    return next
   }
 
-  // serialize data after formulate, should be override
-  serialize(data) {
-    return data
-  }
-
-  jsondata() {
-    const data = this.data
-    const output = this.schema.formulate(data, this)
-    const result = this.serialize(output)
+  toJson() {
+    this._check()
+    const data = this.$data
+    const output = this.$schema.formulate(data, this)
+    const result = this.onExport(output)
     return result
   }
 
-  plaindata() {
+  toFlatData() {
     const data = this.jsondata()
     const output = flatObject(data)
     return output
   }
 
-  formdata() {
+  toFormData() {
     const data = this.plaindata()
     const formdata = new FormData()
     each(data, (value, key) => {
@@ -602,40 +284,66 @@ export class Model {
     return formdata
   }
 
-  validate(key) {
-    if (isArray(key)) {
-      const keys = key
-      const error = iterate(keys, key => this.validate(key))
-      return error
-    }
-    else if (isString(key)) {
-      const value = parse(this.data, key)
-      const error = this.schema.validate(key, value, this)
-
-      return error
-    }
-    else {
-      const data = this.data
-      const error = this.schema.validate(data, this)
-      return error
-    }
-  }
+  // when initialized
+  onInit() {}
 
   // parse data before restore, should be override
-  parse(data) {
+  onParse(data) {
     return data
   }
 
-  restore(data = {}) {
-    const entry = this.parse(data)
-    const coming = this.schema.rebuild(entry, this)
-    const making = this.schema.ensure(coming, this)
+  // serialize data after formulate, should be override
+  onExport(data) {
+    return data
+  }
 
-    // use assign to recover, because developer may append some non-defined property to state
-    Object.assign(this.data, making)
-    this._digest()
+  _ensure(key) {
+    const use = (value, key) => {
+      if (isInstanceOf(value, Model)) {
+        define(value, '$parent', this)
+        define(value, '$parentAt', key)
+      }
+      else if (isArray(value)) {
+        value.forEach(set)
+      }
+    }
+    const set = data => each(data, use)
 
-    return this
+    if (key) {
+      const value = this.$store.data[key]
+      use(value, key)
+    }
+    else {
+      set(this.$store.data)
+    }
+  }
+
+  _check(key, isValidate = false) {
+    const Constructor = getConstructorOf(this)
+    const keys = key ? [key] : Object.keys(Constructor)
+
+    let str = ''
+    keys.forEach((key) => {
+      const def = Constructor[key]
+      each(def, (value) => {
+        if (value.validators && isValidate) {
+          value.validators.forEach((item) => {
+            each(item, (value) => {
+              str += isFunction(value) ? value + '' : ''
+            })
+          })
+        }
+        else {
+          str += isFunction(value) ? value + '' : ''
+        }
+      })
+    })
+
+    if (str.indexOf('this.$parent') > -1 && !this.$parent) {
+      this.onError({
+        action: '$parent',
+      })
+    }
   }
 }
 

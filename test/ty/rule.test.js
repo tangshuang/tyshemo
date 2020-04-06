@@ -1,5 +1,4 @@
-import Dict from '../src/dict.js'
-import Rule from '../src/rule.js'
+import { Dict, Rule } from '../../src/ty/index.js'
 
 describe('Rule', () => {
   test('pass validate option', () => {

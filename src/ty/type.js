@@ -4,7 +4,7 @@ import {
   isInstanceOf,
   inArray,
   inObject,
-  getConstructor,
+  getConstructorOf,
 } from 'ts-fns'
 
 import Prototype from './prototype.js'
@@ -232,7 +232,7 @@ export class Type {
   }
 
   clone() {
-    const Constructor = getConstructor(this)
+    const Constructor = getConstructorOf(this)
     const ins = new Constructor(this.pattern)
     return ins
   }

@@ -3,169 +3,267 @@ import {
   isArray,
   isFunction,
   isBoolean,
-  isEqual,
   isInstanceOf,
   isEmpty,
   each,
   map,
-  iterate,
-  getConstructor,
+  clone,
+  freeze,
+  define,
+  isString,
 } from 'ts-fns'
 
-import TyError from './ty-error.js'
-import Ty from './ty.js'
-import {
-  ifexist,
-} from './rules.js'
+import { Ty, Rule } from './ty/index.js'
+
 
 /**
- * new Schema({
- *   property: {
- *     default: '', // required
+ * @example const schema = new Schema({
+ *   propertyName: {
+ *     // required, function to return an object/array
+ *     default: '',
  *
  *     // optional, computed property, will compute at each time digest end
  *     // when it is a compute property, it is not able to use set to update value
- *     compute: function() {
- *       const a = this.get('a')
- *       const b = this.get('b')
+ *     compute() {
+ *       const a = this.a
+ *       const b = this.b
  *       return a + '' + b
  *     },
  *
- *     type: String, // required, notice: `default` and result of `compute` should match type
- *     rule: ifexist, // optional, which rule to use, only `ifexist` `instance` and `equal` allowed
+ *     // required, notice: `default` and result of `compute` should match type,
+ *     // can be rule, i.e. ifexist(String)
+ *     type: String,
  *
- *     validators: [ // optional
+ *     // optional
+ *     validators: [
  *       {
  *         determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
  *         validate: (value) => Boolean, // whether to pass the validate, return true to pass, false to not pass and throw error
- *         message: '', // the message of error which throw when validate not pass
+ *         message: '', // the message of error which throw when validate not pass, can be function to return message dynamicly
  *       },
  *     ],
  *
- *     prepare: (data, key) => !!data.on_market, // optional, function, used by `rebuild`, `data` is the parameter of `rebuild`
+ *     // optional, function, used by `restore`, `data` is the parameter of `restore`
+ *     create: (data) => !!data.on_market ? data.listing : data.pending,
  *
- *     drop: (value, key, data) => Boolean, // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
- *     map: (value, key, data) => newValue, // optional, function, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
- *     flat: (value, key, data) => ({ newProp: newValue }), // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original data
+ *     // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
+ *     drop: (value, key, data) => Boolean,
+ *     // optional, function, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
+ *     map: (value, key, data) => newValue,
+ *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original data
+ *     flat: (value, key, data) => ({ newProp: newValue }),
  *
- *     getter: (value) => newValue, // optional, function, format this property value when get
- *     setter: (value) => value, // optional, function, format this property value when set
+ *     // optional, function, format this property value when get
+ *     getter: (value) => newValue,
+ *     // optional, function, format this property value when set
+ *     setter: (value) => value,
  *
- *     required: () => Boolean, // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
- *     disabled: () => Boolean, // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
- *     readonly: () => Boolean, // optional, function or boolean, use schema.readonly(field) to check, will disable set
+ *     // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
+ *     required: () => Boolean,
+ *     // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
+ *     disabled: () => Boolean,
+ *     // optional, function or boolean, use schema.readonly(field) to check, will disable set
+ *     readonly: () => Boolean,
  *     // the difference between `disabled` and `readonly`:
- *     // disabled is to disable this property, so that it should not be used(shown) in your application, could not be changed, validate will not work, and will be dropped when formulate,
+ *     // disabled is to disable this property, so that it should not be used(shown) in your application,
  *     // readonly means the property can only be read/validate/formulate, but could not be changed.
  *
- *     message: '', // the message when type checking or required or aother checking fail
- *     catch: (error) => {}, // when an error occurs caused by this property, what to do with the error
+ *     // optional, when an error occurs caused by this property, what to do with the error
+ *     catch: (error) => {},
  *   },
  * })
  */
 export class Schema {
-  constructor(definition) {
-    this.definition = definition
+  constructor(defs) {
+    each(defs, (def, key) => {
+      define(this, key, {
+        value: freeze(def),
+        enumerable: true,
+      })
+    })
   }
 
   has(key) {
-    return !!this.definition[key]
+    return !!this[key]
+  }
+
+  default(key) {
+    const { default: defaultValue } = this[key]
+    return getDefaultValue(defaultValue)
   }
 
   required(key, context) {
-    const { definition } = this
-    const def = definition[key]
+    const def = this[key]
 
     if (!def) {
       return false
     }
 
-    const { required } = def
+    const { required, catch: handle } = def
 
     if (!required) {
       return false
     }
 
-    return isFunction(required) ? !!required.call(context) : !!required
+    if (isFunction(required)) {
+      return !!this._trydo(
+        () => required.call(context),
+        (error) => isFunction(handle) && handle.call(context, error) || false,
+        {
+          key,
+          option: 'required',
+        },
+      )
+    }
+    else {
+      return !!required
+    }
   }
 
   disabled(key, context) {
-    const { definition } = this
-    const def = definition[key]
+    const def = this[key]
 
     if (!def) {
       return false
     }
 
-    const { disabled } = def
+    const { disabled, catch: handle } = def
 
     if (!disabled) {
       return false
     }
 
-    return isFunction(disabled) ? !!disabled.call(context) : !!disabled
+    if (isFunction(disabled)) {
+      return !!this._trydo(
+        () => disabled.call(context),
+        (error) => isFunction(handle) && handle.call(context, error) || false,
+        {
+          key,
+          option: 'disabled',
+        },
+      )
+    }
+    else {
+      return !!disabled
+    }
   }
 
   readonly(key, context) {
-    const { definition } = this
-    const def = definition[key]
+    const def = this[key]
 
     if (!def) {
       return false
     }
 
-    const { readonly } = def
+    const { readonly, catch: handle } = def
 
     if (!readonly) {
       return false
     }
 
-    return isFunction(readonly) ? !!readonly.call(context) : !!readonly
+    if (isFunction(readonly)) {
+      return !!this._trydo(
+        () => readonly.call(context),
+        (error) => isFunction(handle) && handle.call(context, error) || false,
+        {
+          key,
+          option: 'readonly',
+        },
+      )
+    }
+    else {
+      return !!readonly
+    }
   }
 
   get(key, value, context) {
-    const { definition } = this
-    const def = definition[key]
+    const def = this[key]
 
     if (!def) {
       return value
     }
 
-    const { getter, compute } = def
+    const { getter, compute, catch: handle } = def
     if (isFunction(compute)) {
       const next = compute.call(context)
       return next
     }
 
-    const next = isFunction(getter) ? getter.call(context, value) : value
-    return next
+    if (isFunction(getter)) {
+      const coming = this._trydo(
+        () => getter.call(context, value),
+        (error) => isFunction(handle) && handle.call(context, error) || value,
+        {
+          key,
+          option: 'getter',
+        },
+      )
+      return coming
+    }
+    else {
+      return value
+    }
   }
 
-  set(key, value, context) {
-    const { definition } = this
-    const def = definition[key]
+  set(key, next, prev, context) {
+    const def = this[key]
 
     if (!def) {
-      return value
+      return next
     }
 
     const { setter, compute } = def
 
     if (this.disabled(key, context)) {
-      throw new Error(`[Schema]: ${key} is disabled.`)
+      this.onError({
+        key,
+        action: 'set',
+        next,
+        prev,
+        disabled: true,
+        message: `${key} can not be set new value because of disabled.`
+      })
+      return prev
     }
 
     if (this.readonly(key, context)) {
-      throw new Error(`[Schema]: ${key} is readonly.`)
+      this.onError({
+        key,
+        action: 'set',
+        next,
+        prev,
+        readonly: true,
+        message: `${key} can not be set new value because of readonly.`
+      })
+      return prev
     }
 
     if (compute) {
-      throw new Error(`[Schema]: ${key} is a computed property, is not allowed to set value.`)
+      this.onError({
+        key,
+        action: 'set',
+        next,
+        prev,
+        compute,
+        message: `${key} can not be set new value because it is a computed property.`
+      })
+      return prev
     }
 
-    const next = isFunction(setter) ? setter.call(context, value) : value
-
-    return next
+    if (isFunction(setter)) {
+      const coming = this._trydo(
+        () => setter.call(context, next),
+        (error) => isFunction(handle) && handle.call(context, error) || prev,
+        {
+          key,
+          option: 'setter',
+        },
+      )
+      return coming
+    }
+    else {
+      return next
+    }
   }
 
   /**
@@ -175,280 +273,138 @@ export class Schema {
    * @param {*} context
    */
   validate(key, value, context) {
-    const { definition } = this
-
-    // validate the whole data
-    if (isObject(key)) {
-      context = value
-      value = key
-
-      const tyerr = new TyError()
-      const data = value
-      each(definition, (def, key) => {
-        const { rule, type } = def
-        const value = data[key]
-
-        if (isFunction(rule)) {
-          const TyRule = rule(type)
-          const error = TyRule.validate(value, key, data)
-          if (error) {
-            tyerr.add(error)
-          }
-        }
-        else {
-          const error = this.validate(key, value, context)
-          if (error) {
-            tyerr.add(error)
-          }
-        }
-      })
-
-      tyerr.commit()
-      return tyerr.error()
-    }
-
-    // if the property is disabled, there is no need to validate it
-    if (this.disabled(key, context)) {
-      return null
-    }
-
-    // validate single key
-    const def = definition[key]
-    const { type, rule, validators, message, catch: handle } = def
-
-    const transform = (error, message, key, value, context) => {
-      let msg = error.message
-      if (message && isFunction(message)) {
-        msg = message.call(context, value, key, error)
-        error = new Error(msg)
-      }
-      else if (message) {
-        msg = message
-        error = new Error(msg)
-      }
-      return error
-    }
+    const def = this[key]
+    const errors = []
 
     if (!def) {
-      return new Error(`[Schema]: '${key}' is not defined in schema.`)
+      errors.push({
+        key,
+        value,
+        message: `Error: ${key} is not existing in schema.`,
+      })
+      return errors
     }
 
-    let error = Ty.catch(value).by(type)
+    const { type, validators = [] } = def
 
-    // ignore ifexist when have no value
-    if (error && rule === ifexist && value === undefined) {
-      error = null
+    // make rule works
+    const target = {}
+    if (value !== undefined) {
+      Object.assign(target, { key: value })
+    }
+    const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ key: type }) : Ty.catch(value).by(type)
+    if (error) {
+      errors.push({
+        key,
+        value,
+        type,
+        error,
+        message: `TypeError: ${key} does not match type required.`,
+      })
     }
 
     // if required is set, it should check before validators
-    if (!error && this.required(key, context) && isEmpty(value)) {
-      error = new Error(`[Schema]: ${key} is required.`)
-    }
-
-    if (error) {
-      error = transform(error, message, key, value, context)
-    }
-    // validators
-    else if (isArray(validators)) {
-      error = iterate(validators, (validator) => {
-        const { validate, determine, message } = validator
-
-        if (isFunction(determine) && !determine.call(context, value, key)) {
-          return
-        }
-
-        if (isBoolean(determine) && !determine) {
-          return
-        }
-
-        const res = validate.call(context, value, key)
-        if (isBoolean(res) && res) {
-          return
-        }
-
-        let msg = message
-
-        if (isInstanceOf(res, Error)) {
-          return res
-        }
-
-        if (isFunction(message)) {
-          msg = message.call(context, value, key, error)
-        }
-
-        const error = new Error(msg)
-        return error
+    if (this.required(key, context) && isEmpty(value)) {
+      errors.push({
+        key,
+        value,
+        required: true,
+        message: `Error: ${key} should be required, but receive empty.`,
       })
     }
 
-    if (error) {
-      if (isFunction(handle)) {
-        handle.call(context, error, key, value)
+    validators.forEach((item, index) => {
+      const { determine, validate, message, catch: handle } = item
+
+      if (isBoolean(determine) && !determine) {
+        return
       }
-      return error
-    }
 
-    return null
-  }
-
-  /**
-   * make sure each property is fit type and validators
-   * @param {*} key
-   * @param {*} value
-   * @param {*} context
-   */
-  ensure(key, value, context) {
-    const { definition } = this
-
-    if (isObject(key)) {
-      context = value
-      value = key
-
-      const data = value
-      const output = map(definition, (def, key) => {
-        const { default: defaultValue, catch: handle } = def
-        const { rule, type } = def
-        const value = data[key]
-
-        if (isFunction(rule)) {
-          const TyRule = rule(type)
-          const error = TyRule.validate(value, key, data)
-          if (error) {
-            if (isFunction(handle)) {
-              handle.call(context, error, key, value)
-            }
-            return createDefaultValue(defaultValue)
-          }
-          else {
-            return value
-          }
-        }
-
-        try {
-          const res = this.ensure(key, value, context)
-          return res
-        }
-        catch (e) {
-          if (isFunction(handle)) {
-            handle.call(context, error, key, value)
-          }
-          return createDefaultValue(defaultValue)
-        }
-      })
-
-      return output
-    }
-
-    const def = definition[key]
-
-    if (!def) {
-      throw new Error(`[Schema]: '${key}' is not existing in schema.`)
-    }
-
-    const error = this.validate(key, value, context)
-    if (error) {
-      const { catch: handle, default: defaultValue } = def
-      if (isFunction(handle)) {
-        handle.call(context, error, key, value)
-      }
-      return createDefaultValue(defaultValue)
-    }
-
-    return value
-  }
-
-  /**
-   * get final computed properties.
-   * @param {*} data
-   * @param {*} context
-   * @param {function} [fn] this will affect context
-   */
-  digest(data, context, fn) {
-    const { definition } = this
-    const output = { ...data }
-    const getComputedValue = (def) => {
-      const { compute, key, catch: handle, default: defaultValue } = def
-      try {
-        const res = compute.call(context)
-        return res
-      }
-      catch (error) {
-        if (isFunction(handle)) {
-          handle.call(context, error, key)
-        }
-        return createDefaultValue(defaultValue)
-      }
-    }
-
-    let dirty = false
-    let count = 0
-
-    const digest = () => {
-      dirty = false
-
-      each(definition, (def, key) => {
-        const { compute } = def
-        if (!isFunction(compute)) {
+      if (isFunction(determine)) {
+        const bool = this._trydo(
+          () => determine.call(context, value, key),
+          (error) => isFunction(handle) && handle.call(context, error) || false,
+          {
+            key,
+            option: 'validators[' + index+ '].determine',
+          },
+        )
+        if (!bool) {
           return
         }
+      }
 
-        const computed = getComputedValue(def)
-        const current = output[key]
-        if (!isEqual(current, computed)) {
-          dirty = true
-          output[key] = computed
-          if (isFunction(fn)) {
-            fn.call(context, key, computed)
-          }
-        }
+      const res = this._trydo(
+        () => validate.call(context, value, key),
+        (error) => isFunction(handle) && handle.call(context, error) || true,
+        {
+          key,
+          option: 'validators[' + index+ '].validate',
+        },
+      )
+      if (isBoolean(res) && res) {
+        return
+      }
+
+      let msg = ''
+      if (isInstanceOf(res, Error)) {
+        msg = res.message
+      }
+
+      if (isFunction(message)) {
+        msg = this._trydo(
+          () => message.call(context, value, key, res),
+          (error) => isFunction(handle) && handle.call(context, error) || msg || `${key} did not pass validators[${index}]`,
+          {
+            key,
+            option: 'validators[' + index + '].message',
+          },
+        )
+      }
+
+      if (!msg && isString(message)) {
+        msg = message
+      }
+
+      errors.push({
+        key,
+        value,
+        validators: index,
+        message: msg,
       })
+    })
 
-      count ++
-      if (count > 15) {
-        throw new Error(`[Schema]: digest over 15 times.`)
-      }
-
-      if (dirty) {
-        digest()
-      }
-    }
-
-    digest()
-
-    return output
+    return errors
   }
 
   /**
-   * rebuild data by passed data with `prepare` option, you'd better to call ensure to after rebuild to make sure your data is fix with type
+   * restore data by passed data with `create` option, you'd better to call ensure to after restore to make sure your data is fix with type
    * @param {*} data
    * @param {*} context
    */
-  rebuild(data, context) {
-    const { definition } = this
-
-    if (!isObject(data)) {
-      throw new Error(`[Schema]: data should be an object when rebuild.`)
-    }
-
-    const output = map(definition, (def, key) => {
+  restore(data, context) {
+    const output = map(this, (def, key) => {
+      const { create, default: defaultValue } = def
       const value = data[key]
-      const { prepare, catch: handle, default: defaultValue } = def
 
-      if (isFunction(prepare)) {
-        try {
-          const coming = prepare.call(context, data, key)
-          return coming
-        }
-        catch (error) {
-          if (isFunction(handle)) {
-            handle.call(context, error, key, value)
-          }
-          return createDefaultValue(defaultValue)
-        }
+      let coming = value
+
+      if (isFunction(create)) {
+        coming = this._trydo(
+          () => create.call(context, data),
+          (error) => isFunction(handle) && handle.call(context, error) || value,
+          {
+            key,
+            option: 'create',
+          },
+        )
       }
-      else {
-        return value
+
+      if (coming === undefined) {
+        coming = getDefaultValue(defaultValue)
       }
+
+      return coming
     })
     return output
   }
@@ -459,95 +415,93 @@ export class Schema {
    * @param {*} context
    */
   formulate(data, context) {
-    const { definition } = this
-
-    if (!isObject(data)) {
-      throw new Error(`[Schema]: data should be an object when rebuild.`)
-    }
-
     const patch = {}
-    const output = map(definition, (def, key) => {
+    const output = {}
+
+    each(this, (def, key) => {
+      const { drop, map, flat, catch: handle } = def
       const value = data[key]
-      const { drop, map, flat, catch: handle, default: defaultValue } = def
 
       if (isFunction(flat)) {
-        const res = flat.call(context, value, key, data) || {}
+        const res = this._trydo(
+          () => flat.call(context, value, key, data) || {},
+          (error) => isFunction(handle) && handle.call(context, error) || {},
+          {
+            key,
+            option: 'flat',
+          },
+        )
         Object.assign(patch, res)
       }
 
-      // do not to post it to backend, so drop it before all
-      if (this.disabled(key, context)) {
-        return
-      }
-
-      if (isFunction(drop) && drop.call(context, value, key, data)) {
-        return
-      }
       if (isBoolean(drop) && drop) {
         return
       }
 
-      if (isFunction(map)) {
-        try {
-          const res = map.call(context, value, key, data)
-          return res
-        }
-        catch (error) {
-          if (isFunction(handle)) {
-            handle.call(context, error, key, value)
-          }
-          return createDefaultValue(defaultValue)
+      if (isFunction(drop)) {
+        const bool = this._trydo(
+          () => drop.call(context, value, key, data),
+          (error) => isFunction(handle) && handle.call(context, error) || false,
+          {
+            key,
+            option: 'drop',
+          },
+        )
+        if (bool) {
+          return
         }
       }
 
-      return value
+      if (isFunction(map)) {
+        const res = this._trydo(
+          () => map.call(context, value, key, data),
+          (error) => isFunction(handle) && handle.call(context, error) || value,
+          {
+            key,
+            option: 'map',
+          },
+        )
+        output[key] = res
+      }
+      else {
+        output[key] = value
+      }
     })
 
     const result = Object.assign(output, patch)
     return result
   }
 
-  define(key, def, replace = false) {
-    const { definition } = this
-
-    if (replace) {
-      definition[key] = def
+  _trydo(fn, fallback, basic) {
+    try {
+      return fn()
     }
-    else {
-      const exist = definition[key] || {}
-      Object.assign(exist, def)
-      definition[key] = exist
-    }
-
-    return this
-  }
-
-  extend(fields) {
-    const current = this.definition
-    const next = Object.assign({}, current, fields)
-    const Constructor = getConstructor(this)
-    const schema = new Constructor(next)
-    return schema
-  }
-
-  extract(fields) {
-    const current = this.definition
-    const keys = Object.keys(fields)
-    const next = {}
-
-    keys.forEach((key) => {
-      if (fields[key] === true) {
-        next[key] = current[key]
+    catch (error) {
+      const err = {
+        ...basic,
+        error,
       }
-    })
+      const e = this.onError(err) || err
+      return fallback(e)
+    }
+  }
 
-    const Constructor = getConstructor(this)
-    const schema = new Constructor(next)
-    return schema
+  onError(e) {
+    console.error(e)
   }
 }
 export default Schema
 
-function createDefaultValue(defaultValue) {
-  return isFunction(defaultValue) ? defaultValue() : defaultValue
+// --------------------------------------
+
+function getDefaultValue(defaultValue) {
+  if (isFunction(defaultValue)) {
+    return defaultValue()
+  }
+  else if (isObject(defaultValue) || isArray(defaultValue)) {
+    return clone(defaultValue)
+  }
+  else {
+    return defaultValue
+  }
 }

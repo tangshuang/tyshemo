@@ -1,16 +1,16 @@
-import { Any, Numeric } from '../src/prototypes.js'
 import {
-  asynchronous, determine, match,
+  Any, Numeric,
+  asyncof, determine, match,
   shouldmatch, shouldnotmatch,
   ifexist, ifnotmatch, ifmatch,
   shouldexist, shouldnotexist,
-  beof, equal, nullor,
-} from '../src/rules.js'
-import Dict from '../src/dict.js'
+  oneof, equal, nullor,
+  Dict,
+} from '../../src/ty/index.js'
 
 describe('Rule Generators', () => {
-  test('asynchronous', (done) => {
-    const SomeRule = asynchronous(() => Number)
+  test('asyncof', (done) => {
+    const SomeRule = asyncof(() => Number)
     const SomeType = new Dict({
       some: SomeRule,
     })
@@ -125,8 +125,8 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ shouldnotexist: false, name: 'tomy' })).not.toThrowError()
   })
 
-  test('beof', () => {
-    const StringRule = beof(String)
+  test('oneof', () => {
+    const StringRule = oneof(String)
     const StringType = new Dict({
       some: StringRule,
     })

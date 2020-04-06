@@ -9,16 +9,16 @@ import {
   each,
 } from 'ts-fns'
 
-import Ty from './ty.js'
-import Dict from './dict.js'
-import List from './list.js'
-import Enum from './enum.js'
-import Tuple from './tuple.js'
-import Range from './range.js'
-import Mapping from './mapping.js'
-import Rule from './rule.js'
-import Model from './model.js'
+import { Model } from './model.js'
 import {
+  Ty,
+  Dict,
+  List,
+  Enum,
+  Tuple,
+  Range,
+  Mapping,
+  Rule,
   Null,
   Undefined,
   Any,
@@ -35,14 +35,12 @@ import {
   String32,
   String64,
   String128,
-} from './prototypes.js'
-import {
   ifexist,
   shouldnotmatch,
   equal,
   match,
-} from './rules.js'
-import Type from './type.js'
+  Type,
+} from './ty/index.js'
 
 export class Parser {
   constructor(types) {

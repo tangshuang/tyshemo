@@ -1,4 +1,4 @@
-import Enum from '../src/enum'
+import { Enum } from '../../src/ty/index.js'
 
 describe('Enum', () => {
   describe('assert', () => {

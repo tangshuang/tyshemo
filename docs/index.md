@@ -1,0 +1,2 @@
+- Getting Started
+  - [Install](getting-started/install.md)
