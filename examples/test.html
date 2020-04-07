@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TySheMo</title>
+  </head>
+  <body>
+
+    <script src="./tyshemo.js"></script>
+    <script>
+      const { Model, Schema, ifexist, dict, shouldmatch, TyError, Enum, list, range, tuple, mapping, Numeric } = window['tyshemo']
+      TyError.shouldBreakLongMessage = true
+      // TyError.shouldHideSensitiveData = false
+      function test(fn) {
+        try {
+          fn()
+        }
+        catch (e) {
+          const templates = {
+            exception: '{keyPath} 应该是 {should}，但拿到的是 {receive}。'
+          }
+          // e.format(templates, '【{i}】', false, false)
+          console.error(e)
+        }
+      }
+    </script>
+    <script>
+      // const SomeType = dict({
+      //   a: ifexist(tuple([
+      //     new Enum([String, Boolean]),
+      //     Number,
+      //   ])),
+      //   b: {
+      //     title: String,
+      //     count: Number,
+      //   },
+      //   c: shouldmatch(dict({
+      //     name: String,
+      //     age: Number,
+      //   }), '{keyPath} 不是一个用户。'),
+      // })
+      // test(() => SomeType.assert({
+      //   a: [1],
+      //   b: 'null',
+      //   c: null,
+      // }))
+    </script>
+    <script>
+      // const SomeType = dict({
+      //   name: String,
+      //   some: {
+      //     sub: ifexist(String),
+      //     get: shouldmatch(Function),
+      //   },
+      // })
+      // // nested object
+      // test(() => SomeType.assert({
+      //   name: 'tomy',
+      //   some: {
+      //     sub: 0,
+      //     get: null,
+      //   },
+      // }))
+      // // dict error
+      // test(() => SomeType.assert({
+      //   name: 'tomy',
+      //   some: null,
+      // }))
+      // // wrong attr
+      // const data3 = {
+      //   name: {
+      //     start: true,
+      //     end: false,
+      //   },
+      //   some: null,
+      // }
+      // test(() => SomeType.assert(data3))
+      // // rule error
+      // test(() => SomeType.assert({
+      //   some: {
+      //     sub: 122,
+      //     get: true,
+      //   },
+      //   name: 'ok',
+      // }))
+
+      // const error = SomeType.catch(data3)
+      // console.log(error.message, error.traces)
+    </script>
+    <script>
+
+    </script>
+    <script>
+      // class PersonModel extends Model {
+      //   schema() {
+      //     return new Schema({
+      //       name: {
+      //         type: String,
+      //         default: '',
+      //       },
+      //       age: {
+      //         type: Number,
+      //         default: 0,
+      //       },
+      //       body: {
+      //         type: dict({
+      //           head: Boolean,
+      //           neck: Boolean,
+      //           hands: Boolean,
+      //           feet: Boolean,
+      //         }),
+      //         default: {
+      //           head: true,
+      //           neck: true,
+      //           hands: true,
+      //           feet: true,
+      //         },
+      //         rule: ifexist,
+      //       },
+      //     })
+      //   }
+      // }
+
+      // const person = new PersonModel()
+      // const state = person.state
+
+      // state.body = {
+      //   head: true,
+      //   neck: true,
+      //   hands: true,
+      //   feet: true,
+      // }
+
+      // console.log(person.data)
+      // console.log(person.state)
+    </script>
+    <script>
+      // const SomeMapping = mapping({ key: Numeric, value: String })
+      // const a = {
+      //   2019: 'ghi',
+      //   2019: 123,
+      //   abc: 'jkl',
+      //   def: 123,
+      // }
+      // SomeMapping.assert(a)
+    </script>
+    <script>
+      const BookType = dict({
+        name: String,
+        price: Number,
+      })
+      const OneType = dict({
+        books: [
+          [BookType]
+        ],
+      })
+
+      OneType.assert({
+        books: true,
+      })
+    </script>
+  </body>
+</html>

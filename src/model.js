@@ -110,14 +110,6 @@ export class Model {
         errors: {
           get: () => this.validate(key),
         },
-        // get original data
-        data: {
-          get: () => this.$store.data[key],
-        },
-        // get current model
-        model: {
-          value: this,
-        },
       })
       define(views, key, {
         value: view,
