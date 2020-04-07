@@ -85,7 +85,7 @@ const dist = {
 
 const ty = {
   ...basic,
-  entry: __dirname + '/src/ty.js',
+  entry: __dirname + '/src/ty/index.js',
   output: {
     ...basic.output,
     filename: 'ty.js',
@@ -96,10 +96,10 @@ const ty = {
 
 const tymini = {
   ...mini,
-  entry: __dirname + '/src/ty.js',
+  entry: __dirname + '/src/ty/index.js',
   output: {
     ...mini.output,
-    filename: 'ty.mini.js',
+    filename: 'ty.min.js',
   },
   resolve: undefined,
   externals: undefined,

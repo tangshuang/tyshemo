@@ -98,8 +98,8 @@ export class Model {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
         },
-        requried: {
-          get: () => this.$schema.requried(key, this),
+        required: {
+          get: () => this.$schema.required(key, this),
         },
         disabled: {
           get: () => this.$schema.disabled(key, this),
@@ -110,6 +110,11 @@ export class Model {
         errors: {
           get: () => this.validate(key),
         },
+        // get original data
+        data: {
+          get: () => this.$store.data[key],
+        },
+        // get current model
         model: {
           value: this,
         },

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+  <div id="app">
+    <el-form label-width="80px">
+      <el-form-item label="Name">
+        <el-input v-model="views.name.value"></el-input>
+        <div class="el-form-item__error">
+          <span v-for="error in views.name.errors">{{error.message}}</span>
+        </div>
+      </el-form-item>
+      <el-form-item label="Age">
+        <el-input v-model="views.age.value"></el-input>
+        <div class="el-form-item__error">
+          <span v-for="error in views.age.errors">{{error.message}}</span>
+        </div>
+      </el-form-item>
+    </el-form>
+  </div>
+</body>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="tyshemo.js"></script>
+<script>
+  const { Model } = tyshemo
+
+  class FormModel extends Model {
+    static name = {
+      type: String,
+      default: '',
+      validators: [
+        {
+          validate: v => v.length < 12,
+          message: 'name length should must less than 12',
+        },
+      ],
+    }
+    static age = {
+      type: Number,
+      default: 0,
+      getter: v => v > 0 ? v+'' : '',
+      setter(value) {
+        const prev = +this.age
+        const next = isNaN(+value) ? prev : +value
+        return next
+      },
+      validators: [
+        {
+          validate: v => v > 0,
+          message: 'age should must bigger than 0',
+        },
+        {
+          validate: v => v < 100,
+          message: 'age should must less than 12',
+        },
+        {
+          validate: v => v < 150,
+          message: 'human will never live for 150+ years',
+        },
+      ],
+    }
+  }
+
+  const form = new FormModel()
+
+
+  const vm = new Vue({
+    el: '#app',
+    data() {
+      return {
+        views: form.$views,
+      }
+    },
+  })
+
+  form.watch('*', () => vm.$forceUpdate())
+</script>
+</html>

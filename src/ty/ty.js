@@ -39,7 +39,7 @@ export { Mapping, mapping } from './mapping.js'
 
 export { Rule } from './rule.js'
 export {
-  asynchronous,
+  asyncof,
   ifexist,
   match,
   determine,
@@ -49,7 +49,7 @@ export {
   ifmatch,
   shouldexist,
   shouldnotexist,
-  beof,
+  oneof,
   equal,
   nullor,
   lambda,

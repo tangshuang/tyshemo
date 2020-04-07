@@ -7,8 +7,8 @@
     "prepublishOnly": "npm run test && npm run build",
     "build": "rm -rf cjs && node gulpfile.js && rm -rf dist && webpack",
     "test": "jest",
-    "demo": "webpack-dev-server --config ./demo/webpack-dev-server.js",
-    "start": "npm run demo"
+    "examples": "webpack-dev-server --config ./examples/webpack-dev-server.js",
+    "start": "npm run examples"
   },
   "repository": {
     "type": "git",
