@@ -1,7 +1,7 @@
 import Model from '../src/model.js'
 import { dict } from '../src/ty/index.js'
 
-xdescribe('Model', () => {
+describe('Model', () => {
   class PersonModel extends Model {
     static name = {
       default: '',
@@ -19,18 +19,18 @@ xdescribe('Model', () => {
         hands: true,
         feet: true,
       },
-      type: dict({
+      type: {
         head: Boolean,
         hands: Boolean,
         feet: Boolean,
-      }),
+      },
     }
 
     static height = {
       type: Number,
       default: 0,
       compute() {
-        return this.get('body.feet') ? 120 : 60
+        return this.body.feet ? 120 : 60
       },
     }
 
@@ -42,13 +42,10 @@ xdescribe('Model', () => {
 
   test('computed', () => {
     const person = new PersonModel()
-    const data = person.data
+    expect(person.height).toBe(120)
 
-    expect(data.height).toBe(120)
-    person.set('body.feet', false)
-
-    expect(data.height).toBe(60)
-    person.set('body.feet', true)
+    person.body.feet = false
+    expect(person.height).toBe(60)
   })
   test('get', () => {
     const person = new PersonModel()
@@ -56,83 +53,35 @@ xdescribe('Model', () => {
   })
   test('set', () => {
     const person = new PersonModel()
-
     person.set('body.feet', false)
-    expect(person.get('body.feet')).toBe(false)
+    expect(person.body.feet).toBe(false)
   })
-  test('update', async () => {
+  test('update', () => {
     const person = new PersonModel()
-    const data = person.data
-
-    await person.update({
+    person.update({
       name: 'tomy',
       age: 10,
     })
-    expect(data.name).toBe('tomy')
-    expect(data.age).toBe(10)
+    expect(person.name).toBe('tomy')
+    expect(person.age).toBe(10)
   })
   test('watch', () => {
     const person = new PersonModel()
-    const data = person.data
-
-    person.watch('age', function(age) {
-      this.set('weight', age * 2 + 20)
-    })
-    person.set('age', 20)
-    expect(data.weight).toBe(60)
-  })
-
-  test('sync update', () => {
-    const person = new PersonModel()
-    const data = person.data
-
-    person.watch('age', function(age) {
-      this.set('weight', age * 2 + 20)
+    person.watch('age', function() {
+      this.weight = this.age * 2 + 20
     })
 
-    data.age = 20
-    person.update()
-
-    expect(person.data.weight).toBe(60)
+    person.age = 20
+    expect(person.weight).toBe(60)
   })
-
-  test('state', () => {
-    const person = new PersonModel()
-    const state = person.state
-
-    // proxy with watcher
-    person.watch('age', function(age) {
-      state.weight = age * 2 + 20
-    })
-    expect(state.weight).toBe(20)
-    state.age = 40
-    expect(state.weight).toBe(100)
-
-    // nested object with computed definition
-    expect(state.height).toBe(120)
-    state.body.feet = false
-    expect(state.height).toBe(60)
-  })
-
   test('delete', () => {
     const person = new PersonModel()
-    const state = person.state
 
-    // del method
-    person.set('testkey', 'some')
-    expect(state.testkey).toBe('some')
-    expect(() => person.del('testkey')).not.toThrowError()
-    expect(() => person.del('body.feet', true)).toThrowError()
+    person.define('testkey', 'some')
+    expect(person.testkey).toBe('some')
 
-    // delete state
-    state.testkey = 'some'
-    expect(state.testkey).toBe('some')
-    expect(() => {
-      delete state.testkey
-    }).not.toThrowError()
-    expect(() => {
-      delete state.body.feet
-    }).not.toThrowError()
+    person.define('testkey', undefined)
+    expect(person.testkey).toBe(undefined)
   })
 
   test('validate', () => {
@@ -153,8 +102,8 @@ xdescribe('Model', () => {
       some: 0,
     })
     const error = some.validate()
-    expect(error).toBeInstanceOf(Error)
-    expect(error.message).toBe('Should bigger than 0.')
+    expect(error).toBeInstanceOf(Array)
+    expect(error[0].message).toBe('Should bigger than 0.')
   })
 
   test('use model as schema', () => {
@@ -180,5 +129,52 @@ xdescribe('Model', () => {
     expect(any.some.num).toBe(0)
     expect(any.listd.length).toBe(1)
     expect(any.listd[0].num).toBe(10)
+  })
+
+  test('getter and setter', () => {
+    class PersonModel extends Model {
+      static name = {
+        type: String,
+        default: '',
+      }
+
+      static age = {
+        type: Number,
+        default: 0,
+        getter(value) {
+          // ensure string
+          return value ? value + '' : ''
+        },
+        setter(value) {
+          // ensure number
+          return !isNaN(+value) ? +value : 0
+        }
+      }
+    }
+    const person = new PersonModel()
+
+    expect(person.age).toBe('')
+
+    person.age = 12
+    expect(person.age).toBe('12')
+
+    person.age = '30'
+    const data = person.toJson()
+    expect(data.age).toBe(30)
+  })
+
+  test('message when type checking fail', () => {
+    class SomeModel extends Model {
+      static some = {
+        type: String,
+        default: 0,
+        message: 'it should be a string',
+      }
+    }
+    const some = new SomeModel()
+
+    some.some = 12
+    expect(some.some).toBe(12)
+    expect(some.$views.some.errors[0].message).toBe('it should be a string')
   })
 })

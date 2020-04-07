@@ -33,6 +33,7 @@ import { Ty, Rule } from './ty/index.js'
  *     // required, notice: `default` and result of `compute` should match type,
  *     // can be rule, i.e. ifexist(String)
  *     type: String,
+ *     message: '', // message to return when type checking fail
  *
  *     // optional
  *     validators: [
@@ -44,7 +45,7 @@ import { Ty, Rule } from './ty/index.js'
  *     ],
  *
  *     // optional, function, used by `restore`, `data` is the parameter of `restore`
- *     create: (data) => !!data.on_market ? data.listing : data.pending,
+ *     create: (data, key, value) => !!data.on_market ? data.listing : data.pending,
  *
  *     // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
  *     drop: (value, key, data) => Boolean,
@@ -212,7 +213,7 @@ export class Schema {
       return next
     }
 
-    const { setter, compute } = def
+    const { setter, compute, catch: handle } = def
 
     if (this.disabled(key, context)) {
       this.onError({
@@ -285,7 +286,7 @@ export class Schema {
       return errors
     }
 
-    const { type, validators = [] } = def
+    const { type, validators = [], message } = def
 
     // make rule works
     const target = {}
@@ -299,7 +300,7 @@ export class Schema {
         value,
         type,
         error,
-        message: `TypeError: ${key} does not match type required.`,
+        message: message || `TypeError: ${key} does not match type required.`,
       })
     }
 
@@ -346,6 +347,12 @@ export class Schema {
         return
       }
 
+      // if the validate result is an array, it may the submodel return the validate error directly
+      if (isArray(res)) {
+        errors.push(...res)
+        return
+      }
+
       let msg = ''
       if (isInstanceOf(res, Error)) {
         msg = res.message
@@ -384,14 +391,14 @@ export class Schema {
    */
   restore(data, context) {
     const output = map(this, (def, key) => {
-      const { create, default: defaultValue } = def
+      const { create, default: defaultValue, catch: handle } = def
       const value = data[key]
 
       let coming = value
 
       if (isFunction(create)) {
         coming = this._trydo(
-          () => create.call(context, data),
+          () => create.call(context, data, key, value),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,

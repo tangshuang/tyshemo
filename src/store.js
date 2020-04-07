@@ -17,12 +17,12 @@ export class Store {
     this.data = null
     this.state = null
 
-    this._computors = {}
     this._watchers = []
 
     this._updateData = {}
     this._updator = null
 
+    this._computors = {}
     this._deps = {}
     this._dep = []
 
@@ -86,6 +86,11 @@ export class Store {
         this._dispatch(keyPath, next, prev, force)
       },
     })
+
+    // reset to empty object
+    this._computors = {}
+    this._deps = {}
+    this._dep = []
 
     // computors
     const computors = this._computors
