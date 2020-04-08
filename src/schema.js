@@ -30,7 +30,8 @@ import { Ty, Rule } from './ty/index.js'
  *       return a + '' + b
  *     },
  *
- *     // required, notice: `default` and result of `compute` should match type,
+ *     // optional, when passed, `set` action will return prev value if not pass type checking
+ *     // notice: `default` and result of `compute` should match type,
  *     // can be rule, i.e. ifexist(String)
  *     type: String,
  *     message: '', // message to return when type checking fail
@@ -213,7 +214,7 @@ export class Schema {
       return next
     }
 
-    const { setter, compute, catch: handle } = def
+    const { setter, compute, catch: handle, type, message } = def
 
     if (this.disabled(key, context)) {
       this.onError({
@@ -222,7 +223,7 @@ export class Schema {
         next,
         prev,
         disabled: true,
-        message: `${key} can not be set new value because of disabled.`
+        message: `${key} can not be set new value because of disabled.`,
       })
       return prev
     }
@@ -234,7 +235,7 @@ export class Schema {
         next,
         prev,
         readonly: true,
-        message: `${key} can not be set new value because of readonly.`
+        message: `${key} can not be set new value because of readonly.`,
       })
       return prev
     }
@@ -246,13 +247,14 @@ export class Schema {
         next,
         prev,
         compute,
-        message: `${key} can not be set new value because it is a computed property.`
+        message: `${key} can not be set new value because it is a computed property.`,
       })
       return prev
     }
 
+    let output = next
     if (isFunction(setter)) {
-      const coming = this._trydo(
+      output = this._trydo(
         () => setter.call(context, next),
         (error) => isFunction(handle) && handle.call(context, error) || prev,
         {
@@ -260,11 +262,32 @@ export class Schema {
           option: 'setter',
         },
       )
-      return coming
     }
-    else {
-      return next
+
+
+    // type checking
+    if (type) {
+      // make rule works
+      const target = {}
+      if (value !== undefined) {
+        Object.assign(target, { key: value })
+      }
+      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ key: type }) : Ty.catch(value).by(type)
+      if (error) {
+        this.onError({
+          key,
+          action: 'set',
+          next,
+          prev,
+          type,
+          error,
+          message: message || `TypeError: ${key} does not match type required.`,
+        })
+        return prev
+      }
     }
+
+    return output
   }
 
   /**
@@ -286,23 +309,7 @@ export class Schema {
       return errors
     }
 
-    const { type, validators = [], message } = def
-
-    // make rule works
-    const target = {}
-    if (value !== undefined) {
-      Object.assign(target, { key: value })
-    }
-    const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ key: type }) : Ty.catch(value).by(type)
-    if (error) {
-      errors.push({
-        key,
-        value,
-        type,
-        error,
-        message: message || `TypeError: ${key} does not match type required.`,
-      })
-    }
+    const { validators = [] } = def
 
     // if required is set, it should check before validators
     if (this.required(key, context) && isEmpty(value)) {

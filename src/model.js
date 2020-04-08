@@ -377,6 +377,9 @@ export default Model
 // ---------------------------------------------------
 
 function convertModelToSchemaDef(SomeModel, isList) {
+  const create = (data, nu) => {
+    return isInstanceOf(data, SomeModel) ? data : isObject(data) ? new SomeModel(data) : nu ? null : new SomeModel()
+  }
   if (isList) {
     return {
       default: () => [],
@@ -386,8 +389,9 @@ function convertModelToSchemaDef(SomeModel, isList) {
           validate: ms => flatArray(map(ms, m => m.validate())),
         },
       ],
-      create: (data, key) => isArray(data[key]) ? data[key].map(v => isInstanceOf(v, SomeModel) ? v : isObject(v) ? new SomeModel(v) : undefined).filter(item => !!item) : [],
+      create: (data, key) => isArray(data[key]) ? data[key].map(v => create(v, true)).filter(item => !!item) : [],
       map: ms => ms.map(m => m.toJson()),
+      setter: v => isArray(v) ? v.map(v => create(v, true)).filter(item => !!item) : [],
     }
   }
   else {
@@ -399,8 +403,9 @@ function convertModelToSchemaDef(SomeModel, isList) {
           validate: m => m.validate(),
         },
       ],
-      create: (data, key) => isInstanceOf(data[key], SomeModel) ? data[key] : isObject(data[key]) ? new SomeModel(data[key]) : new SomeModel(),
+      create: (data, key) => create(data[key]),
       map: m => m.toJson(),
+      setter: v => create(v),
     }
   }
 }
