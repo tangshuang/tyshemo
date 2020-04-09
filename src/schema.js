@@ -21,7 +21,6 @@ import { Ty, Rule } from './ty/index.js'
  *   propertyName: {
  *     // required, function to return an object/array
  *     default: '',
- *
  *     // optional, computed property, will compute at each time digest end
  *     // when it is a compute property, it is not able to use set to update value
  *     compute() {
@@ -60,11 +59,11 @@ import { Ty, Rule } from './ty/index.js'
  *     // optional, function, format this property value when set
  *     setter: (value) => value,
  *
- *     // optional, function or boolean, use schema.required(field) to check, will be invoked by validate
+ *     // optional, function or boolean or string, use schema.required(field) to check, will be invoked by validate
  *     required: () => Boolean,
- *     // optional, function or boolean, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
+ *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
  *     disabled: () => Boolean,
- *     // optional, function or boolean, use schema.readonly(field) to check, will disable set
+ *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
  *     readonly: () => Boolean,
  *     // the difference between `disabled` and `readonly`:
  *     // disabled is to disable this property, so that it should not be used(shown) in your application,
@@ -108,7 +107,7 @@ export class Schema {
     }
 
     if (isFunction(required)) {
-      return !!this._trydo(
+      return this._trydo(
         () => required.call(context),
         (error) => isFunction(handle) && handle.call(context, error) || false,
         {
@@ -118,7 +117,7 @@ export class Schema {
       )
     }
     else {
-      return !!required
+      return required
     }
   }
 
@@ -136,7 +135,7 @@ export class Schema {
     }
 
     if (isFunction(disabled)) {
-      return !!this._trydo(
+      return this._trydo(
         () => disabled.call(context),
         (error) => isFunction(handle) && handle.call(context, error) || false,
         {
@@ -146,7 +145,7 @@ export class Schema {
       )
     }
     else {
-      return !!disabled
+      return disabled
     }
   }
 
@@ -164,7 +163,7 @@ export class Schema {
     }
 
     if (isFunction(readonly)) {
-      return !!this._trydo(
+      return this._trydo(
         () => readonly.call(context),
         (error) => isFunction(handle) && handle.call(context, error) || false,
         {
@@ -174,7 +173,7 @@ export class Schema {
       )
     }
     else {
-      return !!readonly
+      return readonly
     }
   }
 
@@ -216,26 +215,28 @@ export class Schema {
 
     const { setter, compute, catch: handle, type, message } = def
 
-    if (this.disabled(key, context)) {
+    const disabled = this.disabled(key, context)
+    if (disabled) {
       this.onError({
         key,
         action: 'set',
         next,
         prev,
         disabled: true,
-        message: `${key} can not be set new value because of disabled.`,
+        message: isString(disabled) ? disabled : `${key} can not be set new value because of disabled.`,
       })
       return prev
     }
 
-    if (this.readonly(key, context)) {
+    const readonly = this.readonly(key, context)
+    if (readonly) {
       this.onError({
         key,
         action: 'set',
         next,
         prev,
         readonly: true,
-        message: `${key} can not be set new value because of readonly.`,
+        message: isString(readonly) ? readonly : `${key} can not be set new value because of readonly.`,
       })
       return prev
     }
