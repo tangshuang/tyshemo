@@ -87,15 +87,6 @@ export class Schema {
     })
   }
 
-  has(key) {
-    return !!this[key]
-  }
-
-  default(key) {
-    const { default: defaultValue } = this[key]
-    return getDefaultValue(defaultValue)
-  }
-
   required(key, context) {
     const def = this[key]
 
@@ -268,7 +259,6 @@ export class Schema {
       )
     }
 
-
     // type checking
     if (type) {
       // make rule works
@@ -285,7 +275,7 @@ export class Schema {
           prev,
           type,
           error,
-          message: message || `TypeError: ${key} does not match type required.`,
+          message: message || `TypeError: ${key} does not match type.`,
         })
         return prev
       }
@@ -294,39 +284,12 @@ export class Schema {
     return output
   }
 
-  /**
-   * validate type and vaidators
-   * @param {*} key
-   * @param {*} value
-   * @param {*} context
-   */
-  validate(key, value, context) {
+  validateAt(key, value, context) {
     const def = this[key]
-    const errors = []
-
-    if (!def) {
-      errors.push({
-        key,
-        value,
-        message: `Error: ${key} is not existing in schema.`,
-      })
-      return errors
-    }
-
     const { validators = [] } = def
 
-    // if required is set, it should check before validators
-    if (this.required(key, context) && isEmpty(value)) {
-      errors.push({
-        key,
-        value,
-        required: true,
-        message: `Error: ${key} should be required, but receive empty.`,
-      })
-    }
-
-    validators.forEach((item, index) => {
-      const { determine, validate, message, catch: handle } = item
+    const validate = (validator) => {
+      const { determine, validate, message, catch: handle } = validator
 
       if (isBoolean(determine) && !determine) {
         return
@@ -384,13 +347,104 @@ export class Schema {
         msg = message
       }
 
+      const error = {
+        key,
+        value,
+        at: index,
+        message: msg,
+      }
+      return error
+    }
+
+    const runOne = (i, errors) => {
+      const validator = validators[i]
+      if (!validator) {
+        return
+      }
+
+      const error = validate(validator)
+      if (error) {
+        errors.push(error)
+      }
+    }
+
+    const validateByRange = ([start = 0, end = validators.length - 1]) => {
+      const errors = []
+      for (let i = start; i <= end; i ++) {
+        runOne(i, errors)
+      }
+      return errors
+    }
+
+    const validateByIndexes = (...indexes) => {
+      const errors = []
+      indexes.forEach((i) => {
+        runOne(i, errors)
+      })
+      return errors
+    }
+
+    return function(...args) {
+      if (isArray(args[0])) {
+        return validateByRange(args[0])
+      }
+      else {
+        return validateByIndexes(...args)
+      }
+    }
+  }
+
+  /**
+   * validate type and vaidators
+   * @param {*} key
+   * @param {*} value
+   * @param {*} context
+   */
+  validate(key, value, context) {
+    const def = this[key]
+    const errors = []
+
+    if (!def) {
       errors.push({
         key,
         value,
-        validators: index,
-        message: msg,
+        message: `Error: ${key} is not existing in schema.`,
       })
-    })
+      return errors
+    }
+
+    const { type, message } = def
+    // type checking
+    if (type) {
+      // make rule works
+      const target = {}
+      if (value !== undefined) {
+        Object.assign(target, { key: value })
+      }
+      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ key: type }) : Ty.catch(value).by(type)
+      if (error) {
+        errors.push({
+          key,
+          value,
+          type,
+          error,
+          message: message || `TypeError: ${key} does not match type.`,
+        })
+      }
+    }
+
+    // if required is set, it should check before validators
+    if (this.required(key, context) && isEmpty(value)) {
+      errors.push({
+        key,
+        value,
+        required: true,
+        message: `Error: ${key} should be required, but receive empty.`,
+      })
+    }
+
+    const errs = this.validateAt(key, value, context)([])
+    errors.push(...errs)
 
     return errors
   }

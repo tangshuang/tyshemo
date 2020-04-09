@@ -95,11 +95,11 @@ export class Model {
     const views = {}
     keys.forEach((key) => {
       const { extra = {} } = this.$schema[key]
-      const view = {}
-      // patch extra
-      each(extra, (value, key) => define(view, key, value))
-      // patch stable keys
-      Object.defineProperties(view, {
+      const view = Object.defineProperties({}, {
+        // patch extra
+        ...map(extra, (value) => ({
+          value,
+        })),
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
@@ -114,7 +114,7 @@ export class Model {
           get: () => this.$schema.readonly(key, this),
         },
         errors: {
-          get: () => this.validate(key),
+          get: () => this.$schema.validateAt(key, this.$store.data[key], this)([]),
         },
       })
       define(views, key, {
@@ -123,6 +123,16 @@ export class Model {
       })
     })
     define(this, '$views', views)
+
+    // create errors on views, so that is's easy and quick to know the model's current status
+    define(this.$views, '$errors', () => {
+      const errors = []
+      each(this.$schema, (def, key) => {
+        const errs = this.$schema.validateAt(key, this.$store.data[key], this)([])
+        errors.push(...errs)
+      })
+      return errors
+    })
 
     // create a store
     const store = new Store()
