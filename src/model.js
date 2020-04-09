@@ -15,6 +15,7 @@ import {
   isFunction,
   assign,
   isUndefined,
+  extend,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -374,6 +375,26 @@ export class Model {
         action: '$parent',
       })
     }
+  }
+
+  static extends(schema = {}, replace = false) {
+    const NewModel = extend(this)
+
+    each(schema, (def, key) => {
+      // replace key schema
+      if (replace) {
+        NewModel[key] = def
+        return
+      }
+
+      const oldDef = NewModel[key] || {}
+
+      // deep merge, not assign, validators override
+      const newDef = merge(oldDef, def, false)
+      NewModel[key] = newDef
+    })
+
+    return NewModel
   }
 }
 
