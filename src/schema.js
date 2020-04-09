@@ -71,6 +71,9 @@ import { Ty, Rule } from './ty/index.js'
  *
  *     // optional, when an error occurs caused by this property, what to do with the error
  *     catch: (error) => {},
+ *
+ *     // any other data patch to views
+ *     extra: {},
  *   },
  * })
  */

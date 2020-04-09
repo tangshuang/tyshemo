@@ -93,7 +93,12 @@ export class Model {
     // views
     const views = {}
     keys.forEach((key) => {
-      const view = Object.defineProperties({}, {
+      const { extra = {} } = this.$schema[key]
+      const view = {}
+      // patch extra
+      each(extra, (value, key) => define(view, key, value))
+      // patch stable keys
+      Object.defineProperties(view, {
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
