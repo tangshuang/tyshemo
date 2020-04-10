@@ -164,17 +164,23 @@ describe('Model', () => {
   })
 
   test('message when type checking fail', () => {
+    let error = null
     class SomeModel extends Model {
       static some = {
         type: String,
-        default: 0,
+        default: '',
         message: 'it should be a string',
+      }
+
+      onError(err) {
+        error = err
       }
     }
     const some = new SomeModel()
 
     some.some = 12
-    expect(some.some).toBe(12)
-    expect(some.$views.some.errors[0].message).toBe('it should be a string')
+    expect(some.some).toBe('')
+    expect(error).not.toBeNull()
+    expect(error.message).toBe('it should be a string')
   })
 })
