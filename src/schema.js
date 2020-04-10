@@ -47,11 +47,11 @@ import { Ty, Rule } from './ty/index.js'
  *     // optional, function, used by `restore`, `data` is the parameter of `restore`
  *     create: (data, key, value) => !!data.on_market ? data.listing : data.pending,
  *
- *     // optional, function, whether to not use this property when invoke `jsondata` and `formdata`
+ *     // optional, function, whether to not use this property when formulate
  *     drop: (value, key, data) => Boolean,
- *     // optional, function, to override the property value when using `jsondata` and `formdata`, not work when `drop` is false
+ *     // optional, function, to override the property value when formulate, not work when `drop` is false
  *     map: (value, key, data) => newValue,
- *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original data
+ *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
  *     flat: (value, key, data) => ({ newProp: newValue }),
  *
  *     // optional, function, format this property value when get
@@ -61,18 +61,19 @@ import { Ty, Rule } from './ty/index.js'
  *
  *     // optional, function or boolean or string, use schema.required(field) to check, will be invoked by validate
  *     required: () => Boolean,
- *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, preload before drop in formulate
- *     disabled: () => Boolean,
  *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
  *     readonly: () => Boolean,
+ *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and drop when formulate
+ *     disabled: () => Boolean,
+ *
  *     // the difference between `disabled` and `readonly`:
- *     // disabled is to disable this property, so that it should not be used(shown) in your application,
  *     // readonly means the property can only be read/validate/formulate, but could not be changed.
+ *     // disabled means the property can only be read, but could not be changed, and will be drop when validate and formulate
  *
  *     // optional, when an error occurs caused by this property, what to do with the error
  *     catch: (error) => {},
  *
- *     // any other data patch to views
+ *     // any other information
  *     extra: {},
  *   },
  * })
@@ -247,9 +248,9 @@ export class Schema {
       return prev
     }
 
-    let output = next
+    let value = next
     if (isFunction(setter)) {
-      output = this._trydo(
+      value = this._trydo(
         () => setter.call(context, next),
         (error) => isFunction(handle) && handle.call(context, error) || prev,
         {
@@ -264,13 +265,14 @@ export class Schema {
       // make rule works
       const target = {}
       if (value !== undefined) {
-        Object.assign(target, { key: value })
+        Object.assign(target, { [key]: value })
       }
-      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ key: type }) : Ty.catch(value).by(type)
+      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
       if (error) {
         this.onError({
           key,
           action: 'set',
+          value,
           next,
           prev,
           type,
@@ -281,14 +283,20 @@ export class Schema {
       }
     }
 
-    return output
+    return value
   }
 
+  /**
+   * only validate the rules which passed into validators
+   * @param {*} key
+   * @param {*} value
+   * @param {*} context
+   */
   validateAt(key, value, context) {
     const def = this[key]
     const { validators = [] } = def
 
-    const validate = (validator) => {
+    const validate = (validator, index) => {
       const { determine, validate, message, catch: handle } = validator
 
       if (isBoolean(determine) && !determine) {
@@ -362,7 +370,7 @@ export class Schema {
         return
       }
 
-      const error = validate(validator)
+      const error = validate(validator, i)
       if (error) {
         errors.push(error)
       }
@@ -384,8 +392,14 @@ export class Schema {
       return errors
     }
 
+    const schema = this
+
     return function(...args) {
-      if (isArray(args[0])) {
+      // drop if disabled
+      if (schema.disabled(key, context)) {
+        return []
+      }
+      else if (isArray(args[0])) {
         return validateByRange(args[0])
       }
       else {
@@ -413,15 +427,20 @@ export class Schema {
       return errors
     }
 
+    // drop if disabled
+    if (this.disabled(key, context)) {
+      return errors
+    }
+
     const { type, message } = def
     // type checking
     if (type) {
       // make rule works
       const target = {}
       if (value !== undefined) {
-        Object.assign(target, { key: value })
+        Object.assign(target, { [key]: value })
       }
-      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ key: type }) : Ty.catch(value).by(type)
+      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
       if (error) {
         errors.push({
           key,
@@ -434,12 +453,13 @@ export class Schema {
     }
 
     // if required is set, it should check before validators
-    if (this.required(key, context) && isEmpty(value)) {
+    const required = this.required(key, context)
+    if (required && isEmpty(value)) {
       errors.push({
         key,
         value,
         required: true,
-        message: `Error: ${key} should be required, but receive empty.`,
+        message: isString(required) ? required : `Error: ${key} is required, but receive empty.`,
       })
     }
 
@@ -456,7 +476,7 @@ export class Schema {
    */
   restore(data, context) {
     const output = map(this, (def, key) => {
-      const { create, default: defaultValue, catch: handle } = def
+      const { create, default: defaultValue, catch: handle, type, message } = def
       const value = data[key]
 
       let coming = value
@@ -474,6 +494,25 @@ export class Schema {
 
       if (coming === undefined) {
         coming = getDefaultValue(defaultValue)
+      }
+
+      // check type, and throw error if it is not match the type
+      if (type) {
+        const target = {}
+        if (coming !== undefined) {
+          Object.assign(target, { [key]: coming })
+        }
+        const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
+        if (error) {
+          this.onError({
+            key,
+            action: 'restore',
+            value: coming,
+            type,
+            error,
+            message: message || `TypeError: ${key} does not match type.`,
+          })
+        }
       }
 
       return coming
@@ -504,6 +543,11 @@ export class Schema {
           },
         )
         Object.assign(patch, res)
+      }
+
+      // drop if disabled
+      if (this.disabled(key, context)) {
+        return
       }
 
       if (isBoolean(drop) && drop) {

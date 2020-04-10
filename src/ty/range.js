@@ -27,7 +27,7 @@ export class Range extends Type {
   catch(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
-    const { min, max, minBound, maxBound } = pattern
+    const { min, max, minBound = true, maxBound = true } = pattern
 
     if (!isNumber(value)) {
       tyerr.replace({ type: 'exception', value, name: this.name, pattern })

@@ -32,7 +32,7 @@ import Store from './store.js'
  * @keywords: $schema, $store, $views, init,
  *            get, set, del, update, define,
  *            watch, unwatch, validate, restore,
- *            totoJson, toFlatData, toFormData,
+ *            totoJson, toParams, toFormData,
  *            onInit, onParse, onExport,
  */
 export class Model {
@@ -305,7 +305,7 @@ export class Model {
     return result
   }
 
-  toFlatData() {
+  toParams() {
     const data = this.toJson()
     const output = flat(data)
     return output
@@ -365,9 +365,9 @@ export class Model {
     let str = ''
     keys.forEach((key) => {
       const def = Constructor[key]
-      each(def, (value) => {
-        if (value.validators && isValidate) {
-          value.validators.forEach((item) => {
+      each(def, (value, key) => {
+        if (key === 'validators' && isValidate) {
+          value.forEach((item) => {
             each(item, (value) => {
               str += isFunction(value) ? value + '' : ''
             })
