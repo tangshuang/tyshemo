@@ -30,7 +30,7 @@ export { Mapping, mapping } from './mapping.js'
 
 export { Rule } from './rule.js'
 export {
-  asyncof,
+  asynch,
   ifexist,
   match,
   determine,
@@ -40,9 +40,9 @@ export {
   ifmatch,
   shouldexist,
   shouldnotexist,
-  oneof,
+  instance,
   equal,
-  nullor,
+  nullable,
   lambda,
 } from './rules.js'
 
