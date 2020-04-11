@@ -37,7 +37,11 @@ import Store from './store.js'
  */
 export class Model {
   constructor(data = {}) {
-    define(this, '$schema', this.schema())
+    // create schema
+    class Schema extends _Schema {}
+    Schema.prototype.onError = this.onError.bind(this)
+    const schema = this.schema()
+    define(this, '$schema', new Schema(schema))
 
     this.init(data)
     this.onInit()
@@ -68,14 +72,7 @@ export class Model {
       return def
     })
 
-    const model = this
-    class Schema extends _Schema {
-      onError(err) {
-        model.onError(err)
-      }
-    }
-    const schema = new Schema(defs)
-    return schema
+    return defs
   }
 
   init(data) {
@@ -387,7 +384,7 @@ export class Model {
     }
   }
 
-  static extends(schema = {}, replace = false) {
+  static extend(schema = {}, replace = false) {
     const NewModel = extend(this)
 
     each(schema, (def, key) => {

@@ -51,7 +51,7 @@ export class Parser {
     this.types = { ...Parser.defaultTypes, ...types }
   }
 
-  define(target, text) {
+  define(text, target) {
     this.types[text] = target
     return this
   }
@@ -299,9 +299,7 @@ export class Parser {
 
       let sign = value
       if (isInheritedOf(value, Model)) {
-        const schemaFn = value.prototype.schema
-        const schema = schemaFn()
-        const pattern = map(schema, (node) => {
+        const pattern = map(value, (node) => {
           const { type } = node
           return type
         })
@@ -405,9 +403,7 @@ export class Parser {
       }
 
       if (isInheritedOf(type, Model)) {
-        const schemaFn = type.prototype.schema
-        const schema = schemaFn()
-        type = map(schema, (node) => {
+        type = map(type, (node) => {
           const { type } = node
           return type
         })

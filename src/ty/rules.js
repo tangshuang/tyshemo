@@ -49,10 +49,10 @@ function catchErrorBy(context, pattern, value, key, data) {
 }
 
 /**
- * asyncof rule
+ * asynch rule
  * @param {Function} fn which can be an async function and should return a pattern
  */
-export function asyncof(fn) {
+export function asynch(fn) {
   let pattern = null
   let isReady = false
   function validate(value) {
@@ -63,7 +63,7 @@ export function asyncof(fn) {
     return error
   }
   const rule = new Rule({
-    name: 'asyncof',
+    name: 'asynch',
     validate,
     pattern: fn,
   })
@@ -100,13 +100,14 @@ export function match(patterns) {
  * determine which pattern to use.
  * @param {Function} determine a function to receive parent node of current key, and return a pattern
  */
-export function determine(determine) {
+export function determine(determine, A, B) {
   let isReady = false
   let pattern = null
   let target = {}
 
   function prepare(value, key, data) {
-    pattern = determine(data)
+    const bool = determine(data)
+    pattern = bool ? A : B
     isReady = true
     target = { key, data }
   }
@@ -130,6 +131,7 @@ export function determine(determine) {
     validate,
     prepare,
     complete,
+    pattern: [A, B],
   })
   rule.determine = determine
   return rule
@@ -442,10 +444,10 @@ export function shouldnotexist(determine, pattern) {
  * Whether the value is an instance of given class
  * @param {Constructor} Cons should be a class constructor
  */
-export function oneof(pattern) {
+export function instance(pattern) {
   return new Rule({
-    name: 'oneof',
-    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'oneof' }),
+    name: 'instance',
+    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'instance' }),
     pattern,
   })
 }
@@ -466,9 +468,9 @@ export function equal(pattern) {
  * Can be null, or match the passed pattern
  * @param {*} pattern
  */
-export function nullor(pattern) {
+export function nullable(pattern) {
   return new Rule({
-    name: 'nullor',
+    name: 'nullable',
     validate: function(value) {
       if (value === null) {
         return null
@@ -486,6 +488,9 @@ export function nullor(pattern) {
  * @param {Any} OutputType
  */
 export function lambda(InputType, OutputType) {
+  if (isArray(InputType)) {
+    InputType = new Tuple(InputType)
+  }
   if (!isInstanceOf(InputType, Tuple)) {
     throw new Error('lambda InputType should be a Tuple')
   }

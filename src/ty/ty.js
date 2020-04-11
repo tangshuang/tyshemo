@@ -227,6 +227,7 @@ export class Ty {
             const property = descriptor.value
             const wrapper = function(...args) {
               if (what === 'input') {
+                type = isInstanceOf(type, Tuple) ? type : isArray(type) ? new Tuple(type) : new Tuple([type])
                 $this.expect(args).to.be(type)
               }
               const result = property.call(this, ...args)
