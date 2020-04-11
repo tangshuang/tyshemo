@@ -1,16 +1,16 @@
 import {
   Any, Numeric,
-  asyncof, determine, match,
+  asynch, determine, match,
   shouldmatch, shouldnotmatch,
   ifexist, ifnotmatch, ifmatch,
   shouldexist, shouldnotexist,
-  oneof, equal, nullor,
+  instance, equal, nullable,
   Dict,
 } from '../../src/ty/index.js'
 
 describe('Rule Generators', () => {
-  test('asyncof', (done) => {
-    const SomeRule = asyncof(() => Number)
+  test('asynch', (done) => {
+    const SomeRule = asynch(() => Number)
     const SomeType = new Dict({
       some: SomeRule,
     })
@@ -21,14 +21,7 @@ describe('Rule Generators', () => {
     })
   })
   test('determine', () => {
-    const SomeRule = determine((data) => {
-      if (data.should) {
-        return Object
-      }
-      else {
-        return Any
-      }
-    })
+    const SomeRule = determine(data => data.should, Object, Any)
     const SomeType = new Dict({
       should: Boolean,
       body: SomeRule,
@@ -125,8 +118,8 @@ describe('Rule Generators', () => {
     expect(() => SomeType.assert({ shouldnotexist: false, name: 'tomy' })).not.toThrowError()
   })
 
-  test('oneof', () => {
-    const StringRule = oneof(String)
+  test('instance', () => {
+    const StringRule = instance(String)
     const StringType = new Dict({
       some: StringRule,
     })
@@ -149,8 +142,8 @@ describe('Rule Generators', () => {
       some: 'lucy',
     })).toThrowError()
   })
-  test('nullor', () => {
-    const SomeRule = nullor(String)
+  test('nullable', () => {
+    const SomeRule = nullable(String)
     const SomeType = new Dict({
       some: SomeRule,
     })
