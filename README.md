@@ -1,73 +1,72 @@
 TySheMo
 =======
 
-An ECMAScript data type/schema description system.
+TySheMo is a javascript RUNTIME data type and structure description system. It provides different level of objects to describe data's type and structure, and make it easy to ensure data type in complex js business. Different from other type system, TySheMo provides a atomic programing practice to build a data type system (checker). Based on its type description system, it provides very easy validation approach and uppredictable checking rules or methods. And, the most creative highlight thing is that, TySheMo provides a type basic model which is easy to control data change, vlaidation and formulation.
 
 - [中文文档](https://www.tangshuang.net/7101.html)
 
-TySheMo is a js runtime data type/schema describe system, which contains 5 parts: Prototype, Rule, Type, Schema and Model.
+## Install & Usage
 
-You can use TySheMo for:
+You can use tyshemo with npm or cdn.
 
-- data type and structure checking
-- model schema
-- formulated data
-- data change watcher
-- responsive data model
-- data mock
-- docs generating
-
-## Install
+NPM:
 
 ```
 npm i tyshemo
 ```
 
-- src: source code
-- cjs: commonjs
-- umd: umd modules
-- dist: umd bundles, can be run in browsers
-
-## Usage
-
-webpack:
-
 ```js
 import { Ty } from 'tyshemo'
 ```
 
-ES:
-
 ```js
-import { Ty } from 'tyshemo/src/index.js'
+const { Ty } = require('tyshemo')
 ```
 
-commonjs:
+If you want to load on demand:
 
 ```js
-const { Ty } = require('tyshemo/cjs/index.js')
+const { Ty } = require('tyshemo/cjs/ty')
 ```
 
-bundle file (umd):
+Or use source code to be benefit from tree shaking:
+
+```js
+import { Ty } from 'tyshemo/src/ty'
+```
+
+CDN:
 
 ```html
-<script src="/node_modules/tyshemo/umd/tyshemo.js"></script>
+<script src="https://unpkg.com/tyshemo/dist/tyshemo.min.js"></script>
 <script>
-const { Ty } = window['tyshemo']
+  const { Ty } = window.tyshemo
+</script>
+```
+
+
+```html
+<script src="https://unpkg.com/tyshemo/dist/ty.min.js"></script>
+<script>
+  const { Ty } = window.ty
+</script>
+```
+
+
+```html
+<script src="https://unpkg.com/tyshemo/dist/store.min.js"></script>
+<script>
+  const { Store } = window.store
 </script>
 ```
 
 ## Concepts
 
-Before we develop, we should learn about 5 concepts.
+Before we develop, we should learn about the following concepts.
 
 ### Prototype
 
 Prototype is to describe data automic type which points out the data's nature, quality or characteristic.
-
-For example, `var a = 10` and we know `a` is a number.
-But how do you know `a` is a number which will be stored/computed as number type by V8?
-This is defined by prototype.
 
 In TySheMo, we do not need to describe the deep theory, we just need to define a way to check whether the given data matches the given prototype.
 
@@ -79,7 +78,7 @@ We use native definition/interface as prototypes:
 - Object: should be a normal object like `{}`, not match instances, array and Object self
 - Array: should be a normal array like `[]`
 - Function: should be a function
-- RegExp: should be a string which match regexp
+- regexp: should be a string which match regexp
 - Symbol: should be a symbol
 - NaN: should be NaN
 - Infinity: should be infinity
@@ -106,16 +105,9 @@ And we extended some prototypes:
 - Undefined: undefined
 - Any
 
-However, these do not contains all of what we want, we want more.
-After you learn more about `Prototype`, you will be able to extend your own prototypes.
-
 ### Type
 
 Type is to describe data structure type definition which points out the data storage and usage.
-
-You call a data as some type of data, it means you know what genera it belongs to.
-For example, you call a boy as a Person, because you know the boy has what a Person should contains: a head, two hands and may talk.
-In summary, type contains the data structure definition and the ability to maintain data change as defined (or to throw error when you operate in way which is not allowed).
 
 In TySheMo, we do not need to implement data structure in deep theory, we just need to define a way to check whether the given data match the given type.
 
@@ -128,34 +120,13 @@ We have defined types:
 - Range
 - Mapping
 
-```
-+-------------+----------+----------+--
-|    TySheMo  |    JS    |  Python  |
-+=============+==========+==========+==
-|    Dict     |  Object  |   dict   |
-+-------------+----------+----------+------------------------------
-|    List     |  Array   |   list   |  mutable array
-+-------------+----------+----------+------------------------------
-|    Enum     |          |          |  should be one of given items
-+-------------+----------+----------+------------------------------
-|    Tuple    |          |   tuple  |  immutable determined array
-+-------------+----------+----------+------------------------------
-|    Range    |          |          |
-+-------------+----------+----------+------------------------------
-|   Mapping   |   Map    |          |
-+-------------+----------+----------+------------------------------
-```
-
-After you learn more about `Type`, you will be able to extend your own types.
-
 ### Rule
 
 Rule is to describe the behaviour methods of object properties.
-We need to know whether a property should exist, or whether a property should match some type.
 
 In TySheMo, we have defined rules:
 
-- asynchronous: check later
+- asynch: check later
 - match: match multiple
 - determine: determine which type to check
 - shouldmatch: should match the given type, or throw out the given message
@@ -164,12 +135,10 @@ In TySheMo, we have defined rules:
 - ifnotmatch: if the property does not match the given type, use the given data to replace the property
 - shouldexist: determine whether the property should exist, if exists, check with the given type
 - shouldnotexist: determine whether the property should not exist
-- beof: the property should be an instance of the given class
+- instance: the property should be an instance of the given class
 - equal: the property should deep equal the given value
-- nullor: can be null or what you passed into
+- nullable: can be null or what you passed into
 - lambda: the property should be a function, and the input and output should match the given types
-
-After you learn more about `Rule`, you will be able to extend your own rules.
 
 ### Schema
 
@@ -177,7 +146,20 @@ Schema is to describe data structure in which you describe each property's inter
 
 A schema does not care the real data, it is non-statable, it creates a abstract data structure to validate and formulate data.
 
-In TySheMo, you should use the `Schema` class to create an instance so that you can use the ability to validate and formulate. Please read more about `Schema`.
+In TySheMo, a schema is defined like:
+
+```
+{
+  name: {
+    type: String,
+    default: '',
+  },
+  age: {
+    type: Number,
+    default: 0,
+  },
+}
+```
 
 ### Model
 
@@ -185,21 +167,13 @@ Model is a data container which provide features about data operation.
 
 Js native data is very weak, we provide a model that you can watch data change, so that you can make your business logic more clear. We always use a model in our business code to matain data.
 
-- define data structure and type of each property
-- ensure data to be in right types
-- watch data change
-- recover data from backend api
-- create formdata/postdata
+And it is a observable object, you can watch properties's changing, and run some callback functions.
 
-The relationship:
+### Store
 
-```
-+-----------+      +-----------+       +-----------+      +------------+      +-----------+
-| Prototype |  ->  |   Type    |  <->  |   Rule    |  ->  |   Schema   |  ->  |   Model   |
-+-----------+      +-----------+       +-----------+      +------------+      +-----------+
-```
+Store is a state container, which manage state following observer pattern.
 
-Learn more about `Model` to use it.
+In TySheMo, each model has a store inside itself to storage and watch data. However, you can use it as a single part for other system.
 
 ## MIT License
 

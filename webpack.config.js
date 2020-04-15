@@ -88,6 +88,7 @@ const ty = {
   entry: __dirname + '/src/ty/index.js',
   output: {
     ...basic.output,
+    library: 'ty',
     filename: 'ty.js',
   },
   resolve: undefined,
@@ -99,7 +100,32 @@ const tymini = {
   entry: __dirname + '/src/ty/index.js',
   output: {
     ...mini.output,
+    library: 'ty',
     filename: 'ty.min.js',
+  },
+  resolve: undefined,
+  externals: undefined,
+}
+
+const store = {
+  ...basic,
+  entry: __dirname + '/src/store.js',
+  output: {
+    ...basic.output,
+    library: 'store',
+    filename: 'store.js',
+  },
+  resolve: undefined,
+  externals: undefined,
+}
+
+const storemini = {
+  ...mini,
+  entry: __dirname + '/src/store.js',
+  output: {
+    ...mini.output,
+    library: 'store',
+    filename: 'store.min.js',
   },
   resolve: undefined,
   externals: undefined,
@@ -112,4 +138,6 @@ module.exports = [
   dist,
   ty,
   tymini,
+  store,
+  storemini,
 ]
