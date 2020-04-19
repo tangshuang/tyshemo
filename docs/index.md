@@ -1,2 +1,17 @@
-- Getting Started
-  - [Install](getting-started/install.md)
+- [Install and Usage](install-usage.md)
+- [Prototype](prototype.md)
+- Type
+- Dict
+- List
+- Tuple
+- Enum
+- Mapping
+- Range
+- Rule
+- Ty
+- TyError
+- Parser
+- Mocker
+- Schema
+- Store
+- Model

@@ -7,7 +7,6 @@ import {
   clone,
   each,
   createProxy,
-  define,
   assign,
   remove,
 } from 'ts-fns'
