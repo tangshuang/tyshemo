@@ -294,10 +294,10 @@ export class Schema {
    */
   validateAt(key, value, context) {
     const def = this[key]
-    const { validators = [] } = def
+    const { validators = [], catch: handle } = def
 
     const validate = (validator, index) => {
-      const { determine, validate, message, catch: handle } = validator
+      const { determine, validate, message } = validator
 
       if (isBoolean(determine) && !determine) {
         return
@@ -406,6 +406,63 @@ export class Schema {
         return validateByIndexes(...args)
       }
     }
+  }
+
+  validateOn(key, value, context) {
+    const validate = (validators) => {
+      const errors = []
+      if (isArray(validators)) {
+        validators.forEach((validator) => {
+          const errs = validate(validator)
+          errors.push(...errs)
+        })
+      }
+      else if (validators && typeof validators === 'object') {
+        const { determine, validate, message } = validators
+
+        if (isBoolean(determine) && !determine) {
+          return
+        }
+
+        if (isFunction(determine) && !determine.call(context, value, key)) {
+          return
+        }
+
+        const res = validate.call(context, value, key)
+        if (isBoolean(res) && res) {
+          return
+        }
+
+        // if the validate result is an array, it may the submodel return the validate error directly
+        if (isArray(res)) {
+          errors.push(...res)
+          return
+        }
+
+        let msg = ''
+        if (isInstanceOf(res, Error)) {
+          msg = res.message
+        }
+
+        if (isFunction(message)) {
+          msg = message.call(context, value, key, res)
+        }
+
+        if (!msg && isString(message)) {
+          msg = message
+        }
+
+        const error = {
+          key,
+          value,
+          at: index,
+          message: msg,
+        }
+        errors.push(error)
+      }
+      return errors
+    }
+    return validate
   }
 
   /**
