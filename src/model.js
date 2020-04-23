@@ -111,7 +111,7 @@ export class Model {
           get: () => this.$schema.readonly(key, this),
         },
         errors: {
-          get: () => this.$schema.validateAt(key, this.$store.data[key], this)([]),
+          get: () => this.$schema.validateFn(key, this.$store.data[key], this)([]),
         },
       })
       define(views, key, {
@@ -125,7 +125,7 @@ export class Model {
     define(this.$views, '$errors', () => {
       const errors = []
       each(this.$schema, (def, key) => {
-        const errs = this.$schema.validateAt(key, this.$store.data[key], this)([])
+        const errs = this.$views[key].errors
         errors.push(...errs)
       })
       return errors

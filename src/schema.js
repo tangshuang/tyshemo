@@ -11,9 +11,10 @@ import {
   freeze,
   define,
   isString,
+  isNumber,
 } from 'ts-fns'
 
-import { Ty, Rule } from './ty/index.js'
+import { Ty, Rule, tuple, enumerate } from './ty/index.js'
 
 
 /**
@@ -287,16 +288,17 @@ export class Schema {
   }
 
   /**
-   * only validate the rules which passed into validators
+   * create a function to only validate the rules which passed into validators
    * @param {*} key
    * @param {*} value
    * @param {*} context
+   * @returns {function}
    */
-  validateAt(key, value, context) {
+  validateFn(key, value, context) {
     const def = this[key]
-    const { validators = [], catch: handle } = def
+    const { catch: handle, validators } = def
 
-    const validate = (validator, index) => {
+    const validate = (validator, index, dontTry) => {
       const { determine, validate, message } = validator
 
       if (isBoolean(determine) && !determine) {
@@ -311,6 +313,7 @@ export class Schema {
             key,
             option: 'validators[' + index+ '].determine',
           },
+          dontTry,
         )
         if (!bool) {
           return
@@ -324,6 +327,7 @@ export class Schema {
           key,
           option: 'validators[' + index+ '].validate',
         },
+        dontTry,
       )
       if (isBoolean(res) && res) {
         return
@@ -348,6 +352,7 @@ export class Schema {
             key,
             option: 'validators[' + index + '].message',
           },
+          dontTry,
         )
       }
 
@@ -364,105 +369,52 @@ export class Schema {
       return error
     }
 
-    const runOne = (i, errors) => {
+    const runOne = (dontTry, validators, i, errors) => {
       const validator = validators[i]
       if (!validator) {
         return
       }
 
-      const error = validate(validator, i)
+      const error = validate(validator, i, dontTry)
       if (error) {
         errors.push(error)
       }
     }
 
-    const validateByRange = ([start = 0, end = validators.length - 1]) => {
+    const validateByRange = (dontTry, validators, [start = 0, end = validators.length - 1]) => {
       const errors = []
       for (let i = start; i <= end; i ++) {
-        runOne(i, errors)
+        runOne(dontTry, validators, i, errors)
       }
       return errors
     }
 
-    const validateByIndexes = (...indexes) => {
+    const validateByIndexes = (dontTry, validators, ...indexes) => {
       const errors = []
       indexes.forEach((i) => {
-        runOne(i, errors)
+        runOne(dontTry, validators, i, errors)
       })
       return errors
     }
 
-    const schema = this
-
-    return function(...args) {
-      // drop if disabled
-      if (schema.disabled(key, context)) {
-        return []
+    return (...args) => {
+      const first = args[0]
+      // array, i.e. schema.validateFn('some', value, model)([validator1, validator2])
+      if (isArray(first) && first[0] && typeof first[0] === 'object') {
+        return validateByRange(1, first, [])
       }
-      else if (isArray(args[0])) {
-        return validateByRange(args[0])
+      // array, i.e. schema.validateFn('some', value, model)([2, 6])
+      else if (isArray(first)) {
+        return validateByRange(0, validators, first)
+      }
+      // number, i.e. schema.validateFn('some', value, model)(1, 2, 4, 6)
+      else if (isNumber(first)) {
+        return validateByIndexes(0, validators, ...args)
       }
       else {
-        return validateByIndexes(...args)
+        return []
       }
     }
-  }
-
-  validateOn(key, value, context) {
-    const validate = (validators) => {
-      const errors = []
-      if (isArray(validators)) {
-        validators.forEach((validator) => {
-          const errs = validate(validator)
-          errors.push(...errs)
-        })
-      }
-      else if (validators && typeof validators === 'object') {
-        const { determine, validate, message } = validators
-
-        if (isBoolean(determine) && !determine) {
-          return
-        }
-
-        if (isFunction(determine) && !determine.call(context, value, key)) {
-          return
-        }
-
-        const res = validate.call(context, value, key)
-        if (isBoolean(res) && res) {
-          return
-        }
-
-        // if the validate result is an array, it may the submodel return the validate error directly
-        if (isArray(res)) {
-          errors.push(...res)
-          return
-        }
-
-        let msg = ''
-        if (isInstanceOf(res, Error)) {
-          msg = res.message
-        }
-
-        if (isFunction(message)) {
-          msg = message.call(context, value, key, res)
-        }
-
-        if (!msg && isString(message)) {
-          msg = message
-        }
-
-        const error = {
-          key,
-          value,
-          at: index,
-          message: msg,
-        }
-        errors.push(error)
-      }
-      return errors
-    }
-    return validate
   }
 
   /**
@@ -520,7 +472,7 @@ export class Schema {
       })
     }
 
-    const errs = this.validateAt(key, value, context)([])
+    const errs = this.validateFn(key, value, context)([])
     errors.push(...errs)
 
     return errors
@@ -645,7 +597,11 @@ export class Schema {
     return result
   }
 
-  _trydo(fn, fallback, basic) {
+  _trydo(fn, fallback, basic, disabled) {
+    if (disabled) {
+      return fn()
+    }
+
     try {
       return fn()
     }
