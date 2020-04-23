@@ -296,7 +296,7 @@ export class Schema {
    */
   validateFn(key, value, context) {
     const def = this[key]
-    const { catch: handle, validators } = def
+    const { catch: handle, validators = [] } = def
 
     const validate = (validator, index, dontTry) => {
       const { determine, validate, message } = validator

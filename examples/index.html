@@ -50,7 +50,7 @@
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script src="tyshemo.js"></script>
 <script>
-  const { Model, Range, nullor } = tyshemo
+  const { Model, Range, nullable } = tyshemo
 
   class FormModel extends Model {
     static name = {
@@ -106,7 +106,7 @@
     }
 
     static married = {
-      type: nullor(Boolean),
+      type: nullable(Boolean),
       default: null,
       required: 'Please choose a status of married.',
       disabled() {
