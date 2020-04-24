@@ -64,7 +64,7 @@ import { Ty, Rule, tuple, enumerate } from './ty/index.js'
  *     required: () => Boolean,
  *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
  *     readonly: () => Boolean,
- *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and drop when formulate
+ *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when formulate
  *     disabled: () => Boolean,
  *     // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
  *     hidden: () => Boolean,

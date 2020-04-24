@@ -7,18 +7,21 @@
 <body>
   <div id="app">
     <el-form label-width="80px">
+
       <el-form-item :label="views.name.label" :class="{ 'is-required': views.name.required }">
         <el-input v-model="views.name.value"></el-input>
         <div class="el-form-item__error">
           <span v-for="error in views.name.errors">{{error.message}}</span>
         </div>
       </el-form-item>
+
       <el-form-item :label="views.age.label" :class="{ 'is-required': views.age.required }">
         <el-input v-model="views.age.value"></el-input>
         <div class="el-form-item__error">
           <span v-for="error in views.age.errors" style="margin-right: 20px;">{{error.message}}</span>
         </div>
       </el-form-item>
+
       <el-form-item :label="views.sex.label" :class="{ 'is-required': views.sex.required }">
         <el-select v-model="views.sex.value" :placeholder="views.sex.placeholder">
           <el-option
@@ -29,7 +32,8 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item v-if="!views.married.disabled" :label="views.married.label" :class="{ 'is-required': views.married.required }">
+
+      <el-form-item v-if="!views.married.hidden" :label="views.married.label" :class="{ 'is-required': views.married.required }">
         <el-select v-model="views.married.value" :placeholder="views.married.placeholder">
           <el-option
             v-for="item in views.married.options"
@@ -43,6 +47,7 @@
       <el-form-item>
         <el-button type="primary" :disabled="!!views.$errors.length" @click="submit">Submit</el-button>
       </el-form-item>
+
     </el-form>
   </div>
 </body>
@@ -109,8 +114,11 @@
       type: nullable(Boolean),
       default: null,
       required: 'Please choose a status of married.',
-      disabled() {
-        return this.sex !== 2
+      hidden() {
+        return this.age < 20
+      },
+      drop() {
+        return this.age < 20
       },
       extra: {
         label: 'Married?',
@@ -120,6 +128,15 @@
           { value: true, label: 'Yes' },
         ],
       },
+    }
+
+    onInit() {
+      // when age < 20, reset married
+      this.watch('age', () => {
+        if (this.age < 20) {
+          this.married = null
+        }
+      })
     }
   }
 
