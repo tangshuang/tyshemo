@@ -66,6 +66,8 @@ import { Ty, Rule, tuple, enumerate } from './ty/index.js'
  *     readonly: () => Boolean,
  *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and drop when formulate
  *     disabled: () => Boolean,
+ *     // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
+ *     hidden: () => Boolean,
  *
  *     // the difference between `disabled` and `readonly`:
  *     // readonly means the property can only be read/validate/formulate, but could not be changed.
@@ -74,7 +76,8 @@ import { Ty, Rule, tuple, enumerate } from './ty/index.js'
  *     // optional, when an error occurs caused by this property, what to do with the error
  *     catch: (error) => {},
  *
- *     // any other information
+ *     // any other information patch to model.$views
+ *     // support getter, i.e. { get some() { return this.name } } this point to the model
  *     extra: {},
  *   },
  * })
@@ -170,6 +173,34 @@ export class Schema {
     }
     else {
       return readonly
+    }
+  }
+
+  hidden(key, context) {
+    const def = this[key]
+
+    if (!def) {
+      return false
+    }
+
+    const { hidden, catch: handle } = def
+
+    if (!hidden) {
+      return false
+    }
+
+    if (isFunction(hidden)) {
+      return this._trydo(
+        () => hidden.call(context),
+        (error) => isFunction(handle) && handle.call(context, error) || false,
+        {
+          key,
+          option: 'hidden',
+        },
+      )
+    }
+    else {
+      return hidden
     }
   }
 

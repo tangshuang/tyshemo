@@ -94,9 +94,24 @@ export class Model {
       const { extra = {} } = this.$schema[key]
       const view = Object.defineProperties({}, {
         // patch extra
-        ...map(extra, (value) => ({
-          value,
-        })),
+        ...map(extra, (value, key) => {
+          return {
+            get: () => {
+              const descriptor = Object.getOwnPropertyDescriptor(extra, key)
+              // support getter
+              if (descriptor && descriptor.get) {
+                const value = descriptor.get.call(this)
+                return value
+              }
+              else if (descriptor && descriptor.value) {
+                return descriptor.value
+              }
+              else {
+                return value
+              }
+            },
+          }
+        }),
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
@@ -109,6 +124,9 @@ export class Model {
         },
         readonly: {
           get: () => this.$schema.readonly(key, this),
+        },
+        hidden: {
+          get: () => this.$schema.hidden(key, this),
         },
         errors: {
           get: () => this.$schema.validateFn(key, this.$store.data[key], this)([]),

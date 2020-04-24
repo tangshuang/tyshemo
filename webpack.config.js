@@ -22,7 +22,7 @@ const basic = {
   },
   resolve: {
     alias: {
-      'ts-fns': 'ts-fns/es/index.js',
+      'ts-fns$': 'ts-fns/es',
     },
   },
   module: {
