@@ -56,7 +56,7 @@ describe('Store', () => {
 
     let count = 0
 
-    store.watch('*', () => count ++)
+    store.watch('*', () => count ++, true)
 
     state.age ++
     state.body.head = false
