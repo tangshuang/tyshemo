@@ -50,11 +50,11 @@ export class Model {
 
     // create store
     class Store extends _Store {
-      _dispatch(keyPath, next, prev, force) {
-        const notify = super._dispatch(keyPath, next, prev, force)
+      dispatch(keyPath, next, prev, force) {
+        const notify = super.dispatch(keyPath, next, prev, force)
         // propagation
         if ($this.$parent && $this.$keyPath) {
-          $this.$parent.$store._dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
+          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
         }
         return notify
       }

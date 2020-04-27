@@ -82,7 +82,7 @@ export class Store {
         }
       },
       dispatch: (keyPath, next, prev, force) => {
-        this._dispatch(keyPath, next, prev, force)
+        this.dispatch(keyPath, next, prev, force)
       },
     })
 
@@ -227,7 +227,7 @@ export class Store {
       const prev = this.state[by]
       this._collect(by)
       const next = this.state[by]
-      this._dispatch(by, next, prev)
+      this.dispatch(by, next, prev)
     }
     this.watch(key, observe, true)
     depsOfBy[key] = observe
@@ -284,7 +284,7 @@ export class Store {
     return this
   }
 
-  _dispatch(keyPath, next, prev, force) {
+  dispatch(keyPath, next, prev, force) {
     if (!force && next === prev) {
       return
     }
