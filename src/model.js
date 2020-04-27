@@ -19,7 +19,7 @@ import {
 } from 'ts-fns'
 
 import _Schema from './schema.js'
-import Store from './store.js'
+import _Store from './store.js'
 
 /**
  * class SomeModel extends Model {
@@ -37,11 +37,30 @@ import Store from './store.js'
  */
 export class Model {
   constructor(data = {}) {
+    const $this = this
+
     // create schema
-    class Schema extends _Schema {}
-    Schema.prototype.onError = this.onError.bind(this)
+    class Schema extends _Schema {
+      onError(...args) {
+        $this.onError(...args)
+      }
+    }
     const schema = this.schema()
     define(this, '$schema', new Schema(schema))
+
+    // create store
+    class Store extends _Store {
+      _dispatch(keyPath, next, prev, force) {
+        const notify = super._dispatch(keyPath, next, prev, force)
+        // propagation
+        if ($this.$parent && $this.$keyPath) {
+          $this.$parent.$store._dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
+        }
+        return notify
+      }
+    }
+    const store = new Store()
+    define(this, '$store', store)
 
     this.init(data)
     this.onInit()
@@ -149,9 +168,6 @@ export class Model {
       return errors
     })
 
-    // create a store
-    const store = new Store()
-    define(this, '$store', store)
     // restore
     this.restore(data)
   }
@@ -356,10 +372,15 @@ export class Model {
     const use = (value, key) => {
       if (isInstanceOf(value, Model)) {
         define(value, '$parent', this)
-        define(value, '$parentAt', key)
+        define(value, '$keyPath', [key])
       }
       else if (isArray(value)) {
-        value.forEach(set)
+        value.forEach((item, i) => {
+          if (isInstanceOf(item, Model)) {
+            define(value, '$parent', this)
+            define(value, '$keyPath', [key, i])
+          }
+        })
       }
     }
     const set = data => each(data, use)
@@ -428,8 +449,8 @@ export default Model
 // ---------------------------------------------------
 
 function convertModelToSchemaDef(SomeModel, isList) {
-  const create = (data, nu) => {
-    return isInstanceOf(data, SomeModel) ? data : isObject(data) ? new SomeModel(data) : nu ? null : new SomeModel()
+  const create = (data, nullable) => {
+    return isInstanceOf(data, SomeModel) ? data : isObject(data) ? new SomeModel(data) : nullable ? null : new SomeModel()
   }
   if (isList) {
     return {

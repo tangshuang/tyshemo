@@ -165,15 +165,16 @@ export class Store {
    * store1.bind('age')(store2, 'age') // bind store1's age to store2's age, when store2's age changed, store1's age will re-compute
    */
   bind(key) {
+    const fn = () => {
+      this._collect(key)
+    }
+
     const bind = (store, on) => {
       const computor = this._computors[key]
       if (!computor) {
         return bind
       }
 
-      const fn = () => {
-        this._collect(key)
-      }
       store.watch(on, fn, true)
       computor.bounds = computor.bounds = []
       computor.bounds.push({
@@ -306,7 +307,19 @@ export class Store {
       }
     })
     // watchers which watch any change
-    items.push(...watchers.filter(item => isEqual(item.key, ['*'])))
+    const anys = watchers.filter((item) => {
+      if (!isEqual(item.key, ['*'])) {
+        return false
+      }
+      // if watch('*', fn, false), only top level will be watched
+      else if (!item.deep && key.length > 1) {
+        return false
+      }
+      else {
+        return true
+      }
+    })
+    items.push(...anys)
 
     items.forEach((item) => {
       const target = item.key
