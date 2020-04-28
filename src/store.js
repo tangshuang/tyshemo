@@ -188,6 +188,63 @@ export class Store {
     return bind
   }
 
+  /**
+   *
+   * @param {function|any} target if function return true to match
+   * @param {function} subscribe dispatch: function({ key, next, prev }) => [unsubscribe]
+   * @param {function} [unsubscribe] dispatch
+   * @example
+   * store.observe(model, dispatch => model.watch('*', dispatch, true), dispatch => model.unwatch('*', dispatch))
+   * store.set(keyPath, model) // should must after observe
+   */
+  observe(target, subscribe, unsubscribe) {
+    const isMatch = (v) => {
+      if (isFunction(target)) {
+        return target(v)
+      }
+      else {
+        return v === target
+      }
+    }
+    const memo = []
+    const watch = ({ key, next, prev }) => {
+      if (next === prev) {
+        return
+      }
+
+      if (isMatch(prev)) {
+        const index = memo.findIndex(item => item.target === prev)
+        if (index > -1) {
+          const { dispatch, unsubscribe: unsub } = memo[index]
+          if (isFunction(unsub)) {
+            unsub()
+          }
+          else if (isFunction(unsubscribe)) {
+            unsubscribe(dispatch)
+          }
+          memo.splice(index, 1) // delete the item
+        }
+      }
+
+      if (isMatch(next)) {
+        const dispatch = ({ key: k, prev, next }) => {
+          this.dispatch([...key, ...k], next, prev, true)
+        }
+        const unsubscribe = subscribe(dispatch)
+        memo.push({ target: next, dispatch, unsubscribe })
+      }
+    }
+
+    this.watch('*', watch, true)
+
+    const disconnect = () => {
+      this.unwatch('*', watch)
+      memo.length = 0
+    }
+
+    return disconnect
+  }
+
   // watch change of dependencies
   _dependOn(keyPath) {
     const chain = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
