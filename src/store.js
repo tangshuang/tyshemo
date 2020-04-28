@@ -194,7 +194,7 @@ export class Store {
    * @param {function} subscribe dispatch: function({ key, next, prev }) => [unsubscribe]
    * @param {function} [unsubscribe] dispatch
    * @example
-   * store.observe(model, dispatch => model.watch('*', dispatch, true), dispatch => model.unwatch('*', dispatch))
+   * store.observe(model, (dispatch) => model.watch('*', dispatch, true), dispatch => model.unwatch('*', dispatch))
    * store.set(keyPath, model) // should must after observe
    */
   observe(target, subscribe, unsubscribe) {
@@ -220,7 +220,7 @@ export class Store {
             unsub()
           }
           else if (isFunction(unsubscribe)) {
-            unsubscribe(dispatch)
+            unsubscribe(dispatch, prev)
           }
           memo.splice(index, 1) // delete the item
         }
@@ -230,7 +230,7 @@ export class Store {
         const dispatch = ({ key: k, prev, next }) => {
           this.dispatch([...key, ...k], next, prev, true)
         }
-        const unsubscribe = subscribe(dispatch)
+        const unsubscribe = subscribe(dispatch, next)
         memo.push({ target: next, dispatch, unsubscribe })
       }
     }
