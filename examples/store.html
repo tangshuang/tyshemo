@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<script src="tyshemo.js"></script>
+<script>
+  const { Store, Model } = window.tyshemo
+  const a = new Store({})
+  const b = new Store({
+    body: {
+      hand: true,
+      foot: true,
+    },
+  })
+
+  class SomeModel extends Model {
+    static name = {
+      default: '',
+    }
+  }
+  const model = new SomeModel()
+
+  a.watch('*', console.log, true)
+  a.observe(b.state, dispatch => b.watch('*', dispatch, true), dispatch => b.unwatch('*', dispatch))
+  a.observe(
+    v => v instanceof Model,
+    (dispatch, model) => model.watch('*', dispatch, true),
+    (dispatch, model) => model.unwatch('*', dispatch, true),
+  )
+
+  a.state.b = b.state
+  b.state.body.hand = false
+  b.state.model = model
+  model.name = 'xxx'
+</script>
