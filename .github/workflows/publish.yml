@@ -20,7 +20,7 @@ jobs:
         run: npm ci
       - name: Publish
         ## prepublishOnly has done build and test tasks
-        run: npm publish --access public
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
       - name: Git-tag
