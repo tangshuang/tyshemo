@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: 12.x
           registry-url: https://registry.npmjs.org/
+      - run: npm set config loglevel=info
       - run: npx can-npm-publish
       - name: Install
         run: npm ci

@@ -4,6 +4,7 @@
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
   "scripts": {
+    "postversion": "git add . && git commit -m \"update version to $npm_package_version\"",
     "prepublishOnly": "npm run test && npm run build",
     "build": "rm -rf cjs && node gulpfile.js && rm -rf dist && webpack",
     "test": "jest",
