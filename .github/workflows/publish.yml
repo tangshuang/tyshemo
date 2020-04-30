@@ -22,7 +22,7 @@ jobs:
         ## prepublishOnly has done build and test tasks
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
       - name: Git-tag
         uses: butlerlogic/action-autotag@stable
         with:
