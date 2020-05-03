@@ -92,116 +92,49 @@ export class Schema {
     })
   }
 
-  required(key, context) {
+  determine(key, method, context) {
     const def = this[key]
 
     if (!def) {
       return false
     }
 
-    const { required, catch: handle } = def
+    const { catch: handle } = def
+    const is = def[method]
 
-    if (!required) {
+    if (!is) {
       return false
     }
 
-    if (isFunction(required)) {
+    if (isFunction(is)) {
       return this._trydo(
-        () => required.call(context),
+        () => is.call(context),
         (error) => isFunction(handle) && handle.call(context, error) || false,
         {
           key,
-          option: 'required',
+          option: method,
         },
       )
     }
     else {
-      return required
+      return is
     }
+  }
+
+  required(key, context) {
+    return this.determine(key, 'required', context)
   }
 
   disabled(key, context) {
-    const def = this[key]
-
-    if (!def) {
-      return false
-    }
-
-    const { disabled, catch: handle } = def
-
-    if (!disabled) {
-      return false
-    }
-
-    if (isFunction(disabled)) {
-      return this._trydo(
-        () => disabled.call(context),
-        (error) => isFunction(handle) && handle.call(context, error) || false,
-        {
-          key,
-          option: 'disabled',
-        },
-      )
-    }
-    else {
-      return disabled
-    }
+    return this.determine(key, 'disabled', context)
   }
 
   readonly(key, context) {
-    const def = this[key]
-
-    if (!def) {
-      return false
-    }
-
-    const { readonly, catch: handle } = def
-
-    if (!readonly) {
-      return false
-    }
-
-    if (isFunction(readonly)) {
-      return this._trydo(
-        () => readonly.call(context),
-        (error) => isFunction(handle) && handle.call(context, error) || false,
-        {
-          key,
-          option: 'readonly',
-        },
-      )
-    }
-    else {
-      return readonly
-    }
+    return this.determine(key, 'readonly', context)
   }
 
   hidden(key, context) {
-    const def = this[key]
-
-    if (!def) {
-      return false
-    }
-
-    const { hidden, catch: handle } = def
-
-    if (!hidden) {
-      return false
-    }
-
-    if (isFunction(hidden)) {
-      return this._trydo(
-        () => hidden.call(context),
-        (error) => isFunction(handle) && handle.call(context, error) || false,
-        {
-          key,
-          option: 'hidden',
-        },
-      )
-    }
-    else {
-      return hidden
-    }
+    return this.determine(key, 'hidden', context)
   }
 
   get(key, value, context) {
