@@ -23,7 +23,7 @@ jobs:
       - name: Test
         run: npm test
       - name: Publish
-        use: JS-DevTools/npm-publish@v1
+        uses: JS-DevTools/npm-publish@v1
         with:
           token: "${{ secrets.NPM_AUTH_TOKEN }}"
       - name: Git-tag
