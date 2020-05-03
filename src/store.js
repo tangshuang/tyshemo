@@ -81,8 +81,8 @@ export class Store {
           }
         }
       },
-      dispatch: (keyPath, next, prev, force) => {
-        this.dispatch(keyPath, next, prev, force)
+      dispatch: ({ keyPath, value, next, prev }, force) => {
+        this.dispatch(keyPath, { value, next, prev }, force)
       },
     })
 
@@ -206,32 +206,28 @@ export class Store {
         return v === target
       }
     }
+
     const memo = []
-    const watch = ({ key, next, prev }) => {
+    const watch = ({ key, value, next, prev }) => {
       if (next === prev) {
         return
       }
 
-      if (isMatch(prev)) {
-        const index = memo.findIndex(item => item.target === prev)
-        if (index > -1) {
-          const { dispatch, unsubscribe: unsub } = memo[index]
-          if (isFunction(unsub)) {
-            unsub()
-          }
-          else if (isFunction(unsubscribe)) {
-            unsubscribe(dispatch, prev)
-          }
-          memo.splice(index, 1) // delete the item
-        }
+      // unsubscribe
+      const index = memo.findIndex(item => item.value === value)
+      if (index > -1) {
+        const { value, dispatch, unsubscribe: _unsubscribe } = memo[index]
+        unsubscribe(isFunction(_unsubscribe) ? _unsubscribe : dispatch, value)
+        memo.splice(index, 1) // delete the item
       }
 
-      if (isMatch(next)) {
-        const dispatch = ({ key: k, prev, next }) => {
-          this.dispatch([...key, ...k], next, prev, true)
+      // subscribe
+      if (isMatch(value)) {
+        const dispatch = ({ key: k, value, next, prev }) => {
+          this.dispatch([...key, ...k], { value, next, prev }, true)
         }
-        const unsubscribe = subscribe(dispatch, next)
-        memo.push({ target: next, dispatch, unsubscribe })
+        const unsubscribe = subscribe(dispatch, value)
+        memo.push({ value, dispatch, unsubscribe })
       }
     }
 
@@ -284,7 +280,8 @@ export class Store {
       const prev = this.state[by]
       this._collect(by)
       const next = this.state[by]
-      this.dispatch(by, next, prev)
+      const value = this.data[by]
+      this.dispatch(by, { value, next, prev })
     }
     this.watch(key, observe, true)
     depsOfBy[key] = observe
@@ -341,7 +338,7 @@ export class Store {
     return this
   }
 
-  dispatch(keyPath, next, prev, force) {
+  dispatch(keyPath, { value, next, prev }, force) {
     if (!force && next === prev) {
       return
     }
@@ -381,7 +378,7 @@ export class Store {
     items.forEach((item) => {
       const target = item.key
       const key = keyPath
-      item.fn.call(this.state, { target, key, next, prev })
+      item.fn.call(this.state, { target, key, value, next, prev })
     })
   }
 
