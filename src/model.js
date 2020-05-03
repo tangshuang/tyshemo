@@ -37,18 +37,13 @@ import _Store from './store.js'
  */
 export class Model {
   constructor(data = {}) {
-    const $this = this
 
     // create schema
-    class Schema extends _Schema {
-      onError(...args) {
-        $this.onError(...args)
-      }
-    }
     const schema = this.schema()
-    define(this, '$schema', new Schema(schema))
+    define(this, '$schema', schema)
 
     // create store
+    const $this = this
     class Store extends _Store {
       dispatch(keyPath, next, prev, force) {
         const notify = super.dispatch(keyPath, next, prev, force)
@@ -91,7 +86,11 @@ export class Model {
       return def
     })
 
-    return defs
+    class Schema extends _Schema {}
+    Schema.prototype.onError = this.onError.bind(this)
+
+    const schema = new Schema(defs)
+    return schema
   }
 
   init(data) {
