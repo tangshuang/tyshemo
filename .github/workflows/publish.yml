@@ -18,11 +18,14 @@ jobs:
       - run: npx can-npm-publish
       - name: Install
         run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
       - name: Publish
-        ## prepublishOnly has done build and test tasks
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: "${{ secrets.NPM_AUTH_TOKEN }}"
+        use: JS-DevTools/npm-publish@v1
+        with:
+          token: "${{ secrets.NPM_AUTH_TOKEN }}"
       - name: Git-tag
         uses: butlerlogic/action-autotag@stable
         with:
