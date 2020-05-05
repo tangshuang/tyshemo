@@ -1,9 +1,10 @@
 {
   "name": "tyshemo",
-  "version": "5.5.2",
+  "version": "5.7.0",
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
   "scripts": {
+    "postversion": "git add . && git commit -m \"update version to $npm_package_version\"",
     "prepublishOnly": "npm run test && npm run build",
     "build": "node gulpfile.js && webpack",
     "test": "jest",
@@ -23,23 +24,23 @@
   },
   "homepage": "https://github.com/tangshuang/tyshemo#readme",
   "devDependencies": {
-    "@babel/core": "^7.7.7",
+    "@babel/core": "^7.9.6",
     "@babel/plugin-proposal-class-properties": "^7.7.4",
-    "@babel/plugin-transform-runtime": "^7.7.6",
-    "@babel/preset-env": "^7.7.7",
-    "@babel/runtime": "^7.7.7",
+    "@babel/plugin-transform-runtime": "^7.9.6",
+    "@babel/preset-env": "^7.9.6",
+    "@babel/runtime": "^7.9.6",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.6",
     "gulp": "^4.0.1",
     "gulp-babel": "^8.0.0",
-    "jest": "^25.0.0",
-    "webpack": "^4.41.5",
+    "jest": "^25.5.4",
+    "webpack": "^4.43.0",
     "webpack-cli": "^3.3.10",
     "webpack-deep-scope-plugin": "^1.6.2",
     "webpack-dev-server": "^3.10.1"
   },
   "dependencies": {
-    "ts-fns": "^6.1.0"
+    "ts-fns": "^6.2.0"
   }
 }

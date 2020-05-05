@@ -194,7 +194,7 @@ export class Store {
    * @param {function} subscribe dispatch: function({ key, next, prev }) => [unsubscribe]
    * @param {function} [unsubscribe] dispatch
    * @example
-   * store.observe(model, dispatch => model.watch('*', dispatch, true), dispatch => model.unwatch('*', dispatch))
+   * store.observe(model, (dispatch) => model.watch('*', dispatch, true), dispatch => model.unwatch('*', dispatch))
    * store.set(keyPath, model) // should must after observe
    */
   observe(target, subscribe, unsubscribe) {

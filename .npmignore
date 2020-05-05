@@ -2,6 +2,7 @@ node_modules/
 test/
 examples/
 docs/
+.github/
 
 babel.config.js
 gulpfile.js
