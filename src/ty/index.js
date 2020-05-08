@@ -20,7 +20,7 @@ export {
   String128,
 } from './prototypes.js'
 
-export { Type, type } from './type.js'
+export { Type } from './type.js'
 export { Dict, dict } from './dict.js'
 export { List, list } from './list.js'
 export { Tuple, tuple } from './tuple.js'

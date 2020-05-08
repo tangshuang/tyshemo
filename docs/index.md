@@ -1,6 +1,6 @@
 - [Install and Usage](install-usage.md)
 - [Prototype](prototype.md)
-- Type
+- [Type](type.md)
 - Dict
 - List
 - Tuple

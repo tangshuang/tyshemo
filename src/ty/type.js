@@ -258,9 +258,4 @@ export class Type {
 
 }
 
-export function type(pattern) {
-  const type = new Type(pattern)
-  return type
-}
-
 export default Type

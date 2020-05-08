@@ -8,24 +8,25 @@ In TySheMo, we do not need to describe the deep theory, we just need to define a
 
 We use native definition/interface as prototypes:
 
-- String: should be a string
-- Number: should be a finite number, not match `NaN` `"123"`
-- Boolean: should be `true` or `false`
-- Object: should be a normal object like `{}`, not match instances, array and Object self
-- Array: should be a normal array like `[]`
-- Function: should be a function
-- regexp: should be a string which match regexp
-- Symbol: should be a symbol
-- NaN: should be number and NaN
-- Infinity: should be infinity
-- Date: should be an instanceof Data (new Date)
-- Promise: should be an instance of Promise (new Promise)
+- String
+- Number: finite number, not match `NaN` `"123"`
+- Boolean: `true` or `false`
+- Object: normal object like `{}`, not match instances, array and Object self
+- Array: normal array like `[]`
+- Function: function
+- regexp: string which match regexp, i.e. /^\[0-9].*/
+- Symbol
+- NaN: number and NaN
+- Infinity
+- Date: an instanceof Data (new Date)
+- Promise: an instance of Promise (new Promise)
 
 In fact, all classes can be a prototype, even the custom classes which are defined by yourself.
+For example, `const a = new A()`, here `A` is the prototype of `a`.
 
 ## Internal Prototypes
 
-And we extended some prototypes:
+And we have some prototypes:
 
 - Int
 - Float
@@ -33,6 +34,7 @@ And we extended some prototypes:
 - Positive
 - Finity
 - Zero
+- Natural
 - Numeric: number string
 - String8: string max-length 8
 - String16
@@ -42,6 +44,26 @@ And we extended some prototypes:
 - Null: null
 - Undefined: undefined
 - Any
+
+These prototypes can be import from the package:
+
+```js
+import { Int, Any } from 'tyshemo'
+```
+
+## Usage of prototypes
+
+Use a prototype as the end node of definition. For example:
+
+```js
+import { Dict, Int, Null } from 'tyshemo'
+
+const some = new Dict({
+  name: String,
+  age: Int,
+  body: Null,
+})
+```
 
 ## Custom Prototype
 
@@ -64,6 +86,8 @@ const SomeType = new Dict({
   some: SomePrototype,
 })
 ```
+
+You should pass `validate` into it when initialize.
 
 **Way 2: register**
 
