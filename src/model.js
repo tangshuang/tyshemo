@@ -39,7 +39,9 @@ export class Model {
   constructor(data = {}) {
 
     // create schema
-    const schema = this.schema()
+    class Schema extends _Schema {}
+    Schema.prototype.onError = this.onError.bind(this)
+    const schema = this.schema(Schema)
     define(this, '$schema', schema)
 
     // create store
@@ -61,7 +63,7 @@ export class Model {
     this.onInit()
   }
 
-  schema() {
+  schema(Schema) {
     const Constructor = getConstructorOf(this)
     // create schema by model's static properties
     const defs = map(Constructor, (def) => {
@@ -85,9 +87,6 @@ export class Model {
 
       return def
     })
-
-    class Schema extends _Schema {}
-    Schema.prototype.onError = this.onError.bind(this)
 
     const schema = new Schema(defs)
     return schema
