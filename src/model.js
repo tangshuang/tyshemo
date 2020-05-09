@@ -264,6 +264,15 @@ export class Model {
       return errors
     }
 
+    if (isArray(key)) {
+      const errors = []
+      key.forEach((key) => {
+        const errs = this.validate(key)
+        errors.push(...errs)
+      })
+      return errors
+    }
+
     this._check(key, true)
     const value = this.$store.get(key)
     const errors = this.$schema.validate(key, value, this)
