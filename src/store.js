@@ -25,6 +25,8 @@ export class Store {
     this._deps = {}
     this._dep = []
 
+    this._observers = []
+
     this.init(params)
   }
 
@@ -35,6 +37,17 @@ export class Store {
     this.state = createProxy(data, {
       get: (keyPath, value) => {
         this._dependOn(keyPath)
+
+        // auto observe at the first time
+        this._observers.forEach((observer) => {
+          const { nodes, trap } = observer
+          const { match, register } = trap
+          const existing = nodes.find(item => item.active === value && isEqual(item.key, keyPath))
+          if (!existing && match(value)) {
+            register(keyPath, value)
+          }
+        })
+
         return value
       },
       set: (keyPath, value) => {
@@ -81,8 +94,8 @@ export class Store {
           }
         }
       },
-      dispatch: ({ keyPath, value, next, prev }, force) => {
-        this.dispatch(keyPath, { value, next, prev }, force)
+      dispatch: ({ keyPath, value, next, prev, active, invalid }, force) => {
+        this.dispatch(keyPath, { value, next, prev, active, invalid }, force)
       },
     })
 
@@ -198,7 +211,7 @@ export class Store {
    * store.set(keyPath, model) // should must after observe
    */
   observe(target, subscribe, unsubscribe) {
-    const isMatch = (v) => {
+    const match = (v) => {
       if (isFunction(target)) {
         return target(v)
       }
@@ -207,35 +220,66 @@ export class Store {
       }
     }
 
-    const memo = []
-    const watch = ({ key, value, next, prev }) => {
+    const nodes = []
+
+    const register = (key, active) => {
+      const dispatch = ({ key: k, ...info }) => {
+        this.dispatch([...key, ...k], info, true)
+      }
+      const unsubscribe = subscribe(dispatch, active)
+      nodes.push({ key, active, dispatch, unsubscribe })
+    }
+
+    const watch = (info) => {
+      const { key, next, prev, active, invalid } = info
+
       if (next === prev) {
         return
       }
 
+      if (active === invalid) {
+        return
+      }
+
       // unsubscribe
-      const index = memo.findIndex(item => item.value === value)
+      const index = nodes.findIndex(item => item.active === invalid && isEqual(item.key, key))
       if (index > -1) {
-        const { value, dispatch, unsubscribe: _unsubscribe } = memo[index]
-        unsubscribe(isFunction(_unsubscribe) ? _unsubscribe : dispatch, value)
-        memo.splice(index, 1) // delete the item
+        const { dispatch, unsubscribe: _unsubscribe, active } = nodes[index]
+        if (isFunction(_unsubscribe)) {
+          _unsubscribe()
+        }
+        if (unsubscribe) {
+          unsubscribe(dispatch, active)
+        }
+        nodes.splice(index, 1) // delete the item
       }
 
       // subscribe
-      if (isMatch(value)) {
-        const dispatch = ({ key: k, value, next, prev }) => {
-          this.dispatch([...key, ...k], { value, next, prev }, true)
-        }
-        const unsubscribe = subscribe(dispatch, value)
-        memo.push({ value, dispatch, unsubscribe })
+      if (match(active)) {
+        register(key, active)
       }
     }
 
     this.watch('*', watch, true)
 
+    const trap = {
+      match,
+      register,
+      watch,
+    }
+
+    const observer = {
+      nodes,
+      trap,
+    }
+    this._observers.push(observer)
+
     const disconnect = () => {
       this.unwatch('*', watch)
-      memo.length = 0
+      const index = this._observers.indexOf(observer)
+      if (index > -1) {
+        this._observers.splice(index, 1)
+      }
     }
 
     return disconnect
@@ -277,11 +321,13 @@ export class Store {
     }
 
     const observe = () => {
-      const prev = this.state[by]
+      const prev = this.data[by]
+      const invalid = this.state[by]
       this._collect(by)
-      const next = this.state[by]
-      const value = this.data[by]
-      this.dispatch(by, { value, next, prev })
+      const active = this.state[by]
+      const next = this.data[by]
+      const value = next
+      this.dispatch(by, { value, next, active, prev, invalid })
     }
     this.watch(key, observe, true)
     depsOfBy[key] = observe
@@ -338,7 +384,7 @@ export class Store {
     return this
   }
 
-  dispatch(keyPath, { value, next, prev }, force) {
+  dispatch(keyPath, { value, next, prev, active, invalid }, force = false) {
     if (!force && next === prev) {
       return
     }
@@ -378,7 +424,7 @@ export class Store {
     items.forEach((item) => {
       const target = item.key
       const key = keyPath
-      item.fn.call(this.state, { target, key, value, next, prev })
+      item.fn.call(this.state, { target, key, value, next, prev, active, invalid })
     })
   }
 

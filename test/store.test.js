@@ -1,4 +1,5 @@
 import { Store } from '../src/store.js'
+import { Model } from '../src/model.js'
 
 describe('Store', () => {
   const createData = () => ({
@@ -184,5 +185,32 @@ describe('Store', () => {
     items.splice(0, 1)
     expect(items.length).toBe(3)
     expect(items[2].name).toBe('item')
+  })
+
+  test('observe', () => {
+    class SomeModel extends Model {
+      static name = {
+        default: '',
+      }
+    }
+    const some = new SomeModel()
+    const store = new Store({
+      some,
+    })
+
+    store.observe(
+      v => v instanceof SomeModel,
+      (dispatch, model) => model.watch('*', dispatch, true),
+      (dispatch, model) => model.unwatch('*', dispatch)
+    )
+
+    let count = 0
+    store.watch('*', () => {
+      count ++
+    }, true)
+
+    store.state.some.name = 'tomy'
+
+    expect(count).toBe(1)
   })
 })
