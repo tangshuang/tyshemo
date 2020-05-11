@@ -218,27 +218,40 @@ import { Rule } from 'tyshemo'
 
 const SomeRule = new Rule({
   name: 'Some',
-  validate: v => v !== 0,
   message: '{keyPath} should not be 0.',
+  validate: (data, key) => data[key] !== 0,
 })
 ```
 
-The option `validate` can return boolean or an Error.
+The option `validate` can return boolean or an Error, when return `false` or an Error, it means checking fail, return an Error to contains message when you did not provide `message`, `message` has higher priority.
 
 To create your own rule function, just use `Rule` to wrapper.
 
 ```js
-function to(type) {
+function is(type) {
   const rule = new Rule({
-    name: 'to',
-    validate: v => type === 'string' ? typeof v === 'string' : type === 'number' ? typeof v === 'number' : true,
+    name: 'is',
     message: '{keyPath} should be a ' + type,
+    validate: (data, key) => typeof data[key] === type,
   })
 }
 ```
 
 ```js
 const SomeType = new Dict({
-  age: to('string'),
+  age: is('string'),
 })
 ```
+
+Notice here, a `validate` function receive (data, key) not (value). This is because we mainly use rule to check the property logic, not the value.
+
+Except `validate`, it supports options:
+
+- shouldcheck(data, key)?: boolean // to determine whether to go to check, if return false, the rule validate will not work
+- use(data, key)?: Type // use which Type as property value type
+- validate(data, key): boolean|Error // check logic
+- decorate(data, key)? // run when checking pass
+- override(data, key)? // run when checking does not pass
+- complete(error)? // run after checking
+
+If you pass `decorate` or `override`, valdiate will run again to make sure the value fit the type.
