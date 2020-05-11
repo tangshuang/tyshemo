@@ -11,7 +11,6 @@ export class Rule {
    * define a rule
    * @param {string} name
    * @param {function} validate return 1.true/false 2.error/null
-   * @param {function} prepare
    * @param {function} override
    * @param {function} complete
    * @param {string|function} message
@@ -30,7 +29,7 @@ export class Rule {
     this.options = options
   }
 
-  validate(data, key, pattern) {
+  validate(value, pattern) {
     const { validate } = this.options
     const { message } = this
 
@@ -38,19 +37,18 @@ export class Rule {
 
     if (isInstanceOf(pattern, Rule)) {
       const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
-      error = rule.validate(data, key)
+      error = rule.validate(value)
     }
     else if (isInstanceOf(pattern, Type)) {
       const type = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
-      const value = data[key]
       error = type.catch(value)
     }
     else if (isFunction(validate)) {
-      const res = validate(data, key)
+      const res = validate.call(this, value)
       if (isBoolean(res)) {
         if (!res) {
-          const msg = message ? isFunction(message) ? message(data, key) : message : 'exception'
-          error = new Error(msg)
+          const msg = message ? isFunction(message) ? message(value) : message : 'exception'
+          error = new TypeError(msg)
         }
       }
       else if (isInstanceOf(res, Error)) {
@@ -68,36 +66,36 @@ export class Rule {
    */
   catch(data, key) {
     const {
-      prepare,
       shouldcheck,
       use,
+      decorate,
       override,
       complete,
     } = this.options
 
-    // 1 prepare
-    if (isFunction(prepare)) {
-      prepare(data, key)
-    }
-
-    // 2 should check?
-    if (isFunction(shouldcheck) && !shouldcheck(data, key)) {
+    // 1 should check?
+    if (isFunction(shouldcheck) && !shouldcheck.call(this, data, key)) {
       return null
     }
 
-    // 3 use
-    const pattern = isFunction(use) ? use(data, key) : null
+    // 2 use
+    const pattern = isFunction(use) ? use.call(this, data, key) : null
 
-    // 4 validate
-    let error = this.validate(data, key, pattern)
+    // 3 validate
+    let error = this.validate(data[key], pattern)
 
-    // 4 override
-    if (error && isFunction(override)) {
-      override(data, key)
-      error = this.validate(data, key, pattern)
+    // 4 decorate
+    if (!error && isFunction(decorate)) {
+      decorate.call(this, data, key)
     }
 
-    // 5 complete
+    // 5 override
+    if (error && isFunction(override)) {
+      override.call(this, data, key)
+      error = this.validate(data[key], pattern)
+    }
+
+    // 6 complete
     if (isFunction(complete)) {
       complete.call(this, error)
     }

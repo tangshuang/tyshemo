@@ -1,7 +1,6 @@
 import {
   isFunction,
   isInstanceOf,
-  inObject,
   isArray,
   isObject,
   isEqual,
@@ -18,10 +17,7 @@ import { Any } from './prototypes.js'
 
 export function create(type) {
   if (isInstanceOf(type, Type)) {
-    return type
-  }
-  else if (isInstanceOf(type, Rule)) {
-    return type
+    return type.clone()
   }
   else if (isObject(type)) {
     type = new Dict(type)
@@ -36,30 +32,14 @@ export function create(type) {
   return type
 }
 
-// function catchErrorBy(context, pattern, value, key, data) {
-//   if (isInstanceOf(pattern, Rule)) {
-//     if (context.isStrict && !pattern.isStrict) {
-//       pattern = pattern.strict
-//     }
-//     const error = pattern.validate(value, key, data)
-//     return error
-//   }
-//   else if (isInstanceOf(pattern, Type)) {
-//     if (context.isStrict && !pattern.isStrict) {
-//       pattern = pattern.strict
-//     }
-//     const error = pattern.catch(value)
-//     return error
-//   }
-//   else {
-//     const type = Ty.create(pattern)
-//     if (context.isStrict) {
-//       type.toBeStrict()
-//     }
-//     const error = type.catch(value)
-//     return error
-//   }
-// }
+function createRule(type) {
+  if (isInstanceOf(type, Rule)) {
+    return type
+  }
+  else {
+    return create(type)
+  }
+}
 
 /**
  * asynch rule
@@ -75,7 +55,7 @@ export function asynch(fn) {
   })
 
   Promise.resolve().then(() => fn()).then((res) => {
-    pattern = create(res)
+    pattern = createRule(res)
     rule.pattern = pattern
   })
 
@@ -90,10 +70,10 @@ export function match(patterns) {
   const rule = new Rule({
     name: 'match',
     pattern: patterns,
-    validate(data, key) {
+    validate(value) {
       for (let i = 0, len = patterns.length; i < len; i ++) {
-        const pattern = create(patterns[i])
-        const error = this.validate(data, key, pattern)
+        const pattern = createRule(patterns[i])
+        const error = this.validate(value, pattern)
         if (error) {
           return error
         }
@@ -115,7 +95,7 @@ export function determine(determine, A, B) {
     use(data) {
       const bool = determine(data)
       const choice = bool ? A : B
-      const pattern = create(choice)
+      const pattern = createRule(choice)
       return pattern
     },
   })
@@ -128,7 +108,7 @@ export function determine(determine, A, B) {
  * @param {String|Function} message
  */
 export function shouldmatch(pattern, message) {
-  const type = create(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'shouldmatch',
     pattern,
@@ -143,13 +123,13 @@ export function shouldmatch(pattern, message) {
  * @param {Pattern} pattern
  */
 export function shouldnotmatch(pattern, message) {
-  const type = create(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'shouldnotmatch',
     pattern,
     message,
-    validate(data, key) {
-      const error = this.validate(data, key, type)
+    validate(value) {
+      const error = this.validate(value, type)
       return !error
     },
   })
@@ -162,7 +142,7 @@ export function shouldnotmatch(pattern, message) {
  * @param {Pattern} pattern
  */
 export function ifexist(pattern) {
-  const type = create(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'ifexist',
     pattern,
@@ -181,7 +161,7 @@ export function ifexist(pattern) {
  * @param {Function|Any} callback a function to return new value with origin old value
  */
 export function ifnotmatch(pattern, callback) {
-  const type = create(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'ifnotmatch',
     pattern,
@@ -199,22 +179,16 @@ export function ifnotmatch(pattern, callback) {
  * @param {*} callback
  */
 export function ifmatch(pattern, callback) {
-  const type = create(pattern)
-  let isOverrided = false
-
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'ifnotmatch',
     pattern,
-    validate(data, key) {
-      if (isOverrided) {
-        return null
-      }
-      const error = this.validate(data, key, type)
+    validate(value) {
+      const error = this.validate(value, type)
       return !error
     },
     override(data, key) {
       data[key] = isFunction(callback) ? callback(data, key) : callback
-      isOverrided = true
     },
   })
   return rule
@@ -230,7 +204,7 @@ export function ifmatch(pattern, callback) {
  * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
 export function shouldexist(determine, pattern) {
-  const type = create(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'shouldexist',
     pattern,
@@ -258,51 +232,21 @@ export function shouldexist(determine, pattern) {
  * @param {Pattern} pattern when the determine function return true, use this to check data type
  */
 export function shouldnotexist(determine, pattern) {
-  let isReady = false
-  let shouldNotExist = false
-  let isExist = false
-  let target = {}
-
-  function validate(value) {
-    if (!isReady) {
-      return new Error('shouldnotexist can not be used in this situation.')
-    }
-
-    const { key, data } = target
-
-    if (shouldNotExist && isExist) {
-      const error = new TyError({ type: 'overflow', key })
-      return error
-    }
-
-    if (!shouldNotExist && !isExist) {
-      return null
-    }
-
-    const error = catchErrorBy(this, pattern, value, key, data)
-    return error
-  }
-  function prepare(value, key, data) {
-    shouldNotExist = determine(data)
-    isReady = true
-    isExist = inObject(key, data)
-    target = { key, data }
-  }
-  function complete() {
-    isReady = false
-    shouldNotExist = false
-    isExist = false
-    target = {}
-  }
-
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'shouldnotexist',
-    validate,
-    prepare,
-    complete,
     pattern,
+    shouldcheck(data, key) {
+      const bool = determine(data)
+      if (bool) {
+        return false
+      }
+      else {
+        return key in data
+      }
+    },
+    use: () => type,
   })
-  rule.determine = determine
   return rule
 }
 
@@ -311,11 +255,12 @@ export function shouldnotexist(determine, pattern) {
  * @param {Constructor} Cons should be a class constructor
  */
 export function instance(pattern) {
-  return new Rule({
+  const rule = new Rule({
     name: 'instance',
-    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'instance' }),
     pattern,
+    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'instance' }),
   })
+  return rule
 }
 
 /**
@@ -323,11 +268,12 @@ export function instance(pattern) {
  * @param {Any} target
  */
 export function equal(pattern) {
-  return new Rule({
+  const rule = new Rule({
     name: 'equal',
-    validate: value => isEqual(value, pattern) ? null : new TyError({ type: 'exception', value, pattern, name: 'equal' }),
     pattern,
+    validate: value => isEqual(value, pattern) ? null : new TyError({ type: 'exception', value, pattern, name: 'equal' }),
   })
+  return rule
 }
 
 /**
@@ -335,17 +281,16 @@ export function equal(pattern) {
  * @param {*} pattern
  */
 export function nullable(pattern) {
-  return new Rule({
+  const type = createRule(pattern)
+  const rule = new Rule({
     name: 'nullable',
-    validate: function(value) {
-      if (value === null) {
-        return null
-      }
-      const error = catchErrorBy(this, pattern, value)
-      return error
-    },
     pattern,
+    shouldcheck(data, key) {
+      return data[key] !== null
+    },
+    use: () => type,
   })
+  return rule
 }
 
 /**
@@ -361,38 +306,25 @@ export function lambda(InputType, OutputType) {
     throw new Error('lambda InputType should be a Tuple')
   }
   if (!isInstanceOf(OutputType, Type)) {
-    OutputType = makeType(OutputType)
+    OutputType = create(OutputType)
   }
 
-  let isReady = false
-  function validate(value) {
-    if (!isReady) {
-      return new Error('lambda is can not be used in this situation.')
-    }
-
-    if (!isFunction(value)) {
-      return new Error('lambda should receive a function.')
-    }
-  }
-  function prepare(value, key, target) {
-    const lambda = function(...args) {
-      InputType.assert(args)
-      let result = value.apply(this, args)
-      OutputType.assert(result)
-      return result
-    }
-    target[key] = lambda // Notice, change the original reference
-    isReady = true
-  }
-  function complete() {
-    isReady = false
-  }
-
-  return new Rule({
+  const rule = new Rule({
     name: 'lambda',
     pattern: [InputType, OutputType],
-    validate,
-    prepare,
-    complete,
+    use: () => Function,
+    decorate(data, key) {
+      const o = {
+        [key]: function(...args) {
+          InputType.assert(args)
+          const result = data[key].apply(this, args)
+          OutputType.assert(result)
+          return result
+        },
+      }
+      const fn = o[key]
+      data[key] = fn
+    },
   })
+  return rule
 }
