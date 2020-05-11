@@ -3,7 +3,8 @@ import { Dict, Rule } from '../../src/ty/index.js'
 describe('Rule', () => {
   test('pass validate option', () => {
     const SomeRule = new Rule({
-      validate(value) {
+      validate(data, key) {
+        const value = data[key]
         if (typeof value !== 'object') {
           return new Error(value + ' is not an object')
         }
@@ -24,12 +25,10 @@ describe('Rule', () => {
   })
   test('pass override option', () => {
     const SomeRule = new Rule({
-      validate(value) {
-        if (typeof value !== 'object') {
-          return new Error(value + ' is not an object')
-        }
+      validate(data, key) {
+        return typeof data[key] === 'object'
       },
-      override(value, key, data) {
+      override(data, key) {
         data[key] = {}
       },
     })

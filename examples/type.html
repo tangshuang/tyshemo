@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="UTF-8">
+</head>
+
+<script src="tyshemo.js"></script>
+<script>
+  const {
+    Model,
+    Range,
+    nullable,
+    shouldmatch,
+    Dict,
+    determine,
+    Any,
+    shouldnotmatch,
+    match,
+    Numeric,
+    shouldnotexist,
+  } = tyshemo
+
+  const msg1 = '{keyPath} should be a string.'
+  const SomeType = new Dict({
+    // some: shouldmatch(String, msg1),
+    // any: determine(data => data.should, Object, Any),
+    // a: shouldnotmatch(String, 'should not match string')
+    b: shouldnotexist(data => data.shouldnotexist, String),
+  })
+
+  SomeType.assert({
+    shouldnotexist: false,
+    b: 'aaa',
+  })
+
+  // const error = SomeType.catch({ some: 123 })
+  // const msg = error.message
+  // console.log(msg, error)
+
+  // SomeType.assert({
+  //   some: '123',
+  //   should: true,
+  //   any: null,
+  // })
+
+  // SomeType.assert({
+  //   a: 'a',
+  // })
+
+  // const msg1 = 'It should be a string.'
+  // const msg2 = 'It should be a number string.'
+  // const msg3 = 'It should not begin will 123.'
+  // const SomeRule = match([
+  //   shouldmatch(String, msg1),
+  //   shouldmatch(Numeric, msg2),
+  //   shouldnotmatch(value => value.indexOf('123') === 0, msg3),
+  // ])
+  // const SomeType = new Dict({
+  //   some: SomeRule,
+  // })
+
+  // SomeType.assert({
+  //   some: '123',
+  // })
+
+
+  // expect(() => SomeType.assert({ some: '123' })).not.toThrowError()
+  // expect(SomeType.catch({ some: 123 }).message).toBe(msg1)
+
+  // const msg2 = 'It should be a number string.'
+  // const Some2Type = new Dict({
+  //   some: shouldmatch(Numeric, msg2),
+  // })
+
+  // expect(() => Some2Type.assert({ some: '123' })).not.toThrowError()
+  // expect(() => Some2Type.assert({ some: '12a' })).toThrowError()
+  // expect(Some2Type.catch({ some: 123 }).message).toBe(msg2)
+</script>

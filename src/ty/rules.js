@@ -70,10 +70,10 @@ export function match(patterns) {
   const rule = new Rule({
     name: 'match',
     pattern: patterns,
-    validate(value) {
+    validate(data, key) {
       for (let i = 0, len = patterns.length; i < len; i ++) {
         const pattern = createRule(patterns[i])
-        const error = this.validate(value, pattern)
+        const error = this.validate(data, key, pattern)
         if (error) {
           return error
         }
@@ -99,6 +99,7 @@ export function determine(determine, A, B) {
       return pattern
     },
   })
+  rule.determine = determine
   return rule
 }
 
@@ -108,12 +109,19 @@ export function determine(determine, A, B) {
  * @param {String|Function} message
  */
 export function shouldmatch(pattern, message) {
-  const type = createRule(pattern)
+  const type = isFunction(pattern) ? pattern : createRule(pattern)
   const rule = new Rule({
     name: 'shouldmatch',
     pattern,
     message,
-    use: () => type,
+    validate(data, key) {
+      if (isFunction(type)) {
+        return type(data[key])
+      }
+
+      const error = this.validate(data, key, type)
+      return !error
+    },
   })
   return rule
 }
@@ -123,14 +131,18 @@ export function shouldmatch(pattern, message) {
  * @param {Pattern} pattern
  */
 export function shouldnotmatch(pattern, message) {
-  const type = createRule(pattern)
+  const type = isFunction(pattern) ? pattern : createRule(pattern)
   const rule = new Rule({
     name: 'shouldnotmatch',
     pattern,
     message,
-    validate(value) {
-      const error = this.validate(value, type)
-      return !error
+    validate(data, key) {
+      if (isFunction(type)) {
+        return !type(data[key])
+      }
+
+      const error = this.validate(data, key, type)
+      return !!error
     },
   })
   return rule
@@ -181,13 +193,10 @@ export function ifnotmatch(pattern, callback) {
 export function ifmatch(pattern, callback) {
   const type = createRule(pattern)
   const rule = new Rule({
-    name: 'ifnotmatch',
+    name: 'ifmatch',
     pattern,
-    validate(value) {
-      const error = this.validate(value, type)
-      return !error
-    },
-    override(data, key) {
+    use: () => type,
+    decorate(data, key) {
       data[key] = isFunction(callback) ? callback(data, key) : callback
     },
   })
@@ -208,6 +217,7 @@ export function shouldexist(determine, pattern) {
   const rule = new Rule({
     name: 'shouldexist',
     pattern,
+    message: 'missing',
     shouldcheck(data, key) {
       const bool = determine(data)
       if (bool) {
@@ -239,13 +249,21 @@ export function shouldnotexist(determine, pattern) {
     shouldcheck(data, key) {
       const bool = determine(data)
       if (bool) {
-        return false
+        return true
       }
       else {
         return key in data
       }
     },
-    use: () => type,
+    validate(data, key) {
+      const bool = determine(data)
+      if (bool) {
+        return new Error('overflow')
+      }
+
+      const error = this.validate(data, key, type)
+      return error
+    },
   })
   return rule
 }
@@ -258,7 +276,11 @@ export function instance(pattern) {
   const rule = new Rule({
     name: 'instance',
     pattern,
-    validate: value => isInstanceOf(value, pattern, true) ? null : new TyError({ type: 'exception', value, pattern, name: 'instance' }),
+    validate(data, key) {
+      const value = data[key]
+      return isInstanceOf(value, pattern, true) ? null
+        : new TyError({ type: 'exception', value, pattern, name: 'instance' })
+    },
   })
   return rule
 }
@@ -271,7 +293,11 @@ export function equal(pattern) {
   const rule = new Rule({
     name: 'equal',
     pattern,
-    validate: value => isEqual(value, pattern) ? null : new TyError({ type: 'exception', value, pattern, name: 'equal' }),
+    validate: (data, key) => {
+      const value = data[key]
+      return isEqual(value, pattern) ? null
+        : new TyError({ type: 'exception', value, pattern, name: 'equal' })
+    },
   })
   return rule
 }

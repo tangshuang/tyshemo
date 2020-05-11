@@ -63,7 +63,7 @@ describe('Rule Generators', () => {
       some: '123',
     }).message).toBe(msg1)
   })
-  test('match + shouldmatch+shouldnotmatch', () => {
+  test('match + shouldmatch + shouldnotmatch', () => {
     const msg1 = 'It should be a string.'
     const msg2 = 'It should be a number string.'
     const msg3 = 'It should not begin will 123.'
@@ -183,6 +183,5 @@ describe('Rule Generators', () => {
     }
     expect(() => SomeType.assert(data)).not.toThrowError()
     expect(data.some).toBe('')
-    expect(() => SomeType.assert({})).not.toThrowError()
   })
 })

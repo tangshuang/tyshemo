@@ -2,6 +2,7 @@ import {
   isFunction,
   isBoolean,
   isInstanceOf,
+  isString,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -29,30 +30,47 @@ export class Rule {
     this.options = options
   }
 
-  validate(value, pattern) {
+  validate(data, key, pattern) {
     const { validate } = this.options
     const { message } = this
+    const makeError = (arg) => {
+      if (!arg) {
+        return null
+      }
+      if (message) {
+        const msg = isFunction(message) ? message(data, key) : message
+        const err = new TypeError(msg)
+        return err
+      }
+      if (isInstanceOf(arg, Error)) {
+        return arg
+      }
+      if (isString(arg)) {
+        return new TypeError(arg)
+      }
+    }
 
     let error = null
 
     if (isInstanceOf(pattern, Rule)) {
       const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
-      error = rule.validate(value)
+      const err = rule.catch(data, key)
+      error = makeError(err)
     }
     else if (isInstanceOf(pattern, Type)) {
       const type = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
-      error = type.catch(value)
+      const err = type.catch(data[key])
+      error = makeError(err)
     }
     else if (isFunction(validate)) {
-      const res = validate.call(this, value)
+      const res = validate.call(this, data, key)
       if (isBoolean(res)) {
         if (!res) {
-          const msg = message ? isFunction(message) ? message(value) : message : 'exception'
-          error = new TypeError(msg)
+          error = makeError('exception')
         }
       }
       else if (isInstanceOf(res, Error)) {
-        error = res
+        error = makeError(res)
       }
     }
 
@@ -82,7 +100,7 @@ export class Rule {
     const pattern = isFunction(use) ? use.call(this, data, key) : null
 
     // 3 validate
-    let error = this.validate(data[key], pattern)
+    let error = this.validate(data, key, pattern)
 
     // 4 decorate
     if (!error && isFunction(decorate)) {
@@ -92,7 +110,7 @@ export class Rule {
     // 5 override
     if (error && isFunction(override)) {
       override.call(this, data, key)
-      error = this.validate(data[key], pattern)
+      error = this.validate(data, key, pattern)
     }
 
     // 6 complete
