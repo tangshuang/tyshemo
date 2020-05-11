@@ -123,16 +123,13 @@ export class Type {
 
           const isRule = isInstanceOf(pattern, Rule)
           if (isRule) {
-            if (this.isStrict && !pattern.isStrict) {
-              pattern = pattern.strict
-            }
-
-            const error = pattern.validate(value, key, data)
+            const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+            const error = rule.catch(data, key)
             if (!error) {
               continue
             }
 
-            // after validate, the property may create by validate
+            // after validate, the property may create by rule
             if (!inObject(key, data)) {
               tyerr.add({ type: 'missing', key })
             }

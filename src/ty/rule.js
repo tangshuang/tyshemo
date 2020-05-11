@@ -4,6 +4,8 @@ import {
   isInstanceOf,
 } from 'ts-fns'
 
+import Type from './type.js'
+
 export class Rule {
   /**
    * define a rule
@@ -15,93 +17,91 @@ export class Rule {
    * @param {string|function} message
    */
   constructor(options = {}) {
-    let { name, validate, override, message, prepare, complete, pattern } = options
+    const {
+      name,
+      pattern,
+      message,
+    } = options
 
-    this._listeners = []
-
-    this._prepare = prepare
-    this._complete = complete
-    this._validate = validate
-    this._override = override
-    this._message = message
-
-    this.pattern = pattern
-    this.isStrict = false
     this.name = name || 'Rule'
+    this.pattern = pattern
+    this.message = message
+    this.isStrict = false
     this.options = options
   }
 
-  bind(fn) {
-    if (isFunction(fn)) {
-      this._listeners.push(fn)
-    }
-    return this
-  }
-  unbind(fn) {
-    this._listeners.forEach((item, i) => {
-      if (item === fn) {
-        this._listeners.splice(i, 1)
-      }
-    })
-    return this
-  }
-  dispatch(error) {
-    this._listeners.forEach((fn) => {
-      Promise.resolve().then(() => fn.call(this, error))
-    })
-    return this
-  }
+  validate(data, key, pattern) {
+    const { validate } = this.options
+    const { message } = this
 
-  /**
-   * validate value
-   * @param {*} value
-   * @returns error/null
-   */
-  validate(value, key, data) {
-    // use validate as validate2
-    if (key && data) {
-      return this.validate2(value, key, data)
-    }
+    let error = null
 
-    if (isFunction(this._validate)) {
-      const res = this._validate.call(this, value)
+    if (isInstanceOf(pattern, Rule)) {
+      const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+      error = rule.validate(data, key)
+    }
+    else if (isInstanceOf(pattern, Type)) {
+      const type = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+      const value = data[key]
+      error = type.catch(value)
+    }
+    else if (isFunction(validate)) {
+      const res = validate(data, key)
       if (isBoolean(res)) {
         if (!res) {
-          const msg = this._message ? isFunction(this._message) ? this._message.call(this, value) : this._message : 'exception'
-          const error = new Error(msg)
-          this.dispatch(error)
-          return error
+          const msg = message ? isFunction(message) ? message(data, key) : message : 'exception'
+          error = new Error(msg)
         }
       }
       else if (isInstanceOf(res, Error)) {
-        const error = res
-        this.dispatch(error)
-        return error
+        error = res
       }
     }
 
-    return null
+    return error
   }
 
   /**
    * validate value twice
-   * @param {*} value
-   * @param {*} key
    * @param {*} data
+   * @param {*} key
    */
-  validate2(value, key, data) {
-    if (isFunction(this._prepare)) {
-      this._prepare.call(this, value, key, data)
+  catch(data, key) {
+    const {
+      prepare,
+      shouldcheck,
+      use,
+      override,
+      complete,
+    } = this.options
+
+    // 1 prepare
+    if (isFunction(prepare)) {
+      prepare(data, key)
     }
-    let error = this.validate(value)
-    if (error && isFunction(this._override)) {
-      this._override.call(this, value, key, data)
-      value = data[key]
-      error = this.validate(value)
+
+    // 2 should check?
+    if (isFunction(shouldcheck) && !shouldcheck(data, key)) {
+      return null
     }
-    if (isFunction(this._complete)) {
-      this._complete.call(this, value, key, data)
+
+    // 3 use
+    const pattern = isFunction(use) ? use(data, key) : null
+
+    // 4 validate
+    let error = this.validate(data, key, pattern)
+
+    // 4 override
+    if (error && isFunction(override)) {
+      override(data, key)
+      error = this.validate(data, key, pattern)
     }
+
+    // 5 complete
+    if (isFunction(complete)) {
+      complete.call(this, error)
+    }
+
     return error
   }
 

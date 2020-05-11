@@ -1,61 +1,10 @@
 import {
   isFunction,
-  isObject,
   isArray,
   isInstanceOf,
 } from 'ts-fns'
 
-import Dict from './dict.js'
-import List from './list.js'
-import Type from './type.js'
-
-export { Prototype } from './prototype.js'
-export {
-  Null,
-  Undefined,
-  Any,
-  Numeric,
-  Int,
-  Float,
-  Negative,
-  Positive,
-  Natural,
-  Finity,
-  Zero,
-  String8,
-  String16,
-  String32,
-  String64,
-  String128,
-} from './prototypes.js'
-
-export { Type, type } from './type.js'
-export { Dict, dict } from './dict.js'
-export { List, list } from './list.js'
-export { Tuple, tuple } from './tuple.js'
-export { Enum, enumerate } from './enum.js'
-export { Range, range } from './range.js'
-export { Mapping, mapping } from './mapping.js'
-
-export { Rule } from './rule.js'
-export {
-  asynch,
-  ifexist,
-  match,
-  determine,
-  shouldmatch,
-  shouldnotmatch,
-  ifnotmatch,
-  ifmatch,
-  shouldexist,
-  shouldnotexist,
-  instance,
-  equal,
-  nullable,
-  lambda,
-} from './rules.js'
-
-export { TyError } from './ty-error.js'
+import { create } from './rules.js'
 
 export class Ty {
   constructor() {
@@ -247,23 +196,6 @@ export class Ty {
       }
     }
   }
-
-  static create(type) {
-    if (isObject(type)) {
-      type = new Dict(type)
-    }
-    else if (isArray(type)) {
-      type = new List(type)
-    }
-    else if (isInstanceOf(type, Type)) {
-      type = type.clone()
-    }
-    else {
-      type = new Type(type)
-    }
-
-    return type
-  }
 }
 
 const ty = new Ty()
@@ -274,5 +206,6 @@ Ty.trace = ty.trace.bind(ty)
 Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
 Ty.decorate = ty.decorate.bind(ty)
+Ty.create = create
 
 export default Ty

@@ -38,16 +38,13 @@ export class Tuple extends Type {
 
         const isRule = isInstanceOf(pattern, Rule)
         if (isRule) {
-          if (this.isStrict && !pattern.isStrict) {
-            pattern = pattern.strict
-          }
-
-          const error = pattern.validate(value, index, items)
+          const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+          const error = rule.catch(items, index)
           if (!error) {
             continue
           }
 
-          // after validate, the property may create by validate
+          // after validate, the property may create by rule
           if (!inObject(index, items)) {
             tyerr.add({ type: 'missing', index })
           }
