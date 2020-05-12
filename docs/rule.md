@@ -254,4 +254,4 @@ Except `validate`, it supports options:
 - override(data, key)? // run when checking does not pass
 - complete(error)? // run after checking
 
-If you pass `decorate` or `override`, valdiate will run again to make sure the value fit the type.
+If you pass `override`, valdiate will run again to make sure the value fit the type.

@@ -181,7 +181,9 @@ describe('Rule Generators', () => {
     const data = {
       some: null,
     }
+
     expect(() => SomeType.assert(data)).not.toThrowError()
     expect(data.some).toBe('')
+    expect(() => SomeType.assert({})).not.toThrowError()
   })
 })

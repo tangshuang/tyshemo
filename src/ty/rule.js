@@ -110,16 +110,12 @@ export class Rule {
     // 5 override
     if (error && isFunction(override)) {
       override.call(this, data, key)
-    }
-
-    // 6 check again after decorate and override
-    if (isFunction(decorate) || isFunction(override)) {
       error = this.validate(data, key, pattern)
     }
 
-    // 7 complete
+    // 6 complete
     if (isFunction(complete)) {
-      complete.call(this, error)
+      error = complete.call(this, error) || error
     }
 
     return error

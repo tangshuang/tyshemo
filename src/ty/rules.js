@@ -195,6 +195,9 @@ export function ifmatch(pattern, callback) {
   const rule = new Rule({
     name: 'ifmatch',
     pattern,
+    shouldcheck(data, key) {
+      return key in data
+    },
     use: () => type,
     decorate(data, key) {
       data[key] = isFunction(callback) ? callback(data, key) : callback
