@@ -52,7 +52,7 @@ export class Ty {
     return {
       to: {
         match: (type) => {
-          type = Ty.create(type)
+          type = create(type)
 
           try {
             type.assert(value)
@@ -77,7 +77,7 @@ export class Ty {
   catch(value) {
     return {
       by: (type) => {
-        type = Ty.create(type)
+        type = create(type)
 
         let error = type.catch(value)
         if (error) {
@@ -95,7 +95,7 @@ export class Ty {
   trace(value) {
     return {
       by: (type) => {
-        type = Ty.create(type)
+        type = create(type)
 
         return type.trace(value).catch(error => this.throw(error))
       },
@@ -109,7 +109,7 @@ export class Ty {
   track(value) {
     return {
       by: (type) => {
-        type = Ty.create(type)
+        type = create(type)
 
         return type.track(value).catch(error => this.throw(error))
       },
@@ -126,7 +126,7 @@ export class Ty {
     return {
       typeof: (value) => {
         let type = arg
-        type = Ty.create(type)
+        type = create(type)
 
         let error = type.catch(value)
         if (error) {

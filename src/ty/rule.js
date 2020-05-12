@@ -115,7 +115,8 @@ export class Rule {
 
     // 6 complete
     if (isFunction(complete)) {
-      error = complete.call(this, error) || error
+      const err = complete.call(this, data, key, error)
+      error = err === null || err instanceof Error ? err : error
     }
 
     return error

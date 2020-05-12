@@ -247,11 +247,45 @@ Notice here, a `validate` function receive (data, key) not (value). This is beca
 
 Except `validate`, it supports options:
 
+- name: string // name of this rule, will be used in error
+- pattern: Type // will be used in error
+- message: string|function // will be used to replace error message
 - shouldcheck(data, key)?: boolean // to determine whether to go to check, if return false, the rule validate will not work
 - use(data, key)?: Type // use which Type as property value type
-- validate(data, key): boolean|Error // check logic
+- validate(data, key)?: boolean|Error // check logic
 - decorate(data, key)? // run when checking pass
 - override(data, key)? // run when checking does not pass
-- complete(error)? // run after checking
+- complete(data, key, error)? // run after checking, return a new Error to replace original Error
 
 If you pass `override`, valdiate will run again to make sure the value fit the type.
+
+To create a rule, it is recommeded to declare a function:
+
+```js
+function myrule(pattern) {
+  const type = Ty.create(pattern)
+  const rule = new Rule({
+    name: 'myrule',
+    pattern,
+    shouldcheck(data, key) {
+      return key in data
+    },
+    use: () => type,
+    complete(data, key, error) {
+      console.error(data, key, error)
+      return null // always pass
+    },
+  })
+  return rule
+}
+```
+
+Then you can use it like:
+
+```js
+const SomeType = new Dict({
+  some: myrule(String),
+})
+```
+
+Now you know how to create your custom rule.

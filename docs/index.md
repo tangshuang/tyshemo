@@ -1,11 +1,13 @@
 - [Install and Usage](install-usage.md)
 - [Prototype](prototype.md)
 - [Type](type.md)
-- Rule
-- Ty
-- TyError
+- [Rule](rule.md)
+- [Ty](ty.md)
+- [TyError](error.md)
 - Parser
 - Mocker
+- Model
 - Schema
 - Store
-- Model
+- tyshemo-service
+- react-tyshemo
