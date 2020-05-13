@@ -4,10 +4,10 @@
 - [Rule](rule.md)
 - [Ty](ty.md)
 - [TyError](error.md)
+- Store
+- Schema
+- Model
 - Parser
 - Mocker
-- Model
-- Schema
-- Store
 - tyshemo-service
 - react-tyshemo

@@ -237,7 +237,7 @@ export class Store {
       const dispatch = ({ key: k, ...info }) => {
         this.dispatch([...key, ...k], info, true)
       }
-      const unsubscribe = subscribe(dispatch, value)
+      const unsubscribe = subscribe(value)(dispatch)
       nodes.push({ key, value, active, dispatch, unsubscribe })
     }
 
@@ -260,7 +260,7 @@ export class Store {
           _unsubscribe()
         }
         if (unsubscribe) {
-          unsubscribe(dispatch, value)
+          unsubscribe(value)(dispatch)
         }
         nodes.splice(index, 1) // delete the item
       }
