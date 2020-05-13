@@ -3,13 +3,6 @@
 <script src="tyshemo.js"></script>
 <script>
   const { Store, Model } = window.tyshemo
-  const a = new Store({})
-  const b = new Store({
-    body: {
-      hand: true,
-      foot: true,
-    },
-  })
 
   class SomeModel extends Model {
     static name = {
@@ -18,16 +11,47 @@
   }
   const model = new SomeModel()
 
-  a.watch('*', console.log, true)
-  a.observe(b.state, dispatch => b.watch('*', dispatch, true), dispatch => b.unwatch('*', dispatch))
+  const b = new Store({
+    body: {
+      hand: true,
+      foot: true,
+    },
+    model,
+  })
+  const a = new Store({
+    b: b.state,
+  })
+
+  a.watch('*', ({ key, value }) => console.log('change:', key.join('.'), value), true)
+
+  /**
+   * b is registered on a when initalize
+   */
+
   a.observe(
     v => v instanceof Model,
     (dispatch, model) => model.watch('*', dispatch, true),
-    (dispatch, model) => model.unwatch('*', dispatch, true),
+    (dispatch, model) => model.unwatch('*', dispatch),
   )
 
-  a.state.b = b.state
-  b.state.body.hand = false
-  b.state.model = model
-  model.name = 'xxx'
+  const { state } = a
+  const _b = state.b
+  _b.body.hand = false
+  _b.body.foot = false
+  _b.model.name = 'xxx'
+
+  // will not trigger console.log, only changes on `a` will trigger
+  b.state.body.hand = true
+
+
+  /**
+   * c is pended on a after initalize
+   */
+
+  const c = new Store({})
+  state.c = c.state
+  state.c.e = 'e'
+
+  // not trigger
+  c.state.e = 'ex'
 </script>

@@ -4,11 +4,11 @@ import {
   isFunction,
   parse,
   makeKeyChain,
-  clone,
   each,
   createProxy,
   assign,
   remove,
+  isInstanceOf,
 } from 'ts-fns'
 
 export class Store {
@@ -21,7 +21,7 @@ export class Store {
     this._updateData = {}
     this._updator = null
 
-    this._computors = {}
+    this._descriptors = {}
     this._deps = {}
     this._dep = []
 
@@ -31,38 +31,49 @@ export class Store {
   }
 
   init(params) {
+    // reset to empty object
+    this._descriptors = {}
+    this._deps = {}
+    this._dep = []
+
+    const data = {}
     // data & state
-    const data = clone(params)
-    this.data = data
-    this.state = createProxy(data, {
-      get: (keyPath, value) => {
-        this._dependOn(keyPath)
+    this.data = {}
+    this.state = createProxy(this.data, {
+      get: (keyPath, active) => {
+        // keep store in state
+        if (keyPath[0] === '__store__') {
+          return this
+        }
 
         // auto observe at the first time
         this._observers.forEach((observer) => {
+          const value = parse(this.data, keyPath)
           const { nodes, trap } = observer
           const { match, register } = trap
-          const existing = nodes.find(item => item.active === value && isEqual(item.key, keyPath))
-          if (!existing && match(value)) {
-            register(keyPath, value)
+          const existing = nodes.find(item => item.value === value && isEqual(item.key, keyPath))
+          if (!existing && (match(value) || match(active))) {
+            register(keyPath, value, active)
           }
         })
 
-        return value
+        this._dependOn(keyPath)
+
+        return active
       },
       set: (keyPath, value) => {
         // computed property
-        if (keyPath.length === 1 && this._computors[keyPath[0]]) {
+        if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
           const key = keyPath[0]
-          const computor = this._computors[key]
+          const descriptor = this._descriptors[key]
 
           // call setter
-          if (computor.set) {
-            computor.set.call(this.state, value)
+          if (descriptor.set) {
+            descriptor.set.call(this.state, value)
           }
 
           // compute
-          const next = computor.get ? computor.get.call(this.state) : undefined
+          const next = descriptor.get ? descriptor.get.call(this.state) : undefined
           return next
         }
         else {
@@ -71,19 +82,19 @@ export class Store {
       },
       del: (keyPath) => {
         // computed property
-        if (keyPath.length === 1 && this._computors[keyPath[0]]) {
+        if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
           const key = keyPath[0]
 
           // remove existing bounds
-          const computor = this._computors[key]
-          if (computor && computor.bounds) {
-            computor.bounds.forEach((item) => {
+          const descriptor = this._descriptors[key]
+          if (descriptor && descriptor.bounds) {
+            descriptor.bounds.forEach((item) => {
               item.store.unwatch(item.on, item.fn)
             })
           }
 
           // remove computed property
-          delete this._computors[key]
+          delete this._descriptors[key]
 
           // remove dependencies
           if (this._deps[key]) {
@@ -99,22 +110,22 @@ export class Store {
       },
     })
 
-    // reset to empty object
-    this._computors = {}
-    this._deps = {}
-    this._dep = []
-
-    // computors
-    const computors = this._computors
+    // descriptors
+    const descriptors = this._descriptors
     each(params, (value, key) => {
-      const computor = Object.getOwnPropertyDescriptor(params, key)
-      if (computor.get || computor.set) {
-        computors[key] = computor
+      const descriptor = Object.getOwnPropertyDescriptor(params, key)
+      if (descriptor.get || descriptor.set) {
+        descriptors[key] = descriptor
       }
     })
 
+    // init values
+    // make value patch to data, so that the data has initialized value which is needed in compute
+    each(params, (value, key) => {
+      this.state[key] = value
+    })
     // collecting dependencies
-    each(computors, (item, key) => {
+    each(descriptors, (item, key) => {
       if (item.get) {
         this._collect(key)
       }
@@ -162,10 +173,10 @@ export class Store {
 
   // define a computed property
   define(key, options) {
-    const computor = isFunction(options) ? { get: options } : options
+    const descriptor = isFunction(options) ? { get: options } : options
     this.del(key)
-    this._computors[key] = computor
-    if (computor.get) {
+    this._descriptors[key] = descriptor
+    if (descriptor.get) {
       this._collect(key)
     }
     return this.state[key]
@@ -183,14 +194,14 @@ export class Store {
     }
 
     const bind = (store, on) => {
-      const computor = this._computors[key]
-      if (!computor) {
+      const descriptor = this._descriptors[key]
+      if (!descriptor) {
         return bind
       }
 
       store.watch(on, fn, true)
-      computor.bounds = computor.bounds = []
-      computor.bounds.push({
+      descriptor.bounds = descriptor.bounds = []
+      descriptor.bounds.push({
         store,
         on,
         fn,
@@ -222,16 +233,16 @@ export class Store {
 
     const nodes = []
 
-    const register = (key, active) => {
+    const register = (key, value, active) => {
       const dispatch = ({ key: k, ...info }) => {
         this.dispatch([...key, ...k], info, true)
       }
-      const unsubscribe = subscribe(dispatch, active)
-      nodes.push({ key, active, dispatch, unsubscribe })
+      const unsubscribe = subscribe(dispatch, value)
+      nodes.push({ key, value, active, dispatch, unsubscribe })
     }
 
     const watch = (info) => {
-      const { key, next, prev, active, invalid } = info
+      const { key, value, next, prev, active, invalid } = info
 
       if (next === prev) {
         return
@@ -242,21 +253,21 @@ export class Store {
       }
 
       // unsubscribe
-      const index = nodes.findIndex(item => item.active === invalid && isEqual(item.key, key))
+      const index = nodes.findIndex(item => item.value === prev && isEqual(item.key, key))
       if (index > -1) {
-        const { dispatch, unsubscribe: _unsubscribe, active } = nodes[index]
+        const { dispatch, unsubscribe: _unsubscribe, value } = nodes[index]
         if (isFunction(_unsubscribe)) {
           _unsubscribe()
         }
         if (unsubscribe) {
-          unsubscribe(dispatch, active)
+          unsubscribe(dispatch, value)
         }
         nodes.splice(index, 1) // delete the item
       }
 
       // subscribe
-      if (match(active)) {
-        register(key, active)
+      if (match(value) || match(active)) {
+        register(key, value, active)
       }
     }
 
@@ -306,8 +317,8 @@ export class Store {
       return
     }
 
-    const computor = this._computors[by]
-    if (!computor || !computor.get) {
+    const descriptor = this._descriptors[by]
+    if (!descriptor || !descriptor.get) {
       return
     }
 
@@ -354,13 +365,13 @@ export class Store {
   _collect(key) {
     this._dep.push(key)
 
-    const computor = this._computors[key]
-    if (!computor || !computor.get) {
+    const descriptor = this._descriptors[key]
+    if (!descriptor || !descriptor.get) {
       this._dep.pop()
       return
     }
 
-    const value = computor.get.call(this.state)
+    const value = descriptor.get.call(this.state)
     this.state[key] = value
 
     this._dep.pop()
