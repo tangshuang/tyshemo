@@ -1,7 +1,7 @@
 TySheMo
 =======
 
-TySheMo is a javascript RUNTIME data type and structure description system. It provides different level of objects to describe data's type and structure, and make it easy to ensure data type in complex js business. Different from other type system, TySheMo provides a atomic programing practice to build a data type system (checker). Based on its type description system, it provides very easy validation approach and uppredictable checking rules or methods. And, the most creative highlight thing is that, TySheMo provides a type basic model which is easy to control data change, vlaidation and formulation.
+TySheMo is a javascript runtime data type checking system and morden reactive state management model. It provides different level of objects to describe data's type and structure, and make it easy to ensure data type in complex js code business. Different from other type system, TySheMo provides a atomic programing practice to build a data type system (checker). Based on its type description system, it provides very easy validation approach and uppredictable checking rules or methods. And, the most creative highlight thing is that, TySheMo provides a type based reactive state management model which is easy to control data change, vlaidation and formulation.
 
 - [Documents](https://tangshuang.github.io/tyshemo/)
 - [中文文档](https://www.tangshuang.net/7101.html)
