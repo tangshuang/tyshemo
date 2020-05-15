@@ -445,7 +445,7 @@ export class Schema {
   }
 
   $restore(data, context) {
-    return function(shouldCreate) {
+    return (shouldCreate) => {
       const output = map(this, (def, key) => {
         const { create, default: defaultValue, catch: handle, type, message } = def
         const value = data[key]
@@ -463,7 +463,7 @@ export class Schema {
           )
         }
 
-        if (!inObject(key, data)) {
+        if (isUndefined(coming)) {
           coming = getDefaultValue(defaultValue)
         }
 
@@ -498,7 +498,7 @@ export class Schema {
    * @param {*} context
    */
   restore(data, context) {
-    this.$restore(data, context)(true)
+    return this.$restore(data, context)(true)
   }
 
   /**

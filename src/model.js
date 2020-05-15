@@ -285,10 +285,11 @@ export class Model {
    * @param {*} data
    * @param {boolean} displace whether to use `create` option to create data from api data, default 'true'
    */
-  restore(data = {}, displace = true) {
+  restore(data = {}, shouldCreate = true) {
     const entry = this.onParse(data)
     const schema = this.$schema
-    const created = schema.$restore(entry, this)(displace)
+    const created = schema.$restore(entry, this)(shouldCreate)
+
     const params = {}
 
     // those on schema

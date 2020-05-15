@@ -83,6 +83,7 @@ export class EditableModel extends Model {
 
     const cursor = this.$cursor + 1
     const max = this.$history.length - 1
+
     if (cursor > max) {
       return
     }
@@ -113,6 +114,7 @@ export class EditableModel extends Model {
     if (!data) {
       return
     }
+
     this.$do = true
     this.$store.update(data)
     this.$do = false
@@ -168,3 +170,4 @@ export class EditableModel extends Model {
     this.$do = false
   }
 }
+export default EditableModel

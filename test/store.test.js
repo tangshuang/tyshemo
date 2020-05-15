@@ -200,8 +200,8 @@ describe('Store', () => {
 
     store.observe(
       v => v instanceof SomeModel,
-      (dispatch, model) => model.watch('*', dispatch, true),
-      (dispatch, model) => model.unwatch('*', dispatch)
+      v => dispatch => v.watch('*', dispatch, true),
+      v => dispatch => v.unwatch('*', dispatch)
     )
 
     let count = 0
