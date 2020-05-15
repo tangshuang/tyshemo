@@ -32,7 +32,7 @@ export class EditableModel extends Model {
 
     // record all changes in history
     this.$store.watch('*', ({ key, value }) => {
-      this.$record(key, value)
+      this.$record({ key, value })
     }, true)
 
     // create a initialized mirror
@@ -118,10 +118,10 @@ export class EditableModel extends Model {
     this.$do = true
     this.$store.update(data)
     this.$do = false
-    this.$record(tag, data, true)
+    this.$record({ tag, data })
   }
 
-  $record(key, value, tag) {
+  $record(action) {
     if (this.$do) {
       return
     }
@@ -129,14 +129,15 @@ export class EditableModel extends Model {
     const next = this.$cursor + 1
     this.$history.length = next // clear all items after cursor
 
-    if (tag) {
+    if (action.tag) {
       this.$history.push({
         time: Date.now(),
-        data: value,
-        tag: key,
+        data: action.data,
+        tag: action.tag,
       })
     }
     else {
+      const { key, value } = action
       this.$history.push({
         key,
         value,
