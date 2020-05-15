@@ -8,13 +8,14 @@ import {
   createProxy,
   assign,
   remove,
-  isInstanceOf,
+  isUndefined,
 } from 'ts-fns'
 
 export class Store {
   constructor(params = {}) {
     this.data = null
     this.state = null
+    this.editable = true
 
     this._watchers = []
 
@@ -62,6 +63,12 @@ export class Store {
         return active
       },
       set: (keyPath, value) => {
+        // chould not change the value any more
+        if (!this.editable) {
+          const prev = parse(this.data, keyPath)
+          return prev
+        }
+
         // computed property
         if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
           const key = keyPath[0]
@@ -388,7 +395,7 @@ export class Store {
     const items = this._watchers
     const key = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
     items.forEach((item, i) => {
-      if (isEqual(item.key, key) && (item.fn === fn || fn === undefined)) {
+      if (isEqual(item.key, key) && (item.fn === fn || isUndefined(fn))) {
         items.splice(i, 1)
       }
     })

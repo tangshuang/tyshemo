@@ -3,6 +3,7 @@ import {
   isBoolean,
   isInstanceOf,
   isString,
+  isNull,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -116,7 +117,7 @@ export class Rule {
     // 6 complete
     if (isFunction(complete)) {
       const err = complete.call(this, data, key, error)
-      error = err === null || err instanceof Error ? err : error
+      error = isNull(err) || err instanceof Error ? err : error
     }
 
     return error

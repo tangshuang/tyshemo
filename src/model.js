@@ -146,7 +146,7 @@ export class Model {
           get: () => this.$schema.hidden(key, this),
         },
         errors: {
-          get: () => this.$schema.validateFn(key, this.$store.data[key], this)([]),
+          get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
         },
       })
       define(views, key, {
@@ -167,7 +167,7 @@ export class Model {
     })
 
     // restore
-    this.restore(data)
+    this.restore(data, false)
   }
 
   get(keyPath) {
@@ -279,11 +279,16 @@ export class Model {
     return errors
   }
 
-  restore(data = {}) {
+  /**
+   * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
+   * notice that, properties which are in original model be not in schema may be removed.
+   * @param {*} data
+   * @param {boolean} displace whether to use `create` option to create data from api data, default 'true'
+   */
+  restore(data = {}, displace = true) {
     const entry = this.onParse(data)
     const schema = this.$schema
-    const created = schema.restore(entry, this)
-
+    const created = schema.$restore(entry, this)(displace)
     const params = {}
 
     // those on schema

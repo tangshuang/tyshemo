@@ -11,6 +11,7 @@ import {
   makeKeyPath,
   each,
   isUndefined,
+  isNull,
 } from 'ts-fns'
 
 export class TyError extends TypeError {
@@ -214,7 +215,7 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     }
   }
 
-  if (inArray(totype, ['boolean', 'undefined']) || value === null || isNaN(value)) {
+  if (inArray(totype, ['boolean', 'undefined']) || isNull(value) || isNaN(value)) {
     return value + ''
   }
   else if (totype === 'number') {
@@ -298,10 +299,10 @@ function _makeErrorInnerTraces(resource, keyPath = [], traces = []) {
 
   const { key, index, type, value, name, pattern, error, errors } = resource
 
-  if (key !== undefined) {
+  if (!isUndefined(key)) {
     keyPath.push(key)
   }
-  else if (index !== undefined) {
+  else if (!isUndefined(index)) {
     keyPath.push(index)
   }
 

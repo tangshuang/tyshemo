@@ -4,6 +4,7 @@ import {
   isArray,
   isObject,
   isEqual,
+  isNull,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -315,7 +316,7 @@ export function nullable(pattern) {
     name: 'nullable',
     pattern,
     shouldcheck(data, key) {
-      return data[key] !== null
+      return !isNull(data[key])
     },
     use: () => type,
   })

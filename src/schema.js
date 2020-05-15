@@ -12,6 +12,8 @@ import {
   define,
   isString,
   isNumber,
+  inObject,
+  isUndefined,
 } from 'ts-fns'
 
 import { Ty, Rule, tuple, enumerate } from './ty/index.js'
@@ -229,7 +231,7 @@ export class Schema {
     if (type) {
       // make rule works
       const target = {}
-      if (value !== undefined) {
+      if (!isUndefined(value)) {
         Object.assign(target, { [key]: value })
       }
       const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
@@ -258,7 +260,7 @@ export class Schema {
    * @param {*} context
    * @returns {function}
    */
-  validateFn(key, value, context) {
+  $validate(key, value, context) {
     const def = this[key]
     const { catch: handle, validators = [] } = def
 
@@ -363,15 +365,15 @@ export class Schema {
 
     return (...args) => {
       const first = args[0]
-      // array, i.e. schema.validateFn('some', value, model)([validator1, validator2])
+      // array, i.e. schema.$validate('some', value, model)([validator1, validator2])
       if (isArray(first) && first[0] && typeof first[0] === 'object') {
         return validateByRange(1, first, [])
       }
-      // array, i.e. schema.validateFn('some', value, model)([2, 6])
+      // array, i.e. schema.$validate('some', value, model)([2, 6])
       else if (isArray(first)) {
         return validateByRange(0, validators, first)
       }
-      // number, i.e. schema.validateFn('some', value, model)(1, 2, 4, 6)
+      // number, i.e. schema.$validate('some', value, model)(1, 2, 4, 6)
       else if (isNumber(first)) {
         return validateByIndexes(0, validators, ...args)
       }
@@ -410,7 +412,7 @@ export class Schema {
     if (type) {
       // make rule works
       const target = {}
-      if (value !== undefined) {
+      if (!isUndefined(value)) {
         Object.assign(target, { [key]: value })
       }
       const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
@@ -436,10 +438,58 @@ export class Schema {
       })
     }
 
-    const errs = this.validateFn(key, value, context)([])
+    const errs = this.$validate(key, value, context)([])
     errors.push(...errs)
 
     return errors
+  }
+
+  $restore(data, context) {
+    return function(shouldCreate) {
+      const output = map(this, (def, key) => {
+        const { create, default: defaultValue, catch: handle, type, message } = def
+        const value = data[key]
+
+        let coming = value
+
+        if (shouldCreate && isFunction(create)) {
+          coming = this._trydo(
+            () => create.call(context, data, key, value),
+            (error) => isFunction(handle) && handle.call(context, error) || value,
+            {
+              key,
+              option: 'create',
+            },
+          )
+        }
+
+        if (!inObject(key, data)) {
+          coming = getDefaultValue(defaultValue)
+        }
+
+        // check type, and throw error if it is not match the type
+        if (type) {
+          const target = {}
+          if (!isUndefined(coming)) {
+            Object.assign(target, { [key]: coming })
+          }
+          const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
+          if (error) {
+            this.onError({
+              key,
+              action: 'restore',
+              value: coming,
+              type,
+              error,
+              message: message || `TypeError: ${key} does not match type.`,
+            })
+          }
+        }
+
+        return coming
+      })
+      return output
+    }
   }
 
   /**
@@ -448,49 +498,7 @@ export class Schema {
    * @param {*} context
    */
   restore(data, context) {
-    const output = map(this, (def, key) => {
-      const { create, default: defaultValue, catch: handle, type, message } = def
-      const value = data[key]
-
-      let coming = value
-
-      if (isFunction(create)) {
-        coming = this._trydo(
-          () => create.call(context, data, key, value),
-          (error) => isFunction(handle) && handle.call(context, error) || value,
-          {
-            key,
-            option: 'create',
-          },
-        )
-      }
-
-      if (coming === undefined) {
-        coming = getDefaultValue(defaultValue)
-      }
-
-      // check type, and throw error if it is not match the type
-      if (type) {
-        const target = {}
-        if (coming !== undefined) {
-          Object.assign(target, { [key]: coming })
-        }
-        const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
-        if (error) {
-          this.onError({
-            key,
-            action: 'restore',
-            value: coming,
-            type,
-            error,
-            message: message || `TypeError: ${key} does not match type.`,
-          })
-        }
-      }
-
-      return coming
-    })
-    return output
+    this.$restore(data, context)(true)
   }
 
   /**
