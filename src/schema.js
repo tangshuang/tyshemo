@@ -407,6 +407,19 @@ export class Schema {
       return errors
     }
 
+    // if required is set, it should check before validators
+    const required = this.required(key, context)
+    if (required && isEmpty(value)) {
+      errors.push({
+        key,
+        value,
+        required: true,
+        message: isString(required) ? required : `Error: ${key} is required, but receive empty.`,
+      })
+
+      return errors
+    }
+
     const { type, message } = def
     // type checking
     if (type) {
@@ -425,17 +438,6 @@ export class Schema {
           message: message || `TypeError: ${key} does not match type.`,
         })
       }
-    }
-
-    // if required is set, it should check before validators
-    const required = this.required(key, context)
-    if (required && isEmpty(value)) {
-      errors.push({
-        key,
-        value,
-        required: true,
-        message: isString(required) ? required : `Error: ${key} is required, but receive empty.`,
-      })
     }
 
     const errs = this.$validate(key, value, context)([])

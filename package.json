@@ -1,6 +1,6 @@
 {
   "name": "tyshemo",
-  "version": "6.2.0",
+  "version": "6.3.0",
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
   "scripts": {
@@ -41,6 +41,6 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "ts-fns": "^6.4.2"
+    "ts-fns": "^6.4.3"
   }
 }
