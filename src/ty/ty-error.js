@@ -98,10 +98,12 @@ export class TyError extends TypeError {
     const messages = traces.map((trace, i) => {
       const { type, keyPath, value, name, pattern } = trace
       const info = name && !isUndefined(pattern) ? [name, pattern] : name ? [name] : pattern ? [pattern] : []
+      const keys = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
+      const key = keys.pop()
 
       const params = {
         i: i + 1,
-        key: makeKeyChain(keyPath).pop(),
+        key,
         keyPath: keyPathPrefix + makeKeyPath(keyPath),
         should: info.length ? makeErrorShould(info, breakline) : '',
         receive: inObject('value', trace) ? makeErrorReceive(value, breakline, 0, sensitive) : '',

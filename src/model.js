@@ -171,7 +171,7 @@ export class Model {
   }
 
   get(keyPath) {
-    const chain = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
+    const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.shift()
 
     const value = this.$store.get(key)
@@ -182,7 +182,7 @@ export class Model {
   }
 
   set(keyPath, next) {
-    const chain = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
+    const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.shift()
 
     // deep set
