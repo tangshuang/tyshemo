@@ -223,13 +223,15 @@ model.restore({
 })
 ```
 
-Notice that, restore will use `create` option in schema to create data. If you do not want to generate by `create`, set the second parameter to be `false`.
+**fromJSON**
+
+`restore` method will override the whole model data directly, `fromJSON` method will use `create` option in schema to create data and then use created data for restore.
 
 ```js
-model.restore({
+model.fromJSON({
   name: 'tina',
   age: 12,
-}, false)
+})
 ```
 
 **onParse**
@@ -292,6 +294,19 @@ class StudentModel extends Model {
     }
   }
 }
+```
+
+## save and restore
+
+```js
+// send data to server side
+const data = model.$data
+await send(data)
+
+// restore data from server side
+const data = await fetch()
+model.restore(data)
+// || const model = new SomeModel(data)
 ```
 
 ## EditableModel

@@ -52,8 +52,8 @@ const schema = new Schema({
       },
     ],
 
-    // optional, function, used by `restore`, `data` is the parameter of `restore`
-    create: (data, key, value) => !!data.on_market ? data.listing : data.pending,
+    // optional, function, used by `parse`, `json` is the parameter of `parse`
+    create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
 
     // optional, function, whether to not use this property when formulate
     drop: (value, key, data) => Boolean,
@@ -192,9 +192,9 @@ The `validate` method will follow the rules:
 - type checking, if fail push an error into return array (not returns);
 - validators checking, push failures as errors into return array and returns the array (which may contains type checking errors).
 
-### restore(data, context)
+### parse(json, context)
 
-Create restore data with `create` option by given data.
+Parse json data with `create` option.
 
 ```js
 const schema = new Schema({
@@ -206,12 +206,12 @@ const schema = new Schema({
   }
 })
 
-const data = schema.restore({
+const data = schema.parse({
   age: 50
 }, null) // { height: 100 }
 ```
-
-### formulate(data, context)
+s
+### export(data, context)
 
 Create a formulated data with `drop` `map` `flat` options by given data.
 
@@ -243,7 +243,7 @@ const obj = {
     text: 'some',
   },
 }
-const data = schema.formulate(obj, obj)
+const data = schema.export(obj, obj)
 // => { some: '123', some_text: 'some' }
 ```
 

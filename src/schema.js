@@ -47,12 +47,12 @@ import { Ty, Rule, tuple, enumerate } from './ty/index.js'
  *       },
  *     ],
  *
- *     // optional, function, used by `restore`, `data` is the parameter of `restore`
- *     create: (data, key, value) => !!data.on_market ? data.listing : data.pending,
+ *     // optional, function, used by `fromJSON`, `json` is the parameter of `fromJSON`
+ *     create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
  *
- *     // optional, function, whether to not use this property when formulate
+ *     // optional, function, whether to not use this property when export
  *     drop: (value, key, data) => Boolean,
- *     // optional, function, to override the property value when formulate, not work when `drop` is false
+ *     // optional, function, to override the property value when export, not work when `drop` is false
  *     map: (value, key, data) => newValue,
  *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
  *     flat: (value, key, data) => ({ newProp: newValue }),
@@ -66,14 +66,14 @@ import { Ty, Rule, tuple, enumerate } from './ty/index.js'
  *     required: () => Boolean,
  *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
  *     readonly: () => Boolean,
- *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when formulate
+ *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when export
  *     disabled: () => Boolean,
  *     // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
  *     hidden: () => Boolean,
  *
  *     // the difference between `disabled` and `readonly`:
- *     // readonly means the property can only be read/validate/formulate, but could not be changed.
- *     // disabled means the property can only be read, but could not be changed, and will be drop when validate and formulate
+ *     // readonly means the property can only be read/validate/export, but could not be changed.
+ *     // disabled means the property can only be read, but could not be changed, and will be drop when validate and export
  *
  *     // optional, when an error occurs caused by this property, what to do with the error
  *     catch: (error) => {},
@@ -365,7 +365,7 @@ export class Schema {
 
     return (...args) => {
       const first = args[0]
-      // array, i.e. schema.$validate('some', value, model)([validator1, validator2])
+      // array, pass custom valiators which is not in schema, i.e. schema.$validate('some', value, model)([{ validate: v => v > 0, message: 'should > 0' }])
       if (isArray(first) && first[0] && typeof first[0] === 'object') {
         return validateByRange(1, first, [])
       }
@@ -446,69 +446,63 @@ export class Schema {
     return errors
   }
 
-  $restore(data, context) {
-    return (shouldCreate) => {
-      const output = map(this, (def, key) => {
-        const { create, default: defaultValue, catch: handle, type, message } = def
-        const value = data[key]
-
-        let coming = value
-
-        if (shouldCreate && isFunction(create)) {
-          coming = this._trydo(
-            () => create.call(context, data, key, value),
-            (error) => isFunction(handle) && handle.call(context, error) || value,
-            {
-              key,
-              option: 'create',
-            },
-          )
-        }
-
-        if (isUndefined(coming)) {
-          coming = getDefaultValue(defaultValue)
-        }
-
-        // check type, and throw error if it is not match the type
-        if (type) {
-          const target = {}
-          if (!isUndefined(coming)) {
-            Object.assign(target, { [key]: coming })
-          }
-          const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
-          if (error) {
-            this.onError({
-              key,
-              action: 'restore',
-              value: coming,
-              type,
-              error,
-              message: message || `TypeError: ${key} does not match type.`,
-            })
-          }
-        }
-
-        return coming
-      })
-      return output
-    }
-  }
-
   /**
-   * restore data by passed data with `create` option, you'd better to call ensure to after restore to make sure your data is fix with type
+   * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
    * @param {*} data
    * @param {*} context
    */
-  restore(data, context) {
-    return this.$restore(data, context)(true)
+  parse(data, context) {
+    const output = map(this, (def, key) => {
+      const { create, default: defaultValue, catch: handle, type, message } = def
+      const value = data[key]
+
+      let coming = value
+
+      if (isFunction(create)) {
+        coming = this._trydo(
+          () => create.call(context, data, key, value),
+          (error) => isFunction(handle) && handle.call(context, error) || value,
+          {
+            key,
+            option: 'create',
+          },
+        )
+      }
+
+      if (isUndefined(coming)) {
+        coming = getDefaultValue(defaultValue)
+      }
+
+      // check type, and throw error if it is not match the type
+      if (type) {
+        const target = {}
+        if (!isUndefined(coming)) {
+          Object.assign(target, { [key]: coming })
+        }
+        const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
+        if (error) {
+          this.onError({
+            key,
+            action: 'parse',
+            value: coming,
+            type,
+            error,
+            message: message || `TypeError: ${key} does not match type.`,
+          })
+        }
+      }
+
+      return coming
+    })
+    return output
   }
 
   /**
-   * formulate to get output data
+   * export to get output data
    * @param {*} data
    * @param {*} context
    */
-  formulate(data, context) {
+  export(data, context) {
     const patch = {}
     const output = {}
 

@@ -38,8 +38,8 @@ export class EditableModel extends Model {
     // create a initialized mirror
     this.commit('$origin')
   }
-  restore(data, displace) {
-    super.restore(data, displace)
+  restore(data) {
+    super.restore(data)
     this.clear()
     this.commit('$origin')
   }

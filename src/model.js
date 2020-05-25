@@ -32,12 +32,11 @@ import _Store from './store.js'
  * @keywords: $schema, $store, $views, init,
  *            get, set, del, update, define,
  *            watch, unwatch, validate, restore,
- *            totoJson, toParams, toFormData,
+ *            fromJSON, toJSON, toParams, toFormData,
  *            onInit, onParse, onExport,
  */
 export class Model {
   constructor(data = {}) {
-
     // create schema
     class Schema extends _Schema {}
     Schema.prototype.onError = this.onError.bind(this)
@@ -93,6 +92,10 @@ export class Model {
   }
 
   init(data) {
+    if (this.__init) {
+      return
+    }
+
     const schema = this.$schema
     const keys = Object.keys(schema)
 
@@ -166,8 +169,14 @@ export class Model {
       return errors
     })
 
-    // restore
-    this.restore(data, false)
+    // $data
+    define(this, '$data', () => clone(this.$store.data))
+
+    // init data
+    this.restore(data)
+
+    // inited
+    define(this, '__init', true)
   }
 
   get(keyPath) {
@@ -283,13 +292,9 @@ export class Model {
    * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
    * notice that, properties which are in original model be not in schema may be removed.
    * @param {*} data
-   * @param {boolean} displace whether to use `create` option to create data from api data, default 'true'
    */
-  restore(data = {}, shouldCreate = true) {
-    const entry = this.onParse(data)
+  restore(data = {}) {
     const schema = this.$schema
-    const created = schema.$restore(entry, this)(shouldCreate)
-
     const params = {}
 
     // those on schema
@@ -302,7 +307,7 @@ export class Model {
         })
       }
       else {
-        const value = created[key]
+        const value = data[key]
         params[key] = value
       }
     })
@@ -341,16 +346,27 @@ export class Model {
     return this
   }
 
-  toJson() {
+  /**
+   * use schema `create` option to generate and restore data
+   * @param {*} json
+   */
+  fromJSON(json) {
+    const entry = this.onParse(json)
+    const schema = this.$schema
+    const data = schema.parse(entry, this)
+    this.restore(data)
+  }
+
+  toJSON() {
     this._check()
     const data = this.$store.data // original data
-    const output = this.$schema.formulate(data, this)
+    const output = this.$schema.export(data, this)
     const result = this.onExport(output)
     return result
   }
 
   toParams() {
-    const data = this.toJson()
+    const data = this.toJSON()
     const output = flat(data)
     return output
   }
@@ -367,12 +383,12 @@ export class Model {
   // when initialized
   onInit() {}
 
-  // parse data before restore, should be override
+  // parse data before parse, should be override
   onParse(data) {
     return data
   }
 
-  // serialize data after formulate, should be override
+  // serialize data after export, should be override
   onExport(data) {
     return data
   }
@@ -475,7 +491,7 @@ function convertModelToSchemaDef(SomeModel, isList) {
         },
       ],
       create: (data, key) => isArray(data[key]) ? data[key].map(v => create(v, true)).filter(item => !!item) : [],
-      map: ms => ms.map(m => m.toJson()),
+      map: ms => ms.map(m => m.toJSON()),
       setter: v => isArray(v) ? v.map(v => create(v, true)).filter(item => !!item) : [],
     }
   }
@@ -489,7 +505,7 @@ function convertModelToSchemaDef(SomeModel, isList) {
         },
       ],
       create: (data, key) => create(data[key]),
-      map: m => m.toJson(),
+      map: m => m.toJSON(),
       setter: v => create(v),
     }
   }
