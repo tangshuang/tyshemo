@@ -1,11 +1,13 @@
 # Parser
 
+> Notice, Parser is not in tyshemo core package any more, we will provide a pacakge called `tyshemo-protocol`.
+
 Based on tyshemo's type system, I build a type text description system, and this system can be parsed by `Parser`.
 
 ## Usage
 
 ```js
-import { Parser, Dict } from 'tyshemo'
+import { Parser } from 'tyshemo-protocol'
 
 const parser = new Parser()
 const SomeType = new Dict({

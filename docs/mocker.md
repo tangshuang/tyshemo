@@ -1,11 +1,13 @@
 # Mocker
 
+> Notice, Mocker is not in tyshemo core package any more, we will provide a pacakge called `tyshemo-protocol`.
+
 To mock data from our type system for testing or demo.
 
 ## Usage
 
 ```js
-import { Mocker } from 'tyshemo'
+import { Mocker } from 'tyshemo-protocol'
 const mocker = new Mocker()
 
 const mockdata = mocker.mock(SomeDictType)

@@ -131,30 +131,6 @@ const storemini = {
   externals: undefined,
 }
 
-const core = {
-  ...basic,
-  entry: __dirname + '/src/core.js',
-  output: {
-    ...basic.output,
-    library: 'tyshemo',
-    filename: 'core.js',
-  },
-  resolve: undefined,
-  externals: undefined,
-}
-
-const coremini = {
-  ...mini,
-  entry: __dirname + '/src/core.js',
-  output: {
-    ...mini.output,
-    library: 'tyshemo',
-    filename: 'core.min.js',
-  },
-  resolve: undefined,
-  externals: undefined,
-}
-
 module.exports = [
   basic,
   mini,
@@ -164,6 +140,4 @@ module.exports = [
   tymini,
   store,
   storemini,
-  core,
-  coremini,
 ]
