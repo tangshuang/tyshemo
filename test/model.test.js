@@ -122,7 +122,7 @@ describe('Model', () => {
     expect(any.some.num).toBe(0)
     expect(any.listd.length).toBe(0)
 
-    any.restore({
+    any.fromJSON({
       listd: [{ num: 10 }],
     })
 
@@ -159,7 +159,7 @@ describe('Model', () => {
     expect(person.age).toBe('12')
 
     person.age = '30'
-    const data = person.toJson()
+    const data = person.toJSON()
     expect(data.age).toBe(30)
   })
 

@@ -446,6 +446,20 @@ export class Schema {
     return errors
   }
 
+  $default(key) {
+    const def = this[key]
+    const { default: defaultValue } = def
+    if (isFunction(defaultValue)) {
+      return defaultValue()
+    }
+    else if (isObject(defaultValue) || isArray(defaultValue)) {
+      return clone(defaultValue)
+    }
+    else {
+      return defaultValue
+    }
+  }
+
   /**
    * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
    * @param {*} data
@@ -470,7 +484,7 @@ export class Schema {
       }
 
       if (isUndefined(coming)) {
-        coming = getDefaultValue(defaultValue)
+        coming = this.$default(key)
       }
 
       // check type, and throw error if it is not match the type
@@ -588,17 +602,3 @@ export class Schema {
   }
 }
 export default Schema
-
-// --------------------------------------
-
-function getDefaultValue(defaultValue) {
-  if (isFunction(defaultValue)) {
-    return defaultValue()
-  }
-  else if (isObject(defaultValue) || isArray(defaultValue)) {
-    return clone(defaultValue)
-  }
-  else {
-    return defaultValue
-  }
-}

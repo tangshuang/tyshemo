@@ -71,7 +71,7 @@ describe('Schema', () => {
     expect(SomeSchema.validate('number', undefined).length).toBe(0)
   })
 
-  test('restore', () => {
+  test('parse', () => {
     const SomeSchema = new Schema({
       key1: {
         type: String,
@@ -81,13 +81,13 @@ describe('Schema', () => {
         },
       },
     })
-    const data = SomeSchema.restore({
+    const data = SomeSchema.parse({
       prop1: 'xxx',
     })
     expect(data.key1).toBe('xxx')
   })
 
-  test('formulate', () => {
+  test('export', () => {
     const SomeSchema = new Schema({
       key2: {
         type: String,
@@ -102,7 +102,7 @@ describe('Schema', () => {
         drop: true,
       },
     })
-    const data = SomeSchema.formulate({
+    const data = SomeSchema.export({
       key2: 'a',
       key3: 'x',
     })

@@ -16,6 +16,7 @@ import {
   assign,
   isUndefined,
   extend,
+  inObject,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -191,6 +192,10 @@ export class Model {
   }
 
   set(keyPath, next) {
+    if (!this.$store.editable) {
+      return parse(this, keyPath)
+    }
+
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.shift()
 
@@ -219,6 +224,10 @@ export class Model {
   }
 
   update(data) {
+    if (!this.$store.editable) {
+      return this
+    }
+
     each(data, (value, key) => {
       this.set(key, value)
     })
@@ -226,6 +235,10 @@ export class Model {
   }
 
   define(key, value) {
+    if (!this.$store.editable) {
+      return parse(this, keyPath)
+    }
+
     if (this.$schema[key]) {
       return this[key]
     }
@@ -294,6 +307,10 @@ export class Model {
    * @param {*} data
    */
   restore(data = {}) {
+    if (!this.$store.editable) {
+      return this
+    }
+
     const schema = this.$schema
     const params = {}
 
@@ -306,9 +323,12 @@ export class Model {
           enumerable: true,
         })
       }
-      else {
+      else if (inObject(key, data)) {
         const value = data[key]
         params[key] = value
+      }
+      else {
+        params[key] = schema.$default(key)
       }
     })
 
@@ -351,10 +371,15 @@ export class Model {
    * @param {*} json
    */
   fromJSON(json) {
+    if (!this.$store.editable) {
+      return this
+    }
+
     const entry = this.onParse(json)
     const schema = this.$schema
     const data = schema.parse(entry, this)
     this.restore(data)
+    return this
   }
 
   toJSON() {
@@ -395,6 +420,14 @@ export class Model {
 
   onError(e) {
     console.error(e)
+  }
+
+  lock() {
+    this.$store.editable = true
+  }
+
+  unlock() {
+    this.$store.editable = false
   }
 
   _ensure(key) {

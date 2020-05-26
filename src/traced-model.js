@@ -5,7 +5,7 @@ import {
   parse,
 } from 'ts-fns'
 
-export class EditableModel extends Model {
+export class TracedModel extends Model {
   init(data) {
     let commits = {}
     let history = []
@@ -34,13 +34,11 @@ export class EditableModel extends Model {
     this.$store.watch('*', ({ key, value }) => {
       this.$record({ key, value })
     }, true)
-
-    // create a initialized mirror
-    this.commit('$origin')
   }
   restore(data) {
     super.restore(data)
     this.clear()
+    // create a initialized mirror
     this.commit('$origin')
   }
 
@@ -160,15 +158,10 @@ export class EditableModel extends Model {
     this.$do = false
   }
 
-  lock(isLock) {
-    this.$store.editable = !!isLock
-  }
-
   clear() {
     this.$cursor = -1
-    this.$commits = {}
     this.$history = []
     this.$do = false
   }
 }
-export default EditableModel
+export default TracedModel

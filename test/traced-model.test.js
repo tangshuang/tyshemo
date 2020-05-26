@@ -1,14 +1,14 @@
-import EditableModel from '../src/editable-model.js'
+import TracedModel from '../src/traced-model.js'
 
-describe('EditableModel', () => {
+describe('TracedModel', () => {
   test('undo', () => {
-    class Editor extends EditableModel {
+    class Tracer extends TracedModel {
       static name = {
         default: '',
       }
     }
 
-    const editor = new Editor()
+    const editor = new Tracer()
     expect(editor.name).toBe('')
 
     editor.name = 'text'
@@ -19,13 +19,13 @@ describe('EditableModel', () => {
   })
 
   test('redo', () => {
-    class Editor extends EditableModel {
+    class Tracer extends TracedModel {
       static name = {
         default: '',
       }
     }
 
-    const editor = new Editor()
+    const editor = new Tracer()
     expect(editor.name).toBe('')
 
     editor.name = 'text'
@@ -39,13 +39,13 @@ describe('EditableModel', () => {
   })
 
   test('commit & reset', () => {
-    class Editor extends EditableModel {
+    class Tracer extends TracedModel {
       static name = {
         default: '',
       }
     }
 
-    const editor = new Editor()
+    const editor = new Tracer()
     expect(editor.name).toBe('')
 
     editor.name = 'text'

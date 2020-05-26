@@ -261,10 +261,10 @@ class StudentModel extends Model {
 
 ### Formulate
 
-After all, you want to get whole data for submit to your backend api, you should invoke one of `toJson` `toParams` or `toFormData` to generate.
+After all, you want to get whole data for submit to your backend api, you should invoke one of `toJSON` `toParams` or `toFormData` to generate.
 
 ```js
-const data = model.toJson()
+const data = model.toJSON()
 ```
 
 Data here will be generated with `drop` `map` and `flat` options in schema. Read [here](schema.md) to learn more.
@@ -296,6 +296,22 @@ class StudentModel extends Model {
 }
 ```
 
+### Lock
+
+In some cases, you want to lock the model, so that any editing will have no effects.
+
+```js
+model.lock()
+```
+
+Then, updating and restoring will not work.
+
+To unlock:
+
+```js
+model.lock()
+```
+
 ## save and restore
 
 ```js
@@ -309,15 +325,15 @@ model.restore(data)
 // || const model = new SomeModel(data)
 ```
 
-## EditableModel
+## TracedModel
 
-What is a editable model? In some cases, you may face the situation that, in a form, you want to edit some fields in a popup-modal, however, in the modal, you can cancel the edited fileds. In this case, you have to create a temp state in the modal, so that you can drop the data when you click the cancel button. But this make the state management uncomfortable, EditableModel is to fix this situation.
+What is a traced model? In some cases, you may face the situation that, in a form, you want to edit some fields in a popup-modal, however, in the modal, you can cancel the edited fileds. In this case, you have to create a temp state in the modal, so that you can drop the data when you click the cancel button. But this make the state management uncomfortable, TracedModel is to fix this situation.
 
 ```js
-import { EditableModel } from 'tyshemo'
+import { TracedModel } from 'tyshemo'
 ```
 
-EditableModel is extened from Model, so it has all the methods of Model. However, it has some special methods to help you create editable state.
+TracedModel is extened from Model, so it has all the methods of Model. However, it has some special methods to help you create traced state.
 
 ### commit(tag)
 
@@ -381,3 +397,14 @@ model.redo()
 ```
 
 Notice, `redo` should always follow `undo`, in which there is no state change. If you have changed state after you do `undo`, the history after your change will be clear, so `redo` will not work.
+
+### clear()
+
+Clear all records.
+Notice, commits will not be cleared.
+
+```js
+model.clear()
+mode.undo() // has no effect
+model.reset('edit') // works
+```
