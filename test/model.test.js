@@ -1,5 +1,4 @@
 import Model from '../src/model.js'
-import { dict } from '../src/ty/index.js'
 
 describe('Model', () => {
   class PersonModel extends Model {

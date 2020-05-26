@@ -12,7 +12,6 @@ import {
   define,
   isString,
   isNumber,
-  inObject,
   isUndefined,
 } from 'ts-fns'
 
