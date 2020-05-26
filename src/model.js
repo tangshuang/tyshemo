@@ -390,14 +390,14 @@ export class Model {
     return result
   }
 
-  toParams() {
+  toParams(determine) {
     const data = this.toJSON()
-    const output = flat(data)
+    const output = flat(data, determine)
     return output
   }
 
-  toFormData() {
-    const data = this.plaindata()
+  toFormData(determine) {
+    const data = this.toParams(determine)
     const formdata = new FormData()
     each(data, (value, key) => {
       formdata.append(key, value)
