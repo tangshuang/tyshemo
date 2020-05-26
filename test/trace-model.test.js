@@ -1,8 +1,8 @@
-import TracedModel from '../src/traced-model.js'
+import TraceModel from '../src/trace-model.js'
 
-describe('TracedModel', () => {
+describe('TraceModel', () => {
   test('undo', () => {
-    class Tracer extends TracedModel {
+    class Tracer extends TraceModel {
       static name = {
         default: '',
       }
@@ -19,7 +19,7 @@ describe('TracedModel', () => {
   })
 
   test('redo', () => {
-    class Tracer extends TracedModel {
+    class Tracer extends TraceModel {
       static name = {
         default: '',
       }
@@ -39,7 +39,7 @@ describe('TracedModel', () => {
   })
 
   test('commit & reset', () => {
-    class Tracer extends TracedModel {
+    class Tracer extends TraceModel {
       static name = {
         default: '',
       }

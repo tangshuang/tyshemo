@@ -325,15 +325,15 @@ model.restore(data)
 // || const model = new SomeModel(data)
 ```
 
-## TracedModel
+## TraceModel
 
-What is a traced model? In some cases, you may face the situation that, in a form, you want to edit some fields in a popup-modal, however, in the modal, you can cancel the edited fileds. In this case, you have to create a temp state in the modal, so that you can drop the data when you click the cancel button. But this make the state management uncomfortable, TracedModel is to fix this situation.
+What is a traced model? In some cases, you may face the situation that, in a form, you want to edit some fields in a popup-modal, however, in the modal, you can cancel the edited fileds. In this case, you have to create a temp state in the modal, so that you can drop the data when you click the cancel button. But this make the state management uncomfortable, TraceModel is to fix this situation.
 
 ```js
-import { TracedModel } from 'tyshemo'
+import { TraceModel } from 'tyshemo'
 ```
 
-TracedModel is extened from Model, so it has all the methods of Model. However, it has some special methods to help you create traced state.
+TraceModel is extened from Model, so it has all the methods of Model. However, it has some special methods to help you create traced state.
 
 ### commit(tag)
 

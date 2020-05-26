@@ -5,7 +5,7 @@ import {
   parse,
 } from 'ts-fns'
 
-export class TracedModel extends Model {
+export class TraceModel extends Model {
   init(data) {
     let commits = {}
     let history = []
@@ -164,4 +164,4 @@ export class TracedModel extends Model {
     this.$do = false
   }
 }
-export default TracedModel
+export default TraceModel
