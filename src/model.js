@@ -484,26 +484,6 @@ export class Model {
       })
     }
   }
-
-  static extend(schema = {}, replace = false) {
-    const NewModel = extend(this)
-
-    each(schema, (def, key) => {
-      // replace key schema
-      if (replace) {
-        NewModel[key] = def
-        return
-      }
-
-      const oldDef = NewModel[key] || {}
-
-      // deep merge, not assign, validators override
-      const newDef = merge(oldDef, def, false)
-      NewModel[key] = newDef
-    })
-
-    return NewModel
-  }
 }
 
 export default Model
