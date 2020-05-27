@@ -8,14 +8,13 @@ import {
   each,
   map,
   clone,
-  freeze,
   define,
   isString,
   isNumber,
   isUndefined,
 } from 'ts-fns'
 
-import { Ty, Rule, tuple, enumerate } from './ty/index.js'
+import { Ty, Rule } from './ty/index.js'
 
 
 /**
@@ -87,55 +86,57 @@ export class Schema {
   constructor(defs) {
     each(defs, (def, key) => {
       define(this, key, {
-        value: freeze(def),
+        value: def,
         enumerable: true,
       })
     })
   }
 
-  determine(key, method, context) {
-    const def = this[key]
+  $exec(key, method, context) {
+    return (v) => {
+      const def = this[key]
 
-    if (!def) {
-      return false
-    }
+      if (!def) {
+        return false
+      }
 
-    const { catch: handle } = def
-    const is = def[method]
+      const { catch: handle } = def
+      const exec = def[method]
 
-    if (!is) {
-      return false
-    }
+      if (!exec) {
+        return false
+      }
 
-    if (isFunction(is)) {
-      return this._trydo(
-        () => is.call(context),
-        (error) => isFunction(handle) && handle.call(context, error) || false,
-        {
-          key,
-          option: method,
-        },
-      )
-    }
-    else {
-      return is
+      if (isFunction(exec)) {
+        return this._trydo(
+          () => exec.call(context),
+          (error) => isFunction(handle) && handle.call(context, error) || v,
+          {
+            key,
+            option: method,
+          },
+        )
+      }
+      else {
+        return exec
+      }
     }
   }
 
   required(key, context) {
-    return this.determine(key, 'required', context)
+    return this.$exec(key, 'required', context)(false)
   }
 
   disabled(key, context) {
-    return this.determine(key, 'disabled', context)
+    return this.$exec(key, 'disabled', context)(false)
   }
 
   readonly(key, context) {
-    return this.determine(key, 'readonly', context)
+    return this.$exec(key, 'readonly', context)(false)
   }
 
   hidden(key, context) {
-    return this.determine(key, 'hidden', context)
+    return this.$exec(key, 'hidden', context)(false)
   }
 
   get(key, value, context) {
@@ -466,7 +467,7 @@ export class Schema {
    */
   parse(data, context) {
     const output = map(this, (def, key) => {
-      const { create, default: defaultValue, catch: handle, type, message } = def
+      const { create, catch: handle, type, message } = def
       const value = data[key]
 
       let coming = value

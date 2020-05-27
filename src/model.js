@@ -351,7 +351,7 @@ export class Model {
 
     // delete the outdate properties
     each(this.$store.data, (value, key) => {
-      if (params[key]) {
+      if (key in params) {
         return
       }
 
