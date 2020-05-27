@@ -457,12 +457,12 @@ export class Model {
   }
 
   _check(key, isValidate = false) {
-    const Constructor = getConstructorOf(this)
-    const keys = key ? [key] : Object.keys(Constructor)
+    const schema = this.$schema
+    const keys = key ? [key] : Object.keys(schema)
 
     let str = ''
     keys.forEach((key) => {
-      const def = Constructor[key]
+      const def = schema[key]
       each(def, (value, key) => {
         if (key === 'validators' && isValidate) {
           value.forEach((item) => {
