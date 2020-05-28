@@ -182,4 +182,25 @@ describe('Model', () => {
     expect(error).not.toBeNull()
     expect(error.message).toBe('it should be a string')
   })
+
+  test('$view descontruct', () => {
+    class SomeModel extends Model {
+      static name = {
+        default: '',
+        extra: {
+          label: 'Name',
+          get type() {
+            return typeof this.name
+          },
+        },
+      }
+    }
+    const some = new SomeModel()
+    const view = some.$views.name
+    const attrs = { ...view }
+
+    expect(attrs.required).toBe(false)
+    expect(attrs.label).toBe('Name')
+    expect(attrs.type).toBe('string')
+  })
 })

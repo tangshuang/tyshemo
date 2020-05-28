@@ -131,26 +131,33 @@ export class Model {
                 return value
               }
             },
+            enumerable: true,
           }
         }),
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
+          enumerable: true,
         },
         required: {
           get: () => this.$schema.required(key, this),
+          enumerable: true,
         },
         disabled: {
           get: () => this.$schema.disabled(key, this),
+          enumerable: true,
         },
         readonly: {
           get: () => this.$schema.readonly(key, this),
+          enumerable: true,
         },
         hidden: {
           get: () => this.$schema.hidden(key, this),
+          enumerable: true,
         },
         errors: {
           get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
+          enumerable: true,
         },
       })
       define(views, key, {
