@@ -107,7 +107,7 @@ The array contains errors which is only from `validators`, not contains those fr
 
 Please explore `$views` by yourself next.
 
-### Read Data
+### Read
 
 To read data on a model instance, you have two ways.
 
@@ -135,7 +135,7 @@ Read value from a field view.
 const age = tomy.$views.age.value
 ```
 
-### Update Data
+### Update
 
 To update data on a model instance, you have two ways too.
 
@@ -312,7 +312,65 @@ To unlock:
 model.lock()
 ```
 
-## save and restore
+## Schema
+
+You can create custom schema for a model so that you do not need to define static properties.
+
+```js
+class SomeModel extends Model {
+  schema() {
+    return {
+      name: {
+        default: '',
+        type: String,
+      },
+      age: {
+        default: 0,
+        type: Number,
+      },
+    }
+  }
+}
+```
+
+You should return a pure new object for schema.
+
+## State
+
+When you define a Model, in fact, you are define some Domain Model. However, Domain Model in some cases need to have dependencies with state, and this state may be changed by business code. So we provide a `state` define way.
+
+```js
+class SomeModel extends Model {
+  static some = {
+    default: null,
+    required() {
+      return !this.isFund // use state to check whether need to be required
+    },
+  }
+
+  state() {
+    return {
+      isFund: false,
+      isInvested: false,
+    }
+  }
+}
+
+const model = new SomeModel({
+  isFund: true,
+})
+
+// model.isFund === true
+// model.isInvested === false
+
+model.set('isFund', false)
+```
+
+The properties of state are not in schema, however they are on model, you can update them. You should not delete them.
+`state()` should must return a pure new object, should not be shared from global.
+The return state object will be used as default state each time new data stored into model (initialize and restore).ccx
+
+## Save and restore
 
 ```js
 // send data to server side

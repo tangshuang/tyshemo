@@ -168,6 +168,63 @@ export class Schema {
     }
   }
 
+  $set(key, value, context) {
+    const def = this[key]
+
+    if (!def) {
+      return value
+    }
+
+    const { setter, compute, catch: handle, type, message } = def
+
+    if (compute) {
+      this.onError({
+        key,
+        action: '$set',
+        value,
+        compute,
+        message: `${key} can not be set new value because it is a computed property.`,
+      })
+      const next = compute.call(context)
+      return next
+    }
+
+    if (isFunction(setter)) {
+      value = this._trydo(
+        () => setter.call(context, value),
+        (error) => isFunction(handle) && handle.call(context, error) || value,
+        {
+          key,
+          option: 'setter',
+        },
+      )
+    }
+
+    // type checking
+    if (type) {
+      // make rule works
+      const target = {}
+      if (!isUndefined(value)) {
+        Object.assign(target, { [key]: value })
+      }
+      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
+      if (error) {
+        this.onError({
+          key,
+          action: '$set',
+          value,
+          type,
+          error,
+          message: message || `TypeError: ${key} does not match type.`,
+        })
+        const next = this.$default(key)
+        return next
+      }
+    }
+
+    return value
+  }
+
   set(key, next, prev, context) {
     const def = this[key]
 

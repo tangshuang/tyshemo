@@ -203,4 +203,34 @@ describe('Model', () => {
     expect(attrs.label).toBe('Name')
     expect(attrs.type).toBe('string')
   })
+
+  test('state', () => {
+    class SomeModel extends Model {
+      static some = {
+        default: null,
+        required() {
+          return !this.isFund // use state to check whether need to be required
+        },
+      }
+
+      state() {
+        return {
+          isFund: false,
+          isInvested: false,
+        }
+      }
+    }
+
+    const model = new SomeModel({
+      isFund: true,
+    })
+
+    expect(model.isFund).toBe(true)
+    expect(model.isInvested).toBe(false)
+    expect(model.$views.some.required).toBe(false)
+
+    model.isFund = false
+
+    expect(model.$views.some.required).toBe(true)
+  })
 })

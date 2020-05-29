@@ -15,7 +15,6 @@ import {
   isFunction,
   assign,
   isUndefined,
-  extend,
   inObject,
 } from 'ts-fns'
 
@@ -38,35 +37,13 @@ import _Store from './store.js'
  */
 export class Model {
   constructor(data = {}) {
-    // create schema
+    // bind schema onError method
     class Schema extends _Schema {}
     Schema.prototype.onError = this.onError.bind(this)
-    const schema = this.schema(Schema)
-    define(this, '$schema', schema)
 
-    // create store
-    const $this = this
-    class Store extends _Store {
-      dispatch(keyPath, next, prev, force) {
-        const notify = super.dispatch(keyPath, next, prev, force)
-        // propagation
-        if ($this.$parent && $this.$keyPath) {
-          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
-        }
-        return notify
-      }
-    }
-    const store = new Store()
-    define(this, '$store', store)
-
-    this.init(data)
-    this.onInit()
-  }
-
-  schema(Schema) {
-    const Constructor = getConstructorOf(this)
-    // create schema by model's static properties
-    const defs = map(Constructor, (def) => {
+    // create schema
+    const schema = this.schema()
+    const defs = map(schema, (def) => {
       /**
        * class SomeModel extends Model {
        *   static some = OtherModel
@@ -87,9 +64,35 @@ export class Model {
 
       return def
     })
+    define(this, '$schema', new Schema(defs))
 
-    const schema = new Schema(defs)
-    return schema
+    // create store
+    const $this = this
+    class Store extends _Store {
+      dispatch(keyPath, next, prev, force) {
+        const notify = super.dispatch(keyPath, next, prev, force)
+        // propagation
+        if ($this.$parent && $this.$keyPath) {
+          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
+        }
+        return notify
+      }
+    }
+    const store = new Store()
+    define(this, '$store', store)
+
+    this.init(data)
+    this.onInit()
+  }
+
+  schema() {
+    // create schema by model's static properties
+    const Constructor = getConstructorOf(this)
+    return { ...Constructor }
+  }
+
+  state() {
+    return {}
   }
 
   init(data) {
@@ -319,6 +322,7 @@ export class Model {
     }
 
     const schema = this.$schema
+    const state = this.state()
     const params = {}
 
     // those on schema
@@ -332,11 +336,28 @@ export class Model {
       }
       else if (inObject(key, data)) {
         const value = data[key]
-        params[key] = value
+        params[key] = this.$schema.$set(key, value, this)
       }
       else {
         params[key] = schema.$default(key)
       }
+    })
+
+    // patch state
+    each(state, (value, key) => {
+      if (key in params) {
+        return
+      }
+
+      define(this, key, {
+        get: () => this.get(key),
+        set: (value) => this.set(key, value),
+        enumerable: true,
+        configurable: true,
+      })
+
+      // use data property if exist
+      params[key] = key in data ? data[key] : state[key]
     })
 
     // those on data but not on schema
