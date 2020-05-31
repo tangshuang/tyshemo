@@ -223,6 +223,30 @@ model.restore({
 })
 ```
 
+**onSwitch**
+
+Before restore, a hook method `onSwitch` will be invoked.
+
+```js
+class SomeModel extends Model {
+  static name = {
+    default: '',
+    type: String,
+  }
+
+  onSwitch(params) {
+    if (!params.name) {
+      params.name = 'tomy'
+    }
+  }
+}
+
+const model = new SomeModel()
+// model.name === 'tomy'
+```
+
+So that each time we create a model instance or invoke `restore` method, name will be use default 'tomy'.
+
 **fromJSON**
 
 `restore` method will override the whole model data directly, `fromJSON` method will use `create` option in schema to create data and then use created data for restore.
@@ -236,7 +260,7 @@ model.fromJSON({
 
 **onParse**
 
-Before restore data created, a hook method `onParse` will be invoked.
+Before fromJSON, a hook method `onParse` will be invoked.
 
 ```js
 class StudentModel extends Model {

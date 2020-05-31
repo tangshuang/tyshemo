@@ -345,7 +345,12 @@ export class Model {
 
     // patch state
     each(state, (value, key) => {
-      if (key in params) {
+      if (inObject(key, params)) {
+        return
+      }
+
+      // use data property if exist
+      if (inObject(key, data)) {
         return
       }
 
@@ -356,14 +361,23 @@ export class Model {
         configurable: true,
       })
 
-      // use data property if exist
-      params[key] = key in data ? data[key] : state[key]
+      const descriptor = Object.getOwnPropertyDescriptor(state, key)
+      if (descriptor && (descriptor.get || descriptor.set)) {
+        define(params, key, {
+          get: descriptor.get,
+          set: descriptor.set,
+          enumerable: true,
+        })
+      }
+      else {
+        params[key] = value
+      }
     })
 
     // those on data but not on schema
     // these should be patched on model, because we sometimes need them as original data
     each(data, (value, key) => {
-      if (key in params) {
+      if (inObject(key, params)) {
         return
       }
 
@@ -386,6 +400,9 @@ export class Model {
       this.$store.del(key)
       delete this[key]
     })
+
+
+    this.onSwitch(params)
 
     // reset into store
     this.$store.init(params)
@@ -435,6 +452,11 @@ export class Model {
 
   // when initialized
   onInit() {}
+
+  // before restore model datas
+  onSwitch(params) {
+    return params
+  }
 
   // parse data before parse, should be override
   onParse(data) {
