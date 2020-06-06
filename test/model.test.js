@@ -233,4 +233,26 @@ describe('Model', () => {
 
     expect(model.$views.some.required).toBe(true)
   })
+
+  test('watch schema', () => {
+    let count = 0
+
+    class SomeModel extends Model {
+      static some = {
+        default: '',
+        watch({ value }) {
+          console.log(value)
+          count ++
+        },
+      }
+    }
+
+    const some = new SomeModel()
+
+    some.some = 'a'
+    expect(count).toBe(1)
+
+    some.some = 'b'
+    expect(count).toBe(2)
+  })
 })

@@ -16,6 +16,7 @@ export class Store {
     this.data = null
     this.state = null
     this.editable = true
+    this.silent = false
 
     this._watchers = []
 
@@ -403,6 +404,10 @@ export class Store {
   }
 
   dispatch(keyPath, { value, next, prev, active, invalid }, force = false) {
+    if (this.silent) {
+      return
+    }
+
     if (!force && next === prev) {
       return
     }

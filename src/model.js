@@ -183,6 +183,16 @@ export class Model {
     // $data
     define(this, '$data', () => clone(this.$store.data))
 
+    // watch
+    keys.forEach((key) => {
+      const def = this.$schema[key]
+      if (!def.watch) {
+        return
+      }
+
+      this.watch(key, def.watch, true)
+    })
+
     // init data
     this.restore(data)
 
@@ -405,7 +415,9 @@ export class Model {
     this.onSwitch(params)
 
     // reset into store
+    this.$store.silent = true
     this.$store.init(params)
+    this.$store.silent = false
 
     this._ensure()
     return this

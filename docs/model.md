@@ -28,6 +28,20 @@ class MyModel extends Model {
 
 As you seen, we create a class extends from Model and define static properties on the class to define each property's schema. Notice that, the basic information is the same with what you learn in [Schema](schema.md).
 
+In schema, it supports `watch` option, which will listen the field's change, and invoke the function.
+
+```js
+class MyModel extends Model {
+  static some = {
+    default: '',
+    // when `some` field's value changes, the function will be invoked
+    watch({ value }) {
+      console.log(value)
+    },
+  }
+}
+```
+
 And model supports another schema option `extra`. For example:
 
 ```js
@@ -43,6 +57,11 @@ class MyModel extends Model {
 ```
 
 `extra` option is used to provide other information so that you can find them on `$views`.
+
+```js
+const model = new MyModel()
+console.log(model.$views.some.label) // name
+```
 
 It supports sub-model too, for example:
 
@@ -222,6 +241,8 @@ model.restore({
   age: 12,
 })
 ```
+
+*Notice: `restore` will not trigger watchers.*
 
 **onSwitch**
 
