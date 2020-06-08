@@ -240,8 +240,7 @@ describe('Model', () => {
     class SomeModel extends Model {
       static some = {
         default: '',
-        watch({ value }) {
-          console.log(value)
+        watch() {
           count ++
         },
       }

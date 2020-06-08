@@ -64,12 +64,6 @@ export class Store {
         return active
       },
       set: (keyPath, value) => {
-        // chould not change the value any more
-        if (!this.editable) {
-          const prev = parse(this.data, keyPath)
-          return prev
-        }
-
         // computed property
         if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
           const key = keyPath[0]
@@ -115,6 +109,10 @@ export class Store {
       },
       dispatch: ({ keyPath, value, next, prev, active, invalid }, force) => {
         this.dispatch(keyPath, { value, next, prev, active, invalid }, force)
+      },
+      writable: () => {
+        // chould not change the value any more
+        return this.editable
       },
     })
 
