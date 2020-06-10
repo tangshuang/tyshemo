@@ -346,10 +346,10 @@ export class Model {
       }
       else if (inObject(key, data)) {
         const value = data[key]
-        params[key] = this.$schema.$set(key, value, this)
+        params[key] = this.$schema.assign(key, value, this)
       }
       else {
-        params[key] = schema.$default(key)
+        params[key] = schema.$default(key)()
       }
     })
 

@@ -28,19 +28,115 @@ class MyModel extends Model {
 
 As you seen, we create a class extends from Model and define static properties on the class to define each property's schema. Notice that, the basic information is the same with what you learn in [Schema](schema.md).
 
-In schema, it supports `watch` option, which will listen the field's change, and invoke the function.
+## Schema
+
+You can return an object in `schema` method for a model so that you do not need to define static properties.
 
 ```js
-class MyModel extends Model {
-  static some = {
-    default: '',
-    // when `some` field's value changes, the function will be invoked
-    watch({ value }) {
-      console.log(value)
-    },
+class SomeModel extends Model {
+  schema() {
+    return {
+      name: {
+        default: '',
+        type: String,
+      },
+      age: {
+        default: 0,
+        type: Number,
+      },
+    }
   }
 }
 ```
+
+You should return a pure new object for schema.
+
+## State
+
+When you define a Model, in fact, you are define some Domain Model. However, Domain Model in some cases need to have dependencies with state, and this state may be changed by business code. So we provide a `state` define way.
+
+```js
+class SomeModel extends Model {
+  // define state
+  state() {
+    return {
+      isFund: false,
+      isInvested: false,
+    }
+  }
+
+  schema() {
+    const some = {
+      default: null,
+      required() {
+        return !this.isFund // use state to check whether need to be required
+      },
+    }
+    return {
+      some,
+    }
+  }
+}
+
+const model = new SomeModel({
+  isFund: true,
+})
+
+// model.isFund === true
+// model.isInvested === false
+
+model.set('isFund', false)
+```
+
+The properties of state are not in schema, however they are on model, you can update them. You should not delete them.
+`state()` should must return a pure new object, should not be shared from global.
+The return state object will be used as default state each time new data stored into model (initialize and restore).
+
+## Instance
+
+A Model is an abstract data pattern, to use the model, we should initialize a Model.
+
+```js
+const model = new SomeModel() // this will use `default` option to create values
+```
+
+When you initialize, you can pass default data into it.
+
+```js
+const tomy = new SomeModel({
+  name: 'tomy',
+  age: 10,
+}) // other fileds will use `default` option to create values
+```
+
+Then `tomy` will has the default fields' values. `tomy.name === 'tomy'`.
+
+Now, let's look into the instance, how to use Model to operate data.
+
+### $views
+
+Model instance provides a `$views` property which contains fields information.
+Notice, `$views` only contains fields which defined in schema.
+
+```js
+const { $views } = model
+const { age } = $views
+
+// Here `age` is called a field view. What's on age? =>
+// { value, required, disabled, readonly, hidden, errors, ...extra }
+```
+
+Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drive state.
+
+```html
+<label>{{age.label}}</label>
+<input v-model="age.value" />
+<span v-if="age.required">Required</span>
+```
+
+*Notice: Change `value` on a field view will trigger watch callbacks*
+
+**extra**
 
 And model supports another schema option `extra`. For example:
 
@@ -70,50 +166,6 @@ class ParentModel extends Model {
   static child = ChildModel // use ChildModel directly, it will be transformed to a schema definition
 }
 ```
-
-## Instance
-
-A Model is an abstract data pattern, to use the model, we should initialize a Model.
-
-```js
-const model = new ParentModel()
-```
-
-When you initialize, you can pass default data into it.
-
-```js
-const tomy = new BoyModel({
-  name: 'tomy',
-  age: 10,
-})
-```
-
-Then `tomy` will has the default fields' values. `tomy.name === 'tomy'`.
-
-Now, let's look into the instance, how to use Model to operate data.
-
-### $views
-
-Model instance provides a `$views` property which contains fields information.
-Notice, `$views` only contains fields which defined in schema.
-
-```js
-const { $views } = model
-const { age } = $views
-
-// Here `age` is called a field view. What's on age? =>
-// { value, required, disabled, readonly, hidden, errors, ...extra }
-```
-
-Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drive state.
-
-```html
-<label>{{age.label}}</label>
-<input v-model="age.value" />
-<span v-if="age.required">Required</span>
-```
-
-*Notice: Change `value` on a field view will trigger watch callbacks*
 
 **view.errors**
 
@@ -210,6 +262,20 @@ model.watch('age', (e) => console.log(e), true)
 ```
 
 Its parameters has bee told in `Store` [here](store.md).
+
+In schema, it supports `watch` option, which will listen the field's change, and invoke the function.
+
+```js
+class MyModel extends Model {
+  static some = {
+    default: '',
+    // when `some` field's value changes, the function will be invoked
+    watch({ value }) {
+      console.log(value)
+    },
+  }
+}
+```
 
 ### validate()
 
@@ -356,64 +422,6 @@ To unlock:
 ```js
 model.lock()
 ```
-
-## Schema
-
-You can create custom schema for a model so that you do not need to define static properties.
-
-```js
-class SomeModel extends Model {
-  schema() {
-    return {
-      name: {
-        default: '',
-        type: String,
-      },
-      age: {
-        default: 0,
-        type: Number,
-      },
-    }
-  }
-}
-```
-
-You should return a pure new object for schema.
-
-## State
-
-When you define a Model, in fact, you are define some Domain Model. However, Domain Model in some cases need to have dependencies with state, and this state may be changed by business code. So we provide a `state` define way.
-
-```js
-class SomeModel extends Model {
-  static some = {
-    default: null,
-    required() {
-      return !this.isFund // use state to check whether need to be required
-    },
-  }
-
-  state() {
-    return {
-      isFund: false,
-      isInvested: false,
-    }
-  }
-}
-
-const model = new SomeModel({
-  isFund: true,
-})
-
-// model.isFund === true
-// model.isInvested === false
-
-model.set('isFund', false)
-```
-
-The properties of state are not in schema, however they are on model, you can update them. You should not delete them.
-`state()` should must return a pure new object, should not be shared from global.
-The return state object will be used as default state each time new data stored into model (initialize and restore).ccx
 
 ## Save and restore
 

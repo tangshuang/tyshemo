@@ -12,6 +12,7 @@ import {
   isString,
   isNumber,
   isUndefined,
+  isConstructor,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
@@ -85,6 +86,9 @@ import { Ty, Rule } from './ty/index.js'
 export class Schema {
   constructor(defs) {
     each(defs, (def, key) => {
+      if (!isObject(def)) {
+        return
+      }
       define(this, key, {
         value: def,
         enumerable: true,
@@ -92,8 +96,69 @@ export class Schema {
     })
   }
 
+  /**
+   * get default value by using `default` option
+   * @param {*} key
+   */
+  $default(key) {
+    return () => {
+      const def = this[key]
+      const { default: defaultValue } = def
+      if (isFunction(defaultValue)) {
+        return defaultValue()
+      }
+      else if (isObject(defaultValue) || isArray(defaultValue)) {
+        return clone(defaultValue)
+      }
+      else {
+        return defaultValue
+      }
+    }
+  }
+
+  $message(key, method, context) {
+    return (givenMessage) => {
+      const def = this[key]
+
+      if (!def) {
+        return ''
+      }
+
+      const { catch: handle, message } = def
+      const defualtMessage = `'${key}' occurs error when called '${method}' option.`
+
+      const exec = (message) => {
+        // message: () => xxx
+        if (isFunction(message)) {
+          return this._trydo(
+            () => message.call(context),
+            (error) => isFunction(handle) && handle.call(context, error) || givenMessage || defualtMessage,
+            {
+              key,
+              option: 'message',
+            },
+          )
+        }
+
+        // message: xxx
+        if (isString(message)) {
+          return message || givenMessage || defualtMessage
+        }
+
+        return defualtMessage
+      }
+
+      // message.required
+      if (isObject(message)) {
+        return exec(message[method])
+      }
+
+      return exec(message)
+    }
+  }
+
   $exec(key, method, context) {
-    return (v) => {
+    return (defaultValue) => {
       const def = this[key]
 
       if (!def) {
@@ -110,7 +175,7 @@ export class Schema {
       if (isFunction(exec)) {
         return this._trydo(
           () => exec.call(context),
-          (error) => isFunction(handle) && handle.call(context, error) || v,
+          (error) => isFunction(handle) && handle.call(context, error) || defaultValue,
           {
             key,
             option: method,
@@ -168,22 +233,28 @@ export class Schema {
     }
   }
 
-  $set(key, value, context) {
+  /**
+   * get new value by given value, if not match type or any other rules, return default value
+   * @param {*} key
+   * @param {*} value
+   * @param {*} context
+   */
+  assign(key, value, context) {
     const def = this[key]
 
     if (!def) {
       return value
     }
 
-    const { setter, compute, catch: handle, type, message } = def
+    const { setter, compute, catch: handle, type } = def
 
     if (compute) {
       this.onError({
         key,
-        action: '$set',
+        action: 'assign',
         value,
         compute,
-        message: `${key} can not be set new value because it is a computed property.`,
+        message: this.$message(key, 'compute', context)(`${key} can not be set new value because it is a computed property.`),
       })
       const next = compute.call(context)
       return next
@@ -211,13 +282,13 @@ export class Schema {
       if (error) {
         this.onError({
           key,
-          action: '$set',
+          action: 'assign',
           value,
           type,
           error,
-          message: message || `TypeError: ${key} does not match type.`,
+          message: this.$message(key, 'type', context)(`TypeError: ${key} does not match type.`),
         })
-        const next = this.$default(key)
+        const next = this.$default(key)()
         return next
       }
     }
@@ -225,6 +296,13 @@ export class Schema {
     return value
   }
 
+  /**
+   * get new value by `next`, if not match type or any other rules, return `prev`
+   * @param {*} key
+   * @param {*} next
+   * @param {*} prev
+   * @param {*} context
+   */
   set(key, next, prev, context) {
     const def = this[key]
 
@@ -232,7 +310,7 @@ export class Schema {
       return next
     }
 
-    const { setter, compute, catch: handle, type, message } = def
+    const { setter, compute, catch: handle, type } = def
 
     const disabled = this.disabled(key, context)
     if (disabled) {
@@ -242,7 +320,7 @@ export class Schema {
         next,
         prev,
         disabled: true,
-        message: isString(disabled) ? disabled : `${key} can not be set new value because of disabled.`,
+        message: this.$message(key, 'disabled', context)(isString(disabled) ? disabled : `${key} can not be set new value because of disabled.`),
       })
       return prev
     }
@@ -255,7 +333,7 @@ export class Schema {
         next,
         prev,
         readonly: true,
-        message: isString(readonly) ? readonly : `${key} can not be set new value because of readonly.`,
+        message: this.$message(key, 'readonly', context)(isString(readonly) ? readonly : `${key} can not be set new value because of readonly.`),
       })
       return prev
     }
@@ -267,7 +345,7 @@ export class Schema {
         next,
         prev,
         compute,
-        message: `${key} can not be set new value because it is a computed property.`,
+        message: this.$message(key, 'compute', context)(`${key} can not be set new value because it is a computed property.`),
       })
       return prev
     }
@@ -301,7 +379,7 @@ export class Schema {
           prev,
           type,
           error,
-          message: message || `TypeError: ${key} does not match type.`,
+          message: this.$message(key, 'type', context)(`TypeError: ${key} does not match type.`),
         })
         return prev
       }
@@ -471,13 +549,13 @@ export class Schema {
         key,
         value,
         required: true,
-        message: isString(required) ? required : `Error: ${key} is required, but receive empty.`,
+        message: this.$message(key, 'required', context)(isString(required) ? required : `Error: ${key} is required, but receive empty.`),
       })
 
       return errors
     }
 
-    const { type, message } = def
+    const { type } = def
     // type checking
     if (type) {
       // make rule works
@@ -492,7 +570,7 @@ export class Schema {
           value,
           type,
           error,
-          message: message || `TypeError: ${key} does not match type.`,
+          message: this.$message(key, 'type', context)(`TypeError: ${key} does not match type.`),
         })
       }
     }
@@ -503,20 +581,6 @@ export class Schema {
     return errors
   }
 
-  $default(key) {
-    const def = this[key]
-    const { default: defaultValue } = def
-    if (isFunction(defaultValue)) {
-      return defaultValue()
-    }
-    else if (isObject(defaultValue) || isArray(defaultValue)) {
-      return clone(defaultValue)
-    }
-    else {
-      return defaultValue
-    }
-  }
-
   /**
    * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
    * @param {*} data
@@ -524,7 +588,7 @@ export class Schema {
    */
   parse(data, context) {
     const output = map(this, (def, key) => {
-      const { create, catch: handle, type, message } = def
+      const { create, catch: handle, type } = def
       const value = data[key]
 
       let coming = value
@@ -541,7 +605,7 @@ export class Schema {
       }
 
       if (isUndefined(coming)) {
-        coming = this.$default(key)
+        coming = this.$default(key)()
       }
 
       // check type, and throw error if it is not match the type
@@ -558,7 +622,7 @@ export class Schema {
             value: coming,
             type,
             error,
-            message: message || `TypeError: ${key} does not match type.`,
+            message: this.$message(key, 'type', context)(`TypeError: ${key} does not match type.`),
           })
         }
       }
