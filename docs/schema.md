@@ -41,7 +41,11 @@ const schema = new Schema({
     // notice: `default` and result of `compute` should match type,
     // can be rule, i.e. ifexist(String)
     type: String,
-    message: '', // message to return when type checking fail
+
+    // message to return when type checking fail
+    // message can be a function which receive type of happening: type|required|disabled|readonly|compute
+    // i.e. message: type => type === 'compute' ? 'the property is a computed property, you can not rewrite it' : 'error on ' + type
+    message: '',
 
     // optional
     validators: [

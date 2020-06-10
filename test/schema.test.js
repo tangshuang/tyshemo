@@ -109,4 +109,59 @@ describe('Schema', () => {
     expect(data.key2).toBe('a!')
     expect(data.key3).toBeUndefined()
   })
+
+  test('message', () => {
+    const SomeSchema = new Schema({
+      name: {
+        default: '',
+        type: String,
+        message: '{key} should be string.',
+      },
+
+      sex: {
+        default: null,
+        required: 'sex is required.',
+      },
+
+      age: {
+        default: null,
+        required: true,
+        message: {
+          required: 'age is required.'
+        },
+      },
+
+      weight: {
+        default: null,
+        required: true,
+        message(type) {
+          if (type === 'required') {
+            return 'weight is required.'
+          }
+        },
+      },
+
+      height: {
+        default: null,
+        required: true,
+        message: {
+          required() {
+            return 'height is required.'
+          },
+        },
+      },
+    })
+
+    const errors = SomeSchema.validate('name', null)
+    expect(errors.length).toBe(1)
+    expect(errors[0].message).toBe('name should be string.')
+
+    expect(SomeSchema.validate('sex', null)[0].message).toBe('sex is required.')
+
+    expect(SomeSchema.validate('age', null)[0].message).toBe('age is required.')
+
+    expect(SomeSchema.validate('weight', null)[0].message).toBe('weight is required.')
+
+    expect(SomeSchema.validate('height', null)[0].message).toBe('height is required.')
+  })
 })
