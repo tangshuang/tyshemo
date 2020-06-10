@@ -501,8 +501,8 @@ export class Model {
       else if (isArray(value)) {
         value.forEach((item, i) => {
           if (isInstanceOf(item, Model)) {
-            define(value, '$parent', this)
-            define(value, '$keyPath', [key, i])
+            define(item, '$parent', this)
+            define(item, '$keyPath', [key, i])
           }
         })
       }
