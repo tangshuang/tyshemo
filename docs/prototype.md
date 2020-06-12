@@ -16,7 +16,7 @@ We use native definition/interface as prototypes:
 - Function: function
 - regexp: string which match regexp, i.e. /^\[0-9].*/
 - Symbol
-- NaN: number and NaN
+- NaN: only match `NaN`, notice, it is not `isNaN`
 - Infinity
 - Date: an instanceof Data (new Date)
 - Promise: an instance of Promise (new Promise)

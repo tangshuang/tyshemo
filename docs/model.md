@@ -28,6 +28,15 @@ class MyModel extends Model {
 
 As you seen, we create a class extends from Model and define static properties on the class to define each property's schema. Notice that, the basic information is the same with what you learn in [Schema](schema.md).
 
+
+It supports sub-model too, for example:
+
+```js
+class ParentModel extends Model {
+  static child = ChildModel // use ChildModel directly, it will be transformed to a schema definition
+}
+```
+
 ## Schema
 
 You can return an object in `schema` method for a model so that you do not need to define static properties.
@@ -159,14 +168,6 @@ const model = new MyModel()
 console.log(model.$views.some.label) // name
 ```
 
-It supports sub-model too, for example:
-
-```js
-class ParentModel extends Model {
-  static child = ChildModel // use ChildModel directly, it will be transformed to a schema definition
-}
-```
-
 **view.errors**
 
 The `errors` property on field view is an array.
@@ -187,7 +188,7 @@ To read data on a model instance, you have two ways.
 Read properties from model instance directly.
 
 ```js
-const { name, age } = tomy
+const { name, age } = model
 ```
 
 **get(key)**
@@ -195,7 +196,7 @@ const { name, age } = tomy
 Invoke `get` method to read field value.
 
 ```js
-const name = tomy.get('name')
+const name = model.get('name')
 ```
 
 **view.value**
@@ -203,19 +204,19 @@ const name = tomy.get('name')
 Read value from a field view.
 
 ```js
-const age = tomy.$views.age.value
+const age = model.$views.age.value
 ```
 
 ### Update
 
-To update data on a model instance, you have two ways too.
+To update data on a model instance, you have multiple ways too.
 
 **Properties**
 
 Set value on properties directly.
 
 ```js
-tomy.age = 20
+model.age = 20
 ```
 
 *Notice: Change model properties will trigger watch callbacks*
@@ -223,13 +224,13 @@ tomy.age = 20
 **set(key, value)**
 
 ```js
-tomy.set('age', 20)
+model.set('age', 20)
 ```
 
 **update(data)**
 
 ```js
-tomy.update({
+model.update({
   name: 'tomy',
   age: 30,
 })
@@ -240,17 +241,7 @@ tomy.update({
 Set value directly to the field view's value.
 
 ```js
-tomy.$views.age.value = 40
-```
-
-### define(key, get)
-
-In some case, you want to append a computed property to model instance, you can use `define` method.
-
-```js
-model.define('height', function() {
-  return this.age * 2
-})
+model.$views.age.value = 40
 ```
 
 ### watch/unwatch
@@ -347,7 +338,7 @@ model.fromJSON({
 
 **onParse**
 
-Before fromJSON, a hook method `onParse` will be invoked.
+Before `fromJSON`, a hook method `onParse` will be invoked.
 
 ```js
 class StudentModel extends Model {
@@ -420,10 +411,10 @@ Then, updating and restoring will not work.
 To unlock:
 
 ```js
-model.lock()
+model.unlock()
 ```
 
-## Save and restore
+## Record and replay
 
 ```js
 // send data to server side

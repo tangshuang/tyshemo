@@ -140,7 +140,7 @@ shouldexist = determine + ifexist
 shouldexist(condition: Function, type: Type)
 ```
 
-When condition return true, the property should MUST exist, when return false, the property can exist or nots.
+When condition return true, the property should MUST exist, when return false, the property can exist or not.
 Either true or false, once the property exists, it should must match the type.
 
 ```js

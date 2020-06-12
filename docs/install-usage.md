@@ -63,15 +63,6 @@ Use only store:
 </script>
 ```
 
-Use only core:
-
-```html
-<script src="https://unpkg.com/tyshemo/dist/core.min.js"></script>
-<script>
-  const { Ty } = window.tyshemo
-</script>
-```
-
 ## Exports
 
 You can look into [unpkg](https://unpkg.com/browse/tyshemo@latest/) to find out that, tyshemo has 3 type of exports: cjs, dist, src.
@@ -81,7 +72,6 @@ You can look into [unpkg](https://unpkg.com/browse/tyshemo@latest/) to find out 
 - Files in `dist` directory is webpack bundle files which are able to run in browsers directly. There are bundle/minified js files with their .map files.
   - `ty.js` only contains tyshemo's type system (without Parser and Mocker).
   - `store.js` only contains tyshemo's store library.
-  - `core.js` contains tyshemo's type system, schema, store and model (without Parser and Mocker).
   - `tyshemo.js` contains all exports.
   - `tyshemo.umd.js` contains all exports and should use together with [ts-fns](https://unpkg.com/ts-fns@5.1.4/dist/ts-fns.min.js) which is exported as UMD module.
 
