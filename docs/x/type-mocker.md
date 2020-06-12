@@ -1,14 +1,14 @@
-# Mocker
+# TypeMocker
 
-> Notice, Mocker is not in tyshemo core package any more, we will provide a pacakge called `tyshemo-extends`.
+> Notice, TypeMocker is not in tyshemo core package any more, we will provide a pacakge called `tyshemo-x`.
 
 To mock data from our type system for testing or demo.
 
 ## Usage
 
 ```js
-import { Mocker } from 'tyshemo-extends'
-const mocker = new Mocker()
+import { TypeMocker } from 'tyshemo-x'
+const mocker = new TypeMocker()
 
 const mockdata = mocker.mock(SomeDictType)
 ```
@@ -28,16 +28,16 @@ const loader = [Promise, () => Promise.resolve(Match.random())]
 
 How to use loaders?
 
-**Mocker.defaultLoaders**
+**TypeMocker.defaultLoaders**
 
 ```js
-Mocker.defaultLoaders.unshift(loader)
+TypeMocker.defaultLoaders.unshift(loader)
 ```
 
 **intance loaders**
 
 ```js
-const mocker = new Mocker([
+const mocker = new TypeMocker([
   loader,
 ])
 ```

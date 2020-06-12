@@ -7,9 +7,10 @@
 - [Store](store.md)
 - [Schema](schema.md)
 - [Model](model.md)
-- Extends
-  - [JSON IDL](extends/idl.md)
-  - [Parser](extends/parser.md)
-  - [Mocker](extends/mocker.md)
-  - [tyshemo-service](service.md)
+- TySheMo X
+  - [JSON IDL](x/idl.md)
+  - [TypeParser](x/type-parser.md)
+  - [TypeMocker](x/type-mocker.md)
+  - [ModelParser](x/model-parser.md)
+- [tyshemo-service](service.md)
 - [react-tyshemo](react.md)
