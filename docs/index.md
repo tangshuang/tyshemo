@@ -8,7 +8,6 @@
 - [Schema](schema.md)
 - [Model](model.md)
 - TySheMo X
-  - [JSON IDL](x/idl.md)
   - [TypeParser](x/type-parser.md)
   - [TypeMocker](x/type-mocker.md)
   - [ModelParser](x/model-parser.md)
