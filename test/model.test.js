@@ -166,8 +166,8 @@ describe('Model', () => {
     let error = null
     class SomeModel extends Model {
       static some = {
-        type: String,
         default: '',
+        type: String,
         message: 'it should be a string',
       }
 

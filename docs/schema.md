@@ -41,10 +41,7 @@ const schema = new Schema({
     // notice: `default` and result of `compute` should match type,
     // can be rule, i.e. ifexist(String)
     type: String,
-
-    // message to return when type checking fail
-    // message can be a function which receive type of happening: type|required|disabled|readonly|compute
-    // i.e. message: type => type === 'compute' ? 'the property is a computed property, you can not rewrite it' : 'error on ' + type
+    // optional, string, message to return when type checking fail
     message: '',
 
     // optional
@@ -71,14 +68,12 @@ const schema = new Schema({
     // optional, function, format this property value when set
     setter: (value) => value,
 
-    // optional, function or boolean or string, use schema.required(field) to check, will be invoked by validate
-    required: () => Boolean,
-    // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
-    readonly: () => Boolean,
-    // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when formulate
-    disabled: () => Boolean,
-    // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
-    hidden: () => Boolean,
+    // optional, function or boolean or string, if `required` is true, when you invoke `validate` and the value is empty, an error will be in the errors list
+    required: Boolean,
+    // optional, function or boolean or string, if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)
+    readonly: Boolean,
+    // optional, function or boolean or string, if `disabled` is true, you will not be able to change value by using `set` (however `assign` works), when you invoke `validate`, the validators will be ignored, and when you invoke `export`, the `drop` option will be set to be `true` automaticly
+    disabled: Boolean,
 
     // the difference between `disabled`, `readonly` and `hidden`:
     // readonly means the property can only be read/validate/formulate, but could not be changed.
@@ -87,6 +82,17 @@ const schema = new Schema({
 
     // optional, when an error occurs caused by this property, what to do with the error
     catch: (error) => {},
+
+    // --- the following items only works in Model ---
+
+    // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
+    hidden: Boolean,
+
+    // when this field's value changed, the `watch` schema option will be invoke
+    watch({ value }) {},
+
+    // any other information could be put here in `extra`
+    extra: {},
   },
 })
 ```
@@ -97,7 +103,7 @@ Notice, you may never use `Schema` alone, you should always use it with `Model`.
 
 As said, you may use a stateless schema as a factory.
 
-### required/readonly/disabled/hidden
+### required/readonly/disabled
 
 These four methods return a boolean value to help determine whether the field should show in view, or throw an error when submit data.
 
@@ -144,6 +150,45 @@ const schema = new Schema({
   name: {
     default: '',
     required: true,
+  },
+})
+```
+
+When `required` receive a string, or the function return a string, it means set to be `true` and use the string as message.
+
+```js
+const schema = new Schema({
+  name: {
+    default: '',
+    required: 'Name is reuqired.',
+  },
+})
+```
+
+```js
+const schema = new Schema({
+  name: {
+    default: '',
+    required() {
+      // you can return false
+      return 'Name is reuqired.'
+    },
+  },
+})
+```
+
+However, in some cases, you need to split message:
+
+```js
+const schema = new Schema({
+  name: {
+    default: '',
+    required: {
+      determine() {
+        return true
+      },
+      message: 'Name is reuqired.',
+    },
   },
 })
 ```

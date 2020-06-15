@@ -155,7 +155,7 @@ export class Model {
           enumerable: true,
         },
         hidden: {
-          get: () => this.$schema.hidden(key, this),
+          get: () => this.$schema.$determine(key, 'hidden', this)(false),
           enumerable: true,
         },
         errors: {

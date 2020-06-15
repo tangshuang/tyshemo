@@ -125,28 +125,18 @@ describe('Schema', () => {
 
       age: {
         default: null,
-        required: true,
-        message: {
-          required: 'age is required.'
+        required: {
+          determine: true,
+          message: 'age is required.',
         },
       },
 
       weight: {
         default: null,
-        required: true,
-        message(type) {
-          if (type === 'required') {
+        required: {
+          determine: true,
+          message() {
             return 'weight is required.'
-          }
-        },
-      },
-
-      height: {
-        default: null,
-        required: true,
-        message: {
-          required() {
-            return 'height is required.'
           },
         },
       },
@@ -161,7 +151,5 @@ describe('Schema', () => {
     expect(SomeSchema.validate('age', null)[0].message).toBe('age is required.')
 
     expect(SomeSchema.validate('weight', null)[0].message).toBe('weight is required.')
-
-    expect(SomeSchema.validate('height', null)[0].message).toBe('height is required.')
   })
 })

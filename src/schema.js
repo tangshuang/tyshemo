@@ -13,6 +13,7 @@ import {
   isNumber,
   isUndefined,
   interpolate,
+  inObject,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
@@ -62,13 +63,16 @@ import { Ty, Rule } from './ty/index.js'
  *     setter: (value) => value,
  *
  *     // optional, function or boolean or string, use schema.required(field) to check, will be invoked by validate
- *     required: () => Boolean,
+ *     required: {
+ *       // function to determine whether need to be required
+ *       determine() { return true },
+ *       // when required, what message to notice user
+ *       message: 'xx',
+ *     },
  *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
- *     readonly: () => Boolean,
+ *     readonly: { determine, message },
  *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when export
- *     disabled: () => Boolean,
- *     // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
- *     hidden: () => Boolean,
+ *     disabled: { determine, message },
  *
  *     // the difference between `disabled` and `readonly`:
  *     // readonly means the property can only be read/validate/export, but could not be changed.
@@ -76,10 +80,6 @@ import { Ty, Rule } from './ty/index.js'
  *
  *     // optional, when an error occurs caused by this property, what to do with the error
  *     catch: (error) => {},
- *
- *     // any other information patch to model.$views
- *     // support getter, i.e. { get some() { return this.name } } this point to the model
- *     extra: {},
  *   },
  * })
  */
@@ -116,6 +116,12 @@ export class Schema {
     }
   }
 
+  /**
+   * get message for some method
+   * @param {*} key
+   * @param {*} method
+   * @param {*} context
+   */
   $message(key, method, context) {
     return (givenMessage) => {
       const def = this[key]
@@ -124,40 +130,50 @@ export class Schema {
         return ''
       }
 
+      const node = def[method]
+
+      if (!node) {
+        return ''
+      }
+
       const defualtMessage = interpolate(Schema.defualtMessages[method] || `{key} ${method} error.`, { key })
+      const { catch: handle } = def
+
+      let finalMessage = defualtMessage
 
       if (isString(givenMessage)) {
-        return givenMessage || defualtMessage
+        finalMessage = givenMessage
       }
-
-      const { catch: handle, message } = def
-
-      let touchMessage = message
-      let finalMessage = ''
-
-      // message.required: xxx
-      if (isObject(touchMessage)) {
-        touchMessage = touchMessage[method]
+      // required: true
+      else if (isBoolean(node)) {
+        finalMessage = defualtMessage
       }
-
-      // message: () => xxx
-      if (isFunction(touchMessage)) {
-        finalMessage = this._trydo(
-          () => touchMessage.call(context, method),
-          (error) => isFunction(handle) && handle.call(context, error) || defualtMessage,
-          {
-            key,
-            option: 'message',
-          },
-        )
+      // required: 'should be required.'
+      else if (isString(node)) {
+        finalMessage = node
       }
-
-      // message: xxx
-      else if (isString(touchMessage)) {
-        finalMessage = touchMessage || defualtMessage
+      // required() { return true }, function to return boolean
+      else if (isFunction(node)) {
+        finalMessage = defualtMessage
       }
-      else {
-        finalMessage =  defualtMessage
+      // required: { ... }
+      else if (isObject(node) && node.message) {
+        const { message } = node
+        // required: { message() { return 'xxx' } }
+        if (isFunction(message)) {
+          finalMessage = this._trydo(
+            () => message.call(context, method),
+            (error) => isFunction(handle) && handle.call(context, error) || defualtMessage,
+            {
+              key,
+              option: 'message',
+            },
+          )
+        }
+        // required: { message: 'required' }
+        else if (isString(message)) {
+          finalMessage = message
+        }
       }
 
       const outputMessage = interpolate(finalMessage, { key })
@@ -165,51 +181,78 @@ export class Schema {
     }
   }
 
-  $exec(key, method, context) {
-    return (defaultValue) => {
+  /**
+   * get determine result for some method
+   * @param {*} key
+   * @param {*} method
+   * @param {*} context
+   */
+  $determine(key, method, context) {
+    return (fallbackRes) => {
       const def = this[key]
 
       if (!def) {
-        return defaultValue
+        return fallbackRes
+      }
+
+      const node = def[method]
+
+      if (!node) {
+        return fallbackRes
       }
 
       const { catch: handle } = def
-      const exec = def[method]
 
-      if (!exec) {
-        return defaultValue
+      if (isString(node)) {
+        return node
       }
 
-      if (isFunction(exec)) {
+      if (isBoolean(node)) {
+        return node
+      }
+
+      if (isFunction(node)) {
         return this._trydo(
-          () => exec.call(context),
-          (error) => isFunction(handle) && handle.call(context, error) || defaultValue,
+          () => node.call(context),
+          (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
           {
             key,
             option: method,
           },
         )
       }
-      else {
-        return exec
+
+      if (isObject(node)) {
+        const { determine } = node
+        if (isFunction(determine)) {
+          return this._trydo(
+            () => determine.call(context),
+            (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
+            {
+              key,
+              option: method,
+            },
+          )
+        }
+        else if (isBoolean(determine)) {
+          return determine
+        }
       }
+
+      return fallbackRes
     }
   }
 
   required(key, context) {
-    return this.$exec(key, 'required', context)(false)
+    return this.$determine(key, 'required', context)(false)
   }
 
   disabled(key, context) {
-    return this.$exec(key, 'disabled', context)(false)
+    return this.$determine(key, 'disabled', context)(false)
   }
 
   readonly(key, context) {
-    return this.$exec(key, 'readonly', context)(false)
-  }
-
-  hidden(key, context) {
-    return this.$exec(key, 'hidden', context)(false)
+    return this.$determine(key, 'readonly', context)(false)
   }
 
   get(key, value, context) {
@@ -254,7 +297,7 @@ export class Schema {
       return value
     }
 
-    const { setter, compute, catch: handle, type } = def
+    const { setter, compute, catch: handle, type, message } = def
 
     if (compute) {
       this.onError({
@@ -294,7 +337,7 @@ export class Schema {
           value,
           type,
           error,
-          message: this.$message(key, 'type', context)(),
+          message: this.$message(key, 'type', context)(message),
         })
 
         // use `default` option to generate next value
@@ -321,7 +364,7 @@ export class Schema {
       return next
     }
 
-    const { setter, compute, catch: handle, type } = def
+    const { setter, compute, catch: handle, type, message } = def
 
     const disabled = this.disabled(key, context)
     if (disabled) {
@@ -390,7 +433,7 @@ export class Schema {
           prev,
           type,
           error,
-          message: this.$message(key, 'type', context)(),
+          message: this.$message(key, 'type', context)(message),
         })
         return prev
       }
@@ -566,7 +609,7 @@ export class Schema {
       return errors
     }
 
-    const { type } = def
+    const { type, message } = def
     // type checking
     if (type) {
       // make rule works
@@ -581,7 +624,7 @@ export class Schema {
           value,
           type,
           error,
-          message: this.$message(key, 'type', context)(),
+          message: this.$message(key, 'type', context)(message),
         })
       }
     }
@@ -599,7 +642,7 @@ export class Schema {
    */
   parse(data, context) {
     const output = map(this, (def, key) => {
-      const { create, catch: handle, type } = def
+      const { create, catch: handle, type, message } = def
       const value = data[key]
 
       let coming = value
@@ -633,7 +676,7 @@ export class Schema {
             value: coming,
             type,
             error,
-            message: this.$message(key, 'type', context)(),
+            message: this.$message(key, 'type', context)(message),
           })
         }
       }
