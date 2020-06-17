@@ -13,7 +13,6 @@ import {
   isNumber,
   isUndefined,
   interpolate,
-  inObject,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
@@ -754,8 +753,8 @@ export class Schema {
     return result
   }
 
-  _trydo(fn, fallback, basic, disabled) {
-    if (disabled) {
+  _trydo(fn, fallback, basic, force) {
+    if (force) {
       return fn()
     }
 

@@ -58,7 +58,31 @@ class SomeModel extends Model {
 }
 ```
 
-You should return a pure new object for schema.
+You should return a pure new object or an instance of `Schema` for schema.
+
+```js
+class SomeModel extends Model {
+  schema(Schema) {
+    class SomeSchema extends Schema {
+      isChecked(key, context) {
+        return this.$determine(key, 'checked', context)(false)
+      }
+    }
+    return new SomeSchema({
+      item: {
+        default: 'a',
+        checked() {
+          return this.item === 'b'
+        },
+      }
+    })
+  }
+
+  isItemChecked() {
+    return this.$schema.isChecked('item', this)
+  }
+}
+```
 
 ## State
 

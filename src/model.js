@@ -16,6 +16,7 @@ import {
   assign,
   isUndefined,
   inObject,
+  uniqueArray,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -115,6 +116,10 @@ export class Model {
     return {}
   }
 
+  views() {
+    return []
+  }
+
   init(data) {
     if (this.__init) {
       return
@@ -134,55 +139,48 @@ export class Model {
 
     // views
     const views = {}
+    const methods = uniqueArray([...this.views(), 'required', 'disabled', 'readonly', 'hidden'])
     keys.forEach((key) => {
-      const { extra = {} } = this.$schema[key]
-      const view = Object.defineProperties({}, {
-        // patch extra
-        ...map(extra, (value, key) => {
-          return {
-            get: () => {
-              const descriptor = Object.getOwnPropertyDescriptor(extra, key)
-              // support getter
-              if (descriptor && descriptor.get) {
-                const value = descriptor.get.call(this)
-                return value
-              }
-              else if (descriptor && descriptor.value) {
-                return descriptor.value
-              }
-              else {
-                return value
-              }
-            },
-            enumerable: true,
-          }
-        }),
+      const viewDef = {
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
-          enumerable: true,
-        },
-        required: {
-          get: () => this.$schema.required(key, this),
-          enumerable: true,
-        },
-        disabled: {
-          get: () => this.$schema.disabled(key, this),
-          enumerable: true,
-        },
-        readonly: {
-          get: () => this.$schema.readonly(key, this),
-          enumerable: true,
-        },
-        hidden: {
-          get: () => this.$schema.$determine(key, 'hidden', this)(false),
           enumerable: true,
         },
         errors: {
           get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
           enumerable: true,
         },
+      }
+
+      const def = this.$schema[key]
+      methods.forEach((method) => {
+        if (!inObject(method, def)) {
+          return
+        }
+
+        const node = def[method]
+
+        viewDef[method] = {
+          get: () => {
+            // support getter
+            const descriptor = Object.getOwnPropertyDescriptor(def, method)
+            if (descriptor && descriptor.get) {
+              const value = descriptor.get.call(this)
+              return value
+            }
+
+            if (isFunction(node)) {
+              return this.$schema.$determine(key, method, this)()
+            }
+
+            return node
+          },
+          enumerable: true,
+        }
       })
+
+      const view = Object.defineProperties({}, viewDef)
       define(views, key, {
         value: view,
         enumerable: true,
