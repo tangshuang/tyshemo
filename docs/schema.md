@@ -75,11 +75,6 @@ const schema = new Schema({
     // optional, function or boolean or string, if `disabled` is true, you will not be able to change value by using `set` (however `assign` works), when you invoke `validate`, the validators will be ignored, and when you invoke `export`, the `drop` option will be set to be `true` automaticly
     disabled: Boolean,
 
-    // the difference between `disabled`, `readonly` and `hidden`:
-    // readonly means the property can only be read/validate/formulate, but could not be changed.
-    // disabled means the property can only be read, but could not be changed, and will be drop when validate and formulate
-    // hidden means the property does not show in view, but can be changed and formulated
-
     // optional, when an error occurs caused by this property, what to do with the error
     catch: (error) => {},
 

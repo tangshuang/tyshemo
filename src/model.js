@@ -37,37 +37,56 @@ import _Store from './store.js'
  */
 export class Model {
   constructor(data = {}) {
-    // bind schema onError method
-    class Schema extends _Schema {}
-    Schema.prototype.onError = this.onError.bind(this)
-
-    // create schema
-    const schema = this.schema()
-    const defs = map(schema, (def) => {
-      /**
-       * class SomeModel extends Model {
-       *   static some = OtherModel
-       * }
-       */
-      if (isInheritedOf(def, Model)) {
-        return convertModelToSchemaDef(def, false)
-      }
-
-      /**
-       * class SomeModel extends Model {
-       *   static some = [OtherModel]
-       * }
-       */
-      if (isArray(def) && isInheritedOf(def[0], Model)) {
-        return convertModelToSchemaDef(def[0], true)
-      }
-
-      return def
-    })
-    define(this, '$schema', new Schema(defs))
-
-    // create store
     const $this = this
+
+    /**
+     * create schema
+     */
+    class Schema extends _Schema {
+      constructor(defs) {
+        defs = map(defs, (def) => {
+          if (!isObject(def)) {
+            return
+          }
+
+          /**
+           * class SomeModel extends Model {
+           *   static some = OtherModel
+           * }
+           */
+          if (isInheritedOf(def, Model)) {
+            return convertModelToSchemaDef(def, false)
+          }
+
+          /**
+           * class SomeModel extends Model {
+           *   static some = [OtherModel]
+           * }
+           */
+          if (isArray(def) && isInheritedOf(def[0], Model)) {
+            return convertModelToSchemaDef(def[0], true)
+          }
+
+          return def
+        })
+        super(defs)
+      }
+      onError(...args) {
+        $this.onError(...args)
+      }
+    }
+    // create schema
+    let schema = this.schema(Schema)
+    // support schema instance or object
+    if (!isInstanceOf(schema, _Schema)) {
+      schema = new Schema(schema)
+    }
+    define(this, '$schema', schema)
+
+
+    /**
+     * create store
+     */
     class Store extends _Store {
       dispatch(keyPath, next, prev, force) {
         const notify = super.dispatch(keyPath, next, prev, force)
@@ -80,6 +99,7 @@ export class Model {
     }
     const store = new Store()
     define(this, '$store', store)
+
 
     this.init(data)
     this.onInit()
