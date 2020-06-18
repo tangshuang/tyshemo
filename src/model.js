@@ -196,10 +196,9 @@ export class Model {
     })
 
     // create changed, so that it's easy to find out whether the data has changed
-    define(this.$views, '$changed', () => {
-      return keys.some((key) => {
-        return this.$views[key].changed
-      })
+    define(this.$views, '$changed', {
+      get: () => keys.some((key) => this.$views[key].changed),
+      set: (status) => keys.forEach(key => this.$views[key].changed = !!status)
     })
 
     // $data
