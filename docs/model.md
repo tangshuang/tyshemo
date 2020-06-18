@@ -28,12 +28,12 @@ class MyModel extends Model {
 
 As you seen, we create a class extends from Model and define static properties on the class to define each property's schema. Notice that, the basic information is the same with what you learn in [Schema](schema.md).
 
-
 It supports sub-model too, for example:
 
 ```js
 class ParentModel extends Model {
   static child = ChildModel // use ChildModel directly, it will be transformed to a schema definition
+  static children = [ChildModel] // use as a ChildModel list
 }
 ```
 
@@ -86,7 +86,7 @@ class SomeModel extends Model {
 
 ## State
 
-When you define a Model, in fact, you are define some Domain Model. However, Domain Model in some cases need to have dependencies with state, and this state may be changed by business code. So we provide a `state` define way.
+When you define a Model, in fact, you are defining a Domain Model. However, Domain Model in some cases need to have dependencies with state, and this state may be changed by business code. So we provide a `state` define way.
 
 ```js
 class SomeModel extends Model {
@@ -123,7 +123,7 @@ model.set('isFund', false)
 
 The properties of state are not in schema, however they are on model, you can update them and trigger watchers. You should not delete them.
 `state()` should must return a pure new object, should not be shared from global.
-The return state object will be used as default state each time new data stored into model (initialize and restore).
+The return state object will be used as default state each time new data restored into model (`init` and `restore`).
 
 ## Instance
 
@@ -136,13 +136,13 @@ const model = new SomeModel() // this will use `default` meta to create values
 When you initialize, you can pass default data into it.
 
 ```js
-const tomy = new SomeModel({
+const model = new SomeModel({
   name: 'tomy',
   age: 10,
 }) // other fileds will use `default` meta to create values
 ```
 
-Then `tomy` will has the default fields' values. `tomy.name === 'tomy'`.
+Then `model` will has the default fields' values. `tomy.name === 'tomy'`.
 
 Now, let's look into the instance, how to use Model to operate data.
 
@@ -159,13 +159,15 @@ const { age } = $views
 // { value, required, disabled, readonly, hidden, errors, ...metas }
 ```
 
-Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drive state.
+Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drived by state.
 
 ```html
 <label>{{age.label}}</label>
 <input v-model="age.value" />
 <span v-if="age.required">Required</span>
 ```
+
+**view.value**
 
 *Notice: Change `value` on a field view will trigger watch callbacks*
 
@@ -182,10 +184,7 @@ class MyModel extends Model {
   }
 
   metas() {
-    return [
-      'label',
-      'placeholder',
-    ]
+    return ['label', 'placeholder'] // patch `label` and `placeholder` metas into `$views`
   }
 }
 ```
@@ -223,19 +222,38 @@ console.log(model.$views.some.placeholder) // undefined
 The `errors` property on view is an array.
 The array contains errors which are only from `validators`, not contains those from `requried` and type checking.
 
-### $errors
+```js
+console.log(model.$views.some.errors) // []
+```
 
-`$errros` conbime all view.errors together, so that you can easily check whether current model have some fileds which not pass validators.
+**$views.$errors**
 
-Notice, `$errors` only contains from `validators` meta, if you want to get all errors which contains `required` and type checking results, you should invoke `validate()` method directly.
+`$views.$errros` conbime all `view.errors` together, so that you can easily check whether current model have some fileds which not pass validators.
+
+Notice, `$views.$errors` only contains from `validators` meta, if you want to get all errors which contains `required` and type checking results, you should invoke `model.validate()` method directly.
+
+**view.changed**
+
+For some reason, you may need a state to record changing status. `view.changed` will be true after you change the view's value at the first time.
+
+It is useful in forms:
+
+```html
+<label>
+  <input v-model="some.value" />
+  <span v-if="some.changed && some.errors.length">{{some.errors[0].message}}</span>
+</label>
+```
+
+In this block code, we show error message only after the value of `some` changed.
 
 ### Read
 
-To read data on a model instance, you have two ways.
+To read data on a model instance, you have 3 ways.
 
-**Properties**
+**Field**
 
-Read properties from model instance directly.
+Read fields from model instance directly.
 
 ```js
 const { name, age } = model
@@ -259,11 +277,11 @@ const age = model.$views.age.value
 
 ### Update
 
-To update data on a model instance, you have multiple ways too.
+To update data on a model instance, you have 4 ways too.
 
-**Properties**
+**Field**
 
-Set value on properties directly.
+Set feild value on model directly.
 
 ```js
 model.age = 20
@@ -271,11 +289,13 @@ model.age = 20
 
 *Notice: Change model properties will trigger watch callbacks*
 
-**set(key, value)**
+**set(key, value, force)**
 
 ```js
 model.set('age', 20)
 ```
+
+*force* -> when it is set to be true, `set` will ignore `readonly` and `disabled`.
 
 **update(data)**
 
@@ -411,7 +431,7 @@ class StudentModel extends Model {
 
 `onParse` is invoked before data comes into model, you chan do some transforming here.
 
-### Formulate
+### Export
 
 After all, you want to get whole data for submit to your backend api, you should invoke one of `toJSON` `toParams` or `toFormData` to generate.
 

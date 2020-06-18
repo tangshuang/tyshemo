@@ -19,7 +19,7 @@ const json = {
     type: 'number',
   },
 }
-const SomeMode = parser.parse(json)
+const SomeModel = parser.parse(json)
 ```
 
 The instance of ModelParser has only `parse` method. The method receive a json and return a Model.
