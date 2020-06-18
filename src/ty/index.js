@@ -4,6 +4,7 @@ export { Prototype } from './prototype.js'
 export {
   Null,
   Undefined,
+  None,
   Any,
   Numeric,
   Int,

@@ -43,6 +43,7 @@ And we have some prototypes:
 - String128
 - Null: null
 - Undefined: undefined
+- None: null | undefined
 - Any
 
 These prototypes can be import from the package:

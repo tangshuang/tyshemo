@@ -4,6 +4,7 @@ import {
   isNumeric,
   isNumber,
   isString,
+  isNone,
 } from 'ts-fns'
 
 import Prototype from './prototype.js'
@@ -16,6 +17,11 @@ export const Null = /*#__PURE__*/new Prototype({
 export const Undefined = /*#__PURE__*/new Prototype({
   name: 'Undefined',
   validate: isUndefined,
+})
+
+export const None = /*#__PURE__*/new Prototype({
+  name: 'None',
+  validate: isNone,
 })
 
 export const Numeric = /*#__PURE__*/new Prototype({
