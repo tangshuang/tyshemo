@@ -13,6 +13,7 @@ import {
   isNumber,
   isUndefined,
   interpolate,
+  inObject,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
@@ -116,12 +117,12 @@ export class Schema {
   }
 
   /**
-   * get message for some method
+   * get message for some meta
    * @param {*} key
-   * @param {*} method
+   * @param {*} meta
    * @param {*} context
    */
-  $message(key, method, context) {
+  $message(key, meta, context) {
     return (givenMessage) => {
       const def = this[key]
 
@@ -129,13 +130,13 @@ export class Schema {
         return ''
       }
 
-      const node = def[method]
+      const node = def[meta]
 
       if (!node) {
         return ''
       }
 
-      const defualtMessage = interpolate(Schema.defualtMessages[method] || `{key} ${method} error.`, { key })
+      const defualtMessage = interpolate(Schema.defualtMessages[meta] || `{key} ${meta} error.`, { key })
       const { catch: handle } = def
 
       let finalMessage = defualtMessage
@@ -161,7 +162,7 @@ export class Schema {
         // required: { message() { return 'xxx' } }
         if (isFunction(message)) {
           finalMessage = this._trydo(
-            () => message.call(context, method),
+            () => message.call(context, meta),
             (error) => isFunction(handle) && handle.call(context, error) || defualtMessage,
             {
               key,
@@ -181,12 +182,12 @@ export class Schema {
   }
 
   /**
-   * get determine result for some method
+   * get determine result for some meta
    * @param {*} key
-   * @param {*} method
+   * @param {*} meta
    * @param {*} context
    */
-  $determine(key, method, context) {
+  $determine(key, meta, context) {
     return (fallbackRes) => {
       const def = this[key]
 
@@ -194,33 +195,20 @@ export class Schema {
         return fallbackRes
       }
 
-      const node = def[method]
-
-      if (!node) {
+      if (!inObject(meta, def)) {
         return fallbackRes
       }
 
+      const node = def[meta]
       const { catch: handle } = def
 
-      if (isString(node)) {
-        return node
-      }
 
-      if (isBoolean(node)) {
-        return node
-      }
-
-      if (isFunction(node)) {
-        return this._trydo(
-          () => node.call(context),
-          (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
-          {
-            key,
-            option: method,
-          },
-        )
-      }
-
+      /**
+       * node is a object like: {
+       *   determine: true,
+       *   message: '{key} should be required',
+       * }
+       */
       if (isObject(node)) {
         const { determine } = node
         if (isFunction(determine)) {
@@ -229,16 +217,33 @@ export class Schema {
             (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
             {
               key,
-              option: method,
+              option: meta,
             },
           )
         }
-        else if (isBoolean(determine)) {
+        else {
           return determine
         }
       }
 
-      return fallbackRes
+      /**
+       * node is a function
+       */
+      if (isFunction(node)) {
+        return this._trydo(
+          () => node.call(context),
+          (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
+          {
+            key,
+            option: meta,
+          },
+        )
+      }
+
+      /**
+       * node is a normal value
+       */
+      return node
     }
   }
 

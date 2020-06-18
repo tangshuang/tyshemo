@@ -16,7 +16,7 @@ import {
   assign,
   isUndefined,
   inObject,
-  uniqueArray,
+  isNull,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -46,10 +46,6 @@ export class Model {
     class Schema extends _Schema {
       constructor(defs) {
         defs = map(defs, (def) => {
-          if (!isObject(def)) {
-            return
-          }
-
           /**
            * class SomeModel extends Model {
            *   static some = OtherModel
@@ -116,8 +112,8 @@ export class Model {
     return {}
   }
 
-  views() {
-    return []
+  metas() {
+    return {}
   }
 
   init(data) {
@@ -139,7 +135,21 @@ export class Model {
 
     // views
     const views = {}
-    const methods = uniqueArray([...this.views(), 'required', 'disabled', 'readonly', 'hidden'])
+    let metas = this.metas()
+
+    if (isArray(metas)) {
+      const metaList = metas
+      metas = {}
+      metaList.forEach((meta) => {
+        metas[meta] = null
+      })
+    }
+
+    const defaultMetas = ['required', 'disabled', 'readonly', 'hidden']
+    defaultMetas.forEach((meta) => {
+      metas[meta] = false
+    })
+
     keys.forEach((key) => {
       const viewDef = {
         value: {
@@ -154,28 +164,13 @@ export class Model {
       }
 
       const def = this.$schema[key]
-      methods.forEach((method) => {
-        if (!inObject(method, def)) {
+      each(metas, (fallbackRes, meta) => {
+        if (!inObject(meta, def) && isNull(fallbackRes)) {
           return
         }
 
-        const node = def[method]
-
-        viewDef[method] = {
-          get: () => {
-            // support getter
-            const descriptor = Object.getOwnPropertyDescriptor(def, method)
-            if (descriptor && descriptor.get) {
-              const value = descriptor.get.call(this)
-              return value
-            }
-
-            if (isFunction(node)) {
-              return this.$schema.$determine(key, method, this)()
-            }
-
-            return node
-          },
+        viewDef[meta] = {
+          get: () => this.$schema.$determine(key, meta, this)(fallbackRes),
           enumerable: true,
         }
       })
@@ -377,17 +372,19 @@ export class Model {
         return
       }
 
-      // use data property if exist
-      if (inObject(key, data)) {
-        return
-      }
-
+      // define state here so that we can invoke this.state() only once when initialize
       define(this, key, {
         get: () => this.get(key),
         set: (value) => this.set(key, value),
         enumerable: true,
         configurable: true,
       })
+
+      // use data property if exist, use data property directly
+      if (inObject(key, data)) {
+        params[key] = data[key]
+        return
+      }
 
       const descriptor = Object.getOwnPropertyDescriptor(state, key)
       if (descriptor && (descriptor.get || descriptor.set)) {
@@ -400,23 +397,6 @@ export class Model {
       else {
         params[key] = value
       }
-    })
-
-    // those on data but not on schema
-    // these should be patched on model, because we sometimes need them as original data
-    each(data, (value, key) => {
-      if (inObject(key, params)) {
-        return
-      }
-
-      define(this, key, {
-        get: () => this.get(key),
-        set: (value) => this.set(key, value),
-        enumerable: true,
-        configurable: true,
-      })
-
-      params[key] = value
     })
 
     // delete the outdate properties

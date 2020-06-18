@@ -187,12 +187,14 @@ describe('Model', () => {
     class SomeModel extends Model {
       static name = {
         default: '',
-        extra: {
-          label: 'Name',
-          get type() {
-            return typeof this.name
-          },
+        label: 'Name',
+        type() {
+          return typeof this.name
         },
+      }
+
+      metas() {
+        return ['label', 'type']
       }
     }
     const some = new SomeModel()
