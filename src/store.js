@@ -143,7 +143,8 @@ export class Store {
   }
 
   set(keyPath, value) {
-    return assign(this.state, keyPath, value)
+    assign(this.state, keyPath, value)
+    return value
   }
 
   del(keyPath) {
@@ -383,10 +384,10 @@ export class Store {
     this._dep.pop()
   }
 
-  watch(keyPath, fn, deep = false) {
+  watch(keyPath, fn, deep = false, context) {
     const items = this._watchers
     const key = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
-    items.push({ key, fn, deep })
+    items.push({ key, fn, deep, context })
     return this
   }
 
@@ -445,7 +446,7 @@ export class Store {
     items.forEach((item) => {
       const target = item.key
       const key = keyPath
-      item.fn.call(this.state, { target, key, value, next, prev, active, invalid })
+      item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid })
     })
   }
 

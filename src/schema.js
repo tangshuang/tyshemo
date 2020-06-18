@@ -72,6 +72,7 @@ import { Ty, Rule } from './ty/index.js'
  *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
  *     readonly: { determine, message },
  *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when export
+ *     // disabled = readonly + drop + no validation
  *     disabled: { determine, message },
  *
  *     // the difference between `disabled` and `readonly`:
@@ -96,23 +97,25 @@ export class Schema {
     })
   }
 
+  $has(key) {
+    return !!this[key]
+  }
+
   /**
    * get default value by using `default` option
    * @param {*} key
    */
   $default(key) {
-    return () => {
-      const def = this[key]
-      const { default: defaultValue } = def
-      if (isFunction(defaultValue)) {
-        return defaultValue()
-      }
-      else if (isObject(defaultValue) || isArray(defaultValue)) {
-        return clone(defaultValue)
-      }
-      else {
-        return defaultValue
-      }
+    const def = this[key]
+    const { default: defaultValue } = def
+    if (isFunction(defaultValue)) {
+      return defaultValue()
+    }
+    else if (isObject(defaultValue) || isArray(defaultValue)) {
+      return clone(defaultValue)
+    }
+    else {
+      return defaultValue
     }
   }
 
@@ -166,7 +169,7 @@ export class Schema {
             (error) => isFunction(handle) && handle.call(context, error) || defualtMessage,
             {
               key,
-              option: 'message',
+              meta: 'message',
             },
           )
         }
@@ -176,8 +179,7 @@ export class Schema {
         }
       }
 
-      const outputMessage = interpolate(finalMessage, { key })
-      return outputMessage
+      return finalMessage
     }
   }
 
@@ -217,7 +219,7 @@ export class Schema {
             (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
             {
               key,
-              option: meta,
+              meta,
             },
           )
         }
@@ -235,7 +237,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
           {
             key,
-            option: meta,
+            meta,
           },
         )
       }
@@ -278,7 +280,7 @@ export class Schema {
         (error) => isFunction(handle) && handle.call(context, error) || value,
         {
           key,
-          option: 'getter',
+          meta: 'getter',
         },
       )
       return coming
@@ -289,12 +291,12 @@ export class Schema {
   }
 
   /**
-   * get new value by given value, if not match type or any other rules, return default value
+   * get new value by given value
    * @param {*} key
    * @param {*} value
    * @param {*} context
    */
-  assign(key, value, context) {
+  $set(key, value, context) {
     const def = this[key]
 
     if (!def) {
@@ -306,9 +308,9 @@ export class Schema {
     if (compute) {
       this.onError({
         key,
-        action: 'assign',
+        action: '$set',
         value,
-        compute,
+        compute: true,
         message: this.$message(key, 'compute', context)(),
       })
       const next = compute.call(context)
@@ -321,7 +323,7 @@ export class Schema {
         (error) => isFunction(handle) && handle.call(context, error) || value,
         {
           key,
-          option: 'setter',
+          meta: 'setter',
         },
       )
     }
@@ -337,17 +339,12 @@ export class Schema {
       if (error) {
         this.onError({
           key,
-          action: 'assign',
+          action: '$set',
           value,
-          type,
+          type: true,
           error,
           message: this.$message(key, 'type', context)(message),
         })
-
-        // use `default` option to generate next value
-        const next = this.$default(key)()
-
-        return next
       }
     }
 
@@ -355,7 +352,7 @@ export class Schema {
   }
 
   /**
-   * get new value by `next`, if not match type or any other rules, return `prev`
+   * get new value, with `disabled` `readonly` checking
    * @param {*} key
    * @param {*} next
    * @param {*} prev
@@ -367,8 +364,6 @@ export class Schema {
     if (!def) {
       return next
     }
-
-    const { setter, compute, catch: handle, type, message } = def
 
     const disabled = this.disabled(key, context)
     if (disabled) {
@@ -396,53 +391,7 @@ export class Schema {
       return prev
     }
 
-    if (compute) {
-      this.onError({
-        key,
-        action: 'set',
-        next,
-        prev,
-        compute,
-        message: this.$message(key, 'compute', context)(),
-      })
-      return prev
-    }
-
-    let value = next
-    if (isFunction(setter)) {
-      value = this._trydo(
-        () => setter.call(context, next),
-        (error) => isFunction(handle) && handle.call(context, error) || prev,
-        {
-          key,
-          option: 'setter',
-        },
-      )
-    }
-
-    // type checking
-    if (type) {
-      // make rule works
-      const target = {}
-      if (!isUndefined(value)) {
-        Object.assign(target, { [key]: value })
-      }
-      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
-      if (error) {
-        this.onError({
-          key,
-          action: 'set',
-          value,
-          next,
-          prev,
-          type,
-          error,
-          message: this.$message(key, 'type', context)(message),
-        })
-        return prev
-      }
-    }
-
+    const value = this.$set(key, next, context)
     return value
   }
 
@@ -470,7 +419,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || false,
           {
             key,
-            option: 'validators[' + index + '].determine',
+            meta: 'validators[' + index + '].determine',
           },
           dontTry,
         )
@@ -484,7 +433,7 @@ export class Schema {
         (error) => isFunction(handle) && handle.call(context, error) || true,
         {
           key,
-          option: 'validators[' + index + '].validate',
+          meta: 'validators[' + index + '].validate',
         },
         dontTry,
       )
@@ -509,7 +458,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || msg || `${key} did not pass validators[${index}]`,
           {
             key,
-            option: 'validators[' + index + '].message',
+            meta: 'validators[' + index + '].message',
           },
           dontTry,
         )
@@ -557,6 +506,11 @@ export class Schema {
     }
 
     return (...args) => {
+      // ignore if disabled
+      if (this.disabled(key, context)) {
+        return []
+      }
+
       const first = args[0]
       // array, pass custom valiators which is not in schema, i.e. schema.$validate('some', value, model)([{ validate: v => v > 0, message: 'should > 0' }])
       if (isArray(first) && first[0] && typeof first[0] === 'object') {
@@ -595,7 +549,7 @@ export class Schema {
       return errors
     }
 
-    // drop if disabled
+    // ignore if disabled
     if (this.disabled(key, context)) {
       return errors
     }
@@ -626,7 +580,7 @@ export class Schema {
         errors.push({
           key,
           value,
-          type,
+          type: true,
           error,
           message: this.$message(key, 'type', context)(message),
         })
@@ -657,13 +611,13 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
-            option: 'create',
+            meta: 'create',
           },
         )
       }
 
       if (isUndefined(coming)) {
-        coming = this.$default(key)()
+        coming = this.$default(key)
       }
 
       // check type, and throw error if it is not match the type
@@ -678,7 +632,7 @@ export class Schema {
             key,
             action: 'parse',
             value: coming,
-            type,
+            type: true,
             error,
             message: this.$message(key, 'type', context)(message),
           })
@@ -709,7 +663,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || {},
           {
             key,
-            option: 'flat',
+            meta: 'flat',
           },
         )
         Object.assign(patch, res)
@@ -730,7 +684,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || false,
           {
             key,
-            option: 'drop',
+            meta: 'drop',
           },
         )
         if (bool) {
@@ -744,7 +698,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
-            option: 'map',
+            meta: 'map',
           },
         )
         output[key] = res
@@ -776,9 +730,7 @@ export class Schema {
     }
   }
 
-  onError(e) {
-    console.error(e)
-  }
+  onError() {}
 
   static defualtMessages = {
     type: `{key} does not match type.`,

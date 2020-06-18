@@ -121,7 +121,7 @@ const model = new SomeModel({
 model.set('isFund', false)
 ```
 
-The properties of state are not in schema, however they are on model, you can update them. You should not delete them.
+The properties of state are not in schema, however they are on model, you can update them and trigger watchers. You should not delete them.
 `state()` should must return a pure new object, should not be shared from global.
 The return state object will be used as default state each time new data stored into model (initialize and restore).
 
@@ -130,7 +130,7 @@ The return state object will be used as default state each time new data stored 
 A Model is an abstract data pattern, to use the model, we should initialize a Model.
 
 ```js
-const model = new SomeModel() // this will use `default` option to create values
+const model = new SomeModel() // this will use `default` meta to create values
 ```
 
 When you initialize, you can pass default data into it.
@@ -139,7 +139,7 @@ When you initialize, you can pass default data into it.
 const tomy = new SomeModel({
   name: 'tomy',
   age: 10,
-}) // other fileds will use `default` option to create values
+}) // other fileds will use `default` meta to create values
 ```
 
 Then `tomy` will has the default fields' values. `tomy.name === 'tomy'`.
@@ -155,8 +155,8 @@ Notice, `$views` only contains fields which defined in schema.
 const { $views } = model
 const { age } = $views
 
-// Here `age` is called a field view. What's on age? =>
-// { value, required, disabled, readonly, hidden, errors, ...extra }
+// Here `age` is called 'field view' (short as 'view'). What's on age? =>
+// { value, required, disabled, readonly, hidden, errors, ...metas }
 ```
 
 Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drive state.
@@ -169,39 +169,65 @@ Why I provide a `$views` property and give structure like this? Because in most 
 
 *Notice: Change `value` on a field view will trigger watch callbacks*
 
-**extra**
+**metas()**
 
-And model supports another schema option `extra`. For example:
+Model supports other metas in schema by use `metas` method. For example:
 
 ```js
 class MyModel extends Model {
   static some = {
     default: '',
-    extra: {
-      label: 'name',
-      placeholder: 'Input Name',
-    },
+    label: 'name',
+    placeholder: 'Input Name',
+  }
+
+  metas() {
+    return [
+      'label',
+      'placeholder',
+    ]
   }
 }
 ```
 
-`extra` option is used to provide other information so that you can find them on `$views`.
+The return value is used to provide other information so that you can find them on `$views`.
 
 ```js
 const model = new MyModel()
 console.log(model.$views.some.label) // name
 ```
 
+If you want to make a meta force patched into view, you should return an object in `metas`:
+
+```js
+class MyModel extends Model {
+  static some = {
+    default: '',
+  }
+
+  metas() {
+    return {
+      placeholder: null, // set null to be not force used, `placeholder` property is not existing when you have not given
+      label: '', // `label` property will always exist on view, if you have not given, it will be an empty string
+    }
+  }
+}
+
+const model = new MyModel()
+console.log(model.$views.some.label) // ''
+console.log(model.$views.some.placeholder) // undefined
+```
+
 **view.errors**
 
-The `errors` property on field view is an array.
-The array contains errors which is only from `validators`, not contains those from `requried` and type checking.
+The `errors` property on view is an array.
+The array contains errors which are only from `validators`, not contains those from `requried` and type checking.
 
-**$views.$errors**
+### $errors
 
-`$views.$errros` conbime all view.errors tegother, so that you can easily check whether current model have some fileds which not pass validators.
+`$errros` conbime all view.errors together, so that you can easily check whether current model have some fileds which not pass validators.
 
-Please explore `$views` by yourself next.
+Notice, `$errors` only contains from `validators` meta, if you want to get all errors which contains `required` and type checking results, you should invoke `validate()` method directly.
 
 ### Read
 
@@ -278,7 +304,7 @@ model.watch('age', (e) => console.log(e), true)
 
 Its parameters has bee told in `Store` [here](store.md).
 
-In schema, it supports `watch` option, which will listen the field's change, and invoke the function.
+In schema, it supports `watch` meta, which will listen the field's change, and invoke the function.
 
 ```js
 class MyModel extends Model {
@@ -351,7 +377,7 @@ So that each time we create a model instance or invoke `restore` method, name wi
 
 **fromJSON**
 
-`restore` method will override the whole model data directly, `fromJSON` method will use `create` option in schema to create data and then use created data for restore.
+`restore` method will override the whole model data directly, `fromJSON` method will use `create` meta in schema to create data and then use created data for restore.
 
 ```js
 model.fromJSON({
@@ -393,7 +419,7 @@ After all, you want to get whole data for submit to your backend api, you should
 const data = model.toJSON()
 ```
 
-Data here will be generated with `drop` `map` and `flat` options in schema. Read [here](schema.md) to learn more.
+Data here will be generated with `drop` `map` and `flat` metas in schema. Read [here](schema.md) to learn more.
 
 - drop: if drop returns true, it means this field will not in `data`
 - map: convert field value to another value

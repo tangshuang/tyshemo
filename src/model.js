@@ -175,7 +175,9 @@ export class Model {
         }
       })
 
-      const view = Object.defineProperties({}, viewDef)
+      const view = Object.defineProperties({
+        changed: false, // whether the field has changed
+      }, viewDef)
       define(views, key, {
         value: view,
         enumerable: true,
@@ -183,14 +185,21 @@ export class Model {
     })
     define(this, '$views', views)
 
-    // create errors on views, so that is's easy and quick to know the model's current status
+    // create errors, so that is's easy and quick to know the model's current status
     define(this.$views, '$errors', () => {
       const errors = []
-      each(this.$schema, (def, key) => {
+      keys.map((key) => {
         const errs = this.$views[key].errors
         errors.push(...errs)
       })
       return errors
+    })
+
+    // create changed, so that it's easy to find out whether the data has changed
+    define(this.$views, '$changed', () => {
+      return keys.some((key) => {
+        return this.$views[key].changed
+      })
     })
 
     // $data
@@ -213,6 +222,10 @@ export class Model {
     define(this, '__init', true)
   }
 
+  /**
+   * get field value, with formatting by `getter`
+   * @param {array|string} keyPath
+   */
   get(keyPath) {
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.shift()
@@ -224,7 +237,13 @@ export class Model {
     return output
   }
 
-  set(keyPath, next) {
+  /**
+   * set field value, with `readonly`, `disabled`, `editable`, `type` checking, and formatting by `setter`
+   * @param {array|string} keyPath
+   * @param {*} next
+   * @param {boolean} force force set, ignore `readonly` & `disabled`
+   */
+  set(keyPath, next, force) {
     if (!this.$store.editable) {
       return parse(this, keyPath)
     }
@@ -248,9 +267,10 @@ export class Model {
     this._check(key)
 
     const prev = this.$store.get(key)
-    const value = this.$schema.set(key, next, prev, this)
+    const value = force ? this.$schema.$set(key, next, this) : this.$schema.set(key, next, prev, this)
     const coming = this.$store.set(key, value)
 
+    this.$views[key].changed = true
     this._ensure(key)
 
     return coming
@@ -298,7 +318,7 @@ export class Model {
   }
 
   watch(key, fn) {
-    this.$store.watch(key, fn, true)
+    this.$store.watch(key, fn, true, this)
     return this
   }
 
@@ -359,10 +379,10 @@ export class Model {
       }
       else if (inObject(key, data)) {
         const value = data[key]
-        params[key] = this.$schema.assign(key, value, this)
+        params[key] = value
       }
       else {
-        params[key] = schema.$default(key)()
+        params[key] = schema.$default(key)
       }
     })
 
@@ -478,9 +498,7 @@ export class Model {
     return data
   }
 
-  onError(e) {
-    console.error(e)
-  }
+  onError() {}
 
   lock() {
     this.$store.editable = true

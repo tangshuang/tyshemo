@@ -18,7 +18,7 @@
       <el-form-item :label="views.age.label" :class="{ 'is-required': views.age.required }">
         <el-input v-model="views.age.value"></el-input>
         <div class="el-form-item__error">
-          <span v-for="error in views.age.errors" style="margin-right: 20px;">{{error.message}}</span>
+          <span v-if="views.age.changed" v-for="error in views.age.errors" style="margin-right: 20px;">{{error.message}}</span>
         </div>
       </el-form-item>
 
@@ -68,16 +68,14 @@
           message: 'name length should must less than 12',
         },
       ],
-      extra: {
-        label: 'Name',
-      },
+      label: 'Name',
     }
 
     static age = {
       type: Number,
       default: 0,
-      getter: v => v > 0 ? v+'' : '',
-      setter: v => +v,
+      getter: v => v !== 0 ? v+'' : '',
+      setter: v => !isNaN(+v) ? +v : v,
       validators: [
         {
           validate: v => v > 0,
@@ -92,22 +90,25 @@
           message: 'human will never live for 150+ years',
         },
       ],
-      extra: {
-        label: 'Age',
+      label: 'Age',
+      watch({ value }) {
+        // when age < 20, reset married
+        if (value < 20) {
+          this.set('married', null, true) // force reset to be null
+          // this.married = null
+        }
       },
     }
 
     static sex = {
       type: new Range({ min: 1, max: 2 }),
       default: 1,
-      extra: {
-        label: 'Sex',
-        placeholder: 'Choose one',
-        options: [
-          { value: 1, label: 'M' },
-          { value: 2, label: 'F' },
-        ],
-      },
+      label: 'Sex',
+      placeholder: 'Choose one',
+      options: [
+        { value: 1, label: 'M' },
+        { value: 2, label: 'F' },
+      ],
     }
 
     static married = {
@@ -117,26 +118,23 @@
       hidden() {
         return this.age < 20
       },
-      drop() {
+      disabled() {
         return this.age < 20
       },
-      extra: {
-        label: 'Married?',
-        placeholder: 'Choose one',
-        options: [
-          { value: false, label: 'No' },
-          { value: true, label: 'Yes' },
-        ],
-      },
+      label: 'Married?',
+      placeholder: 'Choose one',
+      options: [
+        { value: false, label: 'No' },
+        { value: true, label: 'Yes' },
+      ],
     }
 
-    onInit() {
-      // when age < 20, reset married
-      this.watch('age', () => {
-        if (this.age < 20) {
-          this.married = null
-        }
-      })
+    metas() {
+      return ['label', 'placeholder', 'options']
+    }
+
+    onError(e) {
+      console.error(e)
     }
   }
 
@@ -148,6 +146,7 @@
     data() {
       return {
         views: form.$views,
+        errors: form.$errors,
       }
     },
     methods: {
@@ -155,12 +154,10 @@
         const errors = form.validate()
         if (errors.length) {
           console.log(errors)
-          errors.forEach((error) => {
-            const { message } = error
-            this.$message({
-              type: 'error',
-              message,
-            })
+          const { message } = errors[0]
+          this.$message({
+            type: 'error',
+            message,
           })
         }
         else {
@@ -168,7 +165,7 @@
             type: 'success',
             message: 'It is ok to submit.',
           })
-          const data = form.toJson()
+          const data = form.toJSON()
           console.log(data)
         }
       }

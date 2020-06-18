@@ -115,7 +115,7 @@ describe('Schema', () => {
       name: {
         default: '',
         type: String,
-        message: '{key} should be string.',
+        message: 'name should be string.',
       },
 
       sex: {

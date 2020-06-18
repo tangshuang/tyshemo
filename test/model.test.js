@@ -178,7 +178,7 @@ describe('Model', () => {
     const some = new SomeModel()
 
     some.some = 12
-    expect(some.some).toBe('')
+    expect(some.some).toBe(12) // even though type checking fail, value will be set into model
     expect(error).not.toBeNull()
     expect(error.message).toBe('it should be a string')
   })
