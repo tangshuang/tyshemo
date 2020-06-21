@@ -7,9 +7,6 @@
 - [Store](store.md)
 - [Schema](schema.md)
 - [Model](model.md)
-- tyshemo-x
-  - [TypeParser](x/type-parser.md)
-  - [TypeMocker](x/type-mocker.md)
-  - [ModelParser](x/model-parser.md)
-- [tyshemo-service](service.md)
-- [react-tyshemo](react.md)
+- [tyshemo-x](tyshemo-x.md)
+- [tyshemo-service](tyshemo-service.md)
+- [react-tyshemo](react-tyshemo.md)
