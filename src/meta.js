@@ -1,3 +1,5 @@
+import { getConstructorOf } from 'ts-fns'
+
 export class Meta {
   constructor(attrs = {}) {
     const Constructor = getConstructorOf(this)
