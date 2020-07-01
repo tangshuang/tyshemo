@@ -6,9 +6,45 @@ Model is the most important part of tyshemo, it is widely used in many situation
 ## Usage
 
 ```js
-import { Model, Enum } from 'tyshemo'
+import { Model, Meta, Enum } from 'tyshemo'
 
-class MyModel extends Model {
+class Name extends Meta {
+  static default = ''
+  static type = String
+}
+
+class Age extends Meta {
+  static default = 0
+  static type = Number
+}
+
+class Sex extends Meta {
+  static default = 'M'
+  static type = new Enum(['M', 'F'])
+}
+
+class PersonModel extends Model {
+  static name = new Name()
+  static age = new Age()
+  static sex = new Sex()
+}
+```
+
+As you seen, we create several metas which are extended from `Meta` (you can read more from [meta](meta.md)) and a model which is extended from Model.
+We use static properties on the class to define each feild's definition by given meta's instance.
+
+As metioned in [schema document](schema.md), you can pass Meta class directly into Model definition, or you can pass a normal js object too.
+
+```js
+class PersonModel extends Model {
+  static name = Name
+  static age = Age
+  static sex = Sex
+}
+```
+
+```js
+class PersonModel extends Model {
   static name = {
     default: '',
     type: String,
@@ -26,34 +62,43 @@ class MyModel extends Model {
 }
 ```
 
-As you seen, we create a class extends from Model and define static properties on the class to define each property's schema. Notice that, the basic information is the same with what you learn in [Schema](schema.md).
-
 It supports sub-model too, for example:
 
 ```js
 class ParentModel extends Model {
-  static child = ChildModel // use ChildModel directly, it will be transformed to a schema definition
+  static child = ChildModel // use ChildModel directly, it will be transformed to a meta inside
   static children = [ChildModel] // use as a ChildModel list
 }
 ```
 
 ## Schema
 
-You can return an object in `schema` method for a model so that you do not need to define static properties.
+You can return an object as Model definition in `schema` method for a model so that you do not need to define static properties and is easy to extend the model.
 
 ```js
 class SomeModel extends Model {
   schema() {
     return {
-      name: {
-        default: '',
-        type: String,
-      },
-      age: {
-        default: 0,
-        type: Number,
-      },
+      name: Name,
+      age: Age,
     }
+  }
+}
+
+class Age2 extends Age {
+  static default = Age.default
+  static type = Age.type
+  static message = 'age should be a ' + Age.type.name
+}
+
+// more easy to extends
+class OtherModel extends SomeModel {
+  schema() {
+    const schema = super.schema()
+    // use new Meta to override original definition
+    schema.age = Age2
+
+    return schema
   }
 }
 ```
@@ -130,7 +175,7 @@ The return state object will be used as default state each time new data restore
 A Model is an abstract data pattern, to use the model, we should initialize a Model.
 
 ```js
-const model = new SomeModel() // this will use `default` meta to create values
+const model = new SomeModel() // this will use `default` attr to create values
 ```
 
 When you initialize, you can pass default data into it.
@@ -139,7 +184,7 @@ When you initialize, you can pass default data into it.
 const model = new SomeModel({
   name: 'tomy',
   age: 10,
-}) // other fileds will use `default` meta to create values
+}) // other fileds will use `default` attr to create values
 ```
 
 Then `model` will has the default fields' values. `tomy.name === 'tomy'`.
@@ -156,7 +201,7 @@ const { $views } = model
 const { age } = $views
 
 // Here `age` is called 'field view' (short as 'view'). What's on age? =>
-// { value, required, disabled, readonly, hidden, errors, ...metas }
+// { value, required, disabled, readonly, hidden, errors, ...attrs }
 ```
 
 Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drived by state.
@@ -171,9 +216,9 @@ Why I provide a `$views` property and give structure like this? Because in most 
 
 *Notice: Change `value` on a field view will trigger watch callbacks*
 
-**metas()**
+**attrs()**
 
-Model supports other metas in schema by use `metas` method. For example:
+Model supports other attrs in schema by use `attrs` method. For example:
 
 ```js
 class MyModel extends Model {
@@ -183,8 +228,8 @@ class MyModel extends Model {
     placeholder: 'Input Name',
   }
 
-  metas() {
-    return ['label', 'placeholder'] // patch `label` and `placeholder` metas into `$views`
+  attrs() {
+    return ['label', 'placeholder'] // patch `label` and `placeholder` attrs into `$views`
   }
 }
 ```
@@ -196,7 +241,7 @@ const model = new MyModel()
 console.log(model.$views.some.label) // name
 ```
 
-If you want to make a meta force patched into view, you should return an object in `metas`:
+If you want to make a attr force patched into view, you should return an object in `attrs`:
 
 ```js
 class MyModel extends Model {
@@ -204,7 +249,7 @@ class MyModel extends Model {
     default: '',
   }
 
-  metas() {
+  attrs() {
     return {
       placeholder: null, // set null to be not force used, `placeholder` property is not existing when you have not given
       label: '', // `label` property will always exist on view, if you have not given, it will be an empty string
@@ -230,7 +275,7 @@ console.log(model.$views.some.errors) // []
 
 `$views.$errros` conbime all `view.errors` together, so that you can easily check whether current model have some fileds which not pass validators.
 
-Notice, `$views.$errors` only contains from `validators` meta, if you want to get all errors which contains `required` and type checking results, you should invoke `model.validate()` method directly.
+Notice, `$views.$errors` only contains from `validators` attr, if you want to get all errors which contains `required` and type checking results, you should invoke `model.validate()` method directly.
 
 **view.changed**
 
@@ -324,7 +369,7 @@ model.watch('age', (e) => console.log(e), true)
 
 Its parameters has bee told in `Store` [here](store.md).
 
-In schema, it supports `watch` meta, which will listen the field's change, and invoke the function.
+In schema, it supports `watch` attr, which will listen the field's change, and invoke the function.
 
 ```js
 class MyModel extends Model {
@@ -397,7 +442,7 @@ So that each time we create a model instance or invoke `restore` method, name wi
 
 **fromJSON**
 
-`restore` method will override the whole model data directly, `fromJSON` method will use `create` meta in schema to create data and then use created data for restore.
+`restore` method will override the whole model data directly, `fromJSON` method will use `create` attr in schema to create data and then use created data for restore.
 
 ```js
 model.fromJSON({
@@ -439,7 +484,7 @@ After all, you want to get whole data for submit to your backend api, you should
 const data = model.toJSON()
 ```
 
-Data here will be generated with `drop` `map` and `flat` metas in schema. Read [here](schema.md) to learn more.
+Data here will be generated with `drop` `map` and `flat` attrs in schema. Read [here](schema.md) to learn more.
 
 - drop: if drop returns true, it means this field will not in `data`
 - map: convert field value to another value

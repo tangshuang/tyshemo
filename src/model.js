@@ -112,7 +112,7 @@ export class Model {
     return {}
   }
 
-  metas() {
+  attrs() {
     return {}
   }
 
@@ -135,19 +135,19 @@ export class Model {
 
     // views
     const views = {}
-    let metas = this.metas()
+    let attrs = this.attrs()
 
-    if (isArray(metas)) {
-      const metaList = metas
-      metas = {}
-      metaList.forEach((meta) => {
-        metas[meta] = null
+    if (isArray(attrs)) {
+      const attrList = attrs
+      attrs = {}
+      attrList.forEach((attr) => {
+        attrs[attr] = null
       })
     }
 
-    const defaultMetas = ['required', 'disabled', 'readonly', 'hidden']
-    defaultMetas.forEach((meta) => {
-      metas[meta] = false
+    const defaultattrs = ['required', 'disabled', 'readonly', 'hidden']
+    defaultattrs.forEach((attr) => {
+      attrs[attr] = false
     })
 
     keys.forEach((key) => {
@@ -164,13 +164,13 @@ export class Model {
       }
 
       const def = this.$schema[key]
-      each(metas, (fallbackRes, meta) => {
-        if (!inObject(meta, def) && isNull(fallbackRes)) {
+      each(attrs, (fallbackRes, attr) => {
+        if (!inObject(attr, def) && isNull(fallbackRes)) {
           return
         }
 
-        viewDef[meta] = {
-          get: () => this.$schema.$determine(key, meta, this)(fallbackRes),
+        viewDef[attr] = {
+          get: () => this.$schema.$determine(key, attr, this)(fallbackRes),
           enumerable: true,
         }
       })

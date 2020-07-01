@@ -193,7 +193,7 @@ describe('Model', () => {
         },
       }
 
-      metas() {
+      attrs() {
         return ['label', 'type']
       }
     }

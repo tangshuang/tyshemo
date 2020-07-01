@@ -14,10 +14,11 @@ import {
   isUndefined,
   interpolate,
   inObject,
+  isInheritedOf,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
-
+import Meta from './meta.js'
 
 /**
  * @example const schema = new Schema({
@@ -85,13 +86,19 @@ import { Ty, Rule } from './ty/index.js'
  * })
  */
 export class Schema {
-  constructor(defs) {
-    each(defs, (def, key) => {
-      if (!isObject(def)) {
+  constructor(metas) {
+    each(metas, (meta, key) => {
+      const value = isInheritedOf(meta, Meta) ? new meta()
+        : isInstanceOf(meta, Meta) ? meta
+        : isObject(meta) ? new Meta(meta)
+        : null
+
+      if (!value) {
         return
       }
+
       define(this, key, {
-        value: def,
+        value,
         enumerable: true,
       })
     })
@@ -106,8 +113,8 @@ export class Schema {
    * @param {*} key
    */
   $default(key) {
-    const def = this[key]
-    const { default: defaultValue } = def
+    const meta = this[key]
+    const { default: defaultValue } = meta
     if (isFunction(defaultValue)) {
       return defaultValue()
     }
@@ -120,27 +127,27 @@ export class Schema {
   }
 
   /**
-   * get message for some meta
+   * get message for some attr
    * @param {*} key
-   * @param {*} meta
+   * @param {*} attr
    * @param {*} context
    */
-  $message(key, meta, context) {
+  $message(key, attr, context) {
     return (givenMessage) => {
-      const def = this[key]
+      const meta = this[key]
 
-      if (!def) {
+      if (!meta) {
         return ''
       }
 
-      const node = def[meta]
+      const node = meta[attr]
 
       if (!node) {
         return ''
       }
 
-      const defualtMessage = interpolate(Schema.defualtMessages[meta] || `{key} ${meta} error.`, { key })
-      const { catch: handle } = def
+      const defualtMessage = interpolate(Schema.defualtMessages[attr] || `{key} ${attr} error.`, { key })
+      const { catch: handle } = meta
 
       let finalMessage = defualtMessage
 
@@ -165,11 +172,11 @@ export class Schema {
         // required: { message() { return 'xxx' } }
         if (isFunction(message)) {
           finalMessage = this._trydo(
-            () => message.call(context, meta),
+            () => message.call(context, attr),
             (error) => isFunction(handle) && handle.call(context, error) || defualtMessage,
             {
               key,
-              meta: 'message',
+              attr: 'message',
             },
           )
         }
@@ -184,25 +191,25 @@ export class Schema {
   }
 
   /**
-   * get determine result for some meta
+   * get determine result for some attr
    * @param {*} key
-   * @param {*} meta
+   * @param {*} attr
    * @param {*} context
    */
-  $determine(key, meta, context) {
+  $determine(key, attr, context) {
     return (fallbackRes) => {
-      const def = this[key]
+      const meta = this[key]
 
-      if (!def) {
+      if (!meta) {
         return fallbackRes
       }
 
-      if (!inObject(meta, def)) {
+      if (!inObject(attr, meta)) {
         return fallbackRes
       }
 
-      const node = def[meta]
-      const { catch: handle } = def
+      const node = meta[attr]
+      const { catch: handle } = meta
 
 
       /**
@@ -219,7 +226,7 @@ export class Schema {
             (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
             {
               key,
-              meta,
+              attr,
             },
           )
         }
@@ -237,7 +244,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
           {
             key,
-            meta,
+            attr,
           },
         )
       }
@@ -262,13 +269,13 @@ export class Schema {
   }
 
   get(key, value, context) {
-    const def = this[key]
+    const meta = this[key]
 
-    if (!def) {
+    if (!meta) {
       return value
     }
 
-    const { getter, compute, catch: handle } = def
+    const { getter, compute, catch: handle } = meta
     if (isFunction(compute)) {
       const next = compute.call(context)
       return next
@@ -280,7 +287,7 @@ export class Schema {
         (error) => isFunction(handle) && handle.call(context, error) || value,
         {
           key,
-          meta: 'getter',
+          attr: 'getter',
         },
       )
       return coming
@@ -297,13 +304,13 @@ export class Schema {
    * @param {*} context
    */
   $set(key, value, context) {
-    const def = this[key]
+    const meta = this[key]
 
-    if (!def) {
+    if (!meta) {
       return value
     }
 
-    const { setter, compute, catch: handle, type, message } = def
+    const { setter, compute, catch: handle, type, message } = meta
 
     if (compute) {
       this.onError({
@@ -323,7 +330,7 @@ export class Schema {
         (error) => isFunction(handle) && handle.call(context, error) || value,
         {
           key,
-          meta: 'setter',
+          attr: 'setter',
         },
       )
     }
@@ -359,9 +366,9 @@ export class Schema {
    * @param {*} context
    */
   set(key, next, prev, context) {
-    const def = this[key]
+    const meta = this[key]
 
-    if (!def) {
+    if (!meta) {
       return next
     }
 
@@ -403,8 +410,8 @@ export class Schema {
    * @returns {function}
    */
   $validate(key, value, context) {
-    const def = this[key]
-    const { catch: handle, validators = [] } = def
+    const meta = this[key]
+    const { catch: handle, validators = [] } = meta
 
     const validate = (validator, index, dontTry) => {
       const { determine, validate, message } = validator
@@ -419,7 +426,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || false,
           {
             key,
-            meta: 'validators[' + index + '].determine',
+            attr: 'validators[' + index + '].determine',
           },
           dontTry,
         )
@@ -433,7 +440,7 @@ export class Schema {
         (error) => isFunction(handle) && handle.call(context, error) || true,
         {
           key,
-          meta: 'validators[' + index + '].validate',
+          attr: 'validators[' + index + '].validate',
         },
         dontTry,
       )
@@ -458,7 +465,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || msg || `${key} did not pass validators[${index}]`,
           {
             key,
-            meta: 'validators[' + index + '].message',
+            attr: 'validators[' + index + '].message',
           },
           dontTry,
         )
@@ -537,10 +544,10 @@ export class Schema {
    * @param {*} context
    */
   validate(key, value, context) {
-    const def = this[key]
+    const meta = this[key]
     const errors = []
 
-    if (!def) {
+    if (!meta) {
       errors.push({
         key,
         value,
@@ -567,7 +574,7 @@ export class Schema {
       return errors
     }
 
-    const { type, message } = def
+    const { type, message } = meta
     // type checking
     if (type) {
       // make rule works
@@ -599,8 +606,8 @@ export class Schema {
    * @param {*} context
    */
   parse(data, context) {
-    const output = map(this, (def, key) => {
-      const { create, catch: handle, type, message } = def
+    const output = map(this, (meta, key) => {
+      const { create, catch: handle, type, message } = meta
       const value = data[key]
 
       let coming = value
@@ -611,7 +618,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
-            meta: 'create',
+            attr: 'create',
           },
         )
       }
@@ -653,8 +660,8 @@ export class Schema {
     const patch = {}
     const output = {}
 
-    each(this, (def, key) => {
-      const { drop, map, flat, catch: handle } = def
+    each(this, (meta, key) => {
+      const { drop, map, flat, catch: handle } = meta
       const value = data[key]
 
       if (isFunction(flat)) {
@@ -663,7 +670,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || {},
           {
             key,
-            meta: 'flat',
+            attr: 'flat',
           },
         )
         Object.assign(patch, res)
@@ -684,7 +691,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || false,
           {
             key,
-            meta: 'drop',
+            attr: 'drop',
           },
         )
         if (bool) {
@@ -698,7 +705,7 @@ export class Schema {
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
-            meta: 'map',
+            attr: 'map',
           },
         )
         output[key] = res
