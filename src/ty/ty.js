@@ -4,7 +4,7 @@ import {
   isInstanceOf,
 } from 'ts-fns'
 
-import { create } from './rules.js'
+import { createType } from './rules.js'
 
 export class Ty {
   constructor() {
@@ -52,7 +52,7 @@ export class Ty {
     return {
       to: {
         match: (type) => {
-          type = create(type)
+          type = createType(type)
 
           try {
             type.assert(value)
@@ -77,7 +77,7 @@ export class Ty {
   catch(value) {
     return {
       by: (type) => {
-        type = create(type)
+        type = createType(type)
 
         let error = type.catch(value)
         if (error) {
@@ -95,7 +95,7 @@ export class Ty {
   trace(value) {
     return {
       by: (type) => {
-        type = create(type)
+        type = createType(type)
 
         return type.trace(value).catch(error => this.throw(error))
       },
@@ -109,7 +109,7 @@ export class Ty {
   track(value) {
     return {
       by: (type) => {
-        type = create(type)
+        type = createType(type)
 
         return type.track(value).catch(error => this.throw(error))
       },
@@ -126,7 +126,7 @@ export class Ty {
     return {
       typeof: (value) => {
         let type = arg
-        type = create(type)
+        type = createType(type)
 
         let error = type.catch(value)
         if (error) {
@@ -206,6 +206,6 @@ Ty.trace = ty.trace.bind(ty)
 Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
 Ty.decorate = ty.decorate.bind(ty)
-Ty.create = create
+Ty.create = createType
 
 export default Ty

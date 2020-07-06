@@ -16,7 +16,7 @@ import Dict from './dict.js'
 import List from './list.js'
 import { Any } from './prototypes.js'
 
-export function create(type) {
+export function createType(type) {
   if (isInstanceOf(type, Type)) {
     return type.clone()
   }
@@ -38,7 +38,7 @@ function createRule(type) {
     return type
   }
   else {
-    return create(type)
+    return createType(type)
   }
 }
 
@@ -336,7 +336,7 @@ export function lambda(InputType, OutputType) {
     throw new Error('lambda InputType should be a Tuple')
   }
   if (!isInstanceOf(OutputType, Type)) {
-    OutputType = create(OutputType)
+    OutputType = createType(OutputType)
   }
 
   const rule = new Rule({

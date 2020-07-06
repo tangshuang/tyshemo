@@ -194,12 +194,38 @@ const SomeMapping = new Mapping({
 })
 ```
 
+## SelfReference
+
+`SelfReference` is a special type, in some cases, you may reuse your will-defined type inside itself.
+
+```js
+const SomeType = new Dict({
+  name: String,
+  children: [SomeType], // child structure is the same with itself
+})
+```
+
+However, this is not working as you want, because `SomeType` has not been defined before you use it in Dict.
+
+In this situation, you should use `SelfReference`:
+
+```js
+const SomeType = new SelfReference((SomeType) => {
+  return new Dict({
+    name: String,
+    children: [SomeType],
+  })
+})
+```
+
+In this code block, `SomeType` points to `SomeType`. It will work as you want.
+
 ## short import
 
 To use more conveniently， you can import these types from tyshemo with functions:
 
 ```js
-import { dict, list, tuple, enumerate, range, mapping } from 'tyshemo'
+import { dict, list, tuple, enumerate, range, mapping, selfreference } from 'tyshemo'
 
 const SomeDict = dict({
   name: String,

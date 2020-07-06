@@ -131,7 +131,12 @@ export class Type {
 
             // after validate, the property may create by rule
             if (!inObject(key, data)) {
-              tyerr.add({ type: 'missing', key })
+              tyerr.add({
+                type: 'missing',
+                key,
+                value,
+                pattern,
+              })
             }
             else {
               tyerr.add({ error, key })
@@ -140,7 +145,12 @@ export class Type {
           // not found some key in data
           // i.e. should be { name: String, age: Number } but give { name: 'tomy' }, 'age' is missing
           else if (!inObject(key, data)) {
-            tyerr.add({ type: 'missing', key })
+            tyerr.add({
+              type: 'missing',
+              key,
+              value,
+              pattern,
+            })
           }
           // nested Type
           else if (isInstanceOf(pattern, Type)) {
