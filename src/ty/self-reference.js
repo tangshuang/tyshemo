@@ -1,7 +1,6 @@
 import { isFunction } from 'ts-fns'
 import Type from './type.js'
 import { createType } from './rules.js'
-import TyError from './ty-error.js'
 
 export class SelfReference extends Type {
   constructor(fn) {
