@@ -8,14 +8,19 @@ export class SelfReference extends Type {
       throw new Error('[SelfReference]: pattern should be a function.')
     }
 
-    super(fn)
+    super(null)
 
+    this.fn = fn
     this.name = 'SelfReference'
   }
   catch(value) {
-    const fn = this.pattern
-    const pattern = fn(this)
-    const type = createType(pattern)
+    if (!this.pattern) {
+      const fn = this.fn
+      const pattern = fn(this)
+      this.pattern = pattern
+    }
+
+    const type = createType(this.pattern)
     const error = type.catch(value)
     return error
   }
