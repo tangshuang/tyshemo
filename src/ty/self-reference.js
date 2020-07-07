@@ -13,12 +13,16 @@ export class SelfReference extends Type {
     this.fn = fn
     this.name = 'SelfReference'
   }
-  catch(value) {
+  init() {
     if (!this.pattern) {
       const fn = this.fn
       const pattern = fn(this)
       this.pattern = pattern
     }
+    return this
+  }
+  catch(value) {
+    this.init()
 
     const type = createType(this.pattern)
     const error = type.catch(value)
