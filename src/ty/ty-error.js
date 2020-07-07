@@ -12,6 +12,7 @@ import {
   each,
   isUndefined,
   isNull,
+  isEmpty,
 } from 'ts-fns'
 
 export class TyError extends TypeError {
@@ -175,6 +176,10 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
   }
   const stringify = (value, space = 2) => {
     if (isObject(value)) {
+      if (isEmpty(value)) {
+        return '{}'
+      }
+
       let str = '{'
 
       if (!breakline) {
@@ -194,6 +199,10 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
       return str
     }
     else if (isArray(value)) {
+      if (!value.length) {
+        return '[]'
+      }
+
       let str = '['
 
       if (!breakline) {
