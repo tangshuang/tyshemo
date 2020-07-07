@@ -75,7 +75,7 @@ export class Store {
           }
 
           // compute
-          const next = descriptor.get ? descriptor.get.call(this.state) : undefined
+          const next = descriptor.get ? descriptor.get.call(this.state) : void 0
           return next
         }
         else {
