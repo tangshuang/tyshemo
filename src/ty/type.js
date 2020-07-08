@@ -180,7 +180,7 @@ export class Type {
       }
     }
     // check single value
-    else if (!Prototype.is(value).equal(pattern)) {
+    else if (!Prototype.is(pattern).equal(value)) {
       tyerr.replace({ type: 'exception', value, name: 'equal', pattern })
     }
 
