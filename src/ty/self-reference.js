@@ -32,7 +32,7 @@ export class SelfReference extends Type {
 
 export function selfreference(fn) {
   const type = new SelfReference(fn)
-  return type
+  return type.init()
 }
 
 export default SelfReference
