@@ -5,6 +5,7 @@
 - [Ty](ty.md)
 - [TyError](error.md)
 - [Store](store.md)
+- [Meta](meta.md)
 - [Schema](schema.md)
 - [Model](model.md)
 - [tyshemo-x](tyshemo-x.md)
