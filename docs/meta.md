@@ -44,6 +44,18 @@ What attributes does a Meta support? The following ones are supported inside wit
 
 ```js
 const attrs = {
+  /**
+   * optional, when you want to export the field as another name, you can pass it,
+   * i.e. {
+   *   one: {
+   *     default: null,
+   *     key: 'some',
+   *   },
+   * }
+   * after export, you will get { some } not { one }
+   */
+  name: 'some',
+
   // required, any,
   // if you need to return an object/array, you should give a function to return,
   // i.e. default() { return { name: 'some' } }

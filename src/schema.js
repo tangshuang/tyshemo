@@ -23,6 +23,9 @@ import Meta from './meta.js'
 /**
  * @example const schema = new Schema({
  *   propertyName: {
+ *     // field name which used to push to backend
+ *     name: 'field_name',
+ *
  *     // required, function to return an object/array
  *     default: '',
  *     // optional, computed property, will compute at each time digest end
@@ -661,7 +664,7 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, catch: handle } = meta
+      const { drop, map, flat, catch: handle, name = key } = meta
       const value = data[key]
 
       if (isFunction(flat)) {
@@ -708,10 +711,10 @@ export class Schema {
             attr: 'map',
           },
         )
-        output[key] = res
+        output[name] = res
       }
       else {
-        output[key] = value
+        output[name] = value
       }
     })
 
