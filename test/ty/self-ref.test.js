@@ -1,8 +1,8 @@
-import { Dict, SelfReference } from '../../src/ty/index.js'
+import { Dict, SelfRef } from '../../src/ty/index.js'
 
 describe('Self including type', () => {
   test('self include dict', () => {
-    const Some = new SelfReference((Some) => new Dict({
+    const Some = new SelfRef((Some) => new Dict({
       name: String,
       age: Number,
       children: [

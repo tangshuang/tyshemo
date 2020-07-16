@@ -28,7 +28,7 @@ export { Tuple, tuple } from './tuple.js'
 export { Enum, enumerate } from './enum.js'
 export { Range, range } from './range.js'
 export { Mapping, mapping } from './mapping.js'
-export { SelfReference, selfreference } from './self-reference.js'
+export { SelfRef, selfref } from './self-ref.js'
 
 export { Rule } from './rule.js'
 export {

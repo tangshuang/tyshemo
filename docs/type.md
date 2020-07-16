@@ -194,9 +194,9 @@ const SomeMapping = new Mapping({
 })
 ```
 
-## SelfReference
+## SelfRef
 
-`SelfReference` is a special type, in some cases, you may reuse your will-defined type inside itself.
+`SelfRef` is a special type, in some cases, you may reuse your will-defined type inside itself.
 
 ```js
 const SomeType = new Dict({
@@ -207,10 +207,10 @@ const SomeType = new Dict({
 
 However, this is not working as you want, because `SomeType` has not been defined before you use it in Dict.
 
-In this situation, you should use `SelfReference`:
+In this situation, you should use `SelfRef`:
 
 ```js
-const SomeType = new SelfReference((SomeType) => {
+const SomeType = new SelfRef((SomeType) => {
   return new Dict({
     name: String,
     children: [SomeType],
@@ -225,7 +225,7 @@ In this code block, `SomeType` points to `SomeType`. It will work as you want.
 To use more conveniently， you can import these types from tyshemo with functions:
 
 ```js
-import { dict, list, tuple, enumerate, range, mapping, selfreference } from 'tyshemo'
+import { dict, list, tuple, enumerate, range, mapping, selfref } from 'tyshemo'
 
 const SomeDict = dict({
   name: String,
