@@ -1,6 +1,6 @@
 # Model
 
-A model is a data container which restrict the data's type, structure and change rules.
+A Model is an abstract data structure description interface which restrict the data's type, shape and change rules.
 Model is the most important part of tyshemo, it is widely used in many situations.
 
 ## Usage
