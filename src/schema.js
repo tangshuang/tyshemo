@@ -23,11 +23,9 @@ import Meta from './meta.js'
 /**
  * @example const schema = new Schema({
  *   propertyName: {
- *     // field name which used to push to backend
- *     name: 'field_name',
- *
  *     // required, function to return an object/array
  *     default: '',
+ *
  *     // optional, computed property, will compute at each time digest end
  *     // when it is a compute property, it is not able to use set to update value
  *     compute() {
@@ -60,6 +58,8 @@ import Meta from './meta.js'
  *     map: (value, key, data) => newValue,
  *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
  *     flat: (value, key, data) => ({ newProp: newValue }),
+ *     // field name which used to push to backend
+ *     as: 'field_name',
  *
  *     // optional, function, format this property value when get
  *     getter: (value) => newValue,
@@ -664,7 +664,7 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, catch: handle, name = key } = meta
+      const { drop, map, flat, catch: handle, as: name = key } = meta
       const value = data[key]
 
       if (isFunction(flat)) {

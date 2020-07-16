@@ -44,18 +44,6 @@ What attributes does a Meta support? The following ones are supported inside wit
 
 ```js
 const attrs = {
-  /**
-   * optional, when you want to export the field as another name, you can pass it,
-   * i.e. {
-   *   one: {
-   *     default: null,
-   *     key: 'some',
-   *   },
-   * }
-   * after export, you will get { some } not { one }
-   */
-  name: 'some',
-
   // required, any,
   // if you need to return an object/array, you should give a function to return,
   // i.e. default() { return { name: 'some' } }
@@ -94,6 +82,18 @@ const attrs = {
   map: (value, key, data) => newValue,
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
   flat: (value, key, data) => ({ newProp: newValue }),
+
+  /**
+   * optional, when you want to export the field as another name, you can pass it,
+   * i.e. {
+   *   one: {
+   *     default: null,
+   *     as: 'some',
+   *   },
+   * }
+   * after export, you will get { some } not { one }
+   */
+  as: 'some',
 
   // optional, function, format this property value when get
   getter: (value) => newValue,
