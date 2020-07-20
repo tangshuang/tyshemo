@@ -1,4 +1,4 @@
-import { getConstructorOf } from 'ts-fns'
+import { getConstructorOf, extend } from 'ts-fns'
 
 export class Meta {
   constructor(attrs = {}) {
@@ -13,6 +13,11 @@ export class Meta {
   extend(attrs = {}) {
     const finalAttrs = { ...this, ...attrs }
     return new Meta(finalAttrs)
+  }
+
+  static extends(attrs = {}) {
+    const Constructor = extend(this, {}, attrs)
+    return Constructor
   }
 }
 export default Meta

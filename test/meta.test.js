@@ -26,4 +26,39 @@ describe('Meta', () => {
       value: 0,
     })
   })
+
+  test('extends', () => {
+    class Name extends Meta {
+      static default = ''
+    }
+
+    class Age extends Meta {
+      static default = 10
+    }
+
+    class Some extends Model {
+      static name = Name.extends(class {
+        static default = 'a'
+      })
+
+      static age = Age
+
+      static weight = Meta.extends(class {
+        static name = 'Weight'
+        static compute = function() {
+          return this.age * 5
+        }
+      })
+
+      attrs() {
+        return ['name']
+      }
+    }
+
+    const some = new Some()
+
+    expect(some.name).toBe('a')
+    expect(some.weight).toBe(50)
+    expect(some.$views.weight.name).toBe('Weight')
+  })
 })

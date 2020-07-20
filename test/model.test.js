@@ -1,4 +1,5 @@
 import Model from '../src/model.js'
+import Meta from '../src/meta.js'
 
 describe('Model', () => {
   class PersonModel extends Model {
@@ -255,5 +256,33 @@ describe('Model', () => {
 
     some.some = 'b'
     expect(count).toBe(2)
+  })
+
+  test('state computed', () => {
+    class Name extends Meta {
+      static default = ''
+    }
+    class Age extends Meta {
+      static default = 10
+    }
+    class Some extends Model {
+      static name = Name
+      static age = Age
+
+      state() {
+        return {
+          get weight() {
+            return this.age * 5
+          }
+        }
+      }
+    }
+
+    const some = new Some()
+
+    expect(some.weight).toBe(50)
+
+    some.age ++
+    expect(some.weight).toBe(55)
   })
 })
