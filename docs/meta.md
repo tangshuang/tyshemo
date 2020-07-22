@@ -160,13 +160,39 @@ const PoodA = new Pood({
 
 2) extend
 
+Use `extend` method of an instance.
+
 ```js
 const PoodB = new Pood().extend({
   default: 'b',
 })
 ```
 
-This way is only used on a instance of Meta.
+Use static `extend` method of a Meta.
+
+```js
+const PoodB = Pood.extend({
+  default: 'b',
+})
+```
+
+You will always use `extend` when you need to define a attribute with `this` inside:
+
+```js
+class SomeModel extends Model {
+  static pooda = Pood.extend({
+    default: 'a',
+    readonly: true,
+  })
+  static poodb = Pood.extend(class { // here pass a Class, but in fact, only its static properties used
+    static default = 'b'
+    static required = function() {
+      // here `this` point to SomeModel instance
+      return this.pooda
+    }
+  })
+}
+```
 
 3) refererece
 

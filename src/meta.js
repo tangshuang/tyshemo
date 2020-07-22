@@ -15,7 +15,7 @@ export class Meta {
     return new Meta(finalAttrs)
   }
 
-  static extends(attrs = {}) {
+  static extend(attrs = {}) {
     const Constructor = extend(this, {}, attrs)
     return Constructor
   }

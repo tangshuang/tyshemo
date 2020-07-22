@@ -27,7 +27,7 @@ describe('Meta', () => {
     })
   })
 
-  test('extends', () => {
+  test('extend', () => {
     class Name extends Meta {
       static default = ''
     }
@@ -37,21 +37,21 @@ describe('Meta', () => {
     }
 
     class Some extends Model {
-      static name = Name.extends(class {
+      static name = Name.extend(class {
         static default = 'a'
       })
 
       static age = Age
 
-      static weight = Meta.extends(class {
-        static name = 'Weight'
+      static weight = Name.extend(class {
+        static label = 'Weight'
         static compute = function() {
           return this.age * 5
         }
       })
 
       attrs() {
-        return ['name']
+        return ['label']
       }
     }
 
@@ -59,6 +59,6 @@ describe('Meta', () => {
 
     expect(some.name).toBe('a')
     expect(some.weight).toBe(50)
-    expect(some.$views.weight.name).toBe('Weight')
+    expect(some.$views.weight.label).toBe('Weight')
   })
 })
