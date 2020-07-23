@@ -285,4 +285,35 @@ describe('Model', () => {
     some.age ++
     expect(some.weight).toBe(55)
   })
+
+  test('model.$views.$state', () => {
+    class Some extends Model {
+      schema() {
+        return {
+          name: { default: 'some' },
+        }
+      }
+      state() {
+        return {
+          isFund: true,
+          isPaid: false,
+        }
+      }
+    }
+
+    const some = new Some()
+
+    expect(some.name).toBe('some')
+    expect(some.isFund).toBe(true)
+    expect(some.isPaid).toBe(false)
+
+    expect(some.$views.$state.isFund).toBe(true)
+    expect(some.$views.$state.isPaid).toBe(false)
+
+    some.$views.$state.isFund = false
+    expect(some.$views.$state.isFund).toBe(false)
+
+    some.$views.$state.isPaid = true
+    expect(some.$views.$state.isPaid).toBe(true)
+  })
 })

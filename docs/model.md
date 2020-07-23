@@ -292,6 +292,28 @@ It is useful in forms:
 
 In this block code, we show error message only after the value of `some` changed.
 
+**$views.$state**
+
+`$views.$state` conbime all states which are defined in `state()` method.
+
+```js
+class Some extends Model {
+  schema() {
+    return {
+      name: { default: 'some' },
+    }
+  }
+  state() {
+    return {
+      isFund: true,
+      isPaid: false,
+    }
+  }
+}
+```
+
+In this code block, `$views.$state` will be `{ isFund, isPaid }`.
+
 ### Read
 
 To read data on a model instance, you have 3 ways.

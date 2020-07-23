@@ -201,6 +201,21 @@ export class Model {
       set: (status) => keys.forEach(key => this.$views[key].changed = !!status)
     })
 
+    // create $state, so that it's easy to read state from $views
+    define(this.$views, '$state', () => {
+      const state = this.state()
+      const keys = Object.keys(state)
+      const output = {}
+      keys.forEach((key) => {
+        define(output, key, {
+          enumerable: true,
+          get: () => this[key],
+          set: (value) => this[key] = value,
+        })
+      })
+      return output
+    })
+
     // $data
     define(this, '$data', () => clone(this.$store.data))
 
