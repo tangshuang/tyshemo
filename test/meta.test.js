@@ -38,7 +38,7 @@ describe('Meta', () => {
 
     class Some extends Model {
       static name = Name.extend(class {
-        static default = 'a'
+        static default = 'some'
       })
 
       static age = Age
@@ -57,7 +57,7 @@ describe('Meta', () => {
 
     const some = new Some()
 
-    expect(some.name).toBe('a')
+    expect(some.name).toBe('some')
     expect(some.weight).toBe(50)
     expect(some.$views.weight.label).toBe('Weight')
   })
