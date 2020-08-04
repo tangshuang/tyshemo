@@ -425,6 +425,21 @@ const errors = model.validate([key1, key2])
 
 This code validate only given fields in model.
 
+**onValid()**
+
+Before alll validators run, the hook method `onValid` will be invoked.
+
+```js
+class Some extends Model {
+  onValid() {
+    const errors = [
+      { message: 'xxx' },
+    ]
+    return errors
+  }
+}
+```
+
 ### Restore
 
 When you want to restore data back to model, you can use `restore` method.

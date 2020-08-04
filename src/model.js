@@ -346,6 +346,10 @@ export class Model {
     if (!key) {
       this._check(null, true)
       const errors = []
+
+      const errs = this.onValid() || []
+      errors.push(...errs)
+
       each(this.$schema, (def, key) => {
         const errs = this.validate(key)
         errors.push(...errs)
@@ -511,6 +515,8 @@ export class Model {
   onExport(data) {
     return data
   }
+
+  onValid() {}
 
   onError() {}
 
