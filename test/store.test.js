@@ -221,8 +221,8 @@ describe('Store', () => {
 
     store.editable = false
 
-    // change uneditable store will throw TypeError as proxy trip does https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/set
-    expect(() => store.set('name', 'lily')).toThrowError()
+    // change will not work, but without any error thrown
+    expect(() => store.set('name', 'lily')).not.toThrowError()
     expect(store.get('name')).toBe('tomy')
   })
 })
