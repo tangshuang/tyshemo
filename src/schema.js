@@ -58,8 +58,11 @@ import Meta from './meta.js'
  *     map: (value, key, data) => newValue,
  *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
  *     flat: (value, key, data) => ({ newProp: newValue }),
- *     // field name which used to push to backend
- *     as: 'field_name',
+
+ *     // field name which used to pick from backend by `fromJSON`
+ *     from: 'field_name',
+ *     // field name which used to push to backend by `toJSON`
+ *     to: 'field_name',
  *
  *     // optional, function, format this property value when get
  *     getter: (value) => newValue,
@@ -610,8 +613,8 @@ export class Schema {
    */
   parse(data, context) {
     const output = map(this, (meta, key) => {
-      const { create, catch: handle, type, message, as: name = key } = meta
-      const value = data[name]
+      const { create, catch: handle, type, message, from = key } = meta
+      const value = data[from]
 
       let coming = value
 
@@ -664,7 +667,7 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, catch: handle, as: name = key } = meta
+      const { drop, map, flat, catch: handle, to = key } = meta
       const value = data[key]
 
       if (isFunction(flat)) {
@@ -711,10 +714,10 @@ export class Schema {
             attr: 'map',
           },
         )
-        output[name] = res
+        output[to] = res
       }
       else {
-        output[name] = value
+        output[to] = value
       }
     })
 

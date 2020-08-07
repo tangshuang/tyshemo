@@ -84,16 +84,27 @@ const attrs = {
   flat: (value, key, data) => ({ newProp: newValue }),
 
   /**
-   * optional, when you want to export the field as another name, you can pass it,
+   * optional, when you want to parse the field from an another name, you can pass it,
    * i.e. {
    *   one: {
    *     default: null,
-   *     as: 'some',
+   *     from: 'some',
+   *   },
+   * }
+   * when you pass into { some }, after parsing, you will get { one }
+   */
+  from: 'some',
+  /**
+   * optional, when you want to export the field to an another name, you can pass it,
+   * i.e. {
+   *   one: {
+   *     default: null,
+   *     to: 'some',
    *   },
    * }
    * after export, you will get { some } not { one }
    */
-  as: 'some',
+  to: 'some',
 
   // optional, function, format this property value when get
   getter: (value) => newValue,

@@ -2,15 +2,15 @@ import Model from '../src/model.js'
 import Meta from '../src/meta.js'
 
 describe('Meta', () => {
-  test('as', () => {
+  test('to', () => {
     class Name extends Meta {
       static default = ''
-      static as = 'key'
+      static to = 'key'
     }
 
     class Age extends Meta {
       static default = 0
-      static as = 'value'
+      static to = 'value'
     }
 
     class Person extends Model {

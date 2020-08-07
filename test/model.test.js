@@ -316,4 +316,24 @@ describe('Model', () => {
     some.$views.$state.isPaid = true
     expect(some.$views.$state.isPaid).toBe(true)
   })
+
+  test('from/to', () => {
+    class Some extends Model {
+      static name = {
+        default: 'some',
+        from: 'some_key',
+        to: 'one',
+      }
+    }
+
+    const some = new Some()
+    some.fromJSON({
+      some_key: 'aaaa'
+    })
+
+    expect(some.name).toBe('aaaa')
+
+    const data = some.toJSON()
+    expect(data.one).toBe('aaaa')
+  })
 })
