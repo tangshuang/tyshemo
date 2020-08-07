@@ -1,6 +1,6 @@
 import {
   Any, Numeric,
-  asynch, determine, match,
+  lazy, determine, match,
   shouldmatch, shouldnotmatch,
   ifexist, ifnotmatch, ifmatch,
   shouldexist, shouldnotexist,
@@ -9,8 +9,8 @@ import {
 } from '../../src/ty/index.js'
 
 describe('Rule Generators', () => {
-  test('asynch', (done) => {
-    const SomeRule = asynch(() => Number)
+  test('lazy', (done) => {
+    const SomeRule = lazy(async () => Number)
     const SomeType = new Dict({
       some: SomeRule,
     })

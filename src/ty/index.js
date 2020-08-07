@@ -32,7 +32,7 @@ export { SelfRef, selfref } from './self-ref.js'
 
 export { Rule } from './rule.js'
 export {
-  asynch,
+  lazy,
   ifexist,
   match,
   determine,

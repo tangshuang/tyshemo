@@ -111,7 +111,7 @@ When condition returns true, use the second parameter as type, or returns false,
 
 *Notice, the `data` parameter is the whole dict object.*
 
-### asynch
+### lazy
 
 Fetch type by a Promise.
 
@@ -125,7 +125,7 @@ const fetchType = fetch('/api/types?xxxx').then(res => res.json()).then((data) =
   }
 })
 const SomeType = new Dict({
-  some: asynch(fetchType),
+  some: lazy(fetchType),
 })
 ```
 

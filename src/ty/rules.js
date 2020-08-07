@@ -43,22 +43,29 @@ function createRule(type) {
 }
 
 /**
- * asynch rule
+ * lazy rule
  * @param {Function} fn which can be an async function and should return a pattern
  */
-export function asynch(fn) {
+export function lazy(fn) {
   let pattern = Any
 
   const rule = new Rule({
-    name: 'asynch',
+    name: 'lazy',
     pattern,
     use: () => pattern,
   })
 
-  Promise.resolve().then(() => fn()).then((res) => {
+  const create = (res) => {
     pattern = createRule(res)
     rule.pattern = pattern
-  })
+  }
+  const res = fn()
+  if (isInstanceOf(res, Promise)) {
+    res.then(create)
+  }
+  else {
+    create(res)
+  }
 
   return rule
 }
