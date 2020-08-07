@@ -565,16 +565,3 @@ To unlock:
 ```js
 model.unlock()
 ```
-
-## Record and replay
-
-```js
-// send data to server side
-const data = model.$data
-await send(data)
-
-// restore data from server side
-const data = await fetch()
-model.restore(data)
-// || const model = new SomeModel(data)
-```

@@ -216,9 +216,6 @@ export class Model {
       return output
     })
 
-    // $data
-    define(this, '$data', () => clone(this.$store.data))
-
     // watch
     keys.forEach((key) => {
       const def = this.$schema[key]

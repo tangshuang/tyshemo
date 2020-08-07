@@ -610,8 +610,8 @@ export class Schema {
    */
   parse(data, context) {
     const output = map(this, (meta, key) => {
-      const { create, catch: handle, type, message } = meta
-      const value = data[key]
+      const { create, catch: handle, type, message, as: name = key } = meta
+      const value = data[name]
 
       let coming = value
 
