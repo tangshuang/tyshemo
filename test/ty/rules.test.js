@@ -10,7 +10,7 @@ import {
 
 describe('Rule Generators', () => {
   test('lazy', (done) => {
-    const SomeRule = lazy(async () => Number)
+    const SomeRule = lazy(() => Promise.resolve(Number))
     const SomeType = new Dict({
       some: SomeRule,
     })
