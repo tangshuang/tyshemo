@@ -27,7 +27,8 @@ export class Validator {
   }
 
   static required = required
-  static numeral = numeral
+  static integer = integer
+  static decimal = decimal
   static max = max
   static min = min
   static email = email
@@ -65,11 +66,10 @@ function minLen(len, message) {
   })
 }
 
-function numeral(integer, decimal, message) {
+function integer(len, message) {
   return new Validator({
     validate: (value) => {
-      const max = Math.pow(10, integer)
-      const fix = Math.pow(10, decimal)
+      const max = Math.pow(10, len)
 
       if (!isNumber(value) && !isNumeric(value)) {
         return false
@@ -79,12 +79,29 @@ function numeral(integer, decimal, message) {
       if (num >= max) {
         return false
       }
-      else if (num * fix % 1 !== 0) {
+
+      return true
+    },
+    message,
+    break: true,
+  })
+}
+
+function decimal(len, message) {
+  return new Validator({
+    validate: (value) => {
+      const fix = Math.pow(10, len)
+
+      if (!isNumber(value) && !isNumeric(value)) {
         return false
       }
-      else {
-        return true
+
+      const num = +value
+      if (num * fix % 1 !== 0) {
+        return false
       }
+
+      return true
     },
     message,
     break: true,
