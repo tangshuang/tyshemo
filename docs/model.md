@@ -265,7 +265,7 @@ console.log(model.$views.some.placeholder) // undefined
 **view.errors**
 
 The `errors` property on view is an array.
-The array contains errors which are only from `validators`, not contains those from `requried` and type checking.
+The array contains errors which are from `validators`, not contains those from `requried` and `type` checking.
 
 ```js
 console.log(model.$views.some.errors) // []
@@ -274,8 +274,6 @@ console.log(model.$views.some.errors) // []
 **$views.$errors**
 
 `$views.$errros` conbime all `view.errors` together, so that you can easily check whether current model have some fileds which not pass validators.
-
-Notice, `$views.$errors` only contains from `validators` attr, if you want to get all errors which contains `required` and type checking results, you should invoke `model.validate()` method directly.
 
 **view.changed**
 

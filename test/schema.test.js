@@ -1,4 +1,5 @@
 import Schema from '../src/schema.js'
+import Validator from '../src/validator.js'
 import { ifexist } from '../src/ty/index.js'
 import { isString } from 'ts-fns'
 
@@ -32,7 +33,7 @@ describe('Schema', () => {
         },
         {
           determine: value => !!value,
-          validate: value => /^[0-9]+$/.test(value),
+          validate: value => isString(value) && /^[0-9]+$/.test(value),
           message: 'should be a number string',
         },
       ],
@@ -42,28 +43,53 @@ describe('Schema', () => {
   test('validate', () => {
     const SomeSchema = new Schema(def)
 
-    expect(SomeSchema.validate('string', '').length).toBe(0)
-    expect(SomeSchema.validate('string', null).length).toBe(1)
+    'Change: We have dropped required and type checking in validate method'
 
-    expect(SomeSchema.validate('number', 10).length).toBe(0)
-    expect(SomeSchema.validate('number', null).length).toBe(1)
+    // expect(SomeSchema.validate('string', '').length).toBe(0)
+    // expect(SomeSchema.validate('string', null).length).toBe(1)
 
-    expect(SomeSchema.validate('dict', { name: '', age: 0 }).length).toBe(0)
-    expect(SomeSchema.validate('dict', { name: '' }).length).toBe(1)
-    expect(SomeSchema.validate('dict', { age: 0 }).length).toBe(1)
-    expect(SomeSchema.validate('dict', null).length).toBe(1)
-    expect(SomeSchema.validate('dict', 'null').length).toBe(1)
-    expect(SomeSchema.validate('dict', {}).length).toBe(1)
+    // expect(SomeSchema.validate('number', 10).length).toBe(0)
+    // expect(SomeSchema.validate('number', null).length).toBe(1)
 
-    expect(SomeSchema.validate('list', []).length).toBe(0)
-    expect(SomeSchema.validate('list', ['aa']).length).toBe(0)
-    expect(SomeSchema.validate('list', null).length).toBe(1)
-    expect(SomeSchema.validate('list', 'aa').length).toBe(1)
-    expect(SomeSchema.validate('list', ['aa', null]).length).toBe(1)
+    // expect(SomeSchema.validate('dict', { name: '', age: 0 }).length).toBe(0)
+    // expect(SomeSchema.validate('dict', { name: '' }).length).toBe(1)
+    // expect(SomeSchema.validate('dict', { age: 0 }).length).toBe(1)
+    // expect(SomeSchema.validate('dict', null).length).toBe(1)
+    // expect(SomeSchema.validate('dict', 'null').length).toBe(1)
+    // expect(SomeSchema.validate('dict', {}).length).toBe(1)
+
+    // expect(SomeSchema.validate('list', []).length).toBe(0)
+    // expect(SomeSchema.validate('list', ['aa']).length).toBe(0)
+    // expect(SomeSchema.validate('list', null).length).toBe(1)
+    // expect(SomeSchema.validate('list', 'aa').length).toBe(1)
+    // expect(SomeSchema.validate('list', ['aa', null]).length).toBe(1)
 
     expect(SomeSchema.validate('validators', '123').length).toBe(0)
     expect(SomeSchema.validate('validators', 'aa').length).toBe(1)
     expect(SomeSchema.validate('validators', 123).length).toBe(2)
+  })
+
+  test('validate break', () => {
+    const Some = new Schema({
+      a: {
+        default: '',
+        validators: [
+          {
+            determine: value => !!value,
+            validate: isString,
+            message: 'should be a string',
+            break: true,
+          },
+          {
+            determine: value => !!value,
+            validate: value => isString(value) && /^[0-9]+$/.test(value),
+            message: 'should be a number string',
+          },
+        ],
+      },
+    })
+
+    expect(Some.validate('a', 123).length).toBe(1)
   })
 
   test('type is a rule', () => {
@@ -110,46 +136,26 @@ describe('Schema', () => {
     expect(data.key3).toBeUndefined()
   })
 
-  test('message', () => {
-    const SomeSchema = new Schema({
-      name: {
+  test('validate message', () => {
+    const Some = new Schema({
+      some: {
+        label: 'Some',
         default: '',
-        type: String,
-        message: 'name should be string.',
-      },
-
-      sex: {
-        default: null,
-        required: 'sex is required.',
-      },
-
-      age: {
-        default: null,
-        required: {
-          determine: true,
-          message: 'age is required.',
-        },
-      },
-
-      weight: {
-        default: null,
-        required: {
-          determine: true,
-          message() {
-            return 'weight is required.'
+        validators: [
+          {
+            validate: Validator.required(),
+            message: '{label} should not be empty',
+            break: true,
           },
-        },
+          {
+            validate: value => /^[0-9]+$/.test(value),
+            message: '{label} should be a number string',
+          },
+        ],
       },
     })
 
-    const errors = SomeSchema.validate('name', null)
-    expect(errors.length).toBe(1)
-    expect(errors[0].message).toBe('name should be string.')
-
-    expect(SomeSchema.validate('sex', null)[0].message).toBe('sex is required.')
-
-    expect(SomeSchema.validate('age', null)[0].message).toBe('age is required.')
-
-    expect(SomeSchema.validate('weight', null)[0].message).toBe('weight is required.')
+    expect(Some.validate('some', null)[0].message).toBe('Some should not be empty')
+    expect(Some.validate('some', 'aaa')[0].message).toBe('Some should be a number string')
   })
 })

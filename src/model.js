@@ -186,14 +186,7 @@ export class Model {
     define(this, '$views', views)
 
     // create errors, so that is's easy and quick to know the model's current status
-    define(this.$views, '$errors', () => {
-      const errors = []
-      keys.map((key) => {
-        const errs = this.$views[key].errors
-        errors.push(...errs)
-      })
-      return errors
-    })
+    define(this.$views, '$errors', () => this.validate())
 
     // create changed, so that it's easy to find out whether the data has changed
     define(this.$views, '$changed', {

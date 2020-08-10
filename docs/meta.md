@@ -70,6 +70,7 @@ const attrs = {
       determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
       validate: (value) => Boolean, // required, return true to pass, false to not pass
       message: '', // the message which throw when validate not pass, can be function to return message dynamicly
+      break: true, // whether to stop the validation if this validator did not pass, the left validators will be dropped
     },
   ],
 

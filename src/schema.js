@@ -4,7 +4,6 @@ import {
   isFunction,
   isBoolean,
   isInstanceOf,
-  isEmpty,
   each,
   map,
   clone,
@@ -192,6 +191,9 @@ export class Schema {
         }
       }
 
+      // interpolate the inner message
+      finalMessage = interpolate(finalMessage, meta)
+
       return finalMessage
     }
   }
@@ -344,7 +346,7 @@ export class Schema {
     // type checking
     if (type) {
       // make rule works
-      const target = {}
+      const target = { ...context }
       if (!isUndefined(value)) {
         Object.assign(target, { [key]: value })
       }
@@ -481,6 +483,9 @@ export class Schema {
         msg = message
       }
 
+      // interpolate with meta, so that we can provide more info
+      msg = interpolate(msg, { key, value, ...meta })
+
       const error = {
         key,
         value,
@@ -496,25 +501,34 @@ export class Schema {
         return
       }
 
+      const { break: toBreak } = validator
       const error = validate(validator, i, dontTry)
       if (error) {
         errors.push(error)
+        return toBreak
       }
     }
 
     const validateByRange = (dontTry, validators, [start = 0, end = validators.length - 1]) => {
       const errors = []
       for (let i = start; i <= end; i ++) {
-        runOne(dontTry, validators, i, errors)
+        const toBreak = runOne(dontTry, validators, i, errors)
+        if (toBreak) {
+          break
+        }
       }
       return errors
     }
 
     const validateByIndexes = (dontTry, validators, ...indexes) => {
       const errors = []
-      indexes.forEach((i) => {
-        runOne(dontTry, validators, i, errors)
-      })
+      for (let i = 0, len = indexes.length; i < len; i ++) {
+        const index = indexes[i]
+        const toBreak = runOne(dontTry, validators, index, errors)
+        if (toBreak) {
+          break
+        }
+      }
       return errors
     }
 
@@ -565,39 +579,6 @@ export class Schema {
     // ignore if disabled
     if (this.disabled(key, context)) {
       return errors
-    }
-
-    // if required is set, it should check before validators
-    const required = this.required(key, context)
-    if (required && isEmpty(value)) {
-      errors.push({
-        key,
-        value,
-        required: true,
-        message: this.$message(key, 'required', context)(required),
-      })
-
-      return errors
-    }
-
-    const { type, message } = meta
-    // type checking
-    if (type) {
-      // make rule works
-      const target = { ...context }
-      if (!isUndefined(value)) {
-        Object.assign(target, { [key]: value })
-      }
-      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
-      if (error) {
-        errors.push({
-          key,
-          value,
-          type: true,
-          error,
-          message: this.$message(key, 'type', context)(message),
-        })
-      }
     }
 
     const errs = this.$validate(key, value, context)([])
@@ -748,7 +729,6 @@ export class Schema {
   static defualtMessages = {
     type: `{key} does not match type.`,
     compute: `{key} can not be set new value because it is a computed property.`,
-    required: `{key} is required, but receive empty.`,
     readonly: `{key} can not be set new value because of readonly.`,
     disabled: `{key} can not be set new value because of disabled.`,
   }
