@@ -1,10 +1,11 @@
-import { isEmpty, isNumber, isNumeric, isString, getConstructorOf } from 'ts-fns'
+import { isEmpty, isNumber, isNumeric, isString, getConstructorOf, inherit } from 'ts-fns'
 
 export class Validator {
   constructor(attrs = {}) {
     const Constructor = getConstructorOf(this)
     const finalAttrs = { ...Constructor, ...attrs }
     Object.assign(this, finalAttrs)
+    this.onInit()
   }
 
   extend(attrs = {}) {
@@ -12,6 +13,8 @@ export class Validator {
     const finalAttrs = { ...this, ...attrs }
     return new Constructor(finalAttrs)
   }
+
+  onInit() {}
 
   // make each validator break true
   static breakEach(validators) {
