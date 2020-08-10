@@ -584,7 +584,7 @@ export class Schema {
     // type checking
     if (type) {
       // make rule works
-      const target = {}
+      const target = { ...context }
       if (!isUndefined(value)) {
         Object.assign(target, { [key]: value })
       }
