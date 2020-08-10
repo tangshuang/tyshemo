@@ -66,12 +66,9 @@ const attrs = {
 
   // optional
   validators: [
-    {
-      determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
-      validate: (value) => Boolean, // required, return true to pass, false to not pass
-      message: '', // the message which throw when validate not pass, can be function to return message dynamicly
-      break: true, // whether to stop the validation if this validator did not pass, the left validators will be dropped
-    },
+    // read more about [Validator](validator.md)
+    validator,
+    ...
   ],
 
   // optional, function, used by `parse`, `json` is the parameter of `parse`
@@ -112,8 +109,6 @@ const attrs = {
   // optional, function, format this property value when set
   setter: (value) => value,
 
-  // optional, function or boolean or string, if `required` is true, when you invoke `validate` and the value is empty, an error will be in the errors list
-  required: Boolean,
   // optional, function or boolean or string, if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)
   readonly: Boolean,
   // optional, function or boolean or string, if `disabled` is true, you will not be able to change value by using `set` (however `assign` works), when you invoke `validate`, the validators will be ignored, and when you invoke `export`, the `drop` option will be set to be `true` automaticly
@@ -121,6 +116,8 @@ const attrs = {
 
   // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
   hidden: Boolean,
+  // optional, function or boolean or string
+  required: Boolean,
 
   // when this field's value changed, the `watch` schema option will be invoke
   watch({ value }) {},

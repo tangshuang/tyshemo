@@ -99,7 +99,22 @@ export class Model {
 
 
     this.init(data)
-    this.onInit()
+
+    /**
+     * support async onInit
+     * i.e.
+     *
+     * async onInit() {
+     *   const options = await this.$schema.some.getOptionsAsync()
+     *   this.options = options
+     * }
+     *
+     * async getOptions() {
+     *   await this.$ready
+     *   return this.options
+     * }
+     */
+    define(this, '$ready', Promise.resolve(this.onInit()))
   }
 
   schema() {
@@ -164,13 +179,13 @@ export class Model {
       }
 
       const def = this.$schema[key]
-      each(attrs, (fallbackRes, attr) => {
-        if (!inObject(attr, def) && isNull(fallbackRes)) {
+      each(attrs, (fallback, attr) => {
+        if (!inObject(attr, def) && isNull(fallback)) {
           return
         }
 
         viewDef[attr] = {
-          get: () => this.$schema.$determine(key, attr, this)(fallbackRes),
+          get: () => this.$schema.$invoke(key, attr, this)(fallback),
           enumerable: true,
         }
       })

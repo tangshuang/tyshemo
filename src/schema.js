@@ -204,21 +204,20 @@ export class Schema {
    * @param {*} attr
    * @param {*} context
    */
-  $determine(key, attr, context) {
-    return (fallbackRes) => {
+  $invoke(key, attr, context) {
+    return (fallback) => {
       const meta = this[key]
 
       if (!meta) {
-        return fallbackRes
+        return fallback
       }
 
       if (!inObject(attr, meta)) {
-        return fallbackRes
+        return fallback
       }
 
       const node = meta[attr]
       const { catch: handle } = meta
-
 
       /**
        * node is a object like: {
@@ -231,7 +230,7 @@ export class Schema {
         if (isFunction(determine)) {
           return this._trydo(
             () => determine.call(context),
-            (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
+            (error) => isFunction(handle) && handle.call(context, error) || fallback,
             {
               key,
               attr,
@@ -249,7 +248,7 @@ export class Schema {
       if (isFunction(node)) {
         return this._trydo(
           () => node.call(context),
-          (error) => isFunction(handle) && handle.call(context, error) || fallbackRes,
+          (error) => isFunction(handle) && handle.call(context, error) || fallback,
           {
             key,
             attr,
@@ -264,16 +263,12 @@ export class Schema {
     }
   }
 
-  required(key, context) {
-    return this.$determine(key, 'required', context)(false)
-  }
-
   disabled(key, context) {
-    return this.$determine(key, 'disabled', context)(false)
+    return this.$invoke(key, 'disabled', context)(false)
   }
 
   readonly(key, context) {
-    return this.$determine(key, 'readonly', context)(false)
+    return this.$invoke(key, 'readonly', context)(false)
   }
 
   get(key, value, context) {

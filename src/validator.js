@@ -5,7 +5,6 @@ export class Validator {
     const Constructor = getConstructorOf(this)
     const finalAttrs = { ...Constructor, ...attrs }
     Object.assign(this, finalAttrs)
-    this.onInit()
   }
 
   extend(attrs = {}) {
@@ -13,8 +12,6 @@ export class Validator {
     const finalAttrs = { ...this, ...attrs }
     return new Constructor(finalAttrs)
   }
-
-  onInit() {}
 
   // make each validator break true
   static breakEach(validators) {
@@ -40,8 +37,8 @@ export class Validator {
   static match = match
   static maxLen = maxLen
   static minLen = minLen
-  static merge = merge
-  static enume = enume
+  static allOf = allOf
+  static oneOf = oneOf
 }
 export default Validator
 
@@ -159,7 +156,7 @@ function match(reg, message) {
   })
 }
 
-function merge(validators, message) {
+function allOf(validators, message) {
   return new Validator({
     validate(value) {
       for (const i = 0, len = validators.length; i < len; i ++) {
@@ -175,7 +172,7 @@ function merge(validators, message) {
   })
 }
 
-function enume(validators, message) {
+function oneOf(validators, message) {
   return new Validator({
     validate(value) {
       for (const i = 0, len = validators.length; i < len; i ++) {
