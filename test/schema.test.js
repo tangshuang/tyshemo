@@ -142,11 +142,7 @@ describe('Schema', () => {
         label: 'Some',
         default: '',
         validators: [
-          {
-            validate: Validator.required(),
-            message: '{label} should not be empty',
-            break: true,
-          },
+          Validator.required('{label} should not be empty'),
           {
             validate: value => /^[0-9]+$/.test(value),
             message: '{label} should be a number string',
