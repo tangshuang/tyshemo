@@ -13,6 +13,14 @@ export class Validator {
     return new Constructor(finalAttrs)
   }
 
+  // make each validator break true
+  static breakEach(validators) {
+    return validators.map(validator => new Validator({
+      ...validator,
+      break: true,
+    }))
+  }
+
   static extend(attrs = {}) {
     const Constructor = inherit(this, {}, attrs)
     return Constructor
