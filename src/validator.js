@@ -1,4 +1,4 @@
-import { isEmpty, isNumber, isNumeric, isString, getConstructorOf, inherit } from 'ts-fns'
+import { getConstructorOf, inherit, isEmpty, isNumber, isNumeric, isString, isConstructor, isFunction, isInstanceOf, isBoolean } from 'ts-fns'
 
 export class Validator {
   constructor(attrs = {}) {
@@ -43,114 +43,104 @@ export class Validator {
 export default Validator
 
 function required(message) {
-  return new Validator({
-    validate: value => !isEmpty(value),
-    message,
-    break: true,
-  })
+  return match(value => !isEmpty(value), message)
 }
 
 function maxLen(len, message) {
-  return new Validator({
-    validate: value => isString(value) && value.length <= len,
-    message,
-    break: true,
-  })
+  return match(value => isString(value) && value.length <= len, message)
 }
 
 function minLen(len, message) {
-  return new Validator({
-    validate: value => isString(value) && value.length >= len,
-    message,
-    break: true,
-  })
+  return match(value => isString(value) && value.length >= len, message)
 }
 
 function integer(len, message) {
-  return new Validator({
-    validate: (value) => {
-      const max = Math.pow(10, len)
+  const validate = (value) => {
+    const max = Math.pow(10, len)
 
-      if (!isNumber(value) && !isNumeric(value)) {
-        return false
-      }
+    if (!isNumber(value) && !isNumeric(value)) {
+      return false
+    }
 
-      const num = +value
-      if (num >= max) {
-        return false
-      }
+    const num = +value
+    if (num >= max) {
+      return false
+    }
 
-      return true
-    },
-    message,
-    break: true,
-  })
+    return true
+  }
+  return match(validate, message)
 }
 
 function decimal(len, message) {
-  return new Validator({
-    validate: (value) => {
-      const fix = Math.pow(10, len)
+  const validate = (value) => {
+    const fix = Math.pow(10, len)
 
-      if (!isNumber(value) && !isNumeric(value)) {
-        return false
-      }
+    if (!isNumber(value) && !isNumeric(value)) {
+      return false
+    }
 
-      const num = +value
-      if (num * fix % 1 !== 0) {
-        return false
-      }
+    const num = +value
+    if (num * fix % 1 !== 0) {
+      return false
+    }
 
-      return true
-    },
-    message,
-    break: true,
-  })
+    return true
+  }
+  return match(validate, message)
 }
 
 function max(num, message) {
-  return new Validator({
-    validate: value => (isNumber(value) || isNumeric(value)) && +value <= num,
-    message,
-    break: true,
-  })
+  return match(value => (isNumber(value) || isNumeric(value)) && +value <= num, message)
 }
 
 function min(num, message) {
-  return new Validator({
-    validate: value => (isNumber(value) || isNumeric(value)) && +value >= num,
-    message,
-    break: true,
-  })
+  return match(value => (isNumber(value) || isNumeric(value)) && +value >= num, message)
 }
 
 function email(message) {
-  return new Validator({
-    validate: value => isString(value) && /^[A-Za-z0-9]+[A-Za-z0-9\._]*[A-Za-z0-9]+@[A-Za-z0-9]+[A-Za-z0-9\.\-]*[A-Za-z0-9]+\.[A-Za-z]{2,8}$/.test(value),
-    message,
-    break: true,
-  })
+  return match(/^[A-Za-z0-9]+[A-Za-z0-9\._]*[A-Za-z0-9]+@[A-Za-z0-9]+[A-Za-z0-9\.\-]*[A-Za-z0-9]+\.[A-Za-z]{2,8}$/, message)
 }
 
 function url(message) {
-  return new Validator({
-    validate: value => isString(value) && /(((^https?:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)$/.test(value),
-    message,
-    break: true,
-  })
+  return match(/(((^https?:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)$/, message)
 }
 
 function date(message) {
-  return new Validator({
-    validate: value => isString(value) && /^[1-2][0-9]{3}\-[0-1][0-9]\-[0-3][0-9]/.test(value),
-    message,
-    break: true,
-  })
+  return match(/^[1-2][0-9]{3}\-[0-1][0-9]\-[0-3][0-9]/, message)
 }
 
-function match(reg, message) {
+function match(validator, message) {
   return new Validator({
-    validate: value => typeof value === 'string' && reg.test(value),
+    validate(value) {
+      if (isFunction(validator)) {
+        return validator.call(this, value)
+      }
+      else if (isInstanceOf(validator, RegExp)) {
+        return typeof value === 'string' && validator.test(value)
+      }
+      else if (validator === String) {
+        return isString(value)
+      }
+      else if (validator === Number) {
+        return isNumber(value)
+      }
+      else if (validator === Boolean) {
+        return isBoolean(value)
+      }
+      else if (validator === Function) {
+        return typeof value === 'function'
+      }
+      else if (isConstructor(validator)) {
+        return isInstanceOf(value, validator)
+      }
+      else if (isNaN(validator)) {
+        return isNaN(value)
+      }
+      else {
+        return validator === value
+      }
+    },
     message,
     break: true,
   })

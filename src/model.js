@@ -132,7 +132,7 @@ export class Model {
   }
 
   init(data) {
-    if (this.__init) {
+    if (this.$ready) {
       return
     }
 
@@ -236,9 +236,6 @@ export class Model {
 
     // init data
     this.restore(data)
-
-    // inited
-    define(this, '__init', true)
   }
 
   /**
@@ -451,7 +448,6 @@ export class Model {
       this.$store.del(key)
       delete this[key]
     })
-
 
     this.onSwitch(params)
 

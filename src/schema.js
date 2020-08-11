@@ -93,8 +93,8 @@ import Meta from './meta.js'
 export class Schema {
   constructor(metas) {
     each(metas, (meta, key) => {
-      const value = isInheritedOf(meta, Meta) ? new meta()
-        : isInstanceOf(meta, Meta) ? meta
+      const value = isInstanceOf(meta, Meta) ? meta
+        : isInheritedOf(meta, Meta) ? new meta()
         : isObject(meta) ? new Meta(meta)
         : null
 

@@ -151,11 +151,16 @@ Should be a date string whose formatter is `YYYY-MM-DD`.
 ]
 ```
 
-### match(reg)
+### match(function|regexp|String|Number|Boolean|NaN|...)
 
 ```js
 [
-  match(/[0-9]+/, 'Some should must be a number')
+  match(/[0-9]+/, 'Some should must be a number'),
+  match(v => v > 10, 'Some should be greater than 10'),
+  match(String, 'Some should be a string'),
+  match(NaN, 'Some should not be a number'),
+  match(Promise, 'Some should be a promise'),
+  match('aaa', 'Some should equal `aaa`'),
 ]
 ```
 

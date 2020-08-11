@@ -1,22 +1,26 @@
-import { getConstructorOf, inherit, map, isInstanceOf, isInheritedOf } from 'ts-fns'
+import { getConstructorOf, inherit, map, isInstanceOf, isInheritedOf, isObject, filter } from 'ts-fns'
 import Validator from './validator.js'
 
 export class Meta {
   constructor(attrs = {}) {
     const Constructor = getConstructorOf(this)
     const mergedAttrs = { ...Constructor, ...attrs }
-    const finalAttrs = map(mergedAttrs, (attr, key) => {
-      if (key === 'validators') {
-        return attr.map(v =>
-          isInstanceOf(v, Validator) ? v
-          : isInheritedOf(v, Validator) ? new v()
-          : new Validator(v)
-        )
-      }
-      else {
-        return attr
-      }
-    })
+    const finalAttrs = filter(
+      map(mergedAttrs, (attr, key) => {
+        if (key === 'validators') {
+          return attr.map(v =>
+            isInstanceOf(v, Validator) ? v
+            : isInheritedOf(v, Validator) ? new v()
+            : isObject(v) ? new Validator(v)
+            : null
+          )
+        }
+        else {
+          return attr
+        }
+      }),
+      v => !!v,
+    )
     Object.assign(this, finalAttrs)
   }
 
