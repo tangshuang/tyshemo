@@ -2,6 +2,7 @@ import {
   isObject,
   isInheritedOf,
   isArray,
+  isEmpty,
   map,
   each,
   flat,
@@ -173,7 +174,16 @@ export class Model {
           enumerable: true,
         },
         errors: {
-          get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
+          get: () => {
+            const value = this.get(key)
+
+            // if user did not fill the value, and the field is not required, there is no need to get error
+            if (isEmpty(value) && !this.$schema.required(key, this)) {
+              return []
+            }
+
+            return this.$schema.$validate(key, this.$store.data[key], this)([])
+          },
           enumerable: true,
         },
       }
@@ -201,7 +211,13 @@ export class Model {
     define(this, '$views', views)
 
     // create errors, so that is's easy and quick to know the model's current status
-    define(this.$views, '$errors', () => this.validate())
+    define(this.$views, '$errors', () => {
+      const errors = []
+      each(views, (view) => {
+        errors.push(...view.errors)
+      })
+      return errors
+    })
 
     // create changed, so that it's easy to find out whether the data has changed
     define(this.$views, '$changed', {

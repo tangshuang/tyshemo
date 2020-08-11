@@ -263,6 +263,10 @@ export class Schema {
     }
   }
 
+  required(key, context) {
+    return this.$invoke(key, 'required', context)(false)
+  }
+
   disabled(key, context) {
     return this.$invoke(key, 'disabled', context)(false)
   }
