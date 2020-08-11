@@ -4,23 +4,24 @@ import Validator from './validator.js'
 export class Meta {
   constructor(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    const mergedAttrs = { ...Constructor, ...attrs }
-    const finalAttrs = filter(
-      map(mergedAttrs, (attr, key) => {
-        if (key === 'validators') {
-          return attr.map(v =>
-            isInstanceOf(v, Validator) ? v
-            : isInheritedOf(v, Validator) ? new v()
-            : isObject(v) ? new Validator(v)
-            : null
-          )
-        }
-        else {
-          return attr
-        }
-      }),
-      v => !!v,
-    )
+    const constructorAttrs = { ...Constructor }
+    // remove extend method
+    delete constructorAttrs.extend
+
+    const mergedAttrs = { ...constructorAttrs, ...attrs }
+    const finalAttrs = map(mergedAttrs, (attr, key) => {
+      if (key === 'validators') {
+        return attr.map(v =>
+          isInstanceOf(v, Validator) ? v
+          : isInheritedOf(v, Validator) ? new v()
+          : v && typeof v === 'object' ? new Validator(v)
+          : null
+        ).filter(v => !!v)
+      }
+      else {
+        return attr
+      }
+    })
     Object.assign(this, finalAttrs)
   }
 
