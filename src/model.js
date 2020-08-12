@@ -356,13 +356,15 @@ export class Model {
       this._check(null, true)
       const errors = []
 
-      const errs = this.onValid() || []
+      const errs = this.onCheck() || []
       errors.push(...errs)
 
-      each(this.$schema, (def, key) => {
+      const keys = Object.keys(this.$schema)
+      keys.forEach((key) => {
         const errs = this.validate(key)
         errors.push(...errs)
       })
+
       return errors
     }
 
@@ -524,7 +526,7 @@ export class Model {
     return data
   }
 
-  onValid() {}
+  onCheck() {}
 
   onError() {}
 
