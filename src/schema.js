@@ -649,6 +649,11 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
+      // disabled
+      if (this.disabled(key, context)) {
+        return
+      }
+
       const { drop, map, flat, catch: handle, to = key } = meta
       const value = data[key]
 
@@ -662,11 +667,6 @@ export class Schema {
           },
         )
         Object.assign(patch, res)
-      }
-
-      // drop if disabled
-      if (this.disabled(key, context)) {
-        return
       }
 
       if (isBoolean(drop) && drop) {

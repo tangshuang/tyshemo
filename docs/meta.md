@@ -61,6 +61,7 @@ const attrs = {
   // notice: `default` and result of `compute` should match type,
   // can be rule, i.e. equal(String)
   type: String,
+
   // optional, string, message to return when type checking fail
   message: '',
 
@@ -76,8 +77,10 @@ const attrs = {
 
   // optional, function, whether to not use this property when export
   drop: (value, key, data) => Boolean,
+
   // optional, function, to override the property value when export, not work when `drop` is false
   map: (value, key, data) => newValue,
+
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
   flat: (value, key, data) => ({ newProp: newValue }),
 
@@ -92,6 +95,7 @@ const attrs = {
    * when you pass into { some }, after parsing, you will get { one }
    */
   from: 'some',
+
   /**
    * optional, when you want to export the field to an another name, you can pass it,
    * i.e. {
@@ -106,20 +110,29 @@ const attrs = {
 
   // optional, function, format this property value when get
   getter: (value) => newValue,
+
   // optional, function, format this property value when set
   setter: (value) => value,
 
-  // optional, function or boolean or string, if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)
+  // optional, function or boolean or string,
+  // if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)
   readonly: Boolean,
-  // optional, function or boolean or string, if `disabled` is true, you will not be able to change value by using `set` (however `assign` works), when you invoke `validate`, the validators will be ignored, and when you invoke `export`, the `drop` option will be set to be `true` automaticly
+
+  // optional, function or boolean or string,
+  // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
+  // when you invoke `validate`, the validators will be ignored,
+  // when you invoke `export`, the `drop` will be set to be `true` automaticly (`flat` will not work too)
   disabled: Boolean,
 
-  // optional, function or boolean, use schema.hidden(field) to check whether the field should be hidden
-  hidden: Boolean,
-  // optional, function or boolean or string
+  // optional, function or boolean or string.
+  // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
+  // `Empty` rule: null|undefined|''|NaN|[]|{}
   required: Boolean,
 
-  // when this field's value changed, the `watch` schema option will be invoke
+  // optional, function or boolean
+  hidden: Boolean,
+
+  // when this field's value changed, the `watch` function will be invoke
   watch({ value }) {},
 
   // optional, when an error occurs caused by this property, what to do with the error
