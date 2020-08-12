@@ -14,6 +14,7 @@ import {
   interpolate,
   inObject,
   isInheritedOf,
+  isEmpty,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
@@ -537,6 +538,11 @@ export class Schema {
         return []
       }
 
+      // if user did not fill the value, and the field is not required, there is no need to get error
+      if (isEmpty(value) && !this.required(key, context)) {
+        return []
+      }
+
       const first = args[0]
       // array, pass custom valiators which is not in schema, i.e. schema.$validate('some', value, model)([{ validate: v => v > 0, message: 'should > 0' }])
       if (isArray(first) && first[0] && typeof first[0] === 'object') {
@@ -567,16 +573,12 @@ export class Schema {
     const errors = []
 
     if (!meta) {
-      errors.push({
+      this.onError({
+        action: 'validate',
         key,
         value,
         message: `${key} is not existing in schema.`,
       })
-      return errors
-    }
-
-    // ignore if disabled
-    if (this.disabled(key, context)) {
       return errors
     }
 

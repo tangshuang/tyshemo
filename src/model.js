@@ -174,16 +174,7 @@ export class Model {
           enumerable: true,
         },
         errors: {
-          get: () => {
-            const value = this.get(key)
-
-            // if user did not fill the value, and the field is not required, there is no need to get error
-            if (isEmpty(value) && !this.$schema.required(key, this)) {
-              return []
-            }
-
-            return this.$schema.$validate(key, this.$store.data[key], this)([])
-          },
+          get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
           enumerable: true,
         },
       }
