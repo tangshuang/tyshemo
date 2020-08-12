@@ -141,6 +141,7 @@ describe('Schema', () => {
       some: {
         label: 'Some',
         default: '',
+        required: true,
         validators: [
           Validator.required('{label} should not be empty'),
           {
