@@ -482,7 +482,8 @@ export class Model {
     const entry = this.onParse(json)
     const schema = this.$schema
     const data = schema.parse(entry, this)
-    this.restore(data)
+    const next = { ...json, ...data }
+    this.restore(next)
     return this
   }
 
