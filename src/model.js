@@ -177,6 +177,15 @@ export class Model {
           get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
           enumerable: true,
         },
+        text: {
+          // support formatter
+          get: () => schema.formatter ? schema.formatter.call(this, this.$store.data[key]) : this.$store.data[key] + '',
+          enumerable: true,
+        },
+        data: {
+          get: () => this.$store.data[key],
+          enumerable: true,
+        },
       }
 
       const def = this.$schema[key]
@@ -199,6 +208,7 @@ export class Model {
         enumerable: true,
       })
     })
+
     define(this, '$views', views)
 
     // create errors, so that is's easy and quick to know the model's current status
