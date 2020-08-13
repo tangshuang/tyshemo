@@ -22,12 +22,12 @@ import Meta from './meta.js'
 
 /**
  * @example const schema = new Schema({
- *   propertyName: {
+ *   fieldName: {
  *     // required, function to return an object/array
  *     default: '',
  *
  *     // optional, computed property, will compute at each time digest end
- *     // when it is a compute property, it is not able to use set to update value
+ *     // when it is a computed property, it is not able to use set to update value
  *     compute() {
  *       const a = this.a
  *       const b = this.b
@@ -52,11 +52,11 @@ import Meta from './meta.js'
  *     // optional, function, used by `fromJSON`, `json` is the parameter of `fromJSON`
  *     create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
  *
- *     // optional, function, whether to not use this property when export
+ *     // optional, function, whether to not use this field when export
  *     drop: (value, key, data) => Boolean,
- *     // optional, function, to override the property value when export, not work when `drop` is false
+ *     // optional, function, to override the field value when export, not work when `drop` is false
  *     map: (value, key, data) => newValue,
- *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
+ *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original field
  *     flat: (value, key, data) => ({ newProp: newValue }),
 
  *     // field name which used to pick from backend by `fromJSON`
@@ -64,9 +64,11 @@ import Meta from './meta.js'
  *     // field name which used to push to backend by `toJSON`
  *     to: 'field_name',
  *
- *     // optional, function, format this property value when get
+ *     // optional, function, format this field value when get
  *     getter: (value) => newValue,
- *     // optional, function, format this property value when set
+ *     // optional, function, format this field to a text
+ *     formatter: (value) => text,
+ *     // optional, function, format this field value when set
  *     setter: (value) => value,
  *
  *     // optional, function or boolean or string, use schema.required(field) to check, will be invoked by validate
@@ -83,10 +85,10 @@ import Meta from './meta.js'
  *     disabled: { determine, message },
  *
  *     // the difference between `disabled` and `readonly`:
- *     // readonly means the property can only be read/validate/export, but could not be changed.
- *     // disabled means the property can only be read, but could not be changed, and will be drop when validate and export
+ *     // readonly means the field can only be read/validate/export, but could not be changed.
+ *     // disabled means the field can only be read, but could not be changed, and will be drop when validate and export
  *
- *     // optional, when an error occurs caused by this property, what to do with the error
+ *     // optional, when an error occurs caused by this field, what to do with the error
  *     catch: (error) => {},
  *   },
  * })
@@ -296,6 +298,31 @@ export class Schema {
         {
           key,
           attr: 'getter',
+        },
+      )
+      return coming
+    }
+    else {
+      return value
+    }
+  }
+
+  format(key, value, context) {
+    const meta = this[key]
+
+    if (!meta) {
+      return value
+    }
+
+    const { formatter, catch: handle } = meta
+
+    if (isFunction(formatter)) {
+      const coming = this._trydo(
+        () => formatter.call(context, value),
+        (error) => isFunction(handle) && handle.call(context, error) || value,
+        {
+          key,
+          attr: 'formatter',
         },
       )
       return coming

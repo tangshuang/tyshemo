@@ -111,6 +111,9 @@ const attrs = {
   // optional, function, format this property value when get
   getter: (value) => newValue,
 
+  // optional, function, format this field to a text, you can read the text on `model.$views.field.text`
+  formatter: (value) => text,
+
   // optional, function, format this property value when set
   setter: (value) => value,
 

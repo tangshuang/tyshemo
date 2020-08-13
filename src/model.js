@@ -177,6 +177,14 @@ export class Model {
           get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
           enumerable: true,
         },
+        data: {
+          get: () => this.$store.data[key],
+          enumerable: true,
+        },
+        text: {
+          get: () => this.$schema.format(key, this.$store.data[key], this) + '',
+          enumerable: true,
+        },
       }
 
       const def = this.$schema[key]
