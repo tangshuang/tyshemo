@@ -2,7 +2,6 @@ import {
   isObject,
   isInheritedOf,
   isArray,
-  isEmpty,
   map,
   each,
   flat,
@@ -17,9 +16,7 @@ import {
   assign,
   isUndefined,
   inObject,
-  isNull,
   isNone,
-  foreach,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -189,8 +186,8 @@ export class Model {
         changed: false, // whether the field has changed
       }
       // patch attributes from meta
-      const def = this.$schema[key]
-      foreach(def, (descriptor, key) => {
+      const meta = this.$schema[key]
+      each(meta, (descriptor, key) => {
         if (inObject(key, attrs)) {
           return
         }
@@ -206,7 +203,7 @@ export class Model {
         else {
           view[key] = value
         }
-      })
+      }, true)
 
       Object.defineProperties(view, viewDef)
       define(views, key, {
@@ -432,7 +429,7 @@ export class Model {
     })
 
     // patch state
-    foreach(state, (descriptor, key) => {
+    each(state, (descriptor, key) => {
       if (inObject(key, params)) {
         return
       }
@@ -452,7 +449,7 @@ export class Model {
       }
 
       define(params, key, descriptor)
-    })
+    }, true)
 
     // delete the outdate properties
     each(this.$store.data, (value, key) => {

@@ -1,4 +1,15 @@
-import { getConstructorOf, inherit, isEmpty, isNumber, isNumeric, isString, isConstructor, isFunction, isInstanceOf, isBoolean } from 'ts-fns'
+import {
+  getConstructorOf,
+  inherit,
+  isEmpty,
+  isNumber,
+  isNumeric,
+  isString,
+  isConstructor,
+  isFunction,
+  isInstanceOf,
+  isBoolean,
+} from 'ts-fns'
 
 export class Validator {
   constructor(attrs = {}) {

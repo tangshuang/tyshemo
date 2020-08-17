@@ -8,10 +8,9 @@ import {
   isArray,
   define,
   foreach,
-  filter,
+  each,
 } from 'ts-fns'
 import Validator from './validator.js'
-import { each } from 'ts-fns/cjs/object'
 
 export class Meta {
   constructor(attrs = {}) {
@@ -46,7 +45,7 @@ export class Meta {
       }
     }
 
-    foreach(Constructor, (descriptor, key) => {
+    each(Constructor, (descriptor, key) => {
       if (inArray(key, ['extend', 'attributes'])) {
         return
       }
@@ -56,7 +55,7 @@ export class Meta {
       }
 
       useAttr(key, descriptor, Constructor)
-    })
+    }, true)
 
     // patch those which are static getter or setter
     const descriptors = Object.getOwnPropertyDescriptors(Constructor)
@@ -69,9 +68,9 @@ export class Meta {
       useAttr(key, descriptor, Constructor)
     })
 
-    foreach(attrs, (descriptor, key) => {
+    each(attrs, (descriptor, key) => {
       useAttr(key, descriptor, attrs)
-    })
+    }, true)
 
     this.onInit()
   }
