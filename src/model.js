@@ -18,10 +18,12 @@ import {
   isUndefined,
   inObject,
   isNull,
+  isNone,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
 import _Store from './store.js'
+import Meta from './meta.js'
 
 /**
  * class SomeModel extends Model {
@@ -128,10 +130,6 @@ export class Model {
     return {}
   }
 
-  attrs() {
-    return {}
-  }
-
   init(data) {
     if (this.$ready) {
       return
@@ -151,20 +149,6 @@ export class Model {
 
     // views
     const views = {}
-    let attrs = this.attrs()
-
-    if (isArray(attrs)) {
-      const attrList = attrs
-      attrs = {}
-      attrList.forEach((attr) => {
-        attrs[attr] = null
-      })
-    }
-
-    const defaultattrs = ['required', 'disabled', 'readonly', 'hidden']
-    defaultattrs.forEach((attr) => {
-      attrs[attr] = false
-    })
 
     keys.forEach((key) => {
       const viewDef = {
@@ -187,14 +171,28 @@ export class Model {
         },
       }
 
-      const def = this.$schema[key]
+      // default attributes
+      const attrs = Meta.attributes
       each(attrs, (fallback, attr) => {
-        if (!inObject(attr, def) && isNull(fallback)) {
+        if (isNone(fallback)) {
           return
         }
 
         viewDef[attr] = {
           get: () => this.$schema.$invoke(key, attr, this)(fallback),
+          enumerable: true,
+        }
+      })
+
+      // patch attributes from meta
+      const def = this.$schema[key]
+      each(def, (value, key) => {
+        if (!isUndefined(attrs, key)) {
+          return
+        }
+
+        viewDef[key] = {
+          value,
           enumerable: true,
         }
       })

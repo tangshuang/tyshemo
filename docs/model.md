@@ -216,52 +216,6 @@ Why I provide a `$views` property and give structure like this? Because in most 
 
 *Notice: Change `value` on a field view will trigger watch callbacks*
 
-**attrs()**
-
-Model supports other attrs in schema by use `attrs` method. For example:
-
-```js
-class MyModel extends Model {
-  static some = {
-    default: '',
-    label: 'name',
-    placeholder: 'Input Name',
-  }
-
-  attrs() {
-    return ['label', 'placeholder'] // patch `label` and `placeholder` attrs into `$views`
-  }
-}
-```
-
-The return value is used to provide other information so that you can find them on `$views`.
-
-```js
-const model = new MyModel()
-console.log(model.$views.some.label) // name
-```
-
-If you want to make a attr force patched into view, you should return an object in `attrs`:
-
-```js
-class MyModel extends Model {
-  static some = {
-    default: '',
-  }
-
-  attrs() {
-    return {
-      placeholder: null, // set null to be not force used, `placeholder` property is not existing when you have not given
-      label: '', // `label` property will always exist on view, if you have not given, it will be an empty string
-    }
-  }
-}
-
-const model = new MyModel()
-console.log(model.$views.some.label) // ''
-console.log(model.$views.some.placeholder) // undefined
-```
-
 **view.errors**
 
 The `errors` property on view is an array.

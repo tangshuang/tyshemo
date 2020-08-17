@@ -5,7 +5,10 @@ export class Validator {
     const Constructor = getConstructorOf(this)
     const finalAttrs = { ...Constructor, ...attrs }
     Object.assign(this, finalAttrs)
+    this.onInit()
   }
+
+  onInit() {}
 
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
