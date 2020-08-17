@@ -19,6 +19,7 @@ import {
   inObject,
   isNull,
   isNone,
+  foreach,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -184,22 +185,30 @@ export class Model {
         }
       })
 
+      const view = {
+        changed: false, // whether the field has changed
+      }
       // patch attributes from meta
       const def = this.$schema[key]
-      each(def, (value, key) => {
-        if (!isUndefined(attrs, key)) {
+      foreach(def, (descriptor, key) => {
+        if (inObject(key, attrs)) {
           return
         }
-
-        viewDef[key] = {
-          value,
-          enumerable: true,
+        const { value, get, set } = descriptor
+        if (get || set) {
+          define(view, key, {
+            get: get && get.bind(this),
+            set: set && set.bind(this),
+            enumerable: true,
+            configurable: true,
+          })
+        }
+        else {
+          view[key] = value
         }
       })
 
-      const view = Object.defineProperties({
-        changed: false, // whether the field has changed
-      }, viewDef)
+      Object.defineProperties(view, viewDef)
       define(views, key, {
         value: view,
         enumerable: true,
@@ -423,7 +432,7 @@ export class Model {
     })
 
     // patch state
-    each(state, (value, key) => {
+    foreach(state, (descriptor, key) => {
       if (inObject(key, params)) {
         return
       }
@@ -442,17 +451,7 @@ export class Model {
         return
       }
 
-      const descriptor = Object.getOwnPropertyDescriptor(state, key)
-      if (descriptor && (descriptor.get || descriptor.set)) {
-        define(params, key, {
-          get: descriptor.get,
-          set: descriptor.set,
-          enumerable: true,
-        })
-      }
-      else {
-        params[key] = value
-      }
+      define(params, key, descriptor)
     })
 
     // delete the outdate properties

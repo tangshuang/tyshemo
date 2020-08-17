@@ -49,10 +49,6 @@ describe('Meta', () => {
           return this.age * 5
         }
       })
-
-      attrs() {
-        return ['label']
-      }
     }
 
     const some = new Some()

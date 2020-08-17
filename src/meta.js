@@ -1,28 +1,78 @@
-import { getConstructorOf, inherit, map, isInstanceOf, isInheritedOf, isObject, filter } from 'ts-fns'
+import {
+  getConstructorOf,
+  inherit,
+  isInstanceOf,
+  isInheritedOf,
+  inArray,
+  inObject,
+  isArray,
+  define,
+  foreach,
+  filter,
+} from 'ts-fns'
 import Validator from './validator.js'
+import { each } from 'ts-fns/cjs/object'
 
 export class Meta {
   constructor(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    const constructorAttrs = { ...Constructor }
-    // remove extend method
-    delete constructorAttrs.extend
+    const createValidators = (items) => {
+      return items.map(v =>
+        isInstanceOf(v, Validator) ? v
+        : isInheritedOf(v, Validator) ? new v()
+        : v && typeof v === 'object' ? new Validator(v)
+        : null
+      ).filter(v => !!v)
+    }
+    const useAttr = (key, descriptor, context) => {
+      const { value, get, set } = descriptor
 
-    const mergedAttrs = { ...constructorAttrs, ...attrs }
-    const finalAttrs = map(mergedAttrs, (attr, key) => {
       if (key === 'validators') {
-        return attr.map(v =>
-          isInstanceOf(v, Validator) ? v
-          : isInheritedOf(v, Validator) ? new v()
-          : v && typeof v === 'object' ? new Validator(v)
-          : null
-        ).filter(v => !!v)
+        const items = value ? value : get ? get.call(context) : null
+        this.validators = isArray(items) ? createValidators(items) : []
+        return
+      }
+
+      if (get || set) {
+        define(this, key, {
+          get,
+          set,
+          enumerable: true,
+          configurable: true,
+        })
       }
       else {
-        return attr
+        this[key] = value
       }
+    }
+
+    foreach(Constructor, (descriptor, key) => {
+      if (inArray(key, ['extend', 'attributes'])) {
+        return
+      }
+
+      if (inObject(key, attrs)) {
+        return
+      }
+
+      useAttr(key, descriptor, Constructor)
     })
-    Object.assign(this, finalAttrs)
+
+    // patch those which are static getter or setter
+    const descriptors = Object.getOwnPropertyDescriptors(Constructor)
+    each(descriptors, (descriptor, key) => {
+      const { get, set } = descriptor
+      if (!get && !set) {
+        return
+      }
+
+      useAttr(key, descriptor, Constructor)
+    })
+
+    foreach(attrs, (descriptor, key) => {
+      useAttr(key, descriptor, attrs)
+    })
+
     this.onInit()
   }
 

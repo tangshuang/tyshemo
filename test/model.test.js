@@ -185,26 +185,26 @@ describe('Model', () => {
   })
 
   test('$view descontruct', () => {
-    class SomeModel extends Model {
-      static name = {
-        default: '',
-        label: 'Name',
-        type() {
-          return typeof this.name
-        },
-      }
-
-      attrs() {
-        return ['label', 'type']
+    class Name extends Meta {
+      static default = ''
+      static label = 'Name'
+      static get copy() {
+        return this.name
       }
     }
+    class SomeModel extends Model {
+      static name = Name
+    }
     const some = new SomeModel()
+    some.name = 'tomy'
+
     const view = some.$views.name
-    const attrs = { ...view }
+    const attrs = { ...view } // after this, when you change your model, properties of attrs will not change any more
 
     expect(attrs.required).toBe(false)
     expect(attrs.label).toBe('Name')
-    expect(attrs.type).toBe('string')
+
+    expect(attrs.copy).toBe('tomy')
   })
 
   test('state', () => {
