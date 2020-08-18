@@ -377,13 +377,13 @@ const errors = model.validate([key1, key2])
 
 This code validate only given fields in model.
 
-**onValid()**
+**onCheck()**
 
-Before alll validators run, the hook method `onValid` will be invoked.
+Before alll validators run, the hook method `onCheck` will be invoked.
 
 ```js
 class Some extends Model {
-  onValid() {
+  onCheck() {
     const errors = [
       { message: 'xxx' },
     ]
