@@ -66,10 +66,6 @@ export class Meta {
 
   onInit() {}
 
-  state() {
-    return {}
-  }
-
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
     const finalAttrs = { ...this, ...attrs }

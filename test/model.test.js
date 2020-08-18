@@ -237,30 +237,6 @@ describe('Model', () => {
     expect(model.$views.some.required).toBe(true)
   })
 
-  test('define state in Meta', () => {
-    class Some extends Meta {
-      state() {
-        return {
-          some_name: 'aa',
-        }
-      }
-
-      static default = ''
-      static compute() {
-        return this.some_name
-      }
-    }
-
-    class It extends Model {
-      static some = Some
-    }
-
-    const it = new It()
-
-    expect(it.some).toBe('aa')
-    expect(it.some_name).toBe('aa')
-  })
-
   test('watch schema', () => {
     let count = 0
 

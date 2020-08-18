@@ -134,33 +134,36 @@ class SomeModel extends Model {
 When you define a Model, in fact, you are defining a Domain Model. However, Domain Model in some cases need to have dependencies with state, and this state may be changed by business code. So we provide a `state` define way.
 
 ```js
-class Some extends Meta {
-  // notice, it is a member method, not static method
+class SomeModel extends Model {
+  // define state
   state() {
     return {
-      some_name: ''
+      isFund: false,
+      isInvested: false,
     }
   }
 
-  static default = ''
-  static compute() {
-    return this.some_name
+  schema() {
+    const some = {
+      default: null,
+      required() {
+        return !this.isFund // use state to check whether need to be required
+      },
+    }
+    return {
+      some,
+    }
   }
 }
-```
 
-`Model` will combine all metas' state together to generate own state.
-
-```js
-class One extends Model {
-  static some = Some // model will generate `some_name` automaticly
-}
-```
-
-```js
-const one = new One({
-  some_name: 'some',
+const model = new SomeModel({
+  isFund: true,
 })
+
+// model.isFund === true
+// model.isInvested === false
+
+model.set('isFund', false)
 ```
 
 The properties of state are not in schema, however they are on model, you can update them and trigger watchers. You should not delete them.
