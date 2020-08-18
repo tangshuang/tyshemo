@@ -16,7 +16,7 @@ import {
   assign,
   isUndefined,
   inObject,
-  isNone,
+  isNull,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -128,6 +128,31 @@ export class Model {
     return {}
   }
 
+  attrs() {
+    return {
+      default: null,
+      compute: null,
+      type: null,
+      message: null,
+      validators: null,
+      create: null,
+      drop: null,
+      map: null,
+      flat: null,
+      from: null,
+      to: null,
+      getter: null,
+      setter: null,
+      formatter: null,
+      readonly: false,
+      disabled: false,
+      required: false,
+      hidden: false,
+      watch: null,
+      catch: null,
+    }
+  }
+
   init(data) {
     if (this.$ready) {
       return
@@ -169,10 +194,11 @@ export class Model {
         },
       }
 
-      // default attributes
-      const attrs = Meta.attributes
+      // default attributes which will be used by Model/Schema, can not be reset by userself
+      const attrs = this.attrs()
+
       each(attrs, (fallback, attr) => {
-        if (isNone(fallback)) {
+        if (isNull(fallback)) {
           return
         }
 

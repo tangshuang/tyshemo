@@ -7,7 +7,6 @@ import {
   inObject,
   isArray,
   define,
-  foreach,
   each,
 } from 'ts-fns'
 import Validator from './validator.js'
@@ -46,7 +45,7 @@ export class Meta {
     }
 
     each(Constructor, (descriptor, key) => {
-      if (Constructor === Meta && inArray(key, ['extend', 'attributes'])) {
+      if (Constructor === Meta && inArray(key, ['extend'])) {
         return
       }
 
@@ -75,29 +74,6 @@ export class Meta {
   static extend(attrs = {}) {
     const Constructor = inherit(this, {}, attrs)
     return Constructor
-  }
-
-  static attributes = {
-    default: null,
-    compute: null,
-    type: null,
-    message: null,
-    validators: null,
-    create: null,
-    drop: null,
-    map: null,
-    flat: null,
-    from: null,
-    to: null,
-    getter: null,
-    setter: null,
-    formatter: null,
-    readonly: false,
-    disabled: false,
-    required: false,
-    hidden: false,
-    watch: null,
-    catch: null,
   }
 }
 export default Meta
