@@ -98,7 +98,7 @@ export class Schema {
     each(metas, (meta, key) => {
       const value = isInstanceOf(meta, Meta) ? meta
         : isInheritedOf(meta, Meta) ? new meta()
-        : meta && typeof meta === 'object' ? new Meta(meta)
+        : meta && typeof meta === 'object' && !isEmpty(meta) ? new Meta(meta)
         : null
 
       if (!value) {

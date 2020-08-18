@@ -336,4 +336,55 @@ describe('Model', () => {
     const data = some.toJSON()
     expect(data.one).toBe('aaaa')
   })
+
+  test('static extend', () => {
+    class Some extends Model {
+      static name = {
+        default: 'some',
+      }
+    }
+
+    const One = Some.extend({
+      age: {
+        default: 0,
+      },
+    })
+
+    const one = new One()
+
+    // extend and extract static methods are deleted
+    expect(one.extend).toBeUndefined()
+
+    expect(one.name).toBe('some')
+    expect(one.age).toBe(0)
+  })
+
+  test('static extract', () => {
+    class Some extends Model {
+      static name = {
+        default: 'some',
+      }
+      static age = {
+        default: 0,
+      }
+
+      say() {}
+
+      sing() {}
+    }
+
+    const One = Some.extract({
+      age: true,
+    }, {
+      sing: true,
+    })
+
+    const one = new One()
+
+    expect(one.extract).toBeUndefined()
+    expect(one.name).toBeUndefined()
+    expect(one.age).toBe(0)
+    expect(one.say).toBeUndefined()
+    expect(one.sing).toBeTruthy()
+  })
 })

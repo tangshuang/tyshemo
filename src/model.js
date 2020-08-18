@@ -17,11 +17,11 @@ import {
   isUndefined,
   inObject,
   isNull,
+  inherit,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
 import _Store from './store.js'
-import Meta from './meta.js'
 
 /**
  * class SomeModel extends Model {
@@ -121,7 +121,10 @@ export class Model {
   schema() {
     // create schema by model's static properties
     const Constructor = getConstructorOf(this)
-    return { ...Constructor }
+    const metas = { ...Constructor }
+    delete metas.extend
+    delete metas.extract
+    return metas
   }
 
   state() {
@@ -621,6 +624,48 @@ export class Model {
         action: '$parent',
       })
     }
+  }
+
+  static extend(metas, protos) {
+    const Constructor = inherit(this, protos, metas)
+    return Constructor
+  }
+
+  static extract(metas, protos) {
+    class Child extends Model {}
+
+    const Parent = this
+
+    if (metas) {
+      each(metas, (meta, key) => {
+        if (!meta) {
+          return
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(Parent, key)
+        define(Child, key, descriptor)
+      })
+    }
+
+    if (protos) {
+      each(protos, (proto, key) => {
+        if (!proto) {
+          return
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(Parent.prototype, key)
+        define(Child.prototype, key, descriptor)
+      })
+    }
+
+    if (Child.name !== Parent.name) {
+      define(Child, 'name', {
+        writable: false,
+        configurable: true,
+        enumerable: false,
+        value: Parent.name,
+      })
+    }
+
+    return Child
   }
 }
 

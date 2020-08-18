@@ -8,6 +8,7 @@ import {
   isArray,
   define,
   each,
+  isEmpty,
 } from 'ts-fns'
 import Validator from './validator.js'
 
@@ -18,7 +19,7 @@ export class Meta {
       return items.map(v =>
         isInstanceOf(v, Validator) ? v
         : isInheritedOf(v, Validator) ? new v()
-        : v && typeof v === 'object' ? new Validator(v)
+        : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
         : null
       ).filter(v => !!v)
     }
