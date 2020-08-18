@@ -14,7 +14,8 @@ import {
 export class Validator {
   constructor(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    const finalAttrs = { ...Constructor, ...attrs }
+    const properties = Constructor === Validator ? {} : { ...Constructor } // filter all original static properties
+    const finalAttrs = { ...properties, ...attrs }
     Object.assign(this, finalAttrs)
     this.onInit()
   }
@@ -36,7 +37,7 @@ export class Validator {
   }
 
   static extend(attrs = {}) {
-    const Constructor = inherit(this, {}, attrs)
+    const Constructor = inherit(this, null, attrs)
     return Constructor
   }
 

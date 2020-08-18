@@ -46,27 +46,16 @@ export class Meta {
     }
 
     each(Constructor, (descriptor, key) => {
-      if (inArray(key, ['extend', 'attributes'])) {
+      if (Constructor === Meta && inArray(key, ['extend', 'attributes'])) {
         return
       }
 
-      if (inObject(key, attrs)) {
+      if (inObject(key, attrs, true)) {
         return
       }
 
       useAttr(key, descriptor, Constructor)
     }, true)
-
-    // patch those which are static getter or setter
-    const descriptors = Object.getOwnPropertyDescriptors(Constructor)
-    each(descriptors, (descriptor, key) => {
-      const { get, set } = descriptor
-      if (!get && !set) {
-        return
-      }
-
-      useAttr(key, descriptor, Constructor)
-    })
 
     each(attrs, (descriptor, key) => {
       useAttr(key, descriptor, attrs)
