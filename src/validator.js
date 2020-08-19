@@ -22,10 +22,14 @@ export class Validator {
 
   onInit() {}
 
-  extend(attrs = {}) {
+  extend(attrs) {
     const Constructor = getConstructorOf(this)
-    const finalAttrs = { ...this, ...attrs }
-    return new Constructor(finalAttrs)
+    return new Constructor(attrs)
+  }
+
+  static extend(attrs) {
+    const Constructor = inherit(this, null, attrs)
+    return Constructor
   }
 
   // make each validator break true
@@ -34,11 +38,6 @@ export class Validator {
       ...validator,
       break: true,
     }))
-  }
-
-  static extend(attrs = {}) {
-    const Constructor = inherit(this, null, attrs)
-    return Constructor
   }
 
   static required = required

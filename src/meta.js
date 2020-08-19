@@ -70,14 +70,13 @@ export class Meta {
     return {}
   }
 
-  extend(attrs = {}) {
+  extend(attrs) {
     const Constructor = getConstructorOf(this)
-    const finalAttrs = { ...this, ...attrs }
-    return new Constructor(finalAttrs)
+    return new Constructor(attrs)
   }
 
-  static extend(attrs = {}) {
-    const Constructor = inherit(this, {}, attrs)
+  static extend(attrs) {
+    const Constructor = inherit(this, null, attrs)
     return Constructor
   }
 }

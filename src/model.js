@@ -685,11 +685,11 @@ export class Model {
     }
 
     if (Child.name !== Parent.name) {
+      const name = Object.getOwnPropertyDescriptor(Parent, 'name')
       define(Child, 'name', {
-        writable: false,
+        ...name,
+        enumerable: !!metas.name,
         configurable: true,
-        enumerable: false,
-        value: Parent.name,
       })
     }
 
