@@ -14,7 +14,6 @@ import Validator from './validator.js'
 
 export class Meta {
   constructor(attrs = {}) {
-    const Constructor = getConstructorOf(this)
     const createValidators = (items) => {
       return items.map(v =>
         isInstanceOf(v, Validator) ? v
@@ -45,17 +44,27 @@ export class Meta {
       }
     }
 
-    each(Constructor, (descriptor, key) => {
-      if (Constructor === Meta && inArray(key, ['extend'])) {
+    const push = (ins) => {
+      const Constructor = getConstructorOf(ins)
+
+      if (Constructor === Meta) {
         return
       }
 
-      if (inObject(key, attrs, true)) {
-        return
+      const Parent = getConstructorOf(Constructor.prototype)
+      if (isInheritedOf(Parent, Meta)) {
+        push(Constructor.prototype)
       }
 
-      useAttr(key, descriptor, Constructor)
-    }, true)
+      each(Constructor, (descriptor, key) => {
+        if (inObject(key, attrs, true)) {
+          return
+        }
+
+        useAttr(key, descriptor, Constructor)
+      }, true)
+    }
+    push(this)
 
     each(attrs, (descriptor, key) => {
       useAttr(key, descriptor, attrs)

@@ -183,7 +183,7 @@ const PoodA = new Pood({
 })
 ```
 
-2) extend
+2) instance.extend
 
 Use `extend` method of an instance.
 
@@ -192,6 +192,8 @@ const PoodB = new Pood().extend({
   default: 'b',
 })
 ```
+
+3) Meta.extend
 
 Use static `extend` method of a Meta.
 
@@ -219,7 +221,7 @@ class SomeModel extends Model {
 }
 ```
 
-3) refererece
+4) refererece
 
 ```js
 class PoodC extends Meta {
@@ -232,7 +234,7 @@ class PoodC extends Meta {
 
 In this way, you should redefine all attributes in class PoodC, although this make it more code, however definition is much more clear.
 
-4) property
+5) property
 
 ```js
 // notice we do not use `static` keyword
@@ -249,3 +251,32 @@ class PoodD extends Pood {
 ```
 
 This is a smart way. Notice, we do not put a `static` keyword in the code. This makes the Pood meta work as a normal js class object. Although it is not work as what we designed, it works as what we want.
+
+6) extends Meta
+
+As a ES class, you can use `extends` keyword like this:
+
+```js
+class Pood extends Meta {
+  static name = 'pood'
+  static default = ''
+  static type = String
+  static message = 'pood should must be a string'
+}
+
+class PoodE extends Pood {
+  static name = 'poode'
+}
+```
+
+PoodE will have all attributes of Pood with own name equals 'poode'.
+
+And another thing yous hould know, if you extends from a Meta which is extended from another upper Meta, the atrributes will be inherited in chain.
+
+```js
+class Pood extends Meta {}
+class PoodA extends Pood {}
+class PoodB extends PoodA {}
+```
+
+`PoodB` will have all atrributes in chain `PoodB`->`PoodA`->`Pood`.

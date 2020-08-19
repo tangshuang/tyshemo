@@ -416,4 +416,41 @@ describe('Model', () => {
     expect(one.say).toBeUndefined()
     expect(one.sing).toBeTruthy()
   })
+
+  test('class extends', () => {
+    class Name extends Meta {
+      static default = 'some'
+    }
+    class Age extends Meta {
+      static default = 0
+    }
+    class Some extends Model {
+      static name = Name
+    }
+    class One extends Some {
+      static age = Age
+    }
+
+    const one = new One()
+    expect(one.$schema.name).toBeTruthy()
+    expect(one.age).toBe(0)
+    expect(one.name).toBe('some')
+
+    class DogName extends Name {
+      static default = 'dog'
+    }
+
+    class DogAge extends Age {
+      static required = true
+    }
+
+    class Dog extends Model {
+      static name = DogName
+      static age = DogAge
+    }
+
+    const dog = new Dog()
+    expect(dog.name).toBe('dog')
+    expect(dog.$views.age.required).toBe(true)
+  })
 })

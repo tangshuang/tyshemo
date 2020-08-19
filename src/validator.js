@@ -13,10 +13,20 @@ import {
 
 export class Validator {
   constructor(attrs = {}) {
-    const Constructor = getConstructorOf(this)
-    const properties = Constructor === Validator ? {} : { ...Constructor } // filter all original static properties
-    const finalAttrs = { ...properties, ...attrs }
-    Object.assign(this, finalAttrs)
+    const properties = {}
+    const push = (ins) => {
+      const Constructor = getConstructorOf(ins)
+      if (Constructor === Validator) {
+        return
+      }
+      const Parent = getConstructorOf(Constructor.prototype)
+      if (isInheritedOf(Parent, Validator)) {
+        push(Constructor.prototype)
+      }
+      each(Constructor, (descriptor, key) => define(properties, key, descriptor), true)
+    }
+    push(this)
+    Object.assign(this, properties, attrs)
     this.onInit()
   }
 

@@ -48,8 +48,8 @@ export class Model {
      * create schema
      */
     class Schema extends _Schema {
-      constructor(defs) {
-        defs = map(defs, (def) => {
+      constructor(metas) {
+        const defs = map(metas, (def) => {
           /**
            * class SomeModel extends Model {
            *   static some = OtherModel
@@ -83,7 +83,6 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
-
 
     /**
      * create store
@@ -123,10 +122,19 @@ export class Model {
 
   schema() {
     // create schema by model's static properties
-    const Constructor = getConstructorOf(this)
-    const metas = { ...Constructor }
-    delete metas.extend
-    delete metas.extract
+    const metas = {}
+    const push = (ins) => {
+      const Constructor = getConstructorOf(ins)
+      if (Constructor === Model) {
+        return
+      }
+      const Parent = getConstructorOf(Constructor.prototype)
+      if (isInheritedOf(Parent, Model)) {
+        push(Constructor.prototype)
+      }
+      each(Constructor, (descriptor, key) => define(metas, key, descriptor), true)
+    }
+    push(this)
     return metas
   }
 
