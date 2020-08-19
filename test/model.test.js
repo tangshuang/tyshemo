@@ -237,14 +237,13 @@ describe('Model', () => {
     expect(model.$views.some.required).toBe(true)
   })
 
-  test('define state in Meta', () => {
+  test('static state in Meta', () => {
     class Some extends Meta {
-      state() {
+      static state() {
         return {
           some_name: 'aa',
         }
       }
-
       static default = ''
       static compute() {
         return this.some_name
@@ -259,6 +258,12 @@ describe('Model', () => {
 
     expect(it.some).toBe('aa')
     expect(it.some_name).toBe('aa')
+    expect(it.$views.some.state.some_name).toBe('aa')
+
+    it.$views.some.state.some_name = 'bb'
+    expect(it.some).toBe('bb')
+    expect(it.some_name).toBe('bb')
+    expect(it.$views.some.state.some_name).toBe('bb')
   })
 
   test('watch schema', () => {

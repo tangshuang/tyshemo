@@ -135,10 +135,9 @@ When you define a Model, in fact, you are defining a Domain Model. However, Doma
 
 ```js
 class Some extends Meta {
-  // notice, it is a member method, not static method
-  state() {
+  static state() {
     return {
-      some_name: ''
+      some_name: 'some'
     }
   }
 
@@ -158,9 +157,9 @@ class One extends Model {
 ```
 
 ```js
-const one = new One({
-  some_name: 'some',
-})
+const one = new One()
+expect(one.some_name).toBe('some')
+expect(one.$views.some.state.some_name).toBe('some')
 ```
 
 The properties of state are not in schema, however they are on model, you can update them and trigger watchers. You should not delete them.
@@ -221,6 +220,18 @@ The array contains errors which are from `validators`, not contains those from `
 ```js
 console.log(model.$views.some.errors) // []
 ```
+
+**view.data**
+
+Get original data of this field without proxy.
+
+**view.text**
+
+Get formatted text of this field, which formatted by meta.formatter as a string.
+
+**view.state**
+
+Get proxied state of this field if `state()` defined in meta.
 
 **$views.$errors**
 

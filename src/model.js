@@ -18,6 +18,9 @@ import {
   inObject,
   isNull,
   inherit,
+  createProxy,
+  inArray,
+  remove,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -137,6 +140,7 @@ export class Model {
   }
 
   attrs() {
+    // default attributes on meta, `null` to disabled
     return {
       default: null,
       compute: null,
@@ -158,6 +162,7 @@ export class Model {
       hidden: false,
       watch: null,
       catch: null,
+      state: null,
     }
   }
 
@@ -182,7 +187,48 @@ export class Model {
     const views = {}
 
     keys.forEach((key) => {
-      const viewDef = {
+      // patch attributes from meta
+      const meta = this.$schema[key]
+      // default attributes which will be used by Model/Schema, can not be reset by userself
+      const attrs = this.attrs()
+      // define a view
+      const view = {
+        changed: false, // whether the field has changed
+      }
+      // use defineProperties to define view properties
+      const viewDef = {}
+
+      each(attrs, (fallback, attr) => {
+        if (isNull(fallback)) {
+          return
+        }
+        viewDef[attr] = {
+          get: () => this.$schema.$invoke(key, attr, this)(fallback),
+          enumerable: true,
+        }
+      })
+
+      each(meta, (descriptor, key) => {
+        if (inObject(key, attrs)) {
+          return
+        }
+        const { value, get, set } = descriptor
+        if (get || set) {
+          viewDef[key] = {
+            get: get && get.bind(this),
+            set: set && set.bind(this),
+            enumerable: true,
+            configurable: true,
+          }
+        }
+        else {
+          // patch to view directly
+          view[key] = value
+        }
+      }, true)
+
+      // unwritable mandatory view properties
+      Object.assign(viewDef, {
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
@@ -200,46 +246,23 @@ export class Model {
           get: () => this.$schema.format(key, this.$store.data[key], this) + '',
           enumerable: true,
         },
-      }
-
-      // default attributes which will be used by Model/Schema, can not be reset by userself
-      const attrs = this.attrs()
-
-      each(attrs, (fallback, attr) => {
-        if (isNull(fallback)) {
-          return
-        }
-
-        viewDef[attr] = {
-          get: () => this.$schema.$invoke(key, attr, this)(fallback),
+        state: {
+          get: () => {
+            const state = isFunction(meta.state) ? meta.state() : {}
+            const keys = Object.keys(state)
+            const proxy = createProxy({}, {
+              get: keyPath => inArray(keyPath[0], keys) ? parse(this, keyPath) : undefined,
+              set: (keyPath, value) => inArray(keyPath[0], keys) && assign(this, keyPath, value),
+              del: keyPath => inArray(keyPath[0], keys) && remove(this, keyPath),
+            })
+            return proxy
+          },
           enumerable: true,
-        }
+        },
       })
 
-      const view = {
-        changed: false, // whether the field has changed
-      }
-      // patch attributes from meta
-      const meta = this.$schema[key]
-      each(meta, (descriptor, key) => {
-        if (inObject(key, attrs)) {
-          return
-        }
-        const { value, get, set } = descriptor
-        if (get || set) {
-          define(view, key, {
-            get: get && get.bind(this),
-            set: set && set.bind(this),
-            enumerable: true,
-            configurable: true,
-          })
-        }
-        else {
-          view[key] = value
-        }
-      }, true)
-
       Object.defineProperties(view, viewDef)
+
       define(views, key, {
         value: view,
         enumerable: true,
