@@ -128,7 +128,12 @@ export class Model {
   }
 
   state() {
-    return {}
+    const state = {}
+    each(this.$schema, (meta) => {
+      const metaState = meta.state()
+      Object.assign(state, metaState)
+    })
+    return state
   }
 
   attrs() {
