@@ -17,18 +17,6 @@ class Name extends Meta {
 }
 ```
 
-**extend**
-
-There is a static `extend` method on the Validator class.
-
-```js
-const NewRequired = Required.extend({
-  determine() {},
-})
-```
-
-Pass a replacement into `extend` to replace the original definition, and it will return a new Validator.
-
 ## Options
 
 ```js
@@ -51,10 +39,6 @@ class Name extends Meta {
   static validators = [required]
 }
 ```
-
-**extend**
-
-If you want to inherit from an existing validator, you can call `required.extend(replacement)` to get a new validator instance.
 
 ## Builtin Validators Generators
 

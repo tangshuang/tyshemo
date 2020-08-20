@@ -27,27 +27,6 @@ export class Validator {
     }
     push(this)
     Object.assign(this, properties, attrs)
-    this.onInit()
-  }
-
-  onInit() {}
-
-  extend(attrs) {
-    const Constructor = getConstructorOf(this)
-    return new Constructor(attrs)
-  }
-
-  static extend(attrs) {
-    const Constructor = inherit(this, null, attrs)
-    return Constructor
-  }
-
-  // make each validator break true
-  static breakEach(validators) {
-    return validators.map(validator => new Validator({
-      ...validator,
-      break: true,
-    }))
   }
 
   static required = required
