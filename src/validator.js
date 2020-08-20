@@ -1,6 +1,5 @@
 import {
   getConstructorOf,
-  inherit,
   isEmpty,
   isNumber,
   isNumeric,
@@ -9,6 +8,8 @@ import {
   isFunction,
   isInstanceOf,
   isBoolean,
+  parse,
+  isUndefined,
 } from 'ts-fns'
 
 export class Validator {
@@ -48,6 +49,9 @@ export default Validator
 function required(message) {
   return new Validator({
     determine(_, key) {
+      if (!this || isUndefined(this.$views)) {
+        return true
+      }
       return this.$views && this.$views[key] && this.$views[key].required
     },
     validate: value => !isEmpty(value),

@@ -1,7 +1,6 @@
 import Schema from '../src/schema.js'
-import Validator from '../src/validator.js'
 import { ifexist } from '../src/ty/index.js'
-import { isString } from 'ts-fns'
+import { isString, isEmpty } from 'ts-fns'
 
 describe('Schema', () => {
   const def = {
@@ -143,7 +142,10 @@ describe('Schema', () => {
         default: '',
         required: true,
         validators: [
-          Validator.required('{label} should not be empty'),
+          {
+            validate: value => !isEmpty(value),
+            message: '{label} should not be empty',
+          },
           {
             validate: value => /^[0-9]+$/.test(value),
             message: '{label} should be a number string',
