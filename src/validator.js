@@ -46,7 +46,14 @@ export class Validator {
 export default Validator
 
 function required(message) {
-  return match(value => !isEmpty(value), message)
+  return new Validator({
+    determine(_, key) {
+      return this.$views && this.$views[key] && this.$views[key].required
+    },
+    validate: value => !isEmpty(value),
+    message,
+    break: true,
+  })
 }
 
 function maxLen(len, message) {
