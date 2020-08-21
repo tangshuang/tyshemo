@@ -19,6 +19,11 @@ export class SelfRef extends Type {
     const error = type.catch(value)
     return error
   }
+  clone() {
+    const Constructor = getConstructorOf(this)
+    const ins = new Constructor(this.fn)
+    return ins
+  }
 }
 
 export function selfref(fn) {
