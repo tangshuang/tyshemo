@@ -258,7 +258,7 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
 
         // deep self-ref
         if (inArray(value, records)) {
-          return name
+          return isString(name) ? name : `ref:${name}`
         }
         records.push(value)
 
