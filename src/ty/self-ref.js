@@ -1,4 +1,4 @@
-import { isFunction } from 'ts-fns'
+import { isFunction, getConstructorOf } from 'ts-fns'
 import Type from './type.js'
 import { createType } from './rules.js'
 
