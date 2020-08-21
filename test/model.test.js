@@ -1,5 +1,6 @@
 import Model from '../src/model.js'
 import Meta from '../src/meta.js'
+import { watch } from 'gulp'
 
 describe('Model', () => {
   class PersonModel extends Model {
@@ -129,6 +130,11 @@ describe('Model', () => {
     expect(any.some.num).toBe(0)
     expect(any.listd.length).toBe(1)
     expect(any.listd[0].num).toBe(10)
+
+    let count = 0
+    any.watch('*', () => count ++, true)
+    any.listd[0].num ++
+    expect(count).toBe(1)
   })
 
   test('getter and setter', () => {

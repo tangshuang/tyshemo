@@ -25,6 +25,7 @@ import {
 
 import _Schema from './schema.js'
 import _Store from './store.js'
+import { ofChain } from './shared/utils.js'
 
 /**
  * class SomeModel extends Model {
@@ -122,20 +123,7 @@ export class Model {
 
   schema() {
     // create schema by model's static properties
-    const metas = {}
-    const push = (ins) => {
-      const Constructor = getConstructorOf(ins)
-      if (Constructor === Model) {
-        return
-      }
-      const Parent = getConstructorOf(Constructor.prototype)
-      if (isInheritedOf(Parent, Model)) {
-        push(Constructor.prototype)
-      }
-      each(Constructor, (descriptor, key) => define(metas, key, descriptor), true)
-    }
-    push(this)
-    return metas
+    return ofChain(this, Model)
   }
 
   state() {
@@ -610,13 +598,13 @@ export class Model {
   _ensure(key) {
     const use = (value, key) => {
       if (isInstanceOf(value, Model)) {
-        define(value, '$parent', this)
+        define(value, '$parent', { value: this })
         define(value, '$keyPath', [key])
       }
       else if (isArray(value)) {
         value.forEach((item, i) => {
           if (isInstanceOf(item, Model)) {
-            define(item, '$parent', this)
+            define(item, '$parent', { value: this })
             define(item, '$keyPath', [key, i])
           }
         })

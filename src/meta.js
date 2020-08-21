@@ -3,7 +3,6 @@ import {
   inherit,
   isInstanceOf,
   isInheritedOf,
-  inArray,
   inObject,
   isArray,
   define,
@@ -11,6 +10,7 @@ import {
   isEmpty,
 } from 'ts-fns'
 import Validator from './validator.js'
+import { ofChain } from './shared/utils.js'
 
 export class Meta {
   constructor(attrs = {}) {
@@ -44,27 +44,14 @@ export class Meta {
       }
     }
 
-    const push = (ins) => {
-      const Constructor = getConstructorOf(ins)
+    const properties = ofChain(this, Meta)
 
-      if (Constructor === Meta) {
+    each(properties, (descriptor, key) => {
+      if (inObject(key, attrs, true)) {
         return
       }
-
-      const Parent = getConstructorOf(Constructor.prototype)
-      if (isInheritedOf(Parent, Meta)) {
-        push(Constructor.prototype)
-      }
-
-      each(Constructor, (descriptor, key) => {
-        if (inObject(key, attrs, true)) {
-          return
-        }
-
-        useAttr(key, descriptor, Constructor)
-      }, true)
-    }
-    push(this)
+      useAttr(key, descriptor, properties)
+    }, true)
 
     each(attrs, (descriptor, key) => {
       useAttr(key, descriptor, attrs)

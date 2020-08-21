@@ -1,5 +1,4 @@
 import {
-  getConstructorOf,
   isEmpty,
   isNumber,
   isNumeric,
@@ -8,25 +7,13 @@ import {
   isFunction,
   isInstanceOf,
   isBoolean,
-  parse,
   isUndefined,
 } from 'ts-fns'
+import { ofChain } from './shared/utils.js'
 
 export class Validator {
   constructor(attrs = {}) {
-    const properties = {}
-    const push = (ins) => {
-      const Constructor = getConstructorOf(ins)
-      if (Constructor === Validator) {
-        return
-      }
-      const Parent = getConstructorOf(Constructor.prototype)
-      if (isInheritedOf(Parent, Validator)) {
-        push(Constructor.prototype)
-      }
-      each(Constructor, (descriptor, key) => define(properties, key, descriptor), true)
-    }
-    push(this)
+    const properties = ofChain(this, Validator)
     Object.assign(this, properties, attrs)
   }
 
@@ -42,7 +29,7 @@ export class Validator {
   static maxLen = maxLen
   static minLen = minLen
   static allOf = allOf
-  static oneOf = oneOf
+  static anyOf = anyOf
 }
 export default Validator
 
@@ -176,7 +163,7 @@ function allOf(validators, message) {
   })
 }
 
-function oneOf(validators, message) {
+function anyOf(validators, message) {
   return new Validator({
     validate(value) {
       for (const i = 0, len = validators.length; i < len; i ++) {

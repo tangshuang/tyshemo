@@ -2,6 +2,8 @@ import {
   isObject,
   isEmpty,
   getConstructorOf,
+  each,
+  inObject,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -38,24 +40,21 @@ export class Dict extends Type {
     return tyerr.error()
   }
 
-  extend(fields) {
+  extend(fields = {}) {
     const current = this.pattern
-    const next = Object.assign({}, current, fields)
+    const next = { ...current, ...fields }
     const Constructor = getConstructorOf(this)
     const type = new Constructor(next)
     return type
   }
-  extract(fields) {
+  extract(fields = {}) {
     const current = this.pattern
-    const keys = Object.keys(fields)
     const next = {}
-
-    keys.forEach((key) => {
-      if (fields[key] === true) {
+    each(fields, (value, key) => {
+      if (value && inObject(key, current)) {
         next[key] = current[key]
       }
     })
-
     const Constructor = getConstructorOf(this)
     const type = new Constructor(next)
     return type
