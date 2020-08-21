@@ -222,12 +222,13 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
       return str
     }
     else {
-      return makeValueString(value, sensitive, breakline, space)
+      return make(value, sensitive, breakline, space)
     }
   }
 
   const records = []
-  const make = (value) => {
+
+  function make(value, sensitive = true, breakline = true, space = 2) {
     if (inArray(totype, ['boolean', 'undefined']) || isNull(value) || isNaN(value)) {
       return value + ''
     }
@@ -241,7 +242,7 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
       return value.name + '()'
     }
     else if (isArray(value)) {
-      const items = value.map(item => makeValueString(item, sensitive, breakline, space + 2))
+      const items = value.map(item => make(item, sensitive, breakline, space + 2))
       const output = britems(items, '[', ']', space)
       return output
     }
@@ -261,7 +262,7 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
         }
         records.push(value)
 
-        const output = makeValueString(value.pattern, sensitive, breakline, space)
+        const output = make(value.pattern, sensitive, breakline, space)
         return isString(name) ? name + '(' + output + ')' : output
       }
       else {
@@ -276,7 +277,8 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
       return output
     }
   }
-  return make(value)
+
+  return make(value, sensitive = true, breakline = true, space = 2)
 }
 
 function makeErrorReceive(value, breakline = true, space = 0, sensitive = false) {
