@@ -222,50 +222,63 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
       return str
     }
     else {
-      return makeValueString(value, sensitive, breakline, space)
+      return make(value, sensitive, breakline, space)
     }
   }
 
-  if (inArray(totype, ['boolean', 'undefined']) || isNull(value) || isNaN(value)) {
-    return value + ''
-  }
-  else if (totype === 'number') {
-    return sensitive ? '***' : value + ''
-  }
-  else if (totype === 'string') {
-    return JSON.stringify(sensitive ? '***' : value)
-  }
-  else if (isFunction(value)) {
-    return value.name + '()'
-  }
-  else if (isArray(value)) {
-    const items = value.map(item => makeValueString(item, sensitive, breakline, space + 2))
-    const output = britems(items, '[', ']', space)
-    return output
-  }
-  else if (isObject(value)) {
-    const keys = Object.keys(value)
-    const output = sensitive ? britems(keys, '{', '}', space) : stringify(value, space)
-    return output
-  }
-  else if (typeof value === 'object') { // for class instances
-    // type or rule
-    if (inObject('pattern', value)) {
-      const name = value.name
-      const output = makeValueString(value.pattern, sensitive, breakline, space)
-      return isString(name) ? name + '(' + output + ')' : output
+  const records = []
+
+  function make(value, sensitive = true, breakline = true, space = 2) {
+    if (inArray(totype, ['boolean', 'undefined']) || isNull(value) || isNaN(value)) {
+      return value + ''
+    }
+    else if (totype === 'number') {
+      return sensitive ? '***' : value + ''
+    }
+    else if (totype === 'string') {
+      return JSON.stringify(sensitive ? '***' : value)
+    }
+    else if (isFunction(value)) {
+      return value.name + '()'
+    }
+    else if (isArray(value)) {
+      const items = value.map(item => make(item, sensitive, breakline, space + 2))
+      const output = britems(items, '[', ']', space)
+      return output
+    }
+    else if (isObject(value)) {
+      const keys = Object.keys(value)
+      const output = sensitive ? britems(keys, '{', '}', space) : stringify(value, space)
+      return output
+    }
+    else if (typeof value === 'object') { // for class instances
+      // type or rule
+      if (inObject('pattern', value)) {
+        const name = value.name
+
+        // deep self-ref
+        if (inArray(value, records)) {
+          return isString(name) ? name : `ref:${name}`
+        }
+        records.push(value)
+
+        const output = make(value.pattern, sensitive, breakline, space)
+        return isString(name) ? name + '(' + output + ')' : output
+      }
+      else {
+        return value.name ? value.name : value.constructor ? value.constructor.name : 'Object'
+      }
+    }
+    else if (typeof value === 'function') { // for native functions or classes
+      return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
     }
     else {
-      return value.name ? value.name : value.constructor ? value.constructor.name : 'Object'
+      const output = value.toString()
+      return output
     }
   }
-  else if (typeof value === 'function') { // for native functions or classes
-    return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
-  }
-  else {
-    const output = value.toString()
-    return output
-  }
+
+  return make(value, sensitive = true, breakline = true, space = 2)
 }
 
 function makeErrorReceive(value, breakline = true, space = 0, sensitive = false) {

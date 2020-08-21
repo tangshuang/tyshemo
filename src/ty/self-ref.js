@@ -1,4 +1,4 @@
-import { isFunction } from 'ts-fns'
+import { isFunction, getConstructorOf } from 'ts-fns'
 import Type from './type.js'
 import { createType } from './rules.js'
 
@@ -18,6 +18,11 @@ export class SelfRef extends Type {
     const type = createType(this.pattern)
     const error = type.catch(value)
     return error
+  }
+  clone() {
+    const Constructor = getConstructorOf(this)
+    const ins = new Constructor(this.fn)
+    return ins
   }
 }
 
