@@ -6,7 +6,6 @@ import {
   each,
   flat,
   flatArray,
-  getConstructorOf,
   define,
   makeKeyChain,
   parse,
@@ -596,28 +595,39 @@ export class Model {
   }
 
   _ensure(key) {
-    const use = (value, key) => {
-      if (isInstanceOf(value, Model)) {
-        define(value, '$parent', { value: this })
-        define(value, '$keyPath', [key])
-      }
-      else if (isArray(value)) {
-        value.forEach((item, i) => {
-          if (isInstanceOf(item, Model)) {
-            define(item, '$parent', { value: this })
-            define(item, '$keyPath', [key, i])
-          }
+    const add = (value, key) => {
+      if (isInstanceOf(value, Model) && !value.$parent) {
+        define(value, '$parent', {
+          value: this,
+          writable: false,
+          configurable: true,
         })
+        define(value, '$keyPath', {
+          value: [key],
+          writable: false,
+          configurable: true,
+        })
+        if (isFunction(value.onParentSet)) {
+          value.onParentSet(this)
+        }
       }
     }
-    const set = data => each(data, use)
+    const use = (value, key) => {
+      if (isArray(value)) {
+        value.forEach((item, i) => {
+          add(item, [key, i])
+        })
+        return
+      }
+      add(value, key)
+    }
 
     if (key) {
       const value = this.$store.data[key]
       use(value, key)
     }
     else {
-      set(this.$store.data)
+      each(this.$store.data, use)
     }
   }
 
