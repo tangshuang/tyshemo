@@ -14,12 +14,12 @@ The word `tyshemo` is made up with `type` `schema` and `model`.
 ## Knowledge Graph
 
 ```
-                                              Store ----+
-                                                        |
-Prototype ----+                                         |
-              |                                         |
+                               Validator      Store ----+
+                                   |                    |
+Prototype ----+                    |                    |
+              |                    |                    |
               +------ Type ------ Meta ----- Schema ----+--> Model
-              |        v
+              |        |
 Rule ---------+        |
                        |
                 +------+------+

@@ -6,6 +6,7 @@
 - [TyError](error.md)
 - [Store](store.md)
 - [Meta](meta.md)
+- [Validator](validator.md)
 - [Schema](schema.md)
 - [Model](model.md)
 - [tyshemo-x](tyshemo-x.md)
