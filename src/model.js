@@ -709,7 +709,10 @@ export default Model
 
 function convertModelToSchemaDef(SomeModel, isList) {
   const create = (data, nullable) => {
-    return isInstanceOf(data, SomeModel) ? data : isObject(data) ? new SomeModel(data) : nullable ? null : new SomeModel()
+    return isInstanceOf(data, SomeModel) ? data
+      : isObject(data) ? new SomeModel().fromJSON(data)
+      : nullable ? null
+      : new SomeModel()
   }
   if (isList) {
     return {
