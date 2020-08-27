@@ -159,12 +159,12 @@ allOf([
 ], 'Some should must be a number which should greater than 10')
 ```
 
-### oneOf(checkers, message)
+### anyOf(checkers, message)
 
 Should match one of the given validators.
 
 ```js
-oneOf([
+anyOf([
   v => typeof v === 'number',
   v => typeof v === 'string' && !isNaN(+v),
 ], 'Some should be a number or a string number')
