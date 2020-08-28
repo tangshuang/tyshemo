@@ -308,6 +308,11 @@ export class Model {
 
     // init data
     this.restore(data)
+
+    // ensure top properties
+    this.watch('*', ({ key }) => {
+      this.ensure(key)
+    })
   }
 
   /**
@@ -359,7 +364,6 @@ export class Model {
     const coming = this.$store.set(key, value)
 
     this.$views[key].changed = true
-    this._ensure(key)
 
     return coming
   }
@@ -520,7 +524,7 @@ export class Model {
     this.$store.init(params)
     this.$store.silent = false
 
-    this._ensure()
+    this.ensure()
     return this
   }
 
@@ -594,8 +598,8 @@ export class Model {
     this.$store.editable = false
   }
 
-  _ensure(key) {
-    const add = (value, key) => {
+  ensure(key) {
+    const add = (value, keys) => {
       if (isInstanceOf(value, Model) && !value.$parent) {
         define(value, '$parent', {
           value: this,
@@ -603,12 +607,12 @@ export class Model {
           configurable: true,
         })
         define(value, '$keyPath', {
-          value: [key],
+          value: keys,
           writable: false,
           configurable: true,
         })
-        if (isFunction(value.onParentSet)) {
-          value.onParentSet(this)
+        if (isFunction(value.onEnsure)) {
+          value.onEnsure(this)
         }
       }
     }
@@ -619,11 +623,12 @@ export class Model {
         })
         return
       }
-      add(value, key)
+      add(value, [key])
     }
 
     if (key) {
-      const value = this.$store.data[key]
+      const root = isArray(key) ? key[0] : key
+      const value = this.$store.data[root]
       use(value, key)
     }
     else {

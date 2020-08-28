@@ -415,7 +415,7 @@ export class Store {
       return
     }
 
-    const key = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
+    const key = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const watchers = this._watchers
     const items = watchers.filter((item) => {
       if (isEqual(item.key, key)) {
@@ -445,7 +445,6 @@ export class Store {
 
     items.forEach((item) => {
       const target = item.key
-      const key = keyPath
       item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid })
     })
   }
