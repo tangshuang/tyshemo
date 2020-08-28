@@ -459,4 +459,32 @@ describe('Model', () => {
     expect(dog.name).toBe('dog')
     expect(dog.$views.age.required).toBe(true)
   })
+  test('compute + $parent + map', () => {
+    class Child extends Model {
+      static age = {
+        default: 0,
+        compute() {
+          console.log(this.$parent.age)
+          return this.$parent.age - 26
+        },
+        map(age) {
+          return age
+        }
+      }
+    }
+
+    class Parent extends Model {
+      static age = {
+        default: 0,
+      }
+      static child = Child
+    }
+
+    const one = new Parent({
+      age: 30,
+    })
+
+    const data = one.toJSON()
+    expect(data.child.age).toBe('4')
+  })
 })

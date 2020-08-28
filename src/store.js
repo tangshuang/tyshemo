@@ -32,7 +32,7 @@ export class Store {
     this.init(params)
   }
 
-  init(params) {
+  init(params, lazy) {
     // reset to empty object
     this._descriptors = {}
     this._deps = {}
@@ -128,11 +128,15 @@ export class Store {
     }, true)
 
     // collecting dependencies
-    each(this._descriptors, (item, key) => {
-      if (item.get) {
-        this._collect(key)
-      }
-    })
+    const collect = () => {
+      each(this._descriptors, (item, key) => {
+        if (item.get) {
+          this._collect(key)
+        }
+      })
+    }
+
+    return lazy ? collect : collect()
   }
 
   get(keyPath) {

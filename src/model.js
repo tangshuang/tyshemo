@@ -41,31 +41,80 @@ import { ofChain } from './shared/utils.js'
  *            onInit, onParse, onExport,
  */
 export class Model {
-  constructor(data = {}) {
+  constructor(data = {}, options = {}) {
     const $this = this
+
+    const { parent, keyPath } = options
+    if (parent && keyPath) {
+      this.setParent(parent, keyPath)
+    }
+
+    const convertModelToSchemaDef = (def, root) => {
+      if (isArray(def)) {
+        const SomeModel = def[0]
+        const create = (data, i) => {
+          return isInstanceOf(data, SomeModel) ? data.setParent(this, [root, i])
+            : isObject(data) ? new SomeModel({}, { parent: this, keyPath: [root, i] }).fromJSON(data)
+            : null
+        }
+        const map = (items) => items.map(create).filter(item => !!item)
+        return {
+          default: () => [],
+          type: def,
+          validators: [
+            {
+              validate: ms => flatArray(map(ms, m => m.validate())),
+            },
+          ],
+          create: (data, key) => isArray(data[key]) ? map(data[key]) : [],
+          map: ms => ms.map(m => m.toJSON()),
+          setter: (v) => isArray(v) ? map(v) : [],
+        }
+      }
+      else {
+        const SomeModel = def
+        const create = (data) => {
+          return isInstanceOf(data, SomeModel) ? data.setParent(this, [root])
+            : isObject(data) ? new SomeModel({}, { parent: this, keyPath: [root] }).fromJSON(data)
+            : new SomeModel({}, { parent: this, keyPath: [root] })
+        }
+        return {
+          default: () => create(),
+          type: SomeModel,
+          validators: [
+            {
+              validate: m => m.validate(),
+            },
+          ],
+          create: (data, key) => create(data[key]),
+          map: m => m.toJSON(),
+          setter: v => create(v),
+        }
+      }
+    }
 
     /**
      * create schema
      */
     class Schema extends _Schema {
       constructor(metas) {
-        const defs = map(metas, (def) => {
+        const defs = map(metas, (def, key) => {
           /**
            * class SomeModel extends Model {
            *   static some = OtherModel
            * }
            */
           if (isInheritedOf(def, Model)) {
-            return convertModelToSchemaDef(def, false)
+            return convertModelToSchemaDef(def, key)
           }
 
           /**
            * class SomeModel extends Model {
-           *   static some = [OtherModel]
+           *   static some = [OtherModel, AnyModel]
            * }
            */
-          if (isArray(def) && isInheritedOf(def[0], Model)) {
-            return convertModelToSchemaDef(def[0], true)
+          if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
+            return convertModelToSchemaDef(def, key)
           }
 
           return def
@@ -230,15 +279,15 @@ export class Model {
           enumerable: true,
         },
         errors: {
-          get: () => this.$schema.$validate(key, this.$store.data[key], this)([]),
+          get: () => this.$schema.$validate(key, this.$store.get(key), this)([]),
           enumerable: true,
         },
         data: {
-          get: () => this.$store.data[key],
+          get: () => this.$store.get(key),
           enumerable: true,
         },
         text: {
-          get: () => this.$schema.format(key, this.$store.data[key], this) + '',
+          get: () => this.$schema.format(key, this.$store.get(key), this) + '',
           enumerable: true,
         },
         state: {
@@ -311,7 +360,7 @@ export class Model {
 
     // ensure top properties
     this.watch('*', ({ key }) => {
-      this.ensure(key)
+      this._ensure(key)
     })
   }
 
@@ -346,7 +395,7 @@ export class Model {
 
     // deep set
     if (chain.length) {
-      const current = this.$store.data[key] // original data
+      const current = this.$store.get(key)
       const cloned = clone(current)
       assign(cloned, chain, next)
       next = cloned
@@ -466,21 +515,43 @@ export class Model {
     const state = this.state()
     const params = {}
 
+    const ensure = (value, root) => {
+      if (isArray(value)) {
+        value.forEach((item, i) => ensure(item, [root, i]))
+        return
+      }
+
+      if (!isInstanceOf(value, Model)) {
+        return
+      }
+      value.setParent(this, [root])
+    }
+
+    this.$store.silent = true
+
     // those on schema
     each(schema, (def, key) => {
       const { compute } = def
       if (compute) {
         define(params, key, {
-          get: compute,
           enumerable: true,
+          get: () => compute.call(this),
         })
+        this.$store.del(key)
+        // bind to parent's store to be dispatched when parent change
+        if ((compute + '').indexOf('$parent') > -1 && this.$parent) {
+          this.$store.bind(key)(this.$parent.$store, '*')
+        }
       }
       else if (inObject(key, data)) {
         const value = data[key]
         params[key] = value
+        ensure(value, key)
       }
       else {
-        params[key] = schema.$default(key)
+        const value = schema.$default(key)
+        params[key] = value
+        ensure(value, key)
       }
     })
 
@@ -500,7 +571,9 @@ export class Model {
 
       // use data property if exist, use data property directly
       if (inObject(key, data)) {
-        params[key] = data[key]
+        const value = data[key]
+        params[key] = value
+        ensure(value, key)
         return
       }
 
@@ -508,23 +581,26 @@ export class Model {
     }, true)
 
     // delete the outdate properties
-    each(this.$store.data, (value, key) => {
-      if (key in params) {
+    each(this.$store.data, (_, key) => {
+      if (inObject(key, params)) {
+        return
+      }
+
+      if (key.indexOf('$') === 0 || key.indexOf('_') === 0) {
         return
       }
 
       this.$store.del(key)
       delete this[key]
-    })
+    }, true)
 
     this.onSwitch(params)
 
     // reset into store
-    this.$store.silent = true
     this.$store.init(params)
+
     this.$store.silent = false
 
-    this.ensure()
     return this
   }
 
@@ -547,7 +623,7 @@ export class Model {
 
   toJSON() {
     this._check()
-    const data = this.$store.data // original data
+    const data = this.$store.state // original data
     const output = this.$schema.export(data, this)
     const result = this.onExport(output)
     return result
@@ -590,6 +666,8 @@ export class Model {
 
   onError() {}
 
+  onEnsure() {}
+
   lock() {
     this.$store.editable = true
   }
@@ -598,42 +676,48 @@ export class Model {
     this.$store.editable = false
   }
 
-  ensure(key) {
+  setParent(parent, keyPath) {
+    if (this.$parent && this.$parent !== parent) {
+      throw new Error('Model $parent has been set.')
+    }
+
+    if (this.$parent && this.$parent === parent) {
+      return this
+    }
+
+    define(this, '$parent', {
+      value: parent,
+      writable: false,
+      configurable: true,
+    })
+    define(this, '$keyPath', {
+      value: keyPath,
+      writable: false,
+      configurable: true,
+    })
+
+    return this
+  }
+
+  _ensure(key) {
     const add = (value, keys) => {
       if (isInstanceOf(value, Model) && !value.$parent) {
-        define(value, '$parent', {
-          value: this,
-          writable: false,
-          configurable: true,
-        })
-        define(value, '$keyPath', {
-          value: keys,
-          writable: false,
-          configurable: true,
-        })
-        if (isFunction(value.onEnsure)) {
-          value.onEnsure(this)
-        }
+        value.setParent(this, keys)
+        value.onEnsure(this)
       }
     }
     const use = (value, key) => {
       if (isArray(value)) {
-        value.forEach((item, i) => {
-          add(item, [key, i])
-        })
-        return
+        value.forEach((item, i) => add(item, [key, i]))
       }
-      add(value, [key])
+      else {
+        add(value, [key])
+      }
     }
 
-    if (key) {
-      const root = isArray(key) ? key[0] : key
-      const value = this.$store.data[root]
-      use(value, key)
-    }
-    else {
-      each(this.$store.data, use)
-    }
+    const root = isArray(key) ? key[0] : key
+    const value = this.$store.get(root)
+    use(value, key)
   }
 
   _check(key, isValidate = false) {
@@ -709,42 +793,3 @@ export class Model {
 }
 
 export default Model
-
-// ---------------------------------------------------
-
-function convertModelToSchemaDef(SomeModel, isList) {
-  const create = (data, nullable) => {
-    return isInstanceOf(data, SomeModel) ? data
-      : isObject(data) ? new SomeModel().fromJSON(data)
-      : nullable ? null
-      : new SomeModel()
-  }
-  if (isList) {
-    return {
-      default: () => [],
-      type: [SomeModel],
-      validators: [
-        {
-          validate: ms => flatArray(map(ms, m => m.validate())),
-        },
-      ],
-      create: (data, key) => isArray(data[key]) ? data[key].map(v => create(v, true)).filter(item => !!item) : [],
-      map: ms => ms.map(m => m.toJSON()),
-      setter: v => isArray(v) ? v.map(v => create(v, true)).filter(item => !!item) : [],
-    }
-  }
-  else {
-    return {
-      default: () => new SomeModel(),
-      type: SomeModel,
-      validators: [
-        {
-          validate: m => m.validate(),
-        },
-      ],
-      create: (data, key) => create(data[key]),
-      map: m => m.toJSON(),
-      setter: v => create(v),
-    }
-  }
-}
