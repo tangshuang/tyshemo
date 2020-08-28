@@ -38,7 +38,6 @@ export class Store {
     this._deps = {}
     this._dep = []
 
-    const data = {}
     // data & state
     this.data = {}
     this.state = createProxy(this.data, {
@@ -117,21 +116,19 @@ export class Store {
     })
 
     // descriptors
-    const descriptors = this._descriptors
-    each(params, (value, key) => {
-      const descriptor = Object.getOwnPropertyDescriptor(params, key)
-      if (descriptor.get || descriptor.set) {
-        descriptors[key] = descriptor
-      }
-    })
-
-    // init values
-    // make value patch to data, so that the data has initialized value which is needed in compute
-    each(params, (value, key) => {
+    each(params, (descriptor, key) => {
+      // make value patch to data, so that the data has initialized value which is needed in compute
+      const value = params[key]
       this.state[key] = value
-    })
+
+      // collect descriptors
+      if (descriptor.get || descriptor.set) {
+        this._descriptors[key] = descriptor
+      }
+    }, true)
+
     // collecting dependencies
-    each(descriptors, (item, key) => {
+    each(this._descriptors, (item, key) => {
       if (item.get) {
         this._collect(key)
       }
