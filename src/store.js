@@ -71,7 +71,7 @@ export class Store {
         const descriptor = this._descriptors[key]
         if (descriptor && isUndefined(active)) {
           // property is a computed property, but without given value
-          const value = this._compute(key)
+          const value = this._compute(key, true)
           return value
         }
         else {
@@ -399,10 +399,15 @@ export class Store {
     this._dep.pop()
   }
 
-  _compute(key) {
+  _compute(key, error) {
     const descriptor = this._descriptors[key]
     if (!descriptor || !descriptor.get) {
       return
+    }
+
+    if (error) {
+      const value = descriptor.get.call(this.state)
+      return value
     }
 
     try {
