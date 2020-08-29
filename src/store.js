@@ -9,6 +9,7 @@ import {
   assign,
   remove,
   isUndefined,
+  isSymbol,
 } from 'ts-fns'
 
 export class Store {
@@ -32,7 +33,11 @@ export class Store {
     this.init(params)
   }
 
-  init(params, lazy) {
+  init(params) {
+    this.silent = true
+
+    // remove binders if exist
+    each(this._descriptors, (_, key) => this.del(key))
     // reset to empty object
     this._descriptors = {}
     this._deps = {}
@@ -42,8 +47,10 @@ export class Store {
     this.data = {}
     this.state = createProxy(this.data, {
       get: (keyPath, active) => {
+        const key = keyPath[0]
+
         // keep store in state
-        if (keyPath[0] === '__store__') {
+        if (isSymbol(key) && key.description === 'store') {
           return this
         }
 
@@ -58,23 +65,31 @@ export class Store {
           }
         })
 
-        this._dependOn(keyPath)
+        this._depend(keyPath)
 
-        return active
+        // computed property
+        const descriptor = this._descriptors[key]
+        if (descriptor && isUndefined(active)) {
+          // property is a computed property, but without given value
+          const value = this._compute(key)
+          return value
+        }
+        else {
+          return active
+        }
       },
       set: (keyPath, value) => {
         // computed property
-        if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
-          const key = keyPath[0]
-          const descriptor = this._descriptors[key]
-
+        const key = keyPath[0]
+        const descriptor = this._descriptors[key]
+        if (keyPath.length === 1 && descriptor) {
           // call setter
           if (descriptor.set) {
             descriptor.set.call(this.state, value)
           }
 
           // compute
-          const next = descriptor.get ? descriptor.get.call(this.state) : void 0
+          const next = this._compute(key)
           return next
         }
         else {
@@ -86,10 +101,10 @@ export class Store {
         if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
           const key = keyPath[0]
 
-          // remove existing bounds
+          // remove existing binders
           const descriptor = this._descriptors[key]
-          if (descriptor && descriptor.bounds) {
-            descriptor.bounds.forEach((item) => {
+          if (descriptor && descriptor.binders) {
+            descriptor.binders.forEach((item) => {
               item.store.unwatch(item.on, item.fn)
             })
           }
@@ -128,15 +143,14 @@ export class Store {
     }, true)
 
     // collecting dependencies
-    const collect = () => {
-      each(this._descriptors, (item, key) => {
-        if (item.get) {
-          this._collect(key)
-        }
-      })
-    }
+    // this should be executed after all values have been set to state, or computers will throw out errors
+    each(this._descriptors, (item, key) => {
+      if (item.get) {
+        this._collect(key)
+      }
+    })
 
-    return lazy ? collect : collect()
+    this.silent = false
   }
 
   get(keyPath) {
@@ -165,7 +179,7 @@ export class Store {
       }).then(() => {
         this._updateData = {}
         this._updator = null
-        return this.data
+        return this.state
       })
 
       this._updator = updator
@@ -176,7 +190,7 @@ export class Store {
     each(data, (value, key) => {
       this.set(key, value)
     })
-    return this.data
+    return this.state
   }
 
   // define a computed property
@@ -208,8 +222,8 @@ export class Store {
       }
 
       store.watch(on, fn, true)
-      descriptor.bounds = descriptor.bounds = []
-      descriptor.bounds.push({
+      descriptor.binders = descriptor.binders = []
+      descriptor.binders.push({
         store,
         on,
         fn,
@@ -305,7 +319,7 @@ export class Store {
   }
 
   // watch change of dependencies
-  _dependOn(keyPath) {
+  _depend(keyPath) {
     const chain = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
     if (chain.length > 1) {
       return
@@ -379,10 +393,23 @@ export class Store {
       return
     }
 
-    const value = descriptor.get.call(this.state)
+    const value = this._compute(key)
     this.state[key] = value
 
     this._dep.pop()
+  }
+
+  _compute(key) {
+    const descriptor = this._descriptors[key]
+    if (!descriptor || !descriptor.get) {
+      return
+    }
+
+    try {
+      const value = descriptor.get.call(this.state)
+      return value
+    }
+    catch (e) {}
   }
 
   watch(keyPath, fn, deep = false, context) {
