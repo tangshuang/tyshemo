@@ -12,6 +12,8 @@ import {
   isSymbol,
 } from 'ts-fns'
 
+import { tryget } from './shared/utils.js'
+
 export class Store {
   constructor(params = {}) {
     this.data = null
@@ -133,8 +135,9 @@ export class Store {
     // descriptors
     each(params, (descriptor, key) => {
       // make value patch to data, so that the data has initialized value which is needed in compute
-      const value = params[key]
+      const value = tryget(() => params[key])
       this.state[key] = value
+      // now all keys have been generated
 
       // collect descriptors
       if (descriptor.get || descriptor.set) {
@@ -410,11 +413,8 @@ export class Store {
       return value
     }
 
-    try {
-      const value = descriptor.get.call(this.state)
-      return value
-    }
-    catch (e) {}
+    const value = tryget(() => descriptor.get.call(this.state))
+    return value
   }
 
   watch(keyPath, fn, deep = false, context) {

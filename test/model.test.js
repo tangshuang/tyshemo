@@ -464,11 +464,10 @@ describe('Model', () => {
       static age = {
         default: 0,
         compute() {
-          console.log(this.$parent.age)
           return this.$parent.age - 26
         },
         map(age) {
-          return age
+          return age + ''
         }
       }
     }

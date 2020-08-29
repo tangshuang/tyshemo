@@ -41,20 +41,15 @@ import { ofChain } from './shared/utils.js'
  *            onInit, onParse, onExport,
  */
 export class Model {
-  constructor(data = {}, options = {}) {
+  constructor(data = {}) {
     const $this = this
-
-    const { parent, keyPath } = options
-    if (parent && keyPath) {
-      this.setParent(parent, keyPath)
-    }
 
     const convertModelToSchemaDef = (def, root) => {
       if (isArray(def)) {
         const SomeModel = def[0]
         const create = (data, i) => {
           return isInstanceOf(data, SomeModel) ? data.setParent(this, [root, i])
-            : isObject(data) ? new SomeModel({}, { parent: this, keyPath: [root, i] }).fromJSON(data)
+            : isObject(data) ? new SomeModel().setParent(this, [root, i]).fromJSON(data)
             : null
         }
         const map = (items) => items.map(create).filter(item => !!item)
@@ -75,8 +70,8 @@ export class Model {
         const SomeModel = def
         const create = (data) => {
           return isInstanceOf(data, SomeModel) ? data.setParent(this, [root])
-            : isObject(data) ? new SomeModel({}, { parent: this, keyPath: [root] }).fromJSON(data)
-            : new SomeModel({}, { parent: this, keyPath: [root] })
+            : isObject(data) ? new SomeModel().setParent(this, [root]).fromJSON(data)
+            : new SomeModel().setParent(this, [root])
         }
         return {
           default: () => create(),
@@ -148,7 +143,6 @@ export class Model {
     }
     const store = new Store()
     define(this, '$store', store)
-
 
     this.init(data)
 
@@ -515,19 +509,17 @@ export class Model {
     const state = this.state()
     const params = {}
 
-    const ensure = (value, root) => {
+    const ensure = (value, keys) => {
       if (isArray(value)) {
-        value.forEach((item, i) => ensure(item, [root, i]))
+        value.forEach((item, i) => ensure(item, [...keys, i]))
         return
       }
 
       if (!isInstanceOf(value, Model)) {
         return
       }
-      value.setParent(this, [root])
+      value.setParent(this, keys)
     }
-
-    this.$store.silent = true
 
     // those on schema
     each(schema, (def, key) => {
@@ -537,21 +529,16 @@ export class Model {
           enumerable: true,
           get: () => compute.call(this),
         })
-        this.$store.del(key)
-        // bind to parent's store to be dispatched when parent change
-        if ((compute + '').indexOf('$parent') > -1 && this.$parent) {
-          this.$store.bind(key)(this.$parent.$store, '*')
-        }
       }
       else if (inObject(key, data)) {
         const value = data[key]
         params[key] = value
-        ensure(value, key)
+        ensure(value, [key])
       }
       else {
         const value = schema.$default(key)
         params[key] = value
-        ensure(value, key)
+        ensure(value, [key])
       }
     })
 
@@ -581,7 +568,7 @@ export class Model {
     }, true)
 
     // delete the outdate properties
-    each(this.$store.data, (_, key) => {
+    each(this.$store.state, (_, key) => {
       if (inObject(key, params)) {
         return
       }
@@ -598,8 +585,6 @@ export class Model {
 
     // reset into store
     this.$store.init(params)
-
-    this.$store.silent = false
 
     return this
   }

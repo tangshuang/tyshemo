@@ -21,3 +21,7 @@ export function ofChain(instance, TopConstructor) {
   push(instance)
   return properties
 }
+
+export function tryget(fn) {
+  try { return fn() } catch (e) {}
+}
