@@ -346,13 +346,15 @@ export class Schema {
     const { setter, compute, catch: handle, type, message } = meta
 
     if (compute) {
-      this.onError({
+      const e = {
         key,
         action: '$set',
         value,
         compute: true,
         message: this.$message(key, 'compute', context)(),
-      })
+      }
+      this._catch(key, e, context)
+
       const next = compute.call(context)
       return next
     }
@@ -377,14 +379,15 @@ export class Schema {
       }
       const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
       if (error) {
-        this.onError({
+        const e = {
           key,
           action: '$set',
           value,
           type: true,
           error,
           message: this.$message(key, 'type', context)(message),
-        })
+        }
+        this._catch(key, e, context)
       }
     }
 
@@ -407,27 +410,29 @@ export class Schema {
 
     const disabled = this.disabled(key, context)
     if (disabled) {
-      this.onError({
+      const e = {
         key,
         action: 'set',
         next,
         prev,
         disabled: true,
         message: this.$message(key, 'disabled', context)(disabled),
-      })
+      }
+      this._catch(key, e, context)
       return prev
     }
 
     const readonly = this.readonly(key, context)
     if (readonly) {
-      this.onError({
+      const e = {
         key,
         action: 'set',
         next,
         prev,
         readonly: true,
         message: this.$message(key, 'readonly', context)(readonly),
-      })
+      }
+      this._catch(key, e, context)
       return prev
     }
 
@@ -598,12 +603,13 @@ export class Schema {
     const errors = []
 
     if (!meta) {
-      this.onError({
+      const e = {
         action: 'validate',
         key,
         value,
         message: `${key} is not existing in schema.`,
-      })
+      }
+      this._catch(key, e, context)
       return errors
     }
 
@@ -648,14 +654,15 @@ export class Schema {
         }
         const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
         if (error) {
-          this.onError({
+          const e = {
             key,
             action: 'parse',
             value: coming,
             type: true,
             error,
             message: this.$message(key, 'type', context)(message),
-          })
+          }
+          this._catch(key, e, context)
         }
       }
 
@@ -778,6 +785,20 @@ export class Schema {
       }
       const e = this.onError(err) || err
       return fallback(e)
+    }
+  }
+
+  _catch(key, e, context) {
+    this.onError(e)
+
+    const meta = this[key]
+    if (!meta) {
+      return
+    }
+
+    const { catch: handle } = meta
+    if (isFunction(handle)) {
+      handle.call(context, e)
     }
   }
 
