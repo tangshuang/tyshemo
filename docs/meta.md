@@ -73,8 +73,7 @@ const attrs = {
 
   // optional, function, used by `fromJSON`.
   // `json` is the first parameter of `fromJSON`
-  // because in this situation, we always use the whole object ot pick out which we want, so `json` comes to be the first parameter
-  create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
+  create: (value, key, json) => !!json.on_market ? json.listing : json.pending,
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
   save: (value, key, data) => {

@@ -20,77 +20,6 @@ import {
 import { Ty, Rule } from './ty/index.js'
 import Meta from './meta.js'
 
-/**
- * @example const schema = new Schema({
- *   fieldName: {
- *     // required, function to return an object/array
- *     default: '',
- *
- *     // optional, computed property, will compute at each time digest end
- *     // when it is a computed property, it is not able to use set to update value
- *     compute() {
- *       const a = this.a
- *       const b = this.b
- *       return a + '' + b
- *     },
- *
- *     // optional, when passed, `set` action will return prev value if not pass type checking
- *     // notice: `default` and result of `compute` should match type,
- *     // can be rule, i.e. ifexist(String)
- *     type: String,
- *     message: '', // message to return when type checking fail
- *
- *     // optional
- *     validators: [
- *       {
- *         determine: (value) => Boolean, // whether to run this validator, return true to run, false to forbid
- *         validate: (value) => Boolean, // whether to pass the validate, return true to pass, false to not pass and throw error
- *         message: '', // the message of error which throw when validate not pass, can be function to return message dynamicly
- *       },
- *     ],
- *
- *     // optional, function, used by `fromJSON`, `json` is the parameter of `fromJSON`
- *     create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
- *
- *     // optional, function, whether to not use this field when export
- *     drop: (value, key, data) => Boolean,
- *     // optional, function, to override the field value when export, not work when `drop` is false
- *     map: (value, key, data) => newValue,
- *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original field
- *     flat: (value, key, data) => ({ newProp: newValue }),
- *
- *     // field name which used to push to backend by `toData`
- *     to: 'field_name',
- *
- *     // optional, function, format this field value when get
- *     getter: (value) => newValue,
- *     // optional, function, format this field to a text
- *     formatter: (value) => text,
- *     // optional, function, format this field value when set
- *     setter: (value) => value,
- *
- *     // optional, function or boolean or string, use schema.required(field) to check, will be invoked by validate
- *     required: {
- *       // function to determine whether need to be required
- *       determine() { return true },
- *       // when required, what message to notice user
- *       message: 'xx',
- *     },
- *     // optional, function or boolean or string, use schema.readonly(field) to check, will disable set
- *     readonly: { determine, message },
- *     // optional, function or boolean or string, use schema.disabled(field) to check, will disable set/validate, and be dropped when export
- *     // disabled = readonly + drop + no validation
- *     disabled: { determine, message },
- *
- *     // the difference between `disabled` and `readonly`:
- *     // readonly means the field can only be read/validate/export, but could not be changed.
- *     // disabled means the field can only be read, but could not be changed, and will be drop when validate and export
- *
- *     // optional, when an error occurs caused by this field, what to do with the error
- *     catch: (error) => {},
- *   },
- * })
- */
 export class Schema {
   constructor(metas) {
     each(metas, (meta, key) => {
@@ -621,19 +550,19 @@ export class Schema {
 
   /**
    * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
-   * @param {*} data
+   * @param {*} json
    * @param {*} context
    */
-  parse(data, context) {
+  parse(json, context) {
     const output = map(this, (meta, key) => {
       const { create, catch: handle, type, message } = meta
-      const value = data[key]
+      const value = json[key]
 
       let coming = value
 
       if (isFunction(create)) {
         coming = this._trydo(
-          () => create.call(context, data, key, value),
+          () => create.call(context, value, key, json),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,

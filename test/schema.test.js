@@ -101,7 +101,7 @@ describe('Schema', () => {
       key1: {
         type: String,
         default: '',
-        create(data) {
+        create(value, key, data) {
           return data.prop1
         },
       },
