@@ -19,7 +19,7 @@ describe('Meta', () => {
     }
 
     const person = new Person()
-    const json = person.toJSON()
+    const json = person.toData()
 
     expect(json).toEqual({
       key: '',

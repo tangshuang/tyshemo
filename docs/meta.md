@@ -61,7 +61,6 @@ const attrs = {
   // notice: `default` and result of `compute` should match type,
   // can be rule, i.e. equal(String)
   type: String,
-
   // optional, string, message to return when type checking fail
   message: '',
 
@@ -72,32 +71,25 @@ const attrs = {
     ...
   ],
 
-  // optional, function, used by `parse`, `json` is the parameter of `parse`
+  // optional, function, used by `fromJSON`.
+  // `json` is the first parameter of `fromJSON`
+  // because in this situation, we always use the whole object ot pick out which we want, so `json` comes to be the first parameter
   create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
+  // optional, function, used by `toJSON`.
+  // use this to create an object which can be used by fromJSON to recover the model
+  mean: (value, key, data) => {
+    // notice: the return object will be patch to output object (as `flat` do), so that you can export a complext object
+    return { [key]: newValue }
+  },
 
-  // optional, function, whether to not use this property when export
+  // optional, function, whether to not use this property when `toData`
   drop: (value, key, data) => Boolean,
-
-  // optional, function, to override the property value when export, not work when `drop` is false
+  // optional, function, to override the property value when `toData`, not work when `drop` is false
   map: (value, key, data) => newValue,
-
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
-  flat: (value, key, data) => ({ newProp: newValue }),
-
+  flat: (value, key, data) => ({ [key]: newValue }),
   /**
-   * optional, when you want to parse the field from an another name, you can pass it,
-   * i.e. {
-   *   one: {
-   *     default: null,
-   *     from: 'some',
-   *   },
-   * }
-   * when you pass into { some }, after parsing, you will get { one }
-   */
-  from: 'some',
-
-  /**
-   * optional, when you want to export the field to an another name, you can pass it,
+   * optional, when you want to `toData` the field to an another name, you can pass it,
    * i.e. {
    *   one: {
    *     default: null,
@@ -108,30 +100,25 @@ const attrs = {
    */
   to: 'some',
 
-  // optional, function, format this property value when get
-  getter: (value) => newValue,
-
-  // optional, function, format this field to a text, you can read the text on `model.$views.field.text`
-  formatter: (value) => text,
-
   // optional, function, format this property value when set
   setter: (value) => value,
+  // optional, function, format this property value when get
+  getter: (value) => newValue,
+  // optional, function, format this field to a text, you can read the text on `model.$views.field.text`
+  formatter: (value) => text,
 
   // optional, function or boolean or string,
   // if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)
   readonly: Boolean,
-
   // optional, function or boolean or string,
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
   // when you invoke `export`, the `drop` will be set to be `true` automaticly (`flat` will not work too)
   disabled: Boolean,
-
   // optional, function or boolean or string.
   // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
   // `Empty` rule: null|undefined|''|NaN|[]|{}
   required: Boolean,
-
   // optional, function or boolean
   hidden: Boolean,
 

@@ -165,7 +165,7 @@ describe('Model', () => {
     expect(person.age).toBe('12')
 
     person.age = '30'
-    const data = person.toJSON()
+    const data = person.toData()
     expect(data.age).toBe(30)
   })
 
@@ -352,23 +352,21 @@ describe('Model', () => {
     expect(some.$views.$state.isPaid).toBe(true)
   })
 
-  test('from/to', () => {
+  test('to', () => {
     class Some extends Model {
       static name = {
         default: 'some',
-        from: 'some_key',
         to: 'one',
       }
     }
 
-    const some = new Some()
-    some.fromJSON({
-      some_key: 'aaaa'
+    const some = new Some({
+      name: 'aaaa'
     })
 
     expect(some.name).toBe('aaaa')
 
-    const data = some.toJSON()
+    const data = some.toData()
     expect(data.one).toBe('aaaa')
   })
 
@@ -483,8 +481,30 @@ describe('Model', () => {
       age: 30,
     })
 
-    const data = one.toJSON()
+    const data = one.toData()
     expect(data.child.age).toBe('4')
+  })
+
+  test('toJSON/fromJSON', () => {
+    class Child extends Model {
+      static name = { default: 'lily' }
+    }
+    class Parent extends Model {
+      static name = { default: 'tom' }
+      static age = { default: 10 }
+      static sex = { default: 'M' }
+      static child = Child
+    }
+
+    const one = new Parent()
+    const backup = one.toJSON()
+    expect(backup.child.name).toBe('lily')
+
+    one.name = 'tomy'
+    expect(one.name).toBe('tomy')
+
+    one.fromJSON(backup)
+    expect(one.name).toBe('tom')
   })
 
   // test('Editor', () => {

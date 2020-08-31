@@ -63,7 +63,8 @@ export class Model {
             },
           ],
           create: (data, key) => isArray(data[key]) ? map(data[key]) : [],
-          map: ms => ms.map(m => m.toJSON()),
+          mean: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
+          map: ms => ms.map(m => m.toData()),
           setter: (v) => isArray(v) ? map(v) : [],
         }
       }
@@ -83,7 +84,8 @@ export class Model {
             },
           ],
           create: (data, key) => create(data[key]),
-          map: m => m.toJSON(),
+          mean: (m, key) => ({ [key]: m.toJSON() }),
+          map: m => m.toData(),
           setter: v => create(v),
         }
       }
@@ -187,6 +189,7 @@ export class Model {
       message: null,
       validators: null,
       create: null,
+      mean: null,
       drop: null,
       map: null,
       flat: null,
@@ -351,7 +354,7 @@ export class Model {
     })
 
     // init data
-    this.restore(data)
+    this.fromJSON(data)
 
     // ensure top properties
     this.watch('*', ({ key }) => {
@@ -600,8 +603,7 @@ export class Model {
     }
 
     const entry = this.onParse(json)
-    const schema = this.$schema
-    const data = schema.parse(entry, this)
+    const data = this.$schema.parse(entry, this)
     const next = { ...json, ...data }
     this.restore(next)
     return this
@@ -610,13 +612,21 @@ export class Model {
   toJSON() {
     this._check()
     const data = clone(this.$store.state) // original data
+    const output = this.$schema.record(data, this)
+    const result = this.onRecord(output)
+    return result
+  }
+
+  toData() {
+    this._check()
+    const data = clone(this.$store.state) // original data
     const output = this.$schema.export(data, this)
     const result = this.onExport(output)
     return result
   }
 
   toParams(determine) {
-    const data = this.toJSON()
+    const data = this.toData()
     const output = flat(data, determine)
     return output
   }
@@ -844,6 +854,11 @@ export class Model {
 
   // parse data before parse, should be override
   onParse(data) {
+    return data
+  }
+
+  // by toJSON
+  onRecord(data) {
     return data
   }
 

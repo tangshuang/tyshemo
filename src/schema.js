@@ -58,10 +58,8 @@ import Meta from './meta.js'
  *     map: (value, key, data) => newValue,
  *     // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original field
  *     flat: (value, key, data) => ({ newProp: newValue }),
-
- *     // field name which used to pick from backend by `fromJSON`
- *     from: 'field_name',
- *     // field name which used to push to backend by `toJSON`
+ *
+ *     // field name which used to push to backend by `toData`
  *     to: 'field_name',
  *
  *     // optional, function, format this field value when get
@@ -622,8 +620,8 @@ export class Schema {
    */
   parse(data, context) {
     const output = map(this, (meta, key) => {
-      const { create, catch: handle, type, message, from = key } = meta
-      const value = data[from]
+      const { create, catch: handle, type, message } = meta
+      const value = data[key]
 
       let coming = value
 
@@ -732,6 +730,37 @@ export class Schema {
 
     const result = Object.assign(output, patch)
     return result
+  }
+
+  /**
+   * export a json to backup model
+   * @param {*} data
+   * @param {*} context
+   */
+  record(data, context) {
+    const output = {}
+
+    each(this, (meta, key) => {
+      const { mean, catch: handle } = meta
+      const value = data[key]
+
+      if (isFunction(mean)) {
+        const res = this._trydo(
+          () => mean.call(context, value, key, data) || {},
+          (error) => isFunction(handle) && handle.call(context, error) || {},
+          {
+            key,
+            attr: 'mean',
+          },
+        )
+        Object.assign(output, res)
+      }
+      else {
+        output[key] = value
+      }
+    })
+
+    return output
   }
 
   _trydo(fn, fallback, basic, force) {
