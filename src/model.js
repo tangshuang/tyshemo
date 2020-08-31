@@ -20,7 +20,6 @@ import {
   createProxy,
   inArray,
   remove,
-  getConstructorOf,
 } from 'ts-fns'
 
 import _Schema from './schema.js'

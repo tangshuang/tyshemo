@@ -748,16 +748,16 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { mean, catch: handle } = meta
+      const { save, catch: handle } = meta
       const value = data[key]
 
-      if (isFunction(mean)) {
+      if (isFunction(save)) {
         const res = this._trydo(
-          () => mean.call(context, value, key, data) || {},
+          () => save.call(context, value, key, data) || {},
           (error) => isFunction(handle) && handle.call(context, error) || {},
           {
             key,
-            attr: 'mean',
+            attr: 'save',
           },
         )
         Object.assign(output, res)

@@ -77,7 +77,7 @@ const attrs = {
   create: (json, key, value) => !!json.on_market ? json.listing : json.pending,
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
-  mean: (value, key, data) => {
+  save: (value, key, data) => {
     // notice: the return object will be patch to output object (as `flat` do), so that you can export a complext object
     return { [key]: newValue }
   },
