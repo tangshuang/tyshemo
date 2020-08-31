@@ -487,34 +487,34 @@ describe('Model', () => {
     expect(data.child.age).toBe('4')
   })
 
-  test('Editor', () => {
-    class Child extends Model {
-      static name = { default: 'lily' }
-    }
-    class Some extends Model {
-      static name = { default: '' }
-      static age = { default: 10 }
-      static sex = { default: 'M' }
-      static child = Child
-    }
+  // test('Editor', () => {
+  //   class Child extends Model {
+  //     static name = { default: 'lily' }
+  //   }
+  //   class Some extends Model {
+  //     static name = { default: '' }
+  //     static age = { default: 10 }
+  //     static sex = { default: 'M' }
+  //     static child = Child
+  //   }
 
-    const some = new Some({
-      name: 'tomy'
-    })
-    expect(some.name).toBe('tomy')
-    expect(some.age).toBe(10)
-    expect(some.child.name).toBe('lily')
+  //   const some = new Some({
+  //     name: 'tomy'
+  //   })
+  //   expect(some.name).toBe('tomy')
+  //   expect(some.age).toBe(10)
+  //   expect(some.child.name).toBe('lily')
 
-    const editor = some.toEdit()
-    editor.name = 'tomi'
-    expect(some.name).toBe('tomy')
-    expect(editor.name).toBe('tomi')
-    expect(editor.child.$parent).toBe(editor)
+  //   const editor = some.toEdit()
+  //   editor.name = 'tomi'
+  //   expect(some.name).toBe('tomy')
+  //   expect(editor.name).toBe('tomi')
+  //   expect(editor.child.$parent).toBe(editor)
 
-    editor.child.name = 'lucy'
-    editor.submit()
-    expect(some.name).toBe('tomi')
-    expect(some.child.name).toBe('lucy')
-    expect(some.child.$parent).toBe(some)
-  })
+  //   editor.child.name = 'lucy'
+  //   editor.submit()
+  //   expect(some.name).toBe('tomi')
+  //   expect(some.child.name).toBe('lucy')
+  //   expect(some.child.$parent).toBe(some)
+  // })
 })
