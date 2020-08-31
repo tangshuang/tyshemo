@@ -87,17 +87,6 @@ const attrs = {
   map: (value, key, data) => newValue,
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
   flat: (value, key, data) => ({ [key]: newValue }),
-  /**
-   * optional, when you want to `toData` the field to an another name, you can pass it,
-   * i.e. {
-   *   one: {
-   *     default: null,
-   *     to: 'some',
-   *   },
-   * }
-   * after export, you will get { some } not { one }
-   */
-  to: 'some',
 
   // optional, function, format this property value when set
   setter: (value) => value,

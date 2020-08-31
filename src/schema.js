@@ -615,7 +615,7 @@ export class Schema {
         return
       }
 
-      const { drop, map, flat, catch: handle, to = key } = meta
+      const { drop, map, flat, catch: handle } = meta
       const value = data[key]
 
       if (isFunction(flat)) {
@@ -657,10 +657,10 @@ export class Schema {
             attr: 'map',
           },
         )
-        output[to] = res
+        output[key] = res
       }
       else {
-        output[to] = value
+        output[key] = value
       }
     })
 
