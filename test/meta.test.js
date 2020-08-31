@@ -2,31 +2,6 @@ import Model from '../src/model.js'
 import Meta from '../src/meta.js'
 
 describe('Meta', () => {
-  test('to', () => {
-    class Name extends Meta {
-      static default = ''
-      static to = 'key'
-    }
-
-    class Age extends Meta {
-      static default = 0
-      static to = 'value'
-    }
-
-    class Person extends Model {
-      static name = Name
-      static age = Age
-    }
-
-    const person = new Person()
-    const json = person.toData()
-
-    expect(json).toEqual({
-      key: '',
-      value: 0,
-    })
-  })
-
   test('extend', () => {
     class Name extends Meta {
       static default = ''

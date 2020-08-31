@@ -352,24 +352,6 @@ describe('Model', () => {
     expect(some.$views.$state.isPaid).toBe(true)
   })
 
-  test('to', () => {
-    class Some extends Model {
-      static name = {
-        default: 'some',
-        to: 'one',
-      }
-    }
-
-    const some = new Some({
-      name: 'aaaa'
-    })
-
-    expect(some.name).toBe('aaaa')
-
-    const data = some.toData()
-    expect(data.one).toBe('aaaa')
-  })
-
   test('static extend', () => {
     class Some extends Model {
       static name = {
