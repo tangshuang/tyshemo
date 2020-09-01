@@ -25,6 +25,8 @@ import {
 import _Schema from './schema.js'
 import _Store from './store.js'
 import { ofChain } from './shared/utils.js'
+import { edit } from './shared/edit.js'
+import { getConstructorOf } from 'ts-fns/cjs/class'
 
 /**
  * class SomeModel extends Model {
@@ -639,210 +641,6 @@ export class Model {
     return formdata
   }
 
-  // toEdit() {
-  //   const Constructor = getConstructorOf(this)
-  //   const $this = this
-
-  //   class Editor extends Constructor {
-  //     init(data) {
-  //       let commits = {}
-  //       let history = []
-  //       let cursor = -1
-  //       let doing = false
-  //       define(this, '$commits', {
-  //         get: () => commits,
-  //         set: v => commits = v,
-  //       })
-  //       define(this, '$history', {
-  //         get: () => history,
-  //         set: v => history = v,
-  //       })
-  //       define(this, '$cursor', {
-  //         get: () => cursor,
-  //         set: v => cursor = v,
-  //       })
-  //       define(this, '$doing', {
-  //         get: () => doing,
-  //         set: v => doing = v,
-  //       })
-
-  //       super.init(data)
-
-  //       // record all changes in history
-  //       this.watch('*', ({ key, value }) => {
-  //         this.$record({ key, value })
-  //       }, true)
-  //     }
-
-  //     restore(data) {
-  //       super.restore(data)
-  //       this.clear()
-  //       // create a initialized mirror
-  //       this.commit('$origin')
-  //       return this
-  //     }
-
-  //     undo() {
-  //       if (!this.$store.editable) {
-  //         return
-  //       }
-
-  //       const cursor = this.$cursor - 1
-
-  //       // no history
-  //       if (cursor < -1 || !this.$history.length) {
-  //         return
-  //       }
-
-  //       // from history to none
-  //       if (cursor === -1) {
-  //         const origin = this.$commits.$origin
-  //         const current = this.$history[0]
-  //         const { key, data } = current
-  //         if (data) {
-  //           this.$replay({ data: origin })
-  //         }
-  //         else {
-  //           const value = parse(origin, key)
-  //           this.$replay({ key, value })
-  //         }
-  //       }
-  //       else {
-  //         const history = this.$history[cursor]
-  //         this.$replay(history)
-  //       }
-
-  //       this.$cursor = cursor
-
-  //       return this
-  //     }
-
-  //     redo() {
-  //       if (!this.$store.editable) {
-  //         return
-  //       }
-
-  //       const cursor = this.$cursor + 1
-  //       const max = this.$history.length - 1
-
-  //       if (cursor > max) {
-  //         return
-  //       }
-
-  //       const history = this.$history[cursor]
-  //       const { key, value, data } = history
-
-  //       this.$doing = true
-  //       if (data) {
-  //         this.$store.update(data)
-  //       }
-  //       else {
-  //         this.$store.set(key, value)
-  //       }
-  //       this.$doing = false
-  //       this.$cursor = cursor
-
-  //       return this
-  //     }
-
-  //     commit(tag) {
-  //       const data = clone(this.$store.data)
-  //       this.$commits[tag] = data
-  //       return this
-  //     }
-
-  //     reset(tag) {
-  //       if (!this.$store.editable) {
-  //         return
-  //       }
-
-  //       const data = this.$commits[tag]
-  //       if (!data) {
-  //         return
-  //       }
-
-  //       this.$doing = true
-  //       this.$store.update(data)
-  //       this.$doing = false
-  //       this.$record({ tag, data })
-
-  //       return this
-  //     }
-
-  //     $record(action) {
-  //       if (this.$doing) {
-  //         return
-  //       }
-
-  //       const next = this.$cursor + 1
-  //       this.$history.length = next // clear all items after cursor
-
-  //       if (action.tag) {
-  //         this.$history.push({
-  //           time: Date.now(),
-  //           data: action.data,
-  //           tag: action.tag,
-  //         })
-  //       }
-  //       else {
-  //         const { key, value } = action
-  //         this.$history.push({
-  //           key,
-  //           value,
-  //           time: Date.now(),
-  //         })
-  //       }
-
-  //       this.$cursor = next // move cursro to next (latest)
-  //     }
-
-  //     $replay(history) {
-  //       const { key, value, data } = history
-  //       this.$doing = true
-  //       if (data) {
-  //         this.$store.update(data)
-  //       }
-  //       else {
-  //         this.$store.set(key, value)
-  //       }
-  //       this.$doing = false
-  //     }
-
-  //     clear() {
-  //       this.$cursor = -1
-  //       this.$history = []
-  //       this.$doing = false
-  //     }
-
-  //     submit() {
-  //       const data = this.$store.data
-  //       const cloned = clone(data)
-  //       const next = map(cloned, (node) => {
-  //         if (isArray(node)) {
-  //           return map(node, item => isInstanceOf(item, Model) ? item.submit() : item)
-  //         }
-  //         else {
-  //           return isInstanceOf(node, Model) ? node.submit() : node
-  //         }
-  //       })
-  //       $this.restore(next)
-  //       return $this
-  //     }
-  //   }
-
-  //   const data = this.$store.data
-  //   const cloned = clone(data)
-  //   const editor = map(cloned, (node) => {
-  //     if (isArray(node)) {
-  //       return map(node, item => isInstanceOf(item, Model) ? item.toEdit() : item)
-  //     }
-  //     else {
-  //       return isInstanceOf(node, Model) ? node.toEdit() : node
-  //     }
-  //   })
-  //   return new Editor(editor)
-  // }
-
   // when initialized
   onInit() {}
 
@@ -989,6 +787,23 @@ export class Model {
     }
 
     return Child
+  }
+
+  static get toEdit() {
+    const Editor = edit(this)
+    return Editor
+  }
+
+  toEdit() {
+    const $this = this
+    const Constructor = getConstructorOf(this)
+    const _Editor = edit(Constructor)
+    class Editor extends _Editor {
+      submit() {
+        return super.submit($this)
+      }
+    }
+    return new Editor(this)
   }
 }
 
