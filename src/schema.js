@@ -302,7 +302,7 @@ export class Schema {
     // type checking
     if (type) {
       // make rule works
-      const target = { ...context }
+      const target = {}
       if (!isUndefined(value)) {
         Object.assign(target, { [key]: value })
       }
@@ -546,6 +546,60 @@ export class Schema {
     errors.push(...errs)
 
     return errors
+  }
+
+  init(json, context) {
+    const output = {}
+    each(this, (meta, key) => {
+      const { init, catch: handle, type, message, compute } = meta
+      if (compute) {
+        return
+      }
+
+      const value = json[key]
+
+      let coming = value
+
+      if (isFunction(init)) {
+        coming = this._trydo(
+          () => init.call(context, value, key, json),
+          (error) => isFunction(handle) && handle.call(context, error) || value,
+          {
+            key,
+            attr: 'init',
+          },
+        )
+      }
+      else if (inObject(key, json)) {
+        coming = value
+      }
+      else {
+        coming = this.$default(key)
+      }
+
+      // check type, and throw error if it is not match the type
+      if (type) {
+        const target = {}
+        if (!isUndefined(coming)) {
+          Object.assign(target, { [key]: coming })
+        }
+        const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
+        if (error) {
+          const e = {
+            key,
+            action: 'init',
+            value: coming,
+            type: true,
+            error,
+            message: this.$message(key, 'type', context)(message),
+          }
+          this._catch(key, e, context)
+        }
+      }
+
+      output[key] = coming
+    })
+    return output
   }
 
   /**

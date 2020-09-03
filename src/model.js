@@ -63,6 +63,7 @@ export class Model {
               validate: ms => flatArray(map(ms, m => m.validate())),
             },
           ],
+          init: (value) => isArray(value) ? map(value) : [],
           create: (value) => isArray(value) ? map(value) : [],
           save: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
           map: ms => ms.map(m => m.toData()),
@@ -84,6 +85,7 @@ export class Model {
               validate: m => m.validate(),
             },
           ],
+          init: (value) => create(value),
           create: (value) => create(value),
           save: (m, key) => ({ [key]: m.toJSON() }),
           map: m => m.toData(),
@@ -355,12 +357,19 @@ export class Model {
     })
 
     // init data
-    this.fromJSON(data)
+    this.initData(data)
 
     // ensure top properties
     this.watch('*', ({ key }) => {
       this._ensure(key)
     })
+  }
+
+  initData(json) {
+    const data = this.$schema.init(json, this)
+    const next = { ...json, ...data }
+    this.restore(next)
+    return this
   }
 
   /**
