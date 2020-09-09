@@ -433,8 +433,12 @@ export class Model {
     each(data, (value, key) => {
       // only update existing props, ignore those which are not on model
       // this shakes affects by over-given props
-      if (inObject(key, this)) {
+      if (inObject(key, this.$store.state)) {
         this.set(key, value)
+      }
+      // patch those not in store
+      else if (inObject(key, this)) {
+        this[key] = value
       }
     })
 
