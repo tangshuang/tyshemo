@@ -431,8 +431,13 @@ export class Model {
     }
 
     each(data, (value, key) => {
-      this.set(key, value)
+      // only update existing props, ignore those which are not on model
+      // this shakes affects by over-given props
+      if (inObject(key, this)) {
+        this.set(key, value)
+      }
     })
+
     return this
   }
 
