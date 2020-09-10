@@ -8,6 +8,7 @@ import {
   isInstanceOf,
   isBoolean,
   isUndefined,
+  numerify,
 } from 'ts-fns'
 import { ofChain } from './shared/utils.js'
 
@@ -57,14 +58,13 @@ function minLen(len, message) {
 
 function integer(len, message) {
   const validate = (value) => {
-    const max = Math.pow(10, len)
-
     if (!isNumber(value) && !isNumeric(value)) {
       return false
     }
 
-    const num = +value
-    if (num >= max) {
+    const num = numerify(value).replace('-', '')
+    const [integ] = num.split('.')
+    if (integ.length >= len) {
       return false
     }
 
@@ -75,14 +75,13 @@ function integer(len, message) {
 
 function decimal(len, message) {
   const validate = (value) => {
-    const fix = Math.pow(10, len)
-
     if (!isNumber(value) && !isNumeric(value)) {
       return false
     }
 
-    const num = +value
-    if (num * fix % 1 !== 0) {
+    const num = numerify(value)
+    const [_, decim] = num.split('.')
+    if (decim.length > len) {
       return false
     }
 
