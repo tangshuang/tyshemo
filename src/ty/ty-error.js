@@ -155,7 +155,7 @@ function makeErrorMessage(type, params, templates) {
   return text
 }
 
-function makeValueString(value, sensitive = true, breakline = true, space = 2) {
+function makeValueString(value, sensitive = false, breakline = true, space = 2) {
   const totype = typeof value
   const britems = (items, start, end, space = 2) => {
     if (!breakline) {
@@ -228,7 +228,7 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
 
   const records = []
 
-  function make(value, sensitive = true, breakline = true, space = 2) {
+  function make(value, sensitive = false, breakline = true, space = 2) {
     if (inArray(totype, ['boolean', 'undefined']) || isNull(value) || isNaN(value)) {
       return value + ''
     }
@@ -278,7 +278,7 @@ function makeValueString(value, sensitive = true, breakline = true, space = 2) {
     }
   }
 
-  return make(value, sensitive = true, breakline = true, space = 2)
+  return make(value, sensitive, breakline, space = 2)
 }
 
 function makeErrorReceive(value, breakline = true, space = 0, sensitive = false) {
