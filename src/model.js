@@ -19,7 +19,6 @@ import {
   inherit,
   createProxy,
   inArray,
-  remove,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -174,13 +173,17 @@ export class Model {
     return ofChain(this, Model)
   }
 
-  state() {
-    const state = {}
+  _combineState() {
+    const state = this.state()
     each(this.$schema, (meta) => {
       const metaState = meta.state()
       Object.assign(state, metaState)
     })
     return state
+  }
+
+  state() {
+    return {}
   }
 
   attrs() {
@@ -293,12 +296,11 @@ export class Model {
         },
         state: {
           get: () => {
-            const state = isFunction(meta.state) ? meta.state() : {}
+            const state = meta.state()
             const keys = Object.keys(state)
             const proxy = createProxy({}, {
               get: keyPath => inArray(keyPath[0], keys) ? parse(this, keyPath) : undefined,
               set: (keyPath, value) => inArray(keyPath[0], keys) && assign(this, keyPath, value),
-              del: keyPath => inArray(keyPath[0], keys) && remove(this, keyPath),
             })
             return proxy
           },
@@ -333,7 +335,7 @@ export class Model {
 
     // create $state, so that it's easy to read state from $views
     define(this.$views, '$state', () => {
-      const state = this.state()
+      const state = this._combineState()
       const keys = Object.keys(state)
       const output = {}
       keys.forEach((key) => {
@@ -357,7 +359,7 @@ export class Model {
     })
 
     // init data
-    this.initData(data)
+    this._initData(data)
 
     // ensure top properties
     this.watch('*', ({ key }) => {
@@ -365,7 +367,7 @@ export class Model {
     })
   }
 
-  initData(json) {
+  _initData(json) {
     const data = this.$schema.init(json, this)
     const next = { ...json, ...data }
     this.restore(next)
@@ -529,7 +531,7 @@ export class Model {
     }
 
     const schema = this.$schema
-    const state = this.state()
+    const state = this._combineState()
     const params = {}
 
     const ensure = (value, keys) => {
@@ -571,7 +573,7 @@ export class Model {
         return
       }
 
-      // define state here so that we can invoke this.state() only once when initialize
+      // define state here so that we can invoke this._combineState() only once when initialize
       define(this, key, {
         get: () => this.get(key),
         set: (value) => this.set(key, value),
