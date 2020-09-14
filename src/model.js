@@ -611,6 +611,8 @@ export class Model {
     // reset into store
     this.$store.init(params)
 
+    this.onRestore()
+
     return this
   }
 
@@ -689,6 +691,8 @@ export class Model {
   onError() {}
 
   onEnsure() {}
+
+  onRestore() {}
 
   lock() {
     this.$store.editable = true
