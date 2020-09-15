@@ -212,11 +212,7 @@ export class Schema {
       return value
     }
 
-    const { getter, compute, catch: handle } = meta
-    if (isFunction(compute)) {
-      const next = compute.call(context)
-      return next
-    }
+    const { getter, catch: handle } = meta
 
     if (isFunction(getter)) {
       const coming = this._trydo(
@@ -232,6 +228,29 @@ export class Schema {
     else {
       return value
     }
+  }
+
+  compute(key, context) {
+    const meta = this[key]
+
+    if (!meta) {
+      return
+    }
+
+    const { compute, catch: handle } = meta
+    if (!compute) {
+      return
+    }
+
+    const computed = this._trydo(
+      () => compute.call(context),
+      (error) => isFunction(handle) && handle.call(context, error),
+      {
+        key,
+        attr: 'compute',
+      },
+    )
+    return computed
   }
 
   format(key, value, context) {
@@ -299,28 +318,44 @@ export class Schema {
       )
     }
 
-    // type checking
-    if (type) {
-      // make rule works
-      const target = {}
-      if (!isUndefined(value)) {
-        Object.assign(target, { [key]: value })
-      }
-      const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
-      if (error) {
-        const e = {
-          key,
-          action: '$set',
-          value,
-          type: true,
-          error,
-          message: this.$message(key, 'type', context)(message),
-        }
-        this._catch(key, e, context)
-      }
-    }
+    this.check(key, value, context)
 
     return value
+  }
+
+  // type checking
+  check(key, value, context) {
+    const meta = this[key]
+
+    if (!meta) {
+      return
+    }
+
+    const { type, message } = meta
+
+    if (!type) {
+      return
+    }
+
+    const target = {}
+    // make rule works
+    if (!isUndefined(value)) {
+      target[key] = value
+    }
+
+    const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(value).by(type)
+    if (error) {
+      const e = {
+        key,
+        action: 'check',
+        value,
+        type: true,
+        error,
+        message: this.$message(key, 'type', context)(message),
+      }
+      this._catch(key, e, context)
+      return error
+    }
   }
 
   /**
@@ -548,79 +583,21 @@ export class Schema {
     return errors
   }
 
-  init(json, context) {
-    const output = {}
-    each(this, (meta, key) => {
-      const { init, catch: handle, type, message, compute } = meta
-      if (compute) {
-        return
-      }
-
-      const value = json[key]
-
-      let coming = value
-
-      if (isFunction(init)) {
-        coming = this._trydo(
-          () => init.call(context, value, key, json),
-          (error) => isFunction(handle) && handle.call(context, error) || value,
-          {
-            key,
-            attr: 'init',
-          },
-        )
-      }
-      else if (inObject(key, json)) {
-        coming = value
-      }
-      else {
-        coming = this.$default(key)
-      }
-
-      // check type, and throw error if it is not match the type
-      if (type) {
-        const target = {}
-        if (!isUndefined(coming)) {
-          Object.assign(target, { [key]: coming })
-        }
-        const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
-        if (error) {
-          const e = {
-            key,
-            action: 'init',
-            value: coming,
-            type: true,
-            error,
-            message: this.$message(key, 'type', context)(message),
-          }
-          this._catch(key, e, context)
-        }
-      }
-
-      output[key] = coming
-    })
-    return output
-  }
-
-  /**
-   * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
-   * @param {*} json
-   * @param {*} context
-   */
-  parse(json, context) {
+  $reuse(json, context, attr) {
     const output = map(this, (meta, key) => {
-      const { create, catch: handle, type, message } = meta
+      const { catch: handle } = meta
+      const reuse = meta[attr]
       const value = json[key]
 
       let coming = value
 
-      if (isFunction(create)) {
+      if (isFunction(reuse)) {
         coming = this._trydo(
-          () => create.call(context, value, key, json),
+          () => reuse.call(context, value, key, json),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
-            attr: 'create',
+            attr,
           },
         )
       }
@@ -629,29 +606,23 @@ export class Schema {
         coming = this.$default(key)
       }
 
-      // check type, and throw error if it is not match the type
-      if (type) {
-        const target = {}
-        if (!isUndefined(coming)) {
-          Object.assign(target, { [key]: coming })
-        }
-        const error = isInstanceOf(type, Rule) ? Ty.catch(target).by({ [key]: type }) : Ty.catch(coming).by(type)
-        if (error) {
-          const e = {
-            key,
-            action: 'parse',
-            value: coming,
-            type: true,
-            error,
-            message: this.$message(key, 'type', context)(message),
-          }
-          this._catch(key, e, context)
-        }
-      }
-
+      this.check(key, coming, context)
       return coming
     })
     return output
+  }
+
+  init(json, context) {
+    return this.$reuse(json, context, 'init')
+  }
+
+  /**
+   * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
+   * @param {*} json
+   * @param {*} context
+   */
+  parse(json, context) {
+    return this.$reuse(json, context, 'create')
   }
 
   /**

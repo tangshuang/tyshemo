@@ -358,6 +358,16 @@ export class Model {
       this.watch(key, def.watch, true)
     })
 
+    // listen
+    keys.forEach((key) => {
+      const def = this.$schema[key]
+      if (!def.listen) {
+        return
+      }
+
+      def.listen.call(this)
+    })
+
     // init data
     this._initData(data)
 
