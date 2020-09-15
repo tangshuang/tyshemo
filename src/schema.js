@@ -5,7 +5,6 @@ import {
   isBoolean,
   isInstanceOf,
   each,
-  map,
   clone,
   define,
   isString,
@@ -39,7 +38,7 @@ export class Schema {
     })
   }
 
-  $has(key) {
+  has(key) {
     return !!this[key]
   }
 
@@ -47,7 +46,7 @@ export class Schema {
    * get default value by using `default` option
    * @param {*} key
    */
-  $default(key) {
+  getDefault(key) {
     const meta = this[key]
     const { default: defaultValue } = meta
     if (isFunction(defaultValue)) {
@@ -291,7 +290,7 @@ export class Schema {
       return value
     }
 
-    const { setter, compute, catch: handle, type, message } = meta
+    const { setter, compute, catch: handle } = meta
 
     if (compute) {
       const e = {
@@ -583,17 +582,32 @@ export class Schema {
     return errors
   }
 
-  $reuse(json, context, attr) {
-    const output = map(this, (meta, key) => {
-      const { catch: handle } = meta
-      const reuse = meta[attr]
+  $use(json, context, attr) {
+    const output = {}
+
+    each(this, (meta, key) => {
+      const { catch: handle, state } = meta
+      const use = meta[attr]
       const value = json[key]
+
+      // patch meta state
+      if (isFunction(state)) {
+        const metaState = state()
+        each(metaState, (value, key) => {
+          if (inObject(key, json)) {
+            output[key] = json[key]
+          }
+          else {
+            output[key] = value
+          }
+        })
+      }
 
       let coming = value
 
-      if (isFunction(reuse)) {
+      if (isFunction(use)) {
         coming = this._trydo(
-          () => reuse.call(context, value, key, json),
+          () => use.call(context, value, key, json),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
@@ -603,17 +617,18 @@ export class Schema {
       }
 
       if (isUndefined(coming)) {
-        coming = this.$default(key)
+        coming = this.getDefault(key)
       }
 
       this.check(key, coming, context)
-      return coming
+      output[key] = coming
     })
+
     return output
   }
 
   init(json, context) {
-    return this.$reuse(json, context, 'init')
+    return this.$use(json, context, 'init')
   }
 
   /**
@@ -622,7 +637,7 @@ export class Schema {
    * @param {*} context
    */
   parse(json, context) {
-    return this.$reuse(json, context, 'create')
+    return this.$use(json, context, 'create')
   }
 
   /**

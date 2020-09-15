@@ -571,7 +571,7 @@ export class Model {
         ensure(value, [key])
       }
       else {
-        const value = schema.$default(key)
+        const value = schema.getDefault(key)
         params[key] = value
         ensure(value, [key])
       }
