@@ -14,7 +14,7 @@ import {
 
 import { tryGet } from './shared/utils.js'
 
-const COMPUTED = Symbol('computed')
+const COMPUTED_FAILURE = Symbol('COMPUTED_FAILURE')
 
 export class Store {
   constructor(params = {}) {
@@ -72,9 +72,9 @@ export class Store {
         this._depend(keyPath)
 
         // computed property
-        if (active === COMPUTED) {
-          // property is a computed property, but without given value
-          const value = this._compute(key, true)
+        // property is a computed property, but calculation failure
+        if (active === COMPUTED_FAILURE) {
+          const value = this._collect(key)
           return value
         }
         else {
@@ -132,7 +132,7 @@ export class Store {
     // descriptors
     each(params, (descriptor, key) => {
       // make value patch to data, so that the data has initialized value which is needed in compute
-      const value = descriptor.get ? tryGet(() => params[key], () => COMPUTED) : params[key]
+      const value = descriptor.get ? tryGet(() => params[key], () => COMPUTED_FAILURE) : params[key]
       this.state[key] = value
 
       // now all keys have been generated
@@ -405,20 +405,17 @@ export class Store {
     this.silent = prevSilent
 
     this._dep.pop()
+
+    return value
   }
 
-  _compute(key, error) {
+  _compute(key) {
     const descriptor = this._descriptors[key]
     if (!descriptor || !descriptor.get) {
       return
     }
 
-    if (error) {
-      const value = descriptor.get.call(this.state)
-      return value
-    }
-
-    const value = tryGet(() => descriptor.get.call(this.state), () => COMPUTED)
+    const value = tryGet(() => descriptor.get.call(this.state), () => COMPUTED_FAILURE)
     return value
   }
 
