@@ -225,4 +225,63 @@ describe('Store', () => {
     expect(() => store.set('name', 'lily')).not.toThrowError()
     expect(store.get('name')).toBe('tomy')
   })
+
+  test('computed with error at the first time', () => {
+    const store = new Store({
+      get age() {
+        return this.$parent.age - 24
+      }
+    })
+
+    let count = 0
+    store.watch('age', () => {
+      count ++
+    })
+
+    // at the first time, this.$parent is undefined, age will be set Symbol('computed')
+    expect(typeof store.data.age).toBe('symbol')
+    expect(store.data.age.toString()).toBe('Symbol(computed)')
+
+    // patch $parent, so that computed property will work
+    store.state.$parent = {
+      age: 30,
+    }
+    expect(store.state.age).toBe(6)
+    expect(count).toBe(1)
+
+    // we can change computed property
+    store.state.age = 10
+    expect(store.state.age).toBe(10)
+  })
+
+  test('dynamic computed', () => {
+    const store = new Store({
+      sex: 'M',
+      age: 20,
+      height: 180,
+      get weight() {
+        return this.sex === 'M' ? this.age * 4 + this.height / 9 : this.age * 3
+      },
+    })
+
+    let count = 0
+    store.watch('weight', () => count ++)
+
+    const { state } = store
+    expect(state.weight).toBe(100)
+    expect(store.data.weight).toBe(100) // computed cached
+
+    state.height = 198
+    expect(state.weight).toBe(102)
+    expect(count).toBe(1)
+
+    state.age ++
+    expect(state.weight).toBe(106)
+    expect(count).toBe(2)
+
+    state.sex = 'F'
+    expect(state.weight).toBe(63)
+    expect(store.data.weight).toBe(63) // computed cached
+    expect(count).toBe(3)
+  })
 })

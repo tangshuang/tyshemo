@@ -12,7 +12,9 @@ import {
   isSymbol,
 } from 'ts-fns'
 
-import { tryget } from './shared/utils.js'
+import { tryGet } from './shared/utils.js'
+
+const COMPUTED = Symbol('computed')
 
 export class Store {
   constructor(params = {}) {
@@ -70,8 +72,7 @@ export class Store {
         this._depend(keyPath)
 
         // computed property
-        const descriptor = this._descriptors[key]
-        if (descriptor && isUndefined(active)) {
+        if (active === COMPUTED) {
           // property is a computed property, but without given value
           const value = this._compute(key, true)
           return value
@@ -89,14 +90,10 @@ export class Store {
           if (descriptor.set) {
             descriptor.set.call(this.state, value)
           }
+        }
 
-          // compute
-          const next = this._compute(key)
-          return next
-        }
-        else {
-          return value
-        }
+        // support change computed property
+        return value
       },
       del: (keyPath) => {
         // computed property
@@ -135,8 +132,9 @@ export class Store {
     // descriptors
     each(params, (descriptor, key) => {
       // make value patch to data, so that the data has initialized value which is needed in compute
-      const value = tryget(() => params[key])
+      const value = descriptor.get ? tryGet(() => params[key], () => COMPUTED) : params[key]
       this.state[key] = value
+
       // now all keys have been generated
 
       // collect descriptors
@@ -218,7 +216,7 @@ export class Store {
       this._collect(key)
     }
 
-    const bind = (store, on) => {
+    return (store, on) => {
       const descriptor = this._descriptors[key]
       if (!descriptor) {
         return bind
@@ -231,19 +229,20 @@ export class Store {
         on,
         fn,
       })
-
-      return bind
     }
-    return bind
   }
 
   /**
    *
-   * @param {function|any} target if function return true to match
-   * @param {function} subscribe dispatch: function({ key, next, prev }) => [unsubscribe]
-   * @param {function} [unsubscribe] dispatch
+   * @param {function|any} target if function, return true to match
+   * @param {function} subscribe target => dispatch => [unsubscribe]
+   * @param {function} [unsubscribe] target => dispatch => !
    * @example
-   * store.observe(model, (dispatch) => model.watch('*', dispatch, true), dispatch => model.unwatch('*', dispatch))
+   * const disconnect = store.observe(
+   *  model,
+   *  model => dispatch => model.watch('*', dispatch, true),
+   *  model => dispatch => model.unwatch('*', dispatch),
+   * )
    * store.set(keyPath, model) // should must after observe
    */
   observe(target, subscribe, unsubscribe) {
@@ -397,7 +396,13 @@ export class Store {
     }
 
     const value = this._compute(key)
+
+    // dont dispatch watchers when collect
+    // this is designed for this._deps observe
+    const prevSilent = this.silent
+    this.silent = true
     this.state[key] = value
+    this.silent = prevSilent
 
     this._dep.pop()
   }
@@ -413,7 +418,7 @@ export class Store {
       return value
     }
 
-    const value = tryget(() => descriptor.get.call(this.state))
+    const value = tryGet(() => descriptor.get.call(this.state), () => COMPUTED)
     return value
   }
 
