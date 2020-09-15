@@ -12,9 +12,9 @@ import {
   isSymbol,
 } from 'ts-fns'
 
-import { tryGet } from './shared/utils.js'
+import { tryGet, delay } from './shared/utils.js'
 
-const COMPUTED_FAILURE = Symbol('COMPUTED_FAILURE')
+export const COMPUTED_FAILURE = Symbol('COMPUTED_FAILURE')
 
 export class Store {
   constructor(params = {}) {
@@ -74,7 +74,13 @@ export class Store {
         // computed property
         // property is a computed property, but calculation failure
         if (active === COMPUTED_FAILURE) {
-          const value = this._collect(key)
+          const value = this._compute(key)
+
+          if (value !== COMPUTED_FAILURE) {
+            // update will trigger watchers
+            delay(() => this.set(key, value))
+          }
+
           return value
         }
         else {
@@ -158,8 +164,15 @@ export class Store {
     return parse(this.state, keyPath)
   }
 
-  set(keyPath, value) {
+  set(keyPath, value, silent) {
+    const prevSilent = this.silent
+    if (silent) {
+      this.silent = true
+    }
     assign(this.state, keyPath, value)
+    if (silent) {
+      this.silent = prevSilent
+    }
     return value
   }
 
@@ -399,14 +412,9 @@ export class Store {
 
     // dont dispatch watchers when collect
     // this is designed for this._deps observe
-    const prevSilent = this.silent
-    this.silent = true
-    this.state[key] = value
-    this.silent = prevSilent
+    this.set(key, value, true)
 
     this._dep.pop()
-
-    return value
   }
 
   _compute(key) {

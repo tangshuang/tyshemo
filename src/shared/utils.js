@@ -30,3 +30,7 @@ export function tryGet(get, use) {
     return use && use()
   }
 }
+
+export function delay(fn) {
+  return Promise.resolve().then(() => fn())
+}
