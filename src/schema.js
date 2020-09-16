@@ -133,7 +133,7 @@ export class Schema {
    * @param {*} attr
    * @param {*} context
    */
-  $invoke(key, attr, context) {
+  $decide(key, attr, context) {
     return (fallback) => {
       const meta = this[key]
 
@@ -193,15 +193,15 @@ export class Schema {
   }
 
   required(key, context) {
-    return this.$invoke(key, 'required', context)(false)
+    return this.$decide(key, 'required', context)(false)
   }
 
   disabled(key, context) {
-    return this.$invoke(key, 'disabled', context)(false)
+    return this.$decide(key, 'disabled', context)(false)
   }
 
   readonly(key, context) {
-    return this.$invoke(key, 'readonly', context)(false)
+    return this.$decide(key, 'readonly', context)(false)
   }
 
   get(key, value, context) {
