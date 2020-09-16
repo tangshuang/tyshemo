@@ -180,7 +180,7 @@ export class Store {
     remove(this.state, keyPath)
   }
 
-  update(data = {}, async) {
+  update(data = {}, async, silent) {
     if (async) {
       Object.assign(this._updateData, data)
 
@@ -202,7 +202,7 @@ export class Store {
     }
 
     each(data, (value, key) => {
-      this.set(key, value)
+      this.set(key, value, silent)
     })
     return this.state
   }
