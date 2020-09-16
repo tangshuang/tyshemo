@@ -71,21 +71,11 @@ export class Store {
 
         this._depend(keyPath)
 
-        // computed property
-        // property is a computed property, but calculation failure
-        if (active === COMPUTED_FAILURE) {
-          const value = this._compute(key)
-
-          // if (value !== COMPUTED_FAILURE) {
-          //   // update will trigger watchers
-          //   delay(() => this.set(key, value))
-          // }
-
-          return value
-        }
-        else {
+        if (active !== COMPUTED_FAILURE) {
           return active
         }
+
+        // if it is a computed property, but calculation failure, return undefined
       },
       set: (keyPath, value) => {
         // computed property
@@ -402,7 +392,7 @@ export class Store {
     }
 
     const value = this._compute(key)
-    this.set(key, value, silent)
+    this.set(key, value, silent || value === COMPUTED_FAILURE)
   }
 
   // collect dependencies, re-compute value
