@@ -586,22 +586,9 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { catch: handle, state } = meta
+      const { catch: handle } = meta
       const use = meta[attr]
       const value = json[key]
-
-      // patch meta state
-      if (isFunction(state)) {
-        const metaState = state()
-        each(metaState, (value, key) => {
-          if (inObject(key, json)) {
-            output[key] = json[key]
-          }
-          else {
-            output[key] = value
-          }
-        })
-      }
 
       let coming = value
 
