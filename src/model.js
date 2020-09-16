@@ -759,8 +759,10 @@ export class Model {
       parent.$children = parent.$children || []
       parent.$children.push(this)
     }
-
-    this.recompute('$parent')
+    // recompute depend on $parent
+    else {
+      this.recompute('$parent')
+    }
 
     return this
   }
