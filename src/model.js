@@ -19,13 +19,14 @@ import {
   inherit,
   createProxy,
   inArray,
+  isEmpty,
+  getConstructorOf,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
-import _Store from './store.js'
+import _Store, { COMPUTED_FAILURE } from './store.js'
 import { ofChain } from './shared/utils.js'
 import { edit } from './shared/edit.js'
-import { getConstructorOf } from 'ts-fns/cjs/class'
 
 /**
  * class SomeModel extends Model {
@@ -173,21 +174,12 @@ export class Model {
     return ofChain(this, Model)
   }
 
-  _combineState() {
-    const state = this.state()
-    each(this.$schema, (meta) => {
-      const metaState = meta.state()
-      Object.assign(state, metaState)
-    })
-    return state
-  }
-
   state() {
     return {}
   }
 
   attrs() {
-    // default attributes on meta, `null` to disabled
+    // default attributes on meta, `null` to disable patching to view
     return {
       default: null,
       compute: null,
@@ -246,12 +238,12 @@ export class Model {
       // use defineProperties to define view properties
       const viewDef = {}
 
-      each(attrs, (fallback, attr) => {
-        if (isNull(fallback)) {
+      each(attrs, (value, attr) => {
+        if (isNull(value)) {
           return
         }
         viewDef[attr] = {
-          get: () => this.$schema.$invoke(key, attr, this)(fallback),
+          get: () => this.$schema.$decide(key, attr, this)(value),
           enumerable: true,
         }
       })
@@ -296,7 +288,7 @@ export class Model {
         },
         state: {
           get: () => {
-            const state = meta.state()
+            const state = meta.state ? meta.state.call(null) : {}
             const keys = Object.keys(state)
             const proxy = createProxy({}, {
               get: keyPath => inArray(keyPath[0], keys) ? parse(this, keyPath) : undefined,
@@ -348,28 +340,23 @@ export class Model {
       return output
     })
 
-    // watch
     keys.forEach((key) => {
       const def = this.$schema[key]
-      if (!def.watch) {
-        return
+      // watch
+      if (def.watch) {
+        this.watch(key, def.watch, true)
       }
-
-      this.watch(key, def.watch, true)
-    })
-
-    // listen
-    keys.forEach((key) => {
-      const def = this.$schema[key]
-      if (!def.listen) {
-        return
-      }
-
-      def.listen.call(this)
     })
 
     // init data
     this._initData(data)
+
+    // ask children to recompute computed properties
+    if (this.$children) {
+      this.$children.forEach(child => child.recompute('$parent'))
+      // we do not need $children
+      delete this.$children
+    }
 
     // ensure top properties
     this.watch('*', ({ key }) => {
@@ -377,10 +364,150 @@ export class Model {
     })
   }
 
+  _combineState() {
+    const output = {}
+    const state = this.state.call(null)
+    const combine = (state) => {
+      each(state, (descriptor, key) => {
+        define(output, key, {
+          ...descriptor,
+          enumerable: true,
+          configurable: true,
+        })
+      }, true)
+    }
+    combine(state)
+    each(this.$schema, (meta) => {
+      if (!meta.state) {
+        return
+      }
+      const metaState = meta.state.call(null)
+      combine(metaState)
+    })
+    return output
+  }
+
   _initData(json) {
     const data = this.$schema.init(json, this)
     const next = { ...json, ...data }
     this.restore(next)
+    return this
+  }
+
+  /**
+   * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
+   * notice that, properties which are in original model be not in schema may be removed.
+   * @param {*} data
+   */
+  restore(data) {
+    if (!this.$store.editable) {
+      return this
+    }
+
+    const schema = this.$schema
+    const state = this._combineState()
+    const params = {}
+    const input = {}
+
+    const ensure = (value, keys) => {
+      if (isArray(value)) {
+        value.forEach((item, i) => ensure(item, [...keys, i]))
+        return
+      }
+      if (!isInstanceOf(value, Model)) {
+        return
+      }
+      value.setParent(this, keys)
+    }
+    const record = (key) => {
+      if (inObject(key, data)) {
+        const value = data[key]
+        input[key] = value
+        ensure(value, key)
+      }
+    }
+
+    // those on schema
+    each(schema, (def, key) => {
+      const { compute } = def
+      if (compute) {
+        define(params, key, {
+          enumerable: true,
+          get: () => compute.call(this),
+        })
+        // may restore computed property
+        record(key)
+      }
+      else if (inObject(key, data)) {
+        const value = data[key]
+        params[key] = value
+        ensure(value, [key])
+      }
+      else {
+        const value = schema.getDefault(key)
+        params[key] = value
+        ensure(value, [key])
+      }
+    })
+
+    // patch state
+    each(state, (descriptor, key) => {
+      if (descriptor.get || descriptor.set) {
+        define(params, key, descriptor)
+        // use data property if exist, use data property directly
+        record(key)
+      }
+      else if (inObject(key, data)) {
+        params[key] = data[key]
+      }
+      else {
+        params[key] = descriptor.value
+      }
+      // define state here so that we can invoke this.state() only once when initialize
+      define(this, key, {
+        get: () => this.get(key),
+        set: (value) => this.set(key, value),
+        enumerable: true,
+        configurable: true,
+      })
+    }, true)
+
+    // delete the outdate properties
+    each(this.$store.state, (_, key) => {
+      if (inObject(key, params)) {
+        return
+      }
+
+      if (key.indexOf('$') === 0 || key.indexOf('_') === 0) {
+        return
+      }
+
+      this.$store.del(key)
+      delete this[key]
+    }, true)
+
+    // patch those which are not in store but on `this`
+    each(data, (value, key) => {
+      if (!inObject(key, params) && inObject(key, this)) {
+        this[key] = value
+      }
+    })
+
+    // reset into store
+    this.onSwitch(params)
+    this.$store.init(params)
+    // reset `input` to store
+    if (!isEmpty(input)) {
+      each(input, (value, key) => {
+        // only reset those which are computing failure
+        if (this.$store.get(key) === COMPUTED_FAILURE) {
+          this.$store.set(key, value, true)
+        }
+      })
+    }
+
+    this.onRestore()
+
     return this
   }
 
@@ -445,11 +572,7 @@ export class Model {
     each(data, (value, key) => {
       // only update existing props, ignore those which are not on model
       // this shakes affects by over-given props
-      if (inObject(key, this.$store.state)) {
-        this.set(key, value)
-      }
-      // patch those not in store
-      else if (inObject(key, this)) {
+      if (inObject(key, this)) {
         this[key] = value
       }
     })
@@ -500,7 +623,6 @@ export class Model {
   validate(key) {
     // validate all properties once together
     if (!key) {
-      this._check(null, true)
       const errors = []
 
       const errs = this.onCheck() || []
@@ -528,102 +650,6 @@ export class Model {
     const value = this.$store.get(key)
     const errors = this.$schema.validate(key, value, this)
     return errors
-  }
-
-  /**
-   * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
-   * notice that, properties which are in original model be not in schema may be removed.
-   * @param {*} data
-   */
-  restore(data = {}) {
-    if (!this.$store.editable) {
-      return this
-    }
-
-    const schema = this.$schema
-    const state = this._combineState()
-    const params = {}
-
-    const ensure = (value, keys) => {
-      if (isArray(value)) {
-        value.forEach((item, i) => ensure(item, [...keys, i]))
-        return
-      }
-
-      if (!isInstanceOf(value, Model)) {
-        return
-      }
-      value.setParent(this, keys)
-    }
-
-    // those on schema
-    each(schema, (def, key) => {
-      const { compute } = def
-      if (compute) {
-        define(params, key, {
-          enumerable: true,
-          get: () => compute.call(this),
-        })
-      }
-      else if (inObject(key, data)) {
-        const value = data[key]
-        params[key] = value
-        ensure(value, [key])
-      }
-      else {
-        const value = schema.getDefault(key)
-        params[key] = value
-        ensure(value, [key])
-      }
-    })
-
-    // patch state
-    each(state, (descriptor, key) => {
-      if (inObject(key, params)) {
-        return
-      }
-
-      // define state here so that we can invoke this._combineState() only once when initialize
-      define(this, key, {
-        get: () => this.get(key),
-        set: (value) => this.set(key, value),
-        enumerable: true,
-        configurable: true,
-      })
-
-      // use data property if exist, use data property directly
-      if (inObject(key, data)) {
-        const value = data[key]
-        params[key] = value
-        ensure(value, key)
-        return
-      }
-
-      define(params, key, descriptor)
-    }, true)
-
-    // delete the outdate properties
-    each(this.$store.state, (_, key) => {
-      if (inObject(key, params)) {
-        return
-      }
-
-      if (key.indexOf('$') === 0 || key.indexOf('_') === 0) {
-        return
-      }
-
-      this.$store.del(key)
-      delete this[key]
-    }, true)
-
-    this.onSwitch(params)
-
-    // reset into store
-    this.$store.init(params)
-
-    this.onRestore()
-
-    return this
   }
 
   /**
@@ -728,7 +754,28 @@ export class Model {
       configurable: true,
     })
 
+    // record before init
+    if (!parent.$ready) {
+      parent.$children = parent.$children || []
+      parent.$children.push(this)
+    }
+
+    this.recompute('$parent')
+
     return this
+  }
+
+  recompute(target) {
+    each(this.$schema, (meta, key) => {
+      const { compute } = meta
+      if (!compute) {
+        return
+      }
+      if (target && (compute + '').indexOf(target) < 0) {
+        return
+      }
+      this.$store._refine(key)
+    })
   }
 
   _ensure(key) {

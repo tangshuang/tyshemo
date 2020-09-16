@@ -263,8 +263,9 @@ describe('Store', () => {
 
     // at the first time, this.$parent is undefined,
     // an error ocurs when compute,
-    // `age` will be set Symbol('computed')
-    expect(store.state.age).toBe(COMPUTED_FAILURE)
+    // `age` will be set COMPUTED_FAILURE
+    expect(store.state.age).toBeUndefined()
+    expect(store.data.age).toBe(COMPUTED_FAILURE)
 
     let count = 0
     store.watch('age', () => count ++)
@@ -285,7 +286,7 @@ describe('Store', () => {
     })
 
     // an error ocurs when compute,
-    expect(store.state.age).toBe(COMPUTED_FAILURE)
+    expect(store.state.age).toBeUndefined()
 
     // we can change computed property
     store.state.age = 10
