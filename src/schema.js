@@ -229,29 +229,6 @@ export class Schema {
     }
   }
 
-  compute(key, context) {
-    const meta = this[key]
-
-    if (!meta) {
-      return
-    }
-
-    const { compute, catch: handle } = meta
-    if (!compute) {
-      return
-    }
-
-    const computed = this._trydo(
-      () => compute.call(context),
-      (error) => isFunction(handle) && handle.call(context, error),
-      {
-        key,
-        attr: 'compute',
-      },
-    )
-    return computed
-  }
-
   format(key, value, context) {
     const meta = this[key]
 
@@ -290,21 +267,7 @@ export class Schema {
       return value
     }
 
-    const { setter, compute, catch: handle } = meta
-
-    if (compute) {
-      const e = {
-        key,
-        action: '$set',
-        value,
-        compute: true,
-        message: this.$message(key, 'compute', context)(),
-      }
-      this._catch(key, e, context)
-
-      const next = compute.call(context)
-      return next
-    }
+    const { setter, catch: handle } = meta
 
     if (isFunction(setter)) {
       value = this._trydo(
@@ -762,7 +725,6 @@ export class Schema {
 
   static defualtMessages = {
     type: `{key} does not match type.`,
-    compute: `{key} can not be set new value because it is a computed property.`,
     readonly: `{key} can not be set new value because of readonly.`,
     disabled: `{key} can not be set new value because of disabled.`,
   }
