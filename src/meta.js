@@ -56,14 +56,6 @@ export class Meta {
     each(attrs, (descriptor, key) => {
       useAttr(key, descriptor, attrs)
     }, true)
-
-    this.onInit()
-  }
-
-  onInit() {}
-
-  state() {
-    return {}
   }
 
   extend(attrs) {
