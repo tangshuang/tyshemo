@@ -12,7 +12,7 @@ import {
   isSymbol,
 } from 'ts-fns'
 
-import { tryGet, delay } from './shared/utils.js'
+import { tryGet } from './shared/utils.js'
 
 export const COMPUTED_FAILURE = Symbol('COMPUTED_FAILURE')
 

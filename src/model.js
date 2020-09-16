@@ -21,6 +21,7 @@ import {
   inArray,
   isEmpty,
   getConstructorOf,
+  isEqual,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -351,9 +352,13 @@ export class Model {
     // init data
     this._initData(data)
 
+    // bind recompute
+    define(this, '$recomputeByParent', {
+      value: () => this.recompute(['$parent']),
+    })
     // ask children to recompute computed properties
     if (this.$children) {
-      this.$children.forEach(child => child.recompute('$parent'))
+      this.$children.forEach(child => child.recompute(['$parent'], true))
       // we do not need $children
       delete this.$children
     }
@@ -739,9 +744,16 @@ export class Model {
   }
 
   setParent(parent, keyPath) {
-    if (this.$parent && this.$parent === parent) {
+    if (this.$parent && this.$parent === parent && this.$keyPath && isEqual(this.$keyPath, keyPath)) {
       return this
     }
+
+    // unbind previous parent
+    if (this.$parent) {
+      this.$parent.unwatch('*', this.$recomputeByParent)
+    }
+    // recompute when parent change
+    parent.watch('*', this.$recomputeByParent, true)
 
     define(this, '$parent', {
       value: parent,
@@ -761,22 +773,22 @@ export class Model {
     }
     // recompute depend on $parent
     else {
-      this.recompute('$parent')
+      this.recompute(['$parent'])
     }
 
     return this
   }
 
-  recompute(target) {
+  recompute(matchers, silent) {
     each(this.$schema, (meta, key) => {
       const { compute } = meta
       if (!compute) {
         return
       }
-      if (target && (compute + '').indexOf(target) < 0) {
+      if (matchers && !matchers.some(matcher => (compute + '').indexOf(matcher) > -1)) {
         return
       }
-      this.$store._refine(key)
+      this.$store._refine(key, silent)
     })
   }
 

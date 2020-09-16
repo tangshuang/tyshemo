@@ -582,4 +582,38 @@ describe('Model', () => {
     expect(some.name).toBe('tomi')
     expect(some.age).toBe(11)
   })
+
+  test('$parent compute', () => {
+    class Child extends Model {
+      static age = {
+        default: 0,
+        compute() {
+          return this.$parent.age - 26
+        },
+        map(age) {
+          return age + ''
+        }
+      }
+    }
+
+    class Parent extends Model {
+      static age = {
+        default: 0,
+      }
+      static child = Child
+    }
+
+    const one = new Parent({
+      age: 30,
+    })
+
+    expect(one.child.age).toBe(4)
+
+    let count = 0
+    one.child.watch('age', () => count ++)
+
+    one.age = 40
+    expect(one.child.age).toBe(14)
+    expect(count).toBe(1)
+  })
 })
