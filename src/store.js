@@ -76,10 +76,10 @@ export class Store {
         if (active === COMPUTED_FAILURE) {
           const value = this._compute(key)
 
-          if (value !== COMPUTED_FAILURE) {
-            // update will trigger watchers
-            delay(() => this.set(key, value))
-          }
+          // if (value !== COMPUTED_FAILURE) {
+          //   // update will trigger watchers
+          //   delay(() => this.set(key, value))
+          // }
 
           return value
         }
@@ -154,6 +154,7 @@ export class Store {
     each(this._descriptors, (item, key) => {
       if (item.get) {
         this._collect(key)
+        this._refine(key, true)
       }
     })
 
@@ -214,6 +215,7 @@ export class Store {
     this._descriptors[key] = descriptor
     if (descriptor.get) {
       this._collect(key)
+      this._refine(key, true)
     }
     return this.state[key]
   }
@@ -226,7 +228,7 @@ export class Store {
    */
   bind(key) {
     const fn = () => {
-      this._collect(key)
+      this._refine(key)
     }
 
     return (store, on) => {
@@ -368,17 +370,12 @@ export class Store {
       return
     }
 
-    const observe = () => {
-      const prev = this.data[by]
-      const invalid = this.state[by]
+    const reactive = () => {
       this._collect(by)
-      const active = this.state[by]
-      const next = this.data[by]
-      const value = next
-      this.dispatch(by, { value, next, active, prev, invalid })
+      this._refine(by)
     }
-    this.watch(key, observe, true)
-    depsOfBy[key] = observe
+    this.watch(key, reactive, true)
+    depsOfBy[key] = reactive
 
     // ignore nested dependencies, for example: a->b+c && b->c => a->b
     const depsOfKey = deps[key]
@@ -398,6 +395,16 @@ export class Store {
     this._collect(key)
   }
 
+  _refine(key, silent) {
+    const descriptor = this._descriptors[key]
+    if (!descriptor || !descriptor.get) {
+      return
+    }
+
+    const value = this._compute(key)
+    this.set(key, value, silent)
+  }
+
   // collect dependencies, re-compute value
   _collect(key) {
     this._dep.push(key)
@@ -408,12 +415,7 @@ export class Store {
       return
     }
 
-    const value = this._compute(key)
-
-    // dont dispatch watchers when collect
-    // this is designed for this._deps observe
-    this.set(key, value, true)
-
+    this._compute(key)
     this._dep.pop()
   }
 
@@ -464,7 +466,7 @@ export class Store {
       if (isEqual(item.key, key)) {
         return true
       }
-      else if (item.deep && isEqual(key, item.key.slice(0, key.length))) {
+      else if (item.deep && isEqual(item.key, key.slice(0, item.key.length))) {
         return true
       }
       else {

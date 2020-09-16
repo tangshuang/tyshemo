@@ -1,4 +1,4 @@
-import { Store } from '../src/store.js'
+import { Store, COMPUTED_FAILURE } from '../src/store.js'
 import { Model } from '../src/model.js'
 
 describe('Store', () => {
@@ -128,6 +128,34 @@ describe('Store', () => {
     expect(state.height).toBeUndefined()
   })
 
+  test('deep computed', () => {
+    const store = new Store({
+      list: [
+        {
+          name: 'MyBook',
+          price: 12,
+        },
+        {
+          name: 'Book2',
+          price: 10,
+        }
+      ],
+      get cost() {
+        return this.list.reduce((prev, curr) => prev + curr.price, 0)
+      }
+    })
+    store.testing = true
+    const { state } = store
+
+    expect(state.cost).toBe(22)
+
+    let count = 0
+    store.watch('list', () => count ++, true)
+    state.list[1].price = 20
+    expect(count).toBe(1)
+    expect(state.cost).toBe(32)
+  })
+
   test('spread', () => {
     const store = new Store({
       name: 'tomy',
@@ -233,14 +261,13 @@ describe('Store', () => {
       }
     })
 
-    let count = 0
-    store.watch('age', () => {
-      count ++
-    })
+    // at the first time, this.$parent is undefined,
+    // an error ocurs when compute,
+    // `age` will be set Symbol('computed')
+    expect(store.state.age).toBe(COMPUTED_FAILURE)
 
-    // at the first time, this.$parent is undefined, age will be set Symbol('computed')
-    expect(typeof store.data.age).toBe('symbol')
-    expect(store.data.age.toString()).toBe('Symbol(computed)')
+    let count = 0
+    store.watch('age', () => count ++)
 
     // patch $parent, so that computed property will work
     store.state.$parent = {
@@ -248,6 +275,17 @@ describe('Store', () => {
     }
     expect(store.state.age).toBe(6)
     expect(count).toBe(1)
+  })
+
+  test('change computed manually', () => {
+    const store = new Store({
+      get age() {
+        return this.$parent.age - 24
+      }
+    })
+
+    // an error ocurs when compute,
+    expect(store.state.age).toBe(COMPUTED_FAILURE)
 
     // we can change computed property
     store.state.age = 10
