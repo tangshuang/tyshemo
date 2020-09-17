@@ -291,7 +291,7 @@ export class Model {
           get: () => {
             const state = meta.state ? meta.state.call(null) : {}
             const keys = Object.keys(state)
-            const proxy = createProxy({}, {
+            const proxy = createProxy(state, {
               get: keyPath => inArray(keyPath[0], keys) ? parse(this, keyPath) : undefined,
               set: (keyPath, value) => inArray(keyPath[0], keys) && assign(this, keyPath, value),
             })
@@ -491,6 +491,10 @@ export class Model {
       delete this[key]
     }, true)
 
+    // reset into store
+    this.onSwitch(params)
+    this.$store.init(params)
+
     // patch those which are not in store but on `this`
     each(data, (value, key) => {
       if (!inObject(key, params) && inObject(key, this)) {
@@ -498,9 +502,6 @@ export class Model {
       }
     })
 
-    // reset into store
-    this.onSwitch(params)
-    this.$store.init(params)
     // reset `input` to store
     if (!isEmpty(input)) {
       each(input, (value, key) => {
