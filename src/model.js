@@ -101,6 +101,10 @@ export class Model {
     class Schema extends _Schema {
       constructor(metas) {
         const defs = map(metas, (def, key) => {
+          if (!def) {
+            return
+          }
+
           /**
            * class SomeModel extends Model {
            *   static some = OtherModel
@@ -291,7 +295,7 @@ export class Model {
           get: () => {
             const state = meta.state ? meta.state.call(null) : {}
             const keys = Object.keys(state)
-            const proxy = createProxy(state, {
+            const proxy = createProxy({}, {
               get: keyPath => inArray(keyPath[0], keys) ? parse(this, keyPath) : undefined,
               set: (keyPath, value) => inArray(keyPath[0], keys) && assign(this, keyPath, value),
             })
@@ -843,46 +847,27 @@ export class Model {
     }
   }
 
-  static extend(metas, protos) {
-    const Constructor = inherit(this, protos, metas)
+  static extend(metas) {
+    const Constructor = inherit(this, null, metas)
     return Constructor
   }
 
-  static extract(metas, protos) {
-    class Child extends Model {}
+  static extract(metas) {
+    const properties = ofChain(this, Model)
+    const attrs = {}
 
-    const Parent = this
+    each(properties, (value, key) => {
+      if (metas[key]) {
+        attrs[key] = value
+      }
+      // disable this meta
+      else {
+        attrs[key] = null
+      }
+    })
 
-    if (metas) {
-      each(metas, (meta, key) => {
-        if (!meta) {
-          return
-        }
-        const descriptor = Object.getOwnPropertyDescriptor(Parent, key)
-        define(Child, key, descriptor)
-      })
-    }
-
-    if (protos) {
-      each(protos, (proto, key) => {
-        if (!proto) {
-          return
-        }
-        const descriptor = Object.getOwnPropertyDescriptor(Parent.prototype, key)
-        define(Child.prototype, key, descriptor)
-      })
-    }
-
-    if (Child.name !== Parent.name) {
-      const name = Object.getOwnPropertyDescriptor(Parent, 'name')
-      define(Child, 'name', {
-        ...name,
-        enumerable: !!metas.name,
-        configurable: true,
-      })
-    }
-
-    return Child
+    const Constructor = inherit(this, null, attrs)
+    return Constructor
   }
 
   static get toEdit() {

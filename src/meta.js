@@ -67,42 +67,5 @@ export class Meta {
     const Constructor = inherit(this, null, attrs)
     return Constructor
   }
-
-  static extract(attrs, protos) {
-    class Child extends Meta {}
-
-    const Parent = this
-
-    if (attrs) {
-      each(attrs, (value, key) => {
-        if (!value) {
-          return
-        }
-        const descriptor = Object.getOwnPropertyDescriptor(Parent, key)
-        define(Child, key, descriptor)
-      })
-    }
-
-    if (protos) {
-      each(protos, (proto, key) => {
-        if (!proto) {
-          return
-        }
-        const descriptor = Object.getOwnPropertyDescriptor(Parent.prototype, key)
-        define(Child.prototype, key, descriptor)
-      })
-    }
-
-    if (Child.name !== Parent.name) {
-      const name = Object.getOwnPropertyDescriptor(Parent, 'name')
-      define(Child, 'name', {
-        ...name,
-        enumerable: !!metas.name,
-        configurable: true,
-      })
-    }
-
-    return Child
-  }
 }
 export default Meta

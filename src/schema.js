@@ -22,6 +22,10 @@ import Meta from './meta.js'
 export class Schema {
   constructor(metas) {
     each(metas, (meta, key) => {
+      if (!meta) {
+        return
+      }
+
       const value = isInstanceOf(meta, Meta) ? meta
         : isInheritedOf(meta, Meta) ? new meta()
         : meta && typeof meta === 'object' && !isEmpty(meta) && inObject('default', meta) ? new Meta(meta)

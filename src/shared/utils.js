@@ -3,22 +3,34 @@ import {
   each,
   define,
   isInheritedOf,
+  isConstructor,
 } from 'ts-fns'
 
-export function ofChain(instance, TopConstructor) {
+export function ofChain(target, TopConstructor) {
   const properties = {}
-  const push = (instance) => {
-    const Constructor = getConstructorOf(instance)
-    if (Constructor === TopConstructor) {
+  const push = (target) => {
+    // if it is a Constructor
+    if (!isConstructor(target)) {
+      target = getConstructorOf(target)
+    }
+
+    if (target === TopConstructor) {
       return
     }
-    const Parent = getConstructorOf(Constructor.prototype)
+
+    each(target, (descriptor, key) => {
+      if (!Object.getOwnPropertyDescriptor(properties, key)) {
+        define(properties, key, descriptor)
+      }
+    }, true)
+
+    // to parent
+    const Parent = getConstructorOf(target.prototype)
     if (isInheritedOf(Parent, TopConstructor)) {
-      push(Constructor.prototype)
+      push(target.prototype)
     }
-    each(Constructor, (descriptor, key) => define(properties, key, descriptor), true)
   }
-  push(instance)
+  push(target)
   return properties
 }
 

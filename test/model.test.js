@@ -382,16 +382,10 @@ describe('Model', () => {
       static age = {
         default: 0,
       }
-
-      say() {}
-
-      sing() {}
     }
 
     const One = Some.extract({
       age: true,
-    }, {
-      sing: true,
     })
 
     const one = new One()
@@ -399,8 +393,6 @@ describe('Model', () => {
     expect(one.extract).toBeUndefined()
     expect(one.name).toBeUndefined()
     expect(one.age).toBe(0)
-    expect(one.say).toBeUndefined()
-    expect(one.sing).toBeTruthy()
   })
 
   test('class extends', () => {
