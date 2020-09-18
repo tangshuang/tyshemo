@@ -474,6 +474,7 @@ describe('Model', () => {
     }
 
     const one = new Parent()
+    expect(one.child.name).toBe('lily')
     const backup = one.toJSON()
     expect(backup.child.name).toBe('lily')
 
