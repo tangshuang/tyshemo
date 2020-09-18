@@ -683,7 +683,7 @@ export class Schema {
             attr: 'save',
           },
         )
-        Object.assign(output, res)
+        output[key] = res
       }
       else {
         output[key] = value
