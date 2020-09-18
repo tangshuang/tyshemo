@@ -418,8 +418,7 @@ export class Schema {
 
       // if the validate result is an array, it may the submodel return the validate error directly
       if (isArray(res)) {
-        errors.push(...res)
-        return
+        return res
       }
 
       let msg = ''
@@ -463,7 +462,11 @@ export class Schema {
 
       const { break: toBreak } = validator
       const error = validate(validator, i, dontTry)
-      if (error) {
+      if (isArray(error)) {
+        errors.push(...error)
+        return toBreak
+      }
+      else if (error) {
         errors.push(error)
         return toBreak
       }
