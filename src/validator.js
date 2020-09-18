@@ -64,7 +64,7 @@ function integer(len, message) {
 
     const num = numerify(value).replace('-', '')
     const [integ] = num.split('.')
-    if (integ.length >= len) {
+    if (integ.length > len) {
       return false
     }
 
