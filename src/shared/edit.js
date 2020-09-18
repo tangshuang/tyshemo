@@ -25,9 +25,13 @@ export function edit(Constructor) {
       // receive (clone) another model
       if (isInstanceOf(data, Constructor)) {
         data = data.toJSON()
+        data = this.onEdit(data)
+        super.init()
+        this.fromJSON(data)
       }
-
-      super.init(data)
+      else {
+        super.init(data)
+      }
 
       // record all changes in history
       this.watch('*', ({ key, value }) => {
@@ -171,9 +175,19 @@ export function edit(Constructor) {
 
     submit(model) {
       if (isInstanceOf(model, Constructor)) {
-        model.fromJSON(this)
+        let data = this.toJSON()
+        data = this.onSubmit(data)
+        model.fromJSON(data)
       }
-      return this
+      return model
+    }
+
+    onEdit(data) {
+      return data
+    }
+
+    onSubmit(data) {
+      return data
     }
   }
   return Editor

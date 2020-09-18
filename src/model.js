@@ -213,7 +213,7 @@ export class Model {
     }
   }
 
-  init(data) {
+  init(data = {}) {
     if (this.$ready) {
       return
     }
