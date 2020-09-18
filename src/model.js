@@ -22,6 +22,8 @@ import {
   isEmpty,
   getConstructorOf,
   isEqual,
+  isConstructor,
+  mixin,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -847,26 +849,17 @@ export class Model {
     }
   }
 
-  static extend(metas) {
-    const Constructor = inherit(this, null, metas)
-    return Constructor
-  }
-
-  static extract(metas) {
-    const properties = ofChain(this, Model)
-    const attrs = {}
-
-    each(properties, (value, key) => {
-      if (metas[key]) {
-        attrs[key] = value
-      }
-      // disable this meta
-      else {
-        attrs[key] = null
-      }
-    })
-
-    const Constructor = inherit(this, null, attrs)
+  static extend(next) {
+    const Constructor = inherit(this)
+    if (isObject(next)) {
+      Object.assign(Constructor, next)
+    }
+    else if (isConstructor(next, 2)) {
+      mixin(Constructor, next)
+    }
+    else if (isFunction(next)) {
+      return next(Constructor)
+    }
     return Constructor
   }
 
@@ -875,10 +868,10 @@ export class Model {
     return Editor
   }
 
-  toEdit() {
+  toEdit(next) {
     const $this = this
     const Constructor = getConstructorOf(this)
-    const _Editor = edit(Constructor)
+    const _Editor = Constructor.toEdit.extend(next)
     class Editor extends _Editor {
       submit() {
         return super.submit($this)

@@ -364,38 +364,41 @@ describe('Model', () => {
         default: 0,
       },
     })
-
     const one = new One()
-
-    // extend and extract static methods are deleted
+    // extend static methods are not there
     expect(one.extend).toBeUndefined()
-
     expect(one.name).toBe('some')
     expect(one.age).toBe(0)
-  })
 
-  test('static extract', () => {
-    class Some extends Model {
-      static name = {
-        default: 'some',
-      }
+    const Two = Some.extend(class {
       static age = {
-        default: 0,
+        default: 10,
       }
-    }
+      static name = null
 
-    const One = Some.extract({
-      age: true,
+      say() {
+        return 100
+      }
     })
+    const two = new Two()
+    expect(two.name).toBeUndefined()
+    expect(two.age).toBe(10)
+    expect(two.say()).toBe(100)
 
-    const one = new One()
-
-    expect(one.extract).toBeUndefined()
-    expect(one.name).toBeUndefined()
-    expect(one.age).toBe(0)
+    const Three = Some.extend((Some) => {
+      return Some.extend({
+        age: {
+          default: 0,
+        },
+        name: null,
+      })
+    })
+    const three = new Three()
+    expect(two.name).toBeUndefined()
+    expect(two.age).toBe(10)
   })
 
-  test('class extends', () => {
+  test('extends class', () => {
     class Name extends Meta {
       static default = 'some'
     }
