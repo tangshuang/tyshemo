@@ -297,9 +297,9 @@ export class Model {
           get: () => {
             const state = meta.state ? meta.state.call(null) : {}
             const keys = Object.keys(state)
-            const proxy = createProxy({}, {
-              get: keyPath => inArray(keyPath[0], keys) ? parse(this, keyPath) : undefined,
-              set: (keyPath, value) => inArray(keyPath[0], keys) && assign(this, keyPath, value),
+            const proxy = new Proxy(state, {
+              get: (target, key) => inArray(key, keys) ? this.get(key) : undefined,
+              set: (target, key, value) => inArray(key, keys) && this.set(key, value),
             })
             return proxy
           },
