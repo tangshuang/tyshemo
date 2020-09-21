@@ -608,11 +608,6 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      // disabled
-      if (this.disabled(key, context)) {
-        return
-      }
-
       const { drop, map, flat, catch: handle } = meta
       const value = data[key]
 
