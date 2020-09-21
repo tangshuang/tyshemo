@@ -556,9 +556,10 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { catch: handle } = meta
+      const { catch: handle, attach } = meta
       const use = meta[attr]
-      const value = json[key]
+      const dataKey = attach ? (isFunction(attach) ? attach(json, key) : attach) : key
+      const value = json[dataKey]
 
       let coming = value
 
@@ -674,8 +675,9 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { save, catch: handle } = meta
+      const { save, catch: handle, attach } = meta
       const value = data[key]
+      const dataKey = attach ? (isFunction(attach) ? attach(json, key) : attach) : key
 
       if (isFunction(save)) {
         const res = this._trydo(
@@ -686,10 +688,15 @@ export class Schema {
             attr: 'save',
           },
         )
-        Object.assign(output, res)
+        if (attach) {
+          output[dataKey] = res
+        }
+        else {
+          Object.assign(output, res)
+        }
       }
       else {
-        output[key] = value
+        output[dataKey] = value
       }
     })
 

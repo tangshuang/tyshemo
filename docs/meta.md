@@ -71,6 +71,11 @@ const attrs = {
     ...
   ],
 
+  // optional, used by `fromJSON` and `toJSON` to read or save to property
+  // ie. attach='some', tyshemo will read property from data.some, and save result to data.some
+  // with `attach`, you do not need to extract property with create and save returning object
+  // { attach: 'some', create: value => // value=json.some, save: value => value // data.some=value }
+  attach: Function|String,
   // optional, function, used by `fromJSON`.
   // `json` is the first parameter of `fromJSON`
   create: (value, key, json) => !!json.on_market ? json.listing : json.pending,
