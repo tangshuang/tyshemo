@@ -1,6 +1,5 @@
 import Model from '../src/model.js'
 import Meta from '../src/meta.js'
-import { watch } from 'gulp'
 
 describe('Model', () => {
   class PersonModel extends Model {
@@ -611,5 +610,28 @@ describe('Model', () => {
     one.age = 40
     expect(one.child.age).toBe(14)
     expect(count).toBe(1)
+  })
+
+  test('children (list) depend on $parent', () => {
+    class Count extends Meta {
+      static default = 0
+      static compute() {
+        return this.$parent.items.length
+      }
+    }
+
+    class Item extends Model {
+      static count = Count
+    }
+
+    class List extends Model {
+      static items = [Item]
+    }
+
+    const list = new List({
+      items: [{}, {}],
+    })
+
+    expect(list.items[0].count).toBe(2)
   })
 })

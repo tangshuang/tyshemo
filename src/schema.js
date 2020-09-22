@@ -553,23 +553,31 @@ export class Schema {
   }
 
   $use(json, context, attr) {
+
+  }
+
+  /**
+   * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
+   * @param {*} json
+   * @param {*} context
+   */
+  parse(json, context) {
     const output = {}
 
     each(this, (meta, key) => {
-      const { catch: handle, attach } = meta
-      const use = meta[attr]
+      const { catch: handle, attach, create } = meta
       const dataKey = attach ? (isFunction(attach) ? attach(json, key) : attach) : key
       const value = json[dataKey]
 
       let coming = value
 
-      if (isFunction(use)) {
+      if (isFunction(create)) {
         coming = this._trydo(
-          () => use.call(context, value, key, json),
+          () => create.call(context, value, key, json),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
-            attr,
+            attr: 'create',
           },
         )
       }
@@ -583,19 +591,6 @@ export class Schema {
     })
 
     return output
-  }
-
-  init(json, context) {
-    return this.$use(json, context, 'init')
-  }
-
-  /**
-   * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
-   * @param {*} json
-   * @param {*} context
-   */
-  parse(json, context) {
-    return this.$use(json, context, 'create')
   }
 
   /**

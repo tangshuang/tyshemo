@@ -17,7 +17,6 @@ import {
   inObject,
   isNull,
   inherit,
-  createProxy,
   inArray,
   isEmpty,
   getConstructorOf,
@@ -54,7 +53,7 @@ export class Model {
         const SomeModel = def[0]
         const create = (data, i) => {
           return isInstanceOf(data, SomeModel) ? data.setParent(this, [root, i])
-            : isObject(data) ? new SomeModel().setParent(this, [root, i]).fromJSON(data)
+            : isObject(data) ? new SomeModel(data).setParent(this, [root, i])
             : null
         }
         const map = (items) => items.map(create).filter(item => !!item)
@@ -77,7 +76,7 @@ export class Model {
         const SomeModel = def
         const create = (data) => {
           return isInstanceOf(data, SomeModel) ? data.setParent(this, [root])
-            : isObject(data) ? new SomeModel().setParent(this, [root]).fromJSON(data)
+            : isObject(data) ? new SomeModel(data).setParent(this, [root])
             : new SomeModel().setParent(this, [root])
         }
         return {
@@ -356,7 +355,7 @@ export class Model {
     })
 
     // init data
-    this._initData(data)
+    this.fromJSON(data)
 
     // bind recompute
     define(this, '$recomputeByParent', {
@@ -396,13 +395,6 @@ export class Model {
       combine(metaState)
     })
     return output
-  }
-
-  _initData(json) {
-    const data = this.$schema.init(json, this)
-    const next = { ...json, ...data }
-    this.restore(next)
-    return this
   }
 
   /**
