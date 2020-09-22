@@ -361,12 +361,6 @@ export class Model {
     define(this, '$recomputeByParent', {
       value: () => this.recompute(['$parent']),
     })
-    // ask children to recompute computed properties
-    if (this.$children) {
-      this.$children.forEach(child => child.recompute(['$parent'], true))
-      // we do not need $children
-      delete this.$children
-    }
 
     // ensure top properties
     this.watch('*', ({ key }) => {
@@ -665,11 +659,20 @@ export class Model {
       return this
     }
 
+    // prepare for sub models
+    this.$children = []
+
     // when new Model, onParse may throw error
     const entry = tryGet(() => this.onParse(json), json)
     const data = this.$schema.parse(entry, this)
     const next = { ...json, ...data }
     this.restore(next)
+
+    // ask children to recompute computed properties
+    this.$children.forEach(child => child.recompute(['$parent'], true))
+    // we do not need $children
+    delete this.$children
+
     return this
   }
 
@@ -766,9 +769,8 @@ export class Model {
       configurable: true,
     })
 
-    // record before init
-    if (!parent.$ready) {
-      parent.$children = parent.$children || []
+    // record sub models
+    if (parent.$children) {
       parent.$children.push(this)
     }
     // recompute depend on $parent
