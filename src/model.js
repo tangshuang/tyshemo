@@ -27,7 +27,7 @@ import {
 
 import _Schema from './schema.js'
 import _Store, { COMPUTED_FAILURE } from './store.js'
-import { ofChain } from './shared/utils.js'
+import { ofChain, tryGet } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 
 /**
@@ -665,7 +665,8 @@ export class Model {
       return this
     }
 
-    const entry = this.onParse(json)
+    // when new Model, onParse may throw error
+    const entry = tryGet(() => this.onParse(json), json)
     const data = this.$schema.parse(entry, this)
     const next = { ...json, ...data }
     this.restore(next)

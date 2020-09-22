@@ -128,7 +128,7 @@ export class Store {
     // descriptors
     each(params, (descriptor, key) => {
       // make value patch to data, so that the data has initialized value which is needed in compute
-      const value = descriptor.get ? tryGet(() => params[key], () => COMPUTED_FAILURE) : params[key]
+      const value = descriptor.get ? tryGet(() => params[key], COMPUTED_FAILURE) : params[key]
       this.state[key] = value
 
       // now all keys have been generated
@@ -415,7 +415,7 @@ export class Store {
       return
     }
 
-    const value = tryGet(() => descriptor.get.call(this.state), () => COMPUTED_FAILURE)
+    const value = tryGet(() => descriptor.get.call(this.state), COMPUTED_FAILURE)
     return value
   }
 
