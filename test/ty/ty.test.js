@@ -79,6 +79,11 @@ describe('Ty', () => {
         this.name = v + 'xxx'
       }
 
+      @Ty.decorate.with([], String)
+      get family() {
+        return 'fa'
+      }
+
       constructor(a, b) {
         this.x = a + b
       }
@@ -115,6 +120,10 @@ describe('Ty', () => {
     }).toThrowError()
     expect(() => {
       some.family = 'null'
+    }).not.toThrowError()
+    expect(() => {
+      const family = some.family
+      expect(family).toBe('fa')
     }).not.toThrowError()
   })
 })

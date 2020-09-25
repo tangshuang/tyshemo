@@ -161,14 +161,14 @@ export class Ty {
       source = what
       return  { with: decorate.with }
     }
-    function wrap(target, ...types) {
+    function wrap(title, target, ...types) {
       const [type, type2] = types
       if (isFunction(target)) {
         const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
         return function(...args) {
-          $this.try(() => $this.expect(args).to.be(tupl), 'function params {keyPath} should match {should} but receive {receive}')
+          $this.try(() => $this.expect(args).to.be(tupl), `${title} parameters {keyPath} should match {should} but receive {receive}`)
           const result = target.apply(this, args)
-          $this.try(() => $this.expect(result).to.be(type2), 'function result should match {should} but receive {receive}')
+          $this.try(() => $this.expect(result).to.be(type2), `${title} returns should match {should} but receive {receive}`)
           return result
         }
       }
@@ -223,23 +223,26 @@ export class Ty {
         const [type] = types
         // decorate class constructor
         if (target && !prop) {
-          return wrap(target, ...types)
+          return wrap(`${target.constructor.name}.constructor`, target, ...types)
         }
         // decorate class member
         else if (target && prop) {
           // computed property with setter
-          if (descriptor.set) {
-            const set = wrap(descriptor.set, ...types)
+          if (descriptor.set || descriptor.get) {
+            const [input, output] = types
+            const get = descriptor.get ? (!input.length ? wrap(`${target.constructor.name}.${prop} getter`, descriptor.get, [], output) : descriptor.get) : void 0
+            const set = descriptor.set ? (!output ? wrap(`${target.constructor.name}.${prop} setter`, descriptor.set, input) : descriptor.set) : void 0
             return {
               ...descriptor,
               set,
+              get,
             }
           }
           // function method
           else if (descriptor.writable && isFunction(descriptor.value)) {
             return {
               ...descriptor,
-              value: wrap(descriptor.value, ...types),
+              value: wrap(`${target.constructor.name}.${prop}`,descriptor.value, ...types),
             }
           }
           else if (descriptor.writable && descriptor.initializer) {
@@ -279,7 +282,7 @@ export class Ty {
     }
     decorate.with = (...types) => {
       if (source !== decorate) {
-        return wrap(source, ...types)
+        return wrap(`function ${source.name}`,source, ...types)
       }
       else {
         return describe(...types)
