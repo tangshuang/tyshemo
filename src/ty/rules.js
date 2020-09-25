@@ -335,32 +335,23 @@ export function nullable(pattern) {
  * @param {Tuple} InputType
  * @param {Any} OutputType
  */
-export function lambda(InputType, OutputType) {
-  if (isArray(InputType)) {
-    InputType = new Tuple(InputType)
-  }
+export function lambda(_InputType, _OutputType) {
+  const InputType =  isArray(_InputType) ? new Tuple(_InputType) : _InputType
   if (!isInstanceOf(InputType, Tuple)) {
     throw new Error('lambda InputType should be a Tuple')
   }
-  if (!isInstanceOf(OutputType, Type)) {
-    OutputType = createType(OutputType)
-  }
-
+  const OutputType = !isInstanceOf(_OutputType, Type) ? createType(_OutputType) : _OutputType
   const rule = new Rule({
     name: 'lambda',
     pattern: [InputType, OutputType],
     use: () => Function,
     decorate(data, key) {
-      const o = {
-        [key]: function(...args) {
-          InputType.assert(args)
-          const result = data[key].apply(this, args)
-          OutputType.assert(result)
-          return result
-        },
+      data[key] = function(...args) {
+        InputType.assert(args)
+        const result = data[key].apply(this, args)
+        OutputType.assert(result)
+        return result
       }
-      const fn = o[key]
-      data[key] = fn
     },
   })
   return rule

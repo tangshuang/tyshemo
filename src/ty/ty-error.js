@@ -119,6 +119,21 @@ export class TyError extends TypeError {
     return message
   }
 
+  translate(message) {
+    this.format({
+      keyPathPrefix: '',
+      templates: {
+        exception: message,
+        unexcepted: message,
+        dirty: message,
+        overflow: message,
+        missing: message,
+        illegal: message,
+        notin: message,
+      }
+    })
+  }
+
   static shouldHideSensitiveData = false
   static shouldBreakLongMessage = false
   static defaultMessages = {

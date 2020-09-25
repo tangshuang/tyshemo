@@ -1,10 +1,18 @@
 import {
   isFunction,
   isArray,
+  isConstructor,
+  isObject,
+  createProxy,
+  parse,
+  assign,
+  clone,
   isInstanceOf,
+  makeKeyPath,
 } from 'ts-fns'
 
 import { createType } from './rules.js'
+import Tuple from './tuple.js'
 
 export class Ty {
   constructor() {
@@ -37,11 +45,20 @@ export class Ty {
     this._silent = !!value
   }
   throw(error) {
+    if (this._translate && error.translate) {
+      error.translate(this._translate)
+    }
+
     this.dispatch(error)
 
     if (!this._silent) {
       throw error
     }
+  }
+  try(fn, translate) {
+    this._translate = translate
+    fn()
+    this._translate = null
   }
 
   /**
@@ -51,9 +68,8 @@ export class Ty {
   expect(value) {
     return {
       to: {
-        match: (type) => {
-          type = createType(type)
-
+        match: (_type) => {
+          const type = createType(_type)
           try {
             type.assert(value)
             return true
@@ -76,10 +92,9 @@ export class Ty {
    */
   catch(value) {
     return {
-      by: (type) => {
-        type = createType(type)
-
-        let error = type.catch(value)
+      by: (_type) => {
+        const type = createType(_type)
+        const error = type.catch(value)
         if (error) {
           this.dispatch(error)
         }
@@ -94,9 +109,8 @@ export class Ty {
    */
   trace(value) {
     return {
-      by: (type) => {
-        type = createType(type)
-
+      by: (_type) => {
+        const type = createType(_type)
         return type.trace(value).catch(error => this.throw(error))
       },
     }
@@ -108,9 +122,8 @@ export class Ty {
    */
   track(value) {
     return {
-      by: (type) => {
-        type = createType(type)
-
+      by: (_type) => {
+        const type = createType(_type)
         return type.track(value).catch(error => this.throw(error))
       },
     }
@@ -125,10 +138,8 @@ export class Ty {
   is(arg) {
     return {
       typeof: (value) => {
-        let type = arg
-        type = createType(type)
-
-        let error = type.catch(value)
+        const type = createType(arg)
+        const error = type.catch(value)
         if (error) {
           this.dispatch(error)
         }
@@ -143,58 +154,138 @@ export class Ty {
    * @example
    * @ty.decorate('input').with((value) => SomeType.assert(value))
    */
-  decorate(what) {
+  get decorate() {
     const $this = this
-    return {
-      with: (type) => (target, prop, descriptor) => {
-        // decorate class constructor function
+    let source = decorate
+    function decorate(what) {
+      source = what
+      return  { with: decorate.with }
+    }
+    function wrap(target, ...types) {
+      const [type, type2] = types
+      if (isFunction(target)) {
+        const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
+        return function(...args) {
+          $this.try(() => $this.expect(args).to.be(tupl), 'function params {keyPath} should match {should} but receive {receive}')
+          const result = target.apply(this, args)
+          $this.try(() => $this.expect(result).to.be(type2), 'function result should match {should} but receive {receive}')
+          return result
+        }
+      }
+      else if (isObject(target)) {
+        return createProxy(target, {
+          set(keyPath, value) {
+            const t = parse(type, keyPath)
+            $this.try(() => $this.expect(value).to.be(t), `${makeKeyPath(keyPath)} should match {should} but receive {receive}`)
+            return value
+          },
+        })
+      }
+      else if (isArray(target)) {
+        return createProxy(target, {
+          set(keyPath, value) {
+            const [index, ...key] = keyPath
+            const current = clone(target[index])
+            const next = assign(current, key, value)
+            const items = Array.from(target, (item, i) => i === index ? next : item)
+            $this.try(() => $this.expect(items).to.be(type), `${makeKeyPath(keyPath)} should match {should} but receive {receive}`)
+            return value
+          },
+          push(items) {
+            $this.try(() => $this.expect(items).to.be(type), `push items {keyPath} should match {should} but receive {receive}`)
+          },
+          splice([start, end, ...items]) {
+            if (items.length) {
+              $this.try(() => $this.expect(items).to.be(type), `splice insert items {keyPath} should match {should} but receive {receive}`)
+            }
+          },
+          fill([value, start, end]) {
+            $this.try(() => $this.expect([value]).to.be(type), `fill value should match {should} but receive {receive}`)
+          },
+        })
+      }
+      else if (isConstructor(target, 3)) {
+        return class extends target {
+          constructor(...args) {
+            const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
+            $this.try(() => $this.expect(args).to.be(tupl), `${target.name} constructor parameters should match {should} but receive {receive}`)
+            return super(...args)
+          }
+        }
+      }
+      else {
+        $this.expect(target).to.be(type)
+        return target
+      }
+    }
+    function describe(...types) {
+      return (target, prop, descriptor) => {
+        const [type] = types
+        // decorate class constructor
         if (target && !prop) {
-          if (what !== 'input' && what !== 'output') {
-            return class extends target {
-              constructor(...args) {
-                $this.expect(args).to.be(type)
-                super(...args)
-              }
+          return wrap(target, ...types)
+        }
+        // decorate class member
+        else if (target && prop) {
+          // computed property with setter
+          if (descriptor.set) {
+            const set = wrap(descriptor.set, ...types)
+            return {
+              ...descriptor,
+              set,
+            }
+          }
+          // function method
+          else if (descriptor.writable && isFunction(descriptor.value)) {
+            return {
+              ...descriptor,
+              value: wrap(descriptor.value, ...types),
+            }
+          }
+          else if (descriptor.writable && descriptor.initializer) {
+            let value = descriptor.initializer()
+            $this.try(() => $this.expect(value).to.be(type), `${target.name}.${prop} should be {should} but receive {receive}`)
+            return {
+              enumerable: descriptor.enumerable,
+              configurable: descriptor.configurable,
+              set: (v) => {
+                $this.try(() => $this.expect(v).to.be(type), `${target.name}.${prop} should be {should} but receive {receive}`)
+                value = v
+              },
+              get: () => value
+            }
+          }
+          // normal property
+          else if (descriptor.writable) {
+            let value = descriptor.value
+            return {
+              enumerable: descriptor.enumerable,
+              configurable: descriptor.configurable,
+              set: (v) => {
+                $this.try(() => $this.expect(v).to.be(type), `${target.name}.${prop} should be {should} but receive {receive}`)
+                value = v
+              },
+              get: () => value
             }
           }
           else {
-            return target
+            return descriptor
           }
-        }
-        // decorate class member
-        else if (prop) {
-          // change the property
-          if (what !== 'input' && what !== 'output') {
-            descriptor.set = (value) => {
-              this.expect(value).to.be(type)
-              descriptor.value = value
-            }
-          }
-
-          // what
-          if (typeof property === 'function' && (what === 'input' || what === 'output')) {
-            const property = descriptor.value
-            const wrapper = function(...args) {
-              if (what === 'input') {
-                type = isInstanceOf(type, Tuple) ? type : isArray(type) ? new Tuple(type) : new Tuple([type])
-                $this.expect(args).to.be(type)
-              }
-              const result = property.call(this, ...args)
-              if (what === 'output') {
-                $this.expect(result).to.be(type)
-              }
-              return result
-            }
-            descriptor.value = wrapper
-          }
-
-          return descriptor
         }
         else {
           return descriptor
         }
       }
     }
+    decorate.with = (...types) => {
+      if (source !== decorate) {
+        return wrap(source, ...types)
+      }
+      else {
+        return describe(...types)
+      }
+    }
+    return decorate
   }
 }
 
@@ -205,7 +296,8 @@ Ty.catch = ty.catch.bind(ty)
 Ty.trace = ty.trace.bind(ty)
 Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
-Ty.decorate = ty.decorate.bind(ty)
 Ty.create = createType
+
+Object.defineProperty(Ty, 'decorate', { get: () => ty.decorate })
 
 export default Ty
