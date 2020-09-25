@@ -52,3 +52,6 @@ export { TyError } from './ty-error.js'
 
 export { Ty }
 export default Ty
+
+export { Parser } from './parser.js'
+export { Mocker } from './mocker.js'
