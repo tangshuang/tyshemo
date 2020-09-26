@@ -25,6 +25,7 @@ const SomeValidator = new Validator({
   validate: (value) => Boolean, // required, return true to pass, false to not pass
   message: '', // the message which throw when validate not pass, can be function to return message dynamicly
   break: true, // whether to stop the validation if this validator did not pass, the left validators will be dropped
+  async: false, // is this validator a async validator, if true, only works when invoke model.validateAsync
 })
 ```
 

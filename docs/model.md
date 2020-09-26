@@ -400,6 +400,30 @@ class Some extends Model {
 }
 ```
 
+**validateAsync()**
+
+When you define a [validator](valiator.md), you can set a `async` option. `async` option make it an async validator which only works when invoke `valdateAsync`. Async validators support async functions for `determine` `validate` options.
+
+```js
+const validator = new Validator({
+  async determine() {},
+  async validate() {},
+  async message() {},
+  break: true,
+  async: true,
+})
+```
+
+And when you invoke `validateAsync` method to validate, normal unasync validators will work too.
+
+```js
+model.validateAsync().then((errors) => {
+  // ...s
+})
+```
+
+*However, notice that, `model.$views.view.errors` only contains sync validator checking results.*
+
 ### Restore
 
 When you want to restore data back to model, you can use `restore` method.
