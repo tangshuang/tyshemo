@@ -412,19 +412,17 @@ export class Schema {
         },
         dontTry,
       )
-      if (isBoolean(res) && res) {
+
+      // true, 'xxx', [], {}, 1, 2, 3...
+      // private: if the validate result is an array, it may the submodel return the validate error directly
+      if (res && !isInstanceOf(res, Error)) {
         return
       }
 
-      // if the validate result is an array, it may the submodel return the validate error directly
-      if (isArray(res)) {
-        return res
-      }
-
-      let msg = ''
-      if (isInstanceOf(res, Error)) {
-        msg = res.message
-      }
+      let msg = isString(message) ? message
+        // if validate return an error, use error message as
+        : isInstanceOf(res, Error) ? res.message
+        : ''
 
       if (isFunction(message)) {
         msg = this._trydo(
@@ -436,10 +434,6 @@ export class Schema {
           },
           dontTry,
         )
-      }
-
-      if (!msg && isString(message)) {
-        msg = message
       }
 
       // interpolate with meta, so that we can provide more info
@@ -460,23 +454,28 @@ export class Schema {
         return
       }
 
-      const { break: toBreak } = validator
+      const { break: isBreak, async: isAsync } = validator
+      // ignore async validators
+      if (isAsync) {
+        return
+      }
+
       const error = validate(validator, i, dontTry)
       if (isArray(error)) {
         errors.push(...error)
-        return toBreak
+        return isBreak
       }
       else if (error) {
         errors.push(error)
-        return toBreak
+        return isBreak
       }
     }
 
     const validateByRange = (dontTry, validators, [start = 0, end = validators.length - 1]) => {
       const errors = []
       for (let i = start; i <= end; i ++) {
-        const toBreak = runOne(dontTry, validators, i, errors)
-        if (toBreak) {
+        const isBreak = runOne(dontTry, validators, i, errors)
+        if (isBreak) {
           break
         }
       }
@@ -487,8 +486,8 @@ export class Schema {
       const errors = []
       for (let i = 0, len = indexes.length; i < len; i ++) {
         const index = indexes[i]
-        const toBreak = runOne(dontTry, validators, index, errors)
-        if (toBreak) {
+        const isBreak = runOne(dontTry, validators, index, errors)
+        if (isBreak) {
           break
         }
       }
@@ -552,8 +551,238 @@ export class Schema {
     return errors
   }
 
-  $use(json, context, attr) {
+  $validateAsync(key, value, context) {
+    const meta = this[key]
+    const { catch: handle, validators = [] } = meta
 
+    function awaitx(input, fn) {
+      if (typeof fn === 'function') {
+        return new Promise((resolve, reject) => {
+          Promise.resolve(input).then(fn).then(resolve).catch(reject)
+        })
+      }
+      else {
+        return Promise.resolve(input)
+      }
+    }
+
+    function asyncx(fn) {
+      return function(...args) {
+        try {
+          return Promise.resolve(fn.call(this, ...args))
+        }
+        catch (e) {
+          return Promise.reject(e)
+        }
+      }
+    }
+
+    const validate = (dontTry, validator, index) => {
+      const { determine, validate, message } = validator
+
+      if (isBoolean(determine) && !determine) {
+        return Promise.resolve()
+      }
+
+      const test = () => {
+        return asyncx(determine).call(context, value, key).catch((error) => {
+          if (dontTry) {
+            throw error
+          }
+          const e = {
+            action: '$validateAsync',
+            key,
+            value,
+            error,
+            attr: 'validators[' + index + '].determine',
+          }
+          this._catch(key, e, context)
+          return false
+        })
+      }
+
+      const check = () => {
+        return asyncx(validate).call(context, value, key).catch((error) => {
+          if (dontTry) {
+            throw error
+          }
+          const e = {
+            action: '$validateAsync',
+            key,
+            value,
+            error,
+            attr: 'validators[' + index + '].validate',
+          }
+          this._catch(key, e, context)
+          return true
+        })
+      }
+
+      const say = (res) => {
+        return asyncx(message).call(context, value, key, res).catch((error) => {
+          if (dontTry) {
+            throw error
+          }
+          const e = {
+            action: '$validateAsync',
+            key,
+            value,
+            error,
+            attr: 'validators[' + index + '].message',
+          }
+          this._catch(key, e, context)
+        })
+      }
+
+      const gen = (msg) => {
+        // interpolate with meta, so that we can provide more info
+        const message = interpolate(msg, { key, value, ...meta })
+
+        const error = {
+          key,
+          value,
+          at: index,
+          message,
+        }
+        return error
+      }
+
+      const create = (res) => {
+        let msg = isString(message) ? message
+          // if validate return an error, use error message as
+          : isInstanceOf(res, Error) ? res.message
+          : ''
+
+        if (isFunction(message)) {
+          return say(res).then((o) => {
+            msg = o || msg
+            return gen(msg)
+          })
+        }
+        else {
+          return gen(msg)
+        }
+      }
+
+      const run = () => {
+        return check().then((res) => {
+          // true, 'xxx', [], {}, 1, 2, 3...
+          // private: if the validate result is an array, it may the submodel return the validate error directly
+          if (res && !isInstanceOf(res, Error)) {
+            return
+          }
+          return create(res)
+        })
+      }
+
+      if (isFunction(determine)) {
+        return test().then((bool) => {
+          if (bool) {
+            return run()
+          }
+        })
+      }
+
+      return run()
+    }
+
+    const pipe = (dontTry, validators) => {
+      const errors = []
+      let i = 0
+      const through = () => {
+        const validator = validators[i]
+        if (!validator) {
+          return Promise.resolve()
+        }
+
+        const { break: isBreak } = validator
+        return validate(dontTry, validator, i).then((error) => {
+          if (error) {
+            if (isArray(error)) {
+              errors.push(...error)
+            }
+            else {
+              errors.push(error)
+            }
+            if (isBreak) {
+              return Promise.resolve()
+            }
+          }
+          i ++
+          return through()
+        })
+      }
+      return through().then(() => errors)
+    }
+
+    const validateByRange = (dontTry, validators, [start = 0, end = validators.length - 1]) => {
+      const items = []
+      for (let i = start; i <= end; i ++) {
+        const validator = validators[i]
+        if (validator) {
+          items.push(validator)
+        }
+      }
+      return pipe(dontTry, items)
+    }
+
+    const validateByIndexes = (dontTry, validators, ...indexes) => {
+      const items = []
+      for (let i = 0, len = indexes.length; i < len; i ++) {
+        const index = indexes[i]
+        const validator = validators[index]
+        if (validator) {
+          items.push(validator)
+        }
+      }
+      return pipe(dontTry, items)
+    }
+
+    return (...args) => {
+      // ignore if disabled
+      if (this.disabled(key, context)) {
+        return Promise.resolve([])
+      }
+
+      // if user did not fill the value, and the field is not required, there is no need to get error
+      if (isEmpty(value) && !this.required(key, context)) {
+        return Promise.resolve([])
+      }
+
+      const first = args[0]
+      // array, pass custom valiators which is not in schema, i.e. schema.$validate('some', value, model)([{ validate: v => v > 0, message: 'should > 0' }])
+      if (isArray(first) && first[0] && typeof first[0] === 'object') {
+        return validateByRange(1, first, [])
+      }
+      // array, i.e. schema.$validate('some', value, model)([2, 6])
+      else if (isArray(first)) {
+        return validateByRange(0, validators, first)
+      }
+      // number, i.e. schema.$validate('some', value, model)(1, 2, 4, 6)
+      else if (isNumber(first)) {
+        return validateByIndexes(0, validators, ...args)
+      }
+      else {
+        return Promise.resolve([])
+      }
+    }
+  }
+
+  validateAsync(key, value, context) {
+    const meta = this[key]
+
+    if (!meta) {
+      const e = {
+        action: 'validate',
+        key,
+        value,
+        message: `${key} is not existing in schema.`,
+      }
+      this._catch(key, e, context)
+      return Promise.resolve([])
+    }
+
+    return this.$validateAsync(key, value, context)([])
   }
 
   /**

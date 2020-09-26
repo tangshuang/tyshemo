@@ -634,4 +634,51 @@ describe('Model', () => {
 
     expect(list.items[0].count).toBe(2)
   })
+
+  test('validateAsync', (done) => {
+    class SomeModel extends Model {
+      static some = {
+        default: 0,
+        validators: [
+          {
+            determine: true,
+            validate: v => v > 0,
+            message: 'Some should bigger than 0.',
+          },
+        ],
+      }
+      static any = {
+        default: 10,
+        validators: [
+          {
+            determine() {
+              return Promise.resolve(true)
+            },
+            validate(v) {
+              return new Promise((r) => {
+                setTimeout(() => r(v > 10), 500)
+              })
+            },
+            message() {
+              return Promise.resolve('Any should bigger than 10.')
+            },
+            async: true,
+          }
+        ],
+      }
+    }
+
+    const some = new SomeModel()
+
+    // validate will ignore async validators
+    const errors = some.validate()
+    expect(errors.length).toBe(1)
+
+    some.validateAsync().then((errors) => {
+      expect(errors.length).toBe(2)
+      expect(errors.message).toBe('Some should bigger than 0.')
+      expect(errors[1].message).toBe('Any should bigger than 10.')
+      done()
+    })
+  })
 })

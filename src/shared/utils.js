@@ -42,3 +42,10 @@ export function tryGet(get, use) {
     return use
   }
 }
+
+export function makeMsg(errors) {
+  if (errors.length) {
+    errors.message = errors[0].message
+  }
+  return errors
+}

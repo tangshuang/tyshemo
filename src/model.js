@@ -27,7 +27,7 @@ import {
 
 import _Schema from './schema.js'
 import _Store, { COMPUTED_FAILURE } from './store.js'
-import { ofChain, tryGet } from './shared/utils.js'
+import { ofChain, tryGet, makeMsg } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 
 /**
@@ -281,7 +281,7 @@ export class Model {
           enumerable: true,
         },
         errors: {
-          get: () => this.$schema.$validate(key, this.$store.get(key), this)([]),
+          get: () => makeMsg(this.$schema.$validate(key, this.$store.get(key), this)([])),
           enumerable: true,
         },
         data: {
@@ -322,7 +322,7 @@ export class Model {
       each(views, (view) => {
         errors.push(...view.errors)
       })
-      return errors
+      return makeMsg(errors)
     })
 
     // create changed, so that it's easy to find out whether the data has changed
@@ -632,7 +632,7 @@ export class Model {
         errors.push(...errs)
       })
 
-      return errors
+      return makeMsg(errors)
     }
 
     if (isArray(key)) {
@@ -641,13 +641,41 @@ export class Model {
         const errs = this.validate(key)
         errors.push(...errs)
       })
-      return errors
+      return makeMsg(errors)
     }
 
     this._check(key, true)
     const value = this.$store.get(key)
     const errors = this.$schema.validate(key, value, this)
-    return errors
+    return makeMsg(errors)
+  }
+
+  validateAsync(key) {
+    // validate all properties once together
+    if (!key) {
+      const errors = []
+
+      const errs = this.onCheck() || []
+      errors.push(...errs)
+
+      const keys = Object.keys(this.$schema)
+      return this.validateAsync(keys).then((errs) => {
+        errors.push(...errs)
+        return makeMsg(errors)
+      })
+    }
+
+    if (isArray(key)) {
+      return Promise.all(key.map(key => this.validateAsync(key))).then((groups) => {
+        const errors = flatArray(groups.filter(group => !!group))
+        return makeMsg(errors)
+      })
+    }
+
+    this._check(key, true)
+    const value = this.$store.get(key)
+    const errors =  this.$schema.validateAsync(key, value, this)
+    return makeMsg(errors)
   }
 
   /**
