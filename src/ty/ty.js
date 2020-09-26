@@ -156,11 +156,6 @@ export class Ty {
    */
   get decorate() {
     const $this = this
-    let source = decorate
-    function decorate(what) {
-      source = what
-      return  { with: decorate.with }
-    }
     function wrap(title, target, ...types) {
       const [type, type2] = types
       if (isFunction(target)) {
@@ -204,7 +199,7 @@ export class Ty {
           },
         })
       }
-      else if (isConstructor(target, 3)) {
+      else if (isConstructor(target, 2)) {
         return class extends target {
           constructor(...args) {
             const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
@@ -280,14 +275,12 @@ export class Ty {
         }
       }
     }
-    decorate.with = (...types) => {
-      if (source !== decorate) {
-        return wrap(`function ${source.name}`,source, ...types)
-      }
-      else {
-        return describe(...types)
+    function decorate(source) {
+      return  {
+        with: (...types) => wrap(`function ${source.name}`, source, ...types),
       }
     }
+    decorate.with = (...types) => describe(...types)
     return decorate
   }
 }
