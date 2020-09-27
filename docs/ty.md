@@ -78,28 +78,60 @@ if (Ty.is(10).of(Number)) {
 }
 ```
 
-### @decorate('input'|'output'?).with(Type)
 
-This is a higher usage, which require your build tool supports *decorate*.
+### decorate().with()
+
+Transform target with decorators.
 
 ```js
-@Ty.decorate().with(SomeDict) // decorate constructor
+const a = Ty.decorate('xxx').with(String) // ok
+const a = Ty.decorate('xxx').with(Number) // error
+
+const o = Ty.decorate({}).with({
+  name: String,
+  age: Number,
+})
+o.name = 'xxx' // ok
+o.name = null // error
+
+const f = Ty.decorate((a, b) => a + b).with([Number, Number], Number)
+f(1, 1) // ok
+f('1', '1') // error
+```
+
+When decorate function, `with` should receive 2 parameters, the first should be an array which stands for function's parameters' types, and the second stands for function's return's type.
+
+### @decorate.with()
+
+This is a higher usage, which require your build tool (['@babel/plugin-proposal-decorators', { **legacy: true** }]) supports *decorate*.
+
+```js
+@Ty.decorate.with(SomeDict) // decorate constructor
 class Some {
   constructor(some) {
     this.data = some
   }
 
-  @Ty.decorate().with(String) // decorate property
+  @Ty.decorate.with(String) // decorate property
   name = ''
 
-  @Ty.decorate().with(Function) // decorate property
-  @Ty.decorate('input').with(SongTupleType) // decorate parameters of function
-  @Ty.decorate('output').with(SingType) // decorate return of function
+  @Ty.decorate.with([String], Object) // decorate method
   sing(song) {
-    // ...
+    return { ... }
+  }
+
+  @Ty.decorate.with([], Number)
+  get age() {
+    return 10
+  }
+  @Ty.decorate.with([Number])
+  set age(v) {
+    ...
   }
 }
 ```
+
+Notice, getter and setter will be treated functions, so you can see, we follow functions decorating.
 
 ### create(pattern): Type
 

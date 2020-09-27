@@ -92,6 +92,14 @@ describe('Ty', () => {
       plus(a, b) {
         return a + b
       }
+
+      @Ty.decorate.with(String)
+      static tag = 'xxx'
+
+      @Ty.decorate.with([Number, Number], Number)
+      static multply(a, b) {
+        return a * b
+      }
     }
     expect(() => {
       const some = new Some()
@@ -124,6 +132,15 @@ describe('Ty', () => {
     expect(() => {
       const family = some.family
       expect(family).toBe('fa')
+    }).not.toThrowError()
+    expect(() => {
+      Some.tag = null
+    }).toThrowError()
+    expect(() => {
+      Some.tag = 'next'
+    }).not.toThrowError()
+    expect(() => {
+      Some.multply(1, 2)
     }).not.toThrowError()
   })
 })
