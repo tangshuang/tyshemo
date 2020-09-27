@@ -857,11 +857,11 @@ export class Model {
     const schema = this.$schema
     const keys = key ? [key] : Object.keys(schema)
 
-    let str = ''
     keys.forEach((key) => {
       const def = schema[key]
-      each(def, (value, key) => {
-        if (key === 'validators' && isValidate) {
+      each(def, (value, attr) => {
+        let str = ''
+        if (attr === 'validators' && isValidate) {
           value.forEach((item) => {
             each(item, (value) => {
               str += isFunction(value) ? value + '' : ''
@@ -871,15 +871,16 @@ export class Model {
         else {
           str += isFunction(value) ? value + '' : ''
         }
+        if (str.indexOf('this.$parent') > -1 && !this.$parent) {
+          this.onError({
+            key,
+            attr,
+            action: '$parent',
+            message: `this.$parent is called in ${attr}, but current model has no $parent`,
+          })
+        }
       })
     })
-
-    if (str.indexOf('this.$parent') > -1 && !this.$parent) {
-      this.onError({
-        key,
-        action: '$parent',
-      })
-    }
   }
 
   static extend(next) {
