@@ -875,7 +875,7 @@ export class Model {
           this.onError({
             key,
             attr,
-            action: '$parent',
+            action: '_check $parent',
             message: `this.$parent is called in ${attr}, but current model has no $parent`,
           })
         }
