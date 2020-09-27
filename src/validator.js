@@ -80,7 +80,7 @@ function decimal(len, message) {
     }
 
     const num = numerify(value)
-    const [_, decim] = num.split('.')
+    const [_, decim = ''] = num.split('.')
     if (decim.length > len) {
       return false
     }
