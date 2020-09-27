@@ -128,8 +128,12 @@ export class Model {
         })
         super(defs)
       }
-      onError(...args) {
-        $this.onError(...args)
+      onError(e) {
+        // dont throw error when generate data when initialize
+        if ($this.$init && e.attr === 'create') {
+          return
+        }
+        $this.onError(e)
       }
     }
     // create schema
@@ -355,7 +359,7 @@ export class Model {
     })
 
     // init data
-    this.fromJSON(data)
+    this._initData(data)
 
     // bind recompute
     define(this, '$recomputeByParent', {
@@ -366,6 +370,12 @@ export class Model {
     this.watch('*', ({ key }) => {
       this._ensure(key)
     })
+  }
+
+  _initData(data) {
+    this.$init = true
+    this.fromJSON(data)
+    delete this.$init
   }
 
   _combineState() {
