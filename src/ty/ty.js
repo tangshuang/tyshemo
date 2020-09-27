@@ -186,15 +186,21 @@ export class Ty {
             $this.try(() => $this.expect(items).to.be(type), `${makeKeyPath(keyPath)} should match {should} but receive {receive}`)
             return value
           },
-          push(items) {
+          push(keyPath, items) {
+            if (keyPath.length) {
+              return
+            }
             $this.try(() => $this.expect(items).to.be(type), `push items {keyPath} should match {should} but receive {receive}`)
           },
-          splice([start, end, ...items]) {
-            if (items.length) {
+          splice(keyPath, [start, end, ...items]) {
+            if (!keyPath.length && items.length) {
               $this.try(() => $this.expect(items).to.be(type), `splice insert items {keyPath} should match {should} but receive {receive}`)
             }
           },
-          fill([value, start, end]) {
+          fill(keyPath, [value, start, end]) {
+            if (keyPath.length) {
+              return
+            }
             $this.try(() => $this.expect([value]).to.be(type), `fill value should match {should} but receive {receive}`)
           },
         })
