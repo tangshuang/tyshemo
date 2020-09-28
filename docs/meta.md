@@ -71,10 +71,6 @@ const attrs = {
     ...
   ],
 
-  // optional, used by `fromJSON` and `toJSON` to read or save to property
-  // ie. asset='some', tyshemo will read property from data.some, and use `key` of `create` and `save` to be 'some'
-  // { asset: 'some', create: (value, key) => value // key='some', save: (value, key) => ({ [key]: value }) // key='some' }
-  asset: Function|String,
   // optional, function, used by `fromJSON`.
   // `json` is the first parameter of `fromJSON`
   create: (value, key, json) => !!json.on_market ? json.listing : json.pending,
@@ -84,6 +80,14 @@ const attrs = {
     // notice: the return value should MUST be an object, and will be patched to output object (like `flat` do), so that you can export a complext object
     return { [key]: newValue }
   },
+  // optional, used by `fromJSON` and `toJSON` to read or save to property
+  // ie. asset='some', tyshemo will read property from data.some, and patch save result as json.some
+  // {
+  //   asset: 'some',
+  //   create: value => value, // value = data.some
+  //   save: value => value, // json.some = value
+  // }
+  asset: Function|String,
 
   // optional, function, whether to not use this property when `toData`
   drop: (value, key, data) => Boolean,

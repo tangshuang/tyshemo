@@ -40,10 +40,10 @@ describe('Meta', () => {
       static create(value) {
         return formatDate(value, 'YYYY/MM/DD')
       }
-      static save(value, key) {
+      static save(value) {
         const date = createDate(value, 'YYYY/MM/DD')
         const text = formatDate(date, 'YYYY-MM-DD')
-        return { [key]: text }
+        return text
       }
     }
 

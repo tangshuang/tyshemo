@@ -802,7 +802,7 @@ export class Schema {
 
       if (isFunction(create)) {
         coming = this._trydo(
-          () => create.call(context, value, dataKey, json),
+          () => create.call(context, value, key, json),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
@@ -900,14 +900,19 @@ export class Schema {
 
       if (isFunction(save)) {
         const res = this._trydo(
-          () => save.call(context, value, dataKey, data) || {},
+          () => save.call(context, value, key, data) || {},
           (error) => isFunction(handle) && handle.call(context, error) || {},
           {
             key,
             attr: 'save',
           },
         )
-        Object.assign(output, res)
+        if (asset) {
+          output[dataKey] = res
+        }
+        else {
+          Object.assign(output, res)
+        }
       }
       else {
         output[dataKey] = value
