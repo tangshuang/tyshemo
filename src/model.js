@@ -867,7 +867,16 @@ export class Model {
         // set parent before restore
         const { $parent, $keyPath } = $this
         if ($parent) {
-          this.setParent($parent, $keyPath)
+          define(this, '$parent', {
+            value: $parent,
+            writable: false,
+            configurable: true,
+          })
+          define(this, '$keyPath', {
+            value: $keyPath,
+            writable: false,
+            configurable: true,
+          })
         }
         super.init(data)
       }
