@@ -1,5 +1,6 @@
 import Model from '../src/model.js'
 import Meta from '../src/meta.js'
+import { formatDate, createDate } from 'ts-fns'
 
 describe('Meta', () => {
   test('extend', () => {
@@ -31,5 +32,31 @@ describe('Meta', () => {
     expect(some.name).toBe('some')
     expect(some.weight).toBe(50)
     expect(some.$views.weight.label).toBe('Weight')
+  })
+  test('asset', () => {
+    class Time extends Meta {
+      static default = ''
+      static asset = 'time_at'
+      static create(value) {
+        return formatDate(value, 'YYYY/MM/DD')
+      }
+      static save(value, key) {
+        const date = createDate(value, 'YYYY/MM/DD')
+        const text = formatDate(date, 'YYYY-MM-DD')
+        return { [key]: text }
+      }
+    }
+
+    class Some extends Model {
+      static time = Time
+    }
+
+    const some = new Some({
+      time_at: new Date('2020-10-01'),
+    })
+    expect(some.time).toBe('2020/10/01')
+
+    const json = some.toJSON()
+    expect(json.time_at).toBe('2020-10-01')
   })
 })

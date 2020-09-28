@@ -794,15 +794,15 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { catch: handle, attach, create } = meta
-      const dataKey = attach ? (isFunction(attach) ? attach(json, key) : attach) : key
+      const { catch: handle, asset, create } = meta
+      const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
       const value = json[dataKey]
 
       let coming = value
 
       if (isFunction(create)) {
         coming = this._trydo(
-          () => create.call(context, value, key, json),
+          () => create.call(context, value, dataKey, json),
           (error) => isFunction(handle) && handle.call(context, error) || value,
           {
             key,
@@ -894,25 +894,20 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { save, catch: handle, attach } = meta
+      const { save, catch: handle, asset } = meta
       const value = data[key]
-      const dataKey = attach ? (isFunction(attach) ? attach(json, key) : attach) : key
+      const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
 
       if (isFunction(save)) {
         const res = this._trydo(
-          () => save.call(context, value, key, data) || {},
+          () => save.call(context, value, dataKey, data) || {},
           (error) => isFunction(handle) && handle.call(context, error) || {},
           {
             key,
             attr: 'save',
           },
         )
-        if (attach) {
-          output[dataKey] = res
-        }
-        else {
-          Object.assign(output, res)
-        }
+        Object.assign(output, res)
       }
       else {
         output[dataKey] = value

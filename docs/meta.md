@@ -72,17 +72,16 @@ const attrs = {
   ],
 
   // optional, used by `fromJSON` and `toJSON` to read or save to property
-  // ie. attach='some', tyshemo will read property from data.some, and save result to data.some
-  // with `attach`, you do not need to extract property with create and save returning object
-  // { attach: 'some', create: value => // value=json.some, save: value => value // data.some=value }
-  attach: Function|String,
+  // ie. asset='some', tyshemo will read property from data.some, and use `key` of `create` and `save` to be 'some'
+  // { asset: 'some', create: (value, key) => value // key='some', save: (value, key) => ({ [key]: value }) // key='some' }
+  asset: Function|String,
   // optional, function, used by `fromJSON`.
   // `json` is the first parameter of `fromJSON`
   create: (value, key, json) => !!json.on_market ? json.listing : json.pending,
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
   save: (value, key, data) => {
-    // notice: the return object will be patch to output object (as `flat` do), so that you can export a complext object
+    // notice: the return value should MUST be an object, and will be patched to output object (like `flat` do), so that you can export a complext object
     return { [key]: newValue }
   },
 
