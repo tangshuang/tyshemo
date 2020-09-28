@@ -48,10 +48,6 @@ export class Model {
   constructor(data = {}) {
     const $this = this
 
-    const convertModelToSchemaDef = (def) => {
-      return Model.enter(def)
-    }
-
     /**
      * create schema
      */
@@ -68,7 +64,7 @@ export class Model {
            * }
            */
           if (isInheritedOf(def, Model)) {
-            return convertModelToSchemaDef(def)
+            return Model.enter(def)
           }
 
           /**
@@ -77,7 +73,7 @@ export class Model {
            * }
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
-            return convertModelToSchemaDef(def)
+            return Model.enter(def)
           }
 
           return def
@@ -891,7 +887,7 @@ export class Model {
     if (isArray(Model)) {
       const SubModel = Model[0]
       const create = (items) => items.map((item) => {
-        return isInstanceOf(item, SubModel) ? item
+        return Model.some(One => isInstanceOf(item, One)) ? item
           : isObject(item) ? new SubModel(item)
           : null
       }).filter(item => !!item)
