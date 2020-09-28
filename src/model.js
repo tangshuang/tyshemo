@@ -48,52 +48,8 @@ export class Model {
   constructor(data = {}) {
     const $this = this
 
-    const convertModelToSchemaDef = (def, root) => {
-      if (isArray(def)) {
-        const SomeModel = def[0]
-        const create = (data, i) => {
-          return isInstanceOf(data, SomeModel) ? data.setParent(this, [root, i])
-            : isObject(data) ? new SomeModel(data).setParent(this, [root, i])
-            : null
-        }
-        const map = (items) => items.map(create).filter(item => !!item)
-        return {
-          default: () => [],
-          type: def,
-          validators: [
-            {
-              validate: ms => flatArray(map(ms, m => m.validate())),
-            },
-          ],
-          init: (value) => isArray(value) ? map(value) : [],
-          create: (value) => isArray(value) ? map(value) : [],
-          save: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
-          map: ms => ms.map(m => m.toData()),
-          setter: (v) => isArray(v) ? map(v) : [],
-        }
-      }
-      else {
-        const SomeModel = def
-        const create = (data) => {
-          return isInstanceOf(data, SomeModel) ? data.setParent(this, [root])
-            : isObject(data) ? new SomeModel(data).setParent(this, [root])
-            : new SomeModel().setParent(this, [root])
-        }
-        return {
-          default: () => create(),
-          type: SomeModel,
-          validators: [
-            {
-              validate: m => m.validate(),
-            },
-          ],
-          init: (value) => create(value),
-          create: (value) => create(value),
-          save: (m, key) => ({ [key]: m.toJSON() }),
-          map: m => m.toData(),
-          setter: v => create(v),
-        }
-      }
+    const convertModelToSchemaDef = (def) => {
+      return Model.enter(def)
     }
 
     /**
@@ -101,7 +57,7 @@ export class Model {
      */
     class Schema extends _Schema {
       constructor(metas) {
-        const defs = map(metas, (def, key) => {
+        const defs = map(metas, (def) => {
           if (!def) {
             return
           }
@@ -112,7 +68,7 @@ export class Model {
            * }
            */
           if (isInheritedOf(def, Model)) {
-            return convertModelToSchemaDef(def, key)
+            return convertModelToSchemaDef(def)
           }
 
           /**
@@ -121,7 +77,7 @@ export class Model {
            * }
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
-            return convertModelToSchemaDef(def, key)
+            return convertModelToSchemaDef(def)
           }
 
           return def
@@ -494,8 +450,8 @@ export class Model {
     }, true)
 
     // reset into store
-    this.onSwitch(params)
-    this.$store.init(params)
+    const initParams = this.onSwitch(params) || params
+    this.$store.init(initParams)
 
     // patch those which are not in store but on `this`
     each(data, (value, key) => {
@@ -912,6 +868,56 @@ export class Model {
       }
     }
     return new Editor(this)
+  }
+
+  static enter(Model, fn) {
+    if (isArray(Model)) {
+      const SubModel = Model[0]
+      const create = (items) => items.map((item) => {
+        return isInstanceOf(item, SubModel) ? item
+          : isObject(item) ? new SubModel(item)
+          : null
+      }).filter(item => !!item)
+      return {
+        default: () => [],
+        type: Model,
+        validators: [
+          {
+            validate: ms => flatArray(map(ms, m => m.validate())),
+          },
+        ],
+        create: (value, key, data) => {
+          const next = fn ? fn(value, key, data) || value : value
+          return isArray(next) ? create(next) : []
+        },
+        save: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
+        map: ms => ms.map(m => m.toData()),
+        setter: value => isArray(value) ? create(value) : [],
+      }
+    }
+    else {
+      const create = (value) => {
+        return isInstanceOf(value, Model) ? value
+          : isObject(value) ? new Model(value)
+          : new Model()
+      }
+      return {
+        default: () => create(),
+        type: Model,
+        validators: [
+          {
+            validate: m => m.validate(),
+          },
+        ],
+        create: (value, key, data) => {
+          const next = fn ? fn(value, key, data) || value : value
+          return create(next)
+        },
+        save: (m, key) => ({ [key]: m.toJSON() }),
+        map: m => m.toData(),
+        setter: value => create(value),
+      }
+    }
   }
 }
 
