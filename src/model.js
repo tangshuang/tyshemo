@@ -863,12 +863,13 @@ export class Model {
     const Constructor = getConstructorOf(this)
     const _Editor = Constructor.toEdit.extend(next)
     class Editor extends _Editor {
-      onInit() {
-        super.onInit()
+      init(data) {
+        // set parent before restore
         const { $parent, $keyPath } = $this
         if ($parent) {
           this.setParent($parent, $keyPath)
         }
+        super.init(data)
       }
       submit() {
         return super.submit($this)
