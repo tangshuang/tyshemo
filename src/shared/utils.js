@@ -4,6 +4,7 @@ import {
   define,
   isInheritedOf,
   isConstructor,
+  isArray,
 } from 'ts-fns'
 
 export function ofChain(target, TopConstructor) {
@@ -48,4 +49,16 @@ export function makeMsg(errors) {
     errors.message = errors[0].message
   }
   return errors
+}
+
+export function patchObj(source, input) {
+  each(input, (value, key) => {
+    const src = source[key]
+    if (isArray(src) && isArray(value)) {
+      src.push(...value)
+    }
+    else {
+      source[key] = value
+    }
+  })
 }

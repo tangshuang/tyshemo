@@ -18,6 +18,7 @@ import {
 
 import { Ty, Rule } from './ty/index.js'
 import Meta from './meta.js'
+import { patchObj } from './shared/utils.js'
 
 export class Schema {
   constructor(metas) {
@@ -844,7 +845,7 @@ export class Schema {
             attr: 'flat',
           },
         )
-        Object.assign(patch, res)
+        patchObj(patch, res)
       }
 
       if (isBoolean(drop) && drop) {
@@ -908,10 +909,10 @@ export class Schema {
           },
         )
         if (asset) {
-          output[dataKey] = res
+          patchObj(output, { [dataKey]: res })
         }
         else {
-          Object.assign(output, res)
+          patchObj(output, res)
         }
       }
       else {
