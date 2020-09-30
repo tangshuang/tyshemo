@@ -181,7 +181,7 @@ export class Schema {
        */
       if (isFunction(node)) {
         return this._trydo(
-          () => node.call(context),
+          () => node.call(context, key),
           (error) => isFunction(handle) && handle.call(context, error) || fallback,
           {
             key,
