@@ -1,27 +1,28 @@
+import Meta from '../src/meta.js'
 import Schema from '../src/schema.js'
 import { ifexist } from '../src/ty/index.js'
 import { isString, isEmpty } from 'ts-fns'
 
 describe('Schema', () => {
   const def = {
-    string: {
+    string: new Meta({
       type: String,
       default: '',
-    },
-    number: {
+    }),
+    number: new Meta({
       type: ifexist(Number),
       default: 0,
-    },
-    dict: {
+    }),
+    dict: new Meta({
       type: { name: String, age: Number },
       default: { name: '', age: 0 },
-    },
-    list: {
+    }),
+    list: new Meta({
       type: [String],
       default: [],
-    },
+    }),
 
-    validators: {
+    validators: new Meta({
       type: String,
       default: '',
       validators: [
@@ -36,7 +37,7 @@ describe('Schema', () => {
           message: 'should be a number string',
         },
       ],
-    },
+    }),
   }
 
   test('validate', () => {
@@ -70,7 +71,7 @@ describe('Schema', () => {
 
   test('validate break', () => {
     const Some = new Schema({
-      a: {
+      a: new Meta({
         default: '',
         validators: [
           {
@@ -85,7 +86,7 @@ describe('Schema', () => {
             message: 'should be a number string',
           },
         ],
-      },
+      }),
     })
 
     expect(Some.validate('a', 123).length).toBe(1)
@@ -98,13 +99,13 @@ describe('Schema', () => {
 
   test('parse', () => {
     const SomeSchema = new Schema({
-      key1: {
+      key1: new Meta({
         type: String,
         default: '',
         create(value, key, data) {
           return data.prop1
         },
-      },
+      }),
     })
     const data = SomeSchema.parse({
       prop1: 'xxx',
@@ -114,18 +115,18 @@ describe('Schema', () => {
 
   test('export', () => {
     const SomeSchema = new Schema({
-      key2: {
+      key2: new Meta({
         type: String,
         default: '',
         map(value, key, data) {
           return value + '!'
         },
-      },
-      key3: {
+      }),
+      key3: new Meta({
         type: String,
         default: '',
         drop: true,
-      },
+      }),
     })
     const data = SomeSchema.export({
       key2: 'a',
@@ -137,7 +138,7 @@ describe('Schema', () => {
 
   test('validate message', () => {
     const Some = new Schema({
-      some: {
+      some: new Meta({
         label: 'Some',
         default: '',
         required: true,
@@ -151,7 +152,7 @@ describe('Schema', () => {
             message: '{label} should be a number string',
           },
         ],
-      },
+      }),
     })
 
     expect(Some.validate('some', null)[0].message).toBe('Some should not be empty')

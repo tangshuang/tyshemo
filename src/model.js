@@ -3,6 +3,7 @@ import {
   isInheritedOf,
   isArray,
   map,
+  filter,
   each,
   flat,
   flatArray,
@@ -29,6 +30,7 @@ import _Schema from './schema.js'
 import _Store, { COMPUTED_FAILURE } from './store.js'
 import { ofChain, tryGet, makeMsg } from './shared/utils.js'
 import { edit } from './shared/edit.js'
+import Meta from './meta.js'
 
 /**
  * class SomeModel extends Model {
@@ -838,7 +840,16 @@ export class Model {
   static extend(next) {
     const Constructor = inherit(this)
     if (isObject(next)) {
-      Object.assign(Constructor, next)
+      const metas = map(next, (value) => {
+        // make it easy to extend
+        if (isObject(value)) {
+          return new Meta(value)
+        }
+        else {
+          return value
+        }
+      })
+      Object.assign(Constructor, metas)
     }
     else if (isConstructor(next, 2)) {
       mixin(Constructor, next)
@@ -891,7 +902,7 @@ export class Model {
           : isObject(item) ? new SubModel(item)
           : null
       }).filter(item => !!item)
-      return {
+      return new Meta({
         default: () => [],
         type: Model,
         validators: [
@@ -906,7 +917,7 @@ export class Model {
         save: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
         map: ms => ms.map(m => m.toData()),
         setter: value => isArray(value) ? create(value) : [],
-      }
+      })
     }
     else {
       const create = (value) => {
@@ -914,7 +925,7 @@ export class Model {
           : isObject(value) ? new Model(value)
           : new Model()
       }
-      return {
+      return new Meta({
         default: () => create(),
         type: Model,
         validators: [
@@ -929,7 +940,7 @@ export class Model {
         save: (m, key) => ({ [key]: m.toJSON() }),
         map: m => m.toData(),
         setter: value => create(value),
-      }
+      })
     }
   }
 }

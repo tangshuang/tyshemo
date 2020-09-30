@@ -27,9 +27,9 @@ export class Schema {
         return
       }
 
+      // only metas will be used
       const value = isInstanceOf(meta, Meta) ? meta
         : isInheritedOf(meta, Meta) ? new meta()
-        : meta && typeof meta === 'object' && !isEmpty(meta) && inObject('default', meta) ? new Meta(meta)
         : null
 
       if (!value) {

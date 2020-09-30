@@ -1,5 +1,6 @@
 import { Store, COMPUTED_FAILURE } from '../src/store.js'
 import { Model } from '../src/model.js'
+import Meta from '../src/meta.js'
 
 describe('Store', () => {
   const createData = () => ({
@@ -217,9 +218,9 @@ describe('Store', () => {
 
   test('observe', () => {
     class SomeModel extends Model {
-      static name = {
+      static name = new Meta({
         default: '',
-      }
+      })
     }
     const some = new SomeModel()
     const store = new Store({

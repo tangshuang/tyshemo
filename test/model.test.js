@@ -3,17 +3,17 @@ import Meta from '../src/meta.js'
 
 describe('Model', () => {
   class PersonModel extends Model {
-    static name = {
+    static name = new Meta({
       default: '',
       type: String,
-    }
+    })
 
-    static age = {
+    static age = new Meta({
       default: 0,
       type: Number,
-    }
+    })
 
-    static body = {
+    static body = new Meta({
       default: {
         head: true,
         hands: true,
@@ -24,20 +24,20 @@ describe('Model', () => {
         hands: Boolean,
         feet: Boolean,
       },
-    }
+    })
 
-    static height = {
+    static height = new Meta({
       type: Number,
       default: 0,
       compute() {
         return this.body.feet ? 120 : 60
       },
-    }
+    })
 
-    static weight = {
+    static weight = new Meta({
       type: Number,
       default: 20,
-    }
+    })
   }
 
   test('computed', () => {
@@ -86,7 +86,7 @@ describe('Model', () => {
 
   test('validate', () => {
     class SomeModel extends Model {
-      static some = {
+      static some = new Meta({
         type: Number,
         default: 0,
         validators: [
@@ -96,7 +96,7 @@ describe('Model', () => {
             message: 'Should bigger than 0.',
           },
         ],
-      }
+      })
     }
     const some = new SomeModel({
       some: 0,
@@ -108,10 +108,10 @@ describe('Model', () => {
 
   test('use model as schema', () => {
     class SomeModel extends Model {
-      static num = {
+      static num = new Meta({
         type: Number,
         default: 0,
-      }
+      })
     }
     class AnyModel extends Model {
       static some = SomeModel
@@ -138,12 +138,12 @@ describe('Model', () => {
 
   test('getter and setter', () => {
     class PersonModel extends Model {
-      static name = {
+      static name = new Meta({
         type: String,
         default: '',
-      }
+      })
 
-      static age = {
+      static age = new Meta({
         type: Number,
         default: 0,
         getter(value) {
@@ -154,7 +154,7 @@ describe('Model', () => {
           // ensure number
           return !isNaN(+value) ? +value : 0
         }
-      }
+      })
     }
     const person = new PersonModel()
 
@@ -171,11 +171,11 @@ describe('Model', () => {
   test('message when type checking fail', () => {
     let error = null
     class SomeModel extends Model {
-      static some = {
+      static some = new Meta({
         default: '',
         type: String,
         message: 'it should be a string',
-      }
+      })
 
       onError(err) {
         error = err
@@ -214,12 +214,12 @@ describe('Model', () => {
 
   test('state', () => {
     class SomeModel extends Model {
-      static some = {
+      static some = new Meta({
         default: null,
         required() {
           return !this.isFund // use state to check whether need to be required
         },
-      }
+      })
 
       state() {
         return {
@@ -271,16 +271,16 @@ describe('Model', () => {
     expect(it.$views.some.state.some_name).toBe('bb')
   })
 
-  test('watch schema', () => {
+  test('watch attribute', () => {
     let count = 0
 
     class SomeModel extends Model {
-      static some = {
+      static some = new Meta({
         default: '',
         watch() {
           count ++
         },
-      }
+      })
     }
 
     const some = new SomeModel()
@@ -324,7 +324,7 @@ describe('Model', () => {
     class Some extends Model {
       schema() {
         return {
-          name: { default: 'some' },
+          name: new Meta({ default: 'some' }),
         }
       }
       state() {
@@ -353,9 +353,9 @@ describe('Model', () => {
 
   test('static extend', () => {
     class Some extends Model {
-      static name = {
+      static name = new Meta({
         default: 'some',
-      }
+      })
     }
 
     const One = Some.extend({
@@ -370,9 +370,10 @@ describe('Model', () => {
     expect(one.age).toBe(0)
 
     const Two = Some.extend(class {
-      static age = {
+      static age = new Meta({
         default: 10,
-      }
+      })
+      // because a field should must be defined by Meta, so when we set it to be a Non-Meta value, it will not be filed
       static name = null
 
       say() {
@@ -435,7 +436,7 @@ describe('Model', () => {
   })
   test('compute + $parent + map', () => {
     class Child extends Model {
-      static age = {
+      static age = new Meta({
         default: 0,
         compute() {
           return this.$parent.age - 26
@@ -443,13 +444,13 @@ describe('Model', () => {
         map(age) {
           return age + ''
         }
-      }
+      })
     }
 
     class Parent extends Model {
-      static age = {
+      static age = new Meta({
         default: 0,
-      }
+      })
       static child = Child
     }
 
@@ -463,12 +464,12 @@ describe('Model', () => {
 
   test('toJSON/fromJSON', () => {
     class Child extends Model {
-      static name = { default: 'lily' }
+      static name = new Meta({ default: 'lily' })
     }
     class Parent extends Model {
-      static name = { default: 'tom' }
-      static age = { default: 10 }
-      static sex = { default: 'M' }
+      static name = new Meta({ default: 'tom' })
+      static age = new Meta({ default: 10 })
+      static sex = new Meta({ default: 'M' })
       static child = Child
     }
 
@@ -486,12 +487,12 @@ describe('Model', () => {
 
   test('Editor', () => {
     class Child extends Model {
-      static name = { default: 'lily' }
+      static name = new Meta({ default: 'lily' })
     }
     class Some extends Model {
-      static name = { default: '' }
-      static age = { default: 10 }
-      static sex = { default: 'M' }
+      static name = new Meta({ default: '' })
+      static age = new Meta({ default: 10 })
+      static sex = new Meta({ default: 'M' })
       static child = Child
     }
 
@@ -580,7 +581,7 @@ describe('Model', () => {
 
   test('$parent compute', () => {
     class Child extends Model {
-      static age = {
+      static age = new Meta({
         default: 0,
         compute() {
           return this.$parent.age - 26
@@ -588,13 +589,13 @@ describe('Model', () => {
         map(age) {
           return age + ''
         }
-      }
+      })
     }
 
     class Parent extends Model {
-      static age = {
+      static age = new Meta({
         default: 0,
-      }
+      })
       static child = Child
     }
 
@@ -637,7 +638,7 @@ describe('Model', () => {
 
   test('validateAsync', (done) => {
     class SomeModel extends Model {
-      static some = {
+      static some = new Meta({
         default: 0,
         validators: [
           {
@@ -646,8 +647,8 @@ describe('Model', () => {
             message: 'Some should bigger than 0.',
           },
         ],
-      }
-      static any = {
+      })
+      static any = new Meta({
         default: 10,
         validators: [
           {
@@ -665,7 +666,7 @@ describe('Model', () => {
             async: true,
           }
         ],
-      }
+      })
     }
 
     const some = new SomeModel()

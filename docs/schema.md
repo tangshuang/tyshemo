@@ -26,29 +26,13 @@ const schema = new Schema({
 })
 ```
 
-To create a schema instance, you should pass an object parameter to define the data structure and inner rules.
-The definition object contains all needed fields of data.
-And the property of the definition object should be a Meta whose attributes will be used by Schema to build up fields' rules.
-
-The following written way are supported too:
+You can also pass a Meta constructor too.
+The following written way are supported:
 
 ```js
 const schema = new Schema({
   name: Name,
   age: Age,
-})
-```
-
-```js
-const schema = new Schema({
-  name: {
-    default: 'unknown',
-    type: String,
-  },
-  age: {
-    default: 0,
-    type: Number,
-  },
 })
 ```
 
