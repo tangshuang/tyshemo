@@ -163,7 +163,7 @@ export class Schema {
         const { determine } = node
         if (isFunction(determine)) {
           return this._trydo(
-            () => determine.call(context),
+            () => determine.call(context, key),
             (error) => isFunction(handle) && handle.call(context, error) || fallback,
             {
               key,
