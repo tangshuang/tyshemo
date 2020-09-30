@@ -943,6 +943,33 @@ export class Model {
       })
     }
   }
+
+  /**
+   * use a meta definition to find out schema node
+   * @param {Meta} Meta
+   * @param {function} [fn] key => any
+   * @returns {view}
+   * @example
+   * class Some extends Meta {
+   *   ...
+   * }
+   * class Dog extends Meta {
+   *   hidden() {
+   *     const some = this.reflect(Some) || {} // undefined if Some not used
+   *     return some.value
+   *   }
+   * }
+   */
+  reflect(Meta, fn) {
+    const keys = Object.keys(this.$schema)
+    for (let i = 0, len = keys.length; i < len; i ++) {
+      const key = keys[i]
+      const meta = this.$schema[key]
+      if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
+        return  isFunction(fn) ? fn(key) : this.$views[key]
+      }
+    }
+  }
 }
 
 export default Model
