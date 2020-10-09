@@ -10,15 +10,13 @@ import {
   isSymbol,
   isConstructor,
   isInfinite,
+  isInheritedOf,
 } from 'ts-fns'
 
 export class Prototype {
-  constructor({ name, validate }) {
-    this.name = name
-    this._validate = validate
-  }
-  validate(value) {
-    return !!this._validate.call(this, value)
+  constructor(options = {}) {
+    this.name = options.name
+    this.validate = options.validate
   }
   toString() {
     return this.name
@@ -52,14 +50,18 @@ Prototype.unregister = (proto) => {
   }
 }
 Prototype.find = proto => prototypes.find(item => item.proto === proto)
-Prototype.is = proto => ({
+Prototype.is = (proto) => ({
   // Prototype.is(Number).existing()
-  existing: () => isInstanceOf(proto, Prototype) || isNaN(proto) || isInstanceOf(proto, RegExp) || isConstructor(proto) || !!Prototype.find(proto),
+  existing: () => isNaN(proto) || isInstanceOf(proto, RegExp) || !!Prototype.find(proto) || isInstanceOf(proto, Prototype) || isConstructor(proto) || isInheritedOf(proto, Prototype),
 
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
     if (isInstanceOf(proto, Prototype)) {
       return proto.validate(value)
+    }
+
+    if (isInheritedOf(proto, Prototype)) {
+      return new proto().validate(value)
     }
 
     const item = Prototype.find(proto)

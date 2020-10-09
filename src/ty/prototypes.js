@@ -9,87 +9,115 @@ import {
 
 import Prototype from './prototype.js'
 
-export const Null = /*#__PURE__*/new Prototype({
-  name: 'Null',
-  validate: isNull,
-})
+export class Null extends Prototype {
+  name = 'Null'
+  validate = isNull
+}
 
-export const Undefined = /*#__PURE__*/new Prototype({
-  name: 'Undefined',
-  validate: isUndefined,
-})
+export class Undefined extends Prototype {
+  name = 'Undefined'
+  validate = isUndefined
+}
 
-export const None = /*#__PURE__*/new Prototype({
-  name: 'None',
-  validate: isNone,
-})
+export class None extends Prototype {
+  name = 'None'
+  validate = isNone
+}
 
-export const Numeric = /*#__PURE__*/new Prototype({
-  name: 'Numeric',
-  validate: isNumeric,
-})
+export class Any extends Prototype {
+  name = 'Any'
+  validate = () => true
+}
 
-export const Any = /*#__PURE__*/new Prototype({
-  name: 'Any',
-  validate: () => true,
-})
+export class Numeric extends Prototype {
+  name = 'Numeric'
+  validate = isNumeric
+  static String = Numeric
+  static Number = class extends Numeric {
+    validate = isNumber
+  }
+}
 
-export const Int = /*#__PURE__*/new Prototype({
-  name: 'Int',
-  validate: value => isNumber(value) && Number.isInteger(value),
-})
+export class Int extends Prototype {
+  name = 'Int'
+  validate = value => isNumber(value) && Number.isInteger(value)
+  static Number = Int
+  static String = class extends Int {
+    validate = value => isNumeric(value) && value.indexOf('.') === -1
+  }
+}
 
-export const Float = /*#__PURE__*/new Prototype({
-  name: 'Float',
-  validate: value => isNumber(value) && !Number.isInteger(value),
-})
+export class Float extends Prototype {
+  name = 'Float'
+  validate = value => isNumber(value) && !Number.isInteger(value)
+  static Number = Float
+  static String = class extends Float {
+    validate = value => isNumeric(value) && value.indexOf('.') > -1
+  }
+}
 
-export const Negative = /*#__PURE__*/new Prototype({
-  name: 'Negative',
-  validate: value => isNumber(value) && value < 0,
-})
+export class Negative extends Prototype {
+  name = 'Negative'
+  validate = value => isNumber(value) && value < 0
+  static Number = Negative
+  static String = class extends Negative {
+    validate = value => isNumeric(value) && value.substr(0, 1) === '-'
+  }
+}
 
-export const Positive = /*#__PURE__*/new Prototype({
-  name: 'Positive',
-  validate: value => isNumber(value) && value > 0,
-})
+export class Positive extends Prototype {
+  name = 'Positive'
+  validate = value => isNumber(value) && value > 0
+  static Number = Positive
+  static String = class extends Positive {
+    validate = value => isNumeric(value) && value.substr(0, 1) !== '-'
+  }
+}
 
-export const Finity = /*#__PURE__*/new Prototype({
-  name: 'Finity',
-  validate: value => isNumber(value) && Number.isFinite(value),
-})
+export class Finity extends Prototype {
+  name = 'Finity'
+  validate = value => isNumber(value) && Number.isFinite(value)
+}
 
-export const Zero = /*#__PURE__*/new Prototype({
-  name: 'Zero',
-  validate: value => value === 0,
-})
+export class Zero extends Prototype {
+  name = 'Zero'
+  validate = value => value === 0
+  static Number = Zero
+  static String = class extends Zero {
+    validate = value => value + '' === '0'
+  }
+}
 
-export const Natural = /*#__PURE__*/new Prototype({
-  name: 'Natural',
-  validate: value => isNumber(value) && Number.isInteger(value) && value >= 0,
-})
+export class Natural extends Prototype {
+  name = 'Natural'
+  validate = value => isNumber(value) && Number.isInteger(value) && value >= 0
+  static Number = Natural
+  static String = class extends Natural {
+    validate = value => isNumeric(value) && Number.isInteger(+value) && +value >= 0
+  }
+}
 
-export const String8 = /*#__PURE__*/new Prototype({
-  name: 'String8',
-  validate: value => isString(value) && value.length <= 8,
-})
+export class String8 extends Prototype {
+  name = 'String8'
+  validate = value => isString(value) && value.length <= 8
+}
 
-export const String16 = /*#__PURE__*/new Prototype({
-  name: 'String16',
-  validate: value => isString(value) && value.length <= 16,
-})
+export class String16 extends Prototype {
+  name = 'String16'
+  validate = value => isString(value) && value.length <= 16
+}
 
-export const String32 = /*#__PURE__*/new Prototype({
-  name: 'String32',
-  validate: value => isString(value) && value.length <= 32,
-})
+export class String32 extends Prototype {
+  name = 'String32'
+  validate = value => isString(value) && value.length <= 32
+}
 
-export const String64 = /*#__PURE__*/new Prototype({
-  name: 'String64',
-  validate: value => isString(value) && value.length <= 64,
-})
+export class String64 extends Prototype {
+  name = 'String64'
+  validate = value => isString(value) && value.length <= 64
+}
 
-export const String128 = /*#__PURE__*/new Prototype({
-  name: 'String128',
-  validate: value => isString(value) && value.length <= 128,
-})
+export class String128 extends Prototype {
+  name = 'String128'
+  validate = value => isString(value) && value.length <= 128
+}
