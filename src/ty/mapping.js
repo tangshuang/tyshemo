@@ -19,7 +19,7 @@ export class Mapping extends Type {
     this.name = 'Mapping'
   }
 
-  catch(value) {
+  _decide(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
     const { key: keyPattern, value: valuePattern } = pattern

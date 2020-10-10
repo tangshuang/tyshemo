@@ -15,7 +15,8 @@ export class List extends Type {
     super(pattern)
     this.name = 'List'
   }
-  catch(value) {
+
+  _decide(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
 

@@ -21,6 +21,7 @@ export class Type {
     this.isStrict = false
     this.pattern = pattern
     this.name = 'Type'
+    this.$msg = null
   }
 
   /**
@@ -188,19 +189,27 @@ export class Type {
     return tyerr.error()
   }
 
+  _decide(value) {
+    const pattern = this.pattern
+    const error = this.validate(value, pattern)
+    return error
+  }
+
   assert(value) {
-    const error = this.catch(value)
+    const error = this._decide(value)
     if (error) {
       throw error
     }
   }
   catch(value) {
-    const pattern = this.pattern
-    const error = this.validate(value, pattern)
+    const error = this._decide(value)
+    if (error && this.$msg) {
+      error.translate(this.$msg.message, this.$msg.prefix, this.$msg.suffix)
+    }
     return error
   }
   test(value) {
-    let error = this.catch(value)
+    const error = this._decide(value)
     return !error
   }
 
@@ -210,7 +219,7 @@ export class Type {
    */
   track(value) {
     return new Promise((resolve, reject) => {
-      let error = this.catch(value)
+      const error = this._decide(value)
       if (error) {
         reject(error)
       }
@@ -227,7 +236,7 @@ export class Type {
   trace(value) {
     return new Promise((resolve, reject) => {
       Promise.resolve().then(() => {
-        let error = this.catch(value)
+        const error = this._decide(value)
         if (error) {
           reject(error)
         }
@@ -256,6 +265,11 @@ export class Type {
   }
   get Strict() {
     return this.strict
+  }
+
+  with({ message, prefix, suffix }) {
+    this.$msg = { message, prefix, suffix }
+    return this
   }
 
   // use name when convert to string

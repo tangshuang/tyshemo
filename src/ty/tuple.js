@@ -17,7 +17,8 @@ export class Tuple extends Type {
     super(pattern)
     this.name = 'Tuple'
   }
-  catch(value) {
+
+  _decide(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
 

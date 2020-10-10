@@ -15,7 +15,8 @@ export class Enum extends Type {
     super(pattern)
     this.name = 'Enum'
   }
-  catch(value) {
+
+  _decide(value) {
     const pattern = this.pattern
     const patterns = pattern
     const tyerr = new TyError()

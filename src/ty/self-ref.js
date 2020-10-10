@@ -14,11 +14,13 @@ export class SelfRef extends Type {
     this.name = 'SelfRef'
     this.pattern = fn(this)
   }
-  catch(value) {
+
+  _decide(value) {
     const type = createType(this.pattern)
     const error = type.catch(value)
     return error
   }
+
   clone() {
     const Constructor = getConstructorOf(this)
     const ins = new Constructor(this.fn)

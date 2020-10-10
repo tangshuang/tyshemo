@@ -19,7 +19,7 @@ export class Dict extends Type {
     this.name = 'Dict'
   }
 
-  catch(value) {
+  _decide(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
 

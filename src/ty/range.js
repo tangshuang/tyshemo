@@ -24,7 +24,8 @@ export class Range extends Type {
     super(pattern)
     this.name = 'Range'
   }
-  catch(value) {
+
+  _decide(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
     const { min, max, minBound = true, maxBound = true } = pattern

@@ -93,6 +93,8 @@ export class TyError extends TypeError {
       breakline = TyError.shouldBreakLongMessage,
       sensitive = TyError.shouldHideSensitiveData,
       templates = {},
+      messagePrefix = '',
+      messageSuffix = '',
     } = options
     const bands = { ...TyError.defaultMessages, ...templates }
 
@@ -114,15 +116,18 @@ export class TyError extends TypeError {
       return text
     })
     const message = messages.join('')
+    const text = messagePrefix + message + messageSuffix
 
-    this._message = message
-    return message
+    this._message = text
+    return text
   }
 
-  translate(message) {
-    this.format({
+  translate(message, prefix, suffix) {
+    const formatter = {
       keyPathPrefix: '',
-      templates: {
+    }
+    if (message) {
+      formatter.templates = {
         exception: message,
         unexcepted: message,
         dirty: message,
@@ -131,7 +136,14 @@ export class TyError extends TypeError {
         illegal: message,
         notin: message,
       }
-    })
+    }
+    if (prefix) {
+      formatter.messagePrefix = prefix
+    }
+    if (suffix) {
+      formatter.messageSuffix = suffix
+    }
+    this.format(formatter)
   }
 
   static shouldHideSensitiveData = false
@@ -146,6 +158,7 @@ export class TyError extends TypeError {
     notin: '{keyPath} recieve `{receive}` did not match `{should}` in enum.',
   }
   static keyPathPrefix = '$.'
+  static messagePrefix = ''
 }
 
 export default TyError
