@@ -812,6 +812,11 @@ export class Model {
     const keys = key ? [key] : Object.keys(schema)
 
     keys.forEach((key) => {
+      // dont check if disabled
+      if (this.$schema.disabled(key, this)) {
+        return
+      }
+
       const def = schema[key]
       each(def, (value, attr) => {
         let str = ''

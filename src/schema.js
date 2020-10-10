@@ -554,18 +554,7 @@ export class Schema {
 
   $validateAsync(key, value, context) {
     const meta = this[key]
-    const { catch: handle, validators = [] } = meta
-
-    function awaitx(input, fn) {
-      if (typeof fn === 'function') {
-        return new Promise((resolve, reject) => {
-          Promise.resolve(input).then(fn).then(resolve).catch(reject)
-        })
-      }
-      else {
-        return Promise.resolve(input)
-      }
-    }
+    const { validators = [] } = meta
 
     function asyncx(fn) {
       return function(...args) {
