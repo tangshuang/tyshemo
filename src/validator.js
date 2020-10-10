@@ -8,6 +8,7 @@ import {
   isInstanceOf,
   isBoolean,
   isUndefined,
+  isNaN,
   numerify,
 } from 'ts-fns'
 import { ofChain } from './shared/utils.js'
