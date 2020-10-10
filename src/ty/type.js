@@ -5,6 +5,8 @@ import {
   inArray,
   inObject,
   getConstructorOf,
+  isUndefined,
+  isString,
 } from 'ts-fns'
 
 import Prototype from './prototype.js'
@@ -252,6 +254,9 @@ export class Type {
   clone() {
     const Constructor = getConstructorOf(this)
     const ins = new Constructor(this.pattern)
+    ins.isStrict = this.isStrict
+    ins.name = this.name
+    ins.$msg = this.$msg
     return ins
   }
 
@@ -269,8 +274,14 @@ export class Type {
     return this.strict
   }
 
-  with({ message, prefix, suffix }) {
-    this.$msg = { message, prefix, suffix }
+  with({ name, strict, message, prefix, suffix }) {
+    this.$msg = message || prefix || suffix ? Object.assign({}, { message, prefix, suffix }) : null
+    if (isString(name)) {
+      this.name = name
+    }
+    if (!isUndefined(strict)) {
+      this.isStrict = !!strict
+    }
     return this
   }
 
