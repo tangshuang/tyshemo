@@ -851,6 +851,7 @@ export class Model {
       })
       Object.assign(Constructor, metas)
     }
+    // isConstructor should must come before isFunction
     else if (isConstructor(next, 2)) {
       mixin(Constructor, next)
     }

@@ -6,6 +6,7 @@ import {
   shouldexist, shouldnotexist,
   instance, equal, nullable,
   Dict,
+  Prototype,
 } from '../../src/ty/index.js'
 
 describe('Rule Generators', () => {
@@ -70,7 +71,7 @@ describe('Rule Generators', () => {
     const SomeRule = match([
       shouldmatch(String, msg1),
       shouldmatch(Numeric, msg2),
-      shouldnotmatch(value => value.indexOf('123') === 0, msg3),
+      shouldnotmatch(new Prototype({ validate: value => value.indexOf('123') === 0 }), msg3),
     ])
     const SomeType = new Dict({
       some: SomeRule,

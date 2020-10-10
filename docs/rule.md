@@ -27,6 +27,10 @@ We provide internal rules, you can use them by `import` very easy.
 
 ### ifexist
 
+```
+ifexist(:Rule|Type)
+```
+
 When a dict property or tuple item not exists, do not check type, when exists, check type.
 
 ```js
@@ -36,6 +40,10 @@ const SomeType = new Dict({
 ```
 
 ### shouldmatch
+
+```
+shouldmatch(:Rule|Type, message:string)
+```
 
 ```js
 const SomeType = new Dict({
@@ -47,6 +55,10 @@ Use it to custom your own message.
 
 ### shouldnotmatch
 
+```
+shouldnotmatch(:Rule|Type, message:string)
+```
+
 ```js
 const SomeType = new Dict({
   some: shouldnotmatch(String, '{keyPath} should not be a string'),
@@ -54,6 +66,10 @@ const SomeType = new Dict({
 ```
 
 ### match
+
+```
+match([:Rule|Type])
+```
 
 Make multiple rules work together.
 
@@ -70,6 +86,10 @@ Rules in the array with be checked one by one, if one fail, the left rules will 
 
 ### ifnotmatch
 
+```
+ifnotmatch(:Rule|Type, defaultValue:any|Function)
+```
+
 Help you to give a default value.
 
 ```js
@@ -82,6 +102,10 @@ The second parameter can be a function to compute default value dynamicly.
 
 ### ifmatch
 
+```
+ifmatch(:Rule|Type, defaultValue:any|Function)
+```
+
 ```js
 const SomeType = new Dict({
   some: match([
@@ -93,7 +117,7 @@ const SomeType = new Dict({
 ### determine
 
 ```
-determin(condition: Function, A: Type, B: Type)
+determin(condition:Function<(data:object):boolean>, A:Type, B:Type)
 ```
 
 Get type by conditions.
@@ -112,6 +136,10 @@ When condition returns true, use the second parameter as type, or returns false,
 *Notice, the `data` parameter is the whole dict object.*
 
 ### lazy
+
+```
+lazy(async function:Function<:Type>)
+```
 
 Fetch type by a Promise.
 
@@ -137,7 +165,7 @@ Before the Promise resolved, `some` property will use `Any` as type.
 shouldexist = determine + ifexist
 
 ```
-shouldexist(condition: Function, type: Type)
+shouldexist(condition:Function<(data:object):boolean>, type:Type)
 ```
 
 When condition return true, the property should MUST exist, when return false, the property can exist or not.
@@ -153,6 +181,10 @@ const SomeType = new Dict({
 
 ### shouldnotexist
 
+```
+shouldnotexist(condition:Function<(data:object):boolean>, type:Type)
+```
+
 When condition return true, the property should NOT exist, when return false, the property can exist or not.
 Either true or false, once the property exists, it should must match the type.
 
@@ -166,6 +198,10 @@ const SomeType = new Dict({
 
 ### instance
 
+```
+instance(:Constructor)
+```
+
 The property should be an instance of the type.
 
 ```js
@@ -175,6 +211,10 @@ const SomeType = new Dict({
 ```
 
 ### equal
+
+```
+equal(:any)
+```
 
 The property should totally equal the passed value or same structure of object.
 
@@ -186,6 +226,10 @@ const SomeType = new Dict({
 
 ### nullable
 
+```
+nullable(:any)
+```
+
 The property can be nullable.
 
 ```js
@@ -195,6 +239,10 @@ const SomeType = dict({
 ```
 
 ### lambda
+
+```
+lambda(:Tuple|array, :Type)
+```
 
 The property should be a function with given parameters type and return type.
 
@@ -207,7 +255,6 @@ const SomeType = new Dict({
 
 The first paramter should be a tuple or an array which will be treated as a tupele definition.
 The second paramter is the return type.
-
 
 ## Custom Rule
 

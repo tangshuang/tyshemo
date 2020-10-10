@@ -117,16 +117,12 @@ export function determine(determine, A, B) {
  * @param {String|Function} message
  */
 export function shouldmatch(pattern, message) {
-  const type = isFunction(pattern) ? pattern : createRule(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'shouldmatch',
     pattern,
     message,
     validate(data, key) {
-      if (isFunction(type)) {
-        return type(data[key])
-      }
-
       const error = this.validate(data, key, type)
       return !error
     },
@@ -139,16 +135,12 @@ export function shouldmatch(pattern, message) {
  * @param {Pattern} pattern
  */
 export function shouldnotmatch(pattern, message) {
-  const type = isFunction(pattern) ? pattern : createRule(pattern)
+  const type = createRule(pattern)
   const rule = new Rule({
     name: 'shouldnotmatch',
     pattern,
     message,
     validate(data, key) {
-      if (isFunction(type)) {
-        return !type(data[key])
-      }
-
       const error = this.validate(data, key, type)
       return !!error
     },

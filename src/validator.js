@@ -113,10 +113,7 @@ function date(message) {
 function match(validator, message) {
   return new Validator({
     validate(value) {
-      if (isFunction(validator)) {
-        return validator.call(this, value)
-      }
-      else if (isInstanceOf(validator, RegExp)) {
+      if (isInstanceOf(validator, RegExp)) {
         return typeof value === 'string' && validator.test(value)
       }
       else if (validator === String) {
@@ -131,11 +128,15 @@ function match(validator, message) {
       else if (validator === Function) {
         return typeof value === 'function'
       }
-      else if (isConstructor(validator)) {
-        return isInstanceOf(value, validator)
-      }
       else if (isNaN(validator)) {
         return isNaN(value)
+      }
+      // isConstructor should must come before isFunction
+      else if (isConstructor(validator, 2)) {
+        return isInstanceOf(value, validator)
+      }
+      else if (isFunction(validator)) {
+        return validator.call(this, value)
       }
       else {
         return validator === value

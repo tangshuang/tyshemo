@@ -158,16 +158,7 @@ export class Ty {
     const $this = this
     function wrap(title, target, ...types) {
       const [type, type2] = types
-      if (isFunction(target)) {
-        const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
-        return function(...args) {
-          $this.try(() => $this.expect(args).to.be(tupl), `${title} parameters {keyPath} should match {should} but receive {receive}`)
-          const result = target.apply(this, args)
-          $this.try(() => $this.expect(result).to.be(type2), `${title} returns should match {should} but receive {receive}`)
-          return result
-        }
-      }
-      else if (isObject(target)) {
+      if (isObject(target)) {
         return createProxy(target, {
           set(keyPath, value) {
             const t = parse(type, keyPath)
@@ -205,6 +196,7 @@ export class Ty {
           },
         })
       }
+      // isConstructor should must come before isFunction
       else if (isConstructor(target, 2)) {
         return class extends target {
           constructor(...args) {
@@ -212,6 +204,15 @@ export class Ty {
             $this.try(() => $this.expect(args).to.be(tupl), `${target.name} constructor parameters should match {should} but receive {receive}`)
             return super(...args)
           }
+        }
+      }
+      else if (isFunction(target)) {
+        const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
+        return function(...args) {
+          $this.try(() => $this.expect(args).to.be(tupl), `${title} parameters {keyPath} should match {should} but receive {receive}`)
+          const result = target.apply(this, args)
+          $this.try(() => $this.expect(result).to.be(type2), `${title} returns should match {should} but receive {receive}`)
+          return result
         }
       }
       else {
