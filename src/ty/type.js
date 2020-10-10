@@ -195,12 +195,6 @@ export class Type {
     return error
   }
 
-  assert(value) {
-    const error = this._decide(value)
-    if (error) {
-      throw error
-    }
-  }
   catch(value) {
     const error = this._decide(value)
     if (error && this.$msg) {
@@ -208,8 +202,16 @@ export class Type {
     }
     return error
   }
+
+  assert(value) {
+    const error = this.catch(value)
+    if (error) {
+      throw error
+    }
+  }
+
   test(value) {
-    const error = this._decide(value)
+    const error = this.catch(value)
     return !error
   }
 
@@ -219,7 +221,7 @@ export class Type {
    */
   track(value) {
     return new Promise((resolve, reject) => {
-      const error = this._decide(value)
+      const error = this.catch(value)
       if (error) {
         reject(error)
       }
@@ -236,7 +238,7 @@ export class Type {
   trace(value) {
     return new Promise((resolve, reject) => {
       Promise.resolve().then(() => {
-        const error = this._decide(value)
+        const error = this.catch(value)
         if (error) {
           reject(error)
         }
