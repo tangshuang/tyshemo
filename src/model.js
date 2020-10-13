@@ -884,7 +884,7 @@ export class Model {
     if (isObject(next)) {
       const metas = map(next, (value) => {
         // make it easy to extend, 'default' is required
-        if (isObject(value) && value.default) {
+        if (isObject(value) && inObject('default', value)) {
           return new Meta(value)
         }
         else {

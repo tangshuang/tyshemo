@@ -42,7 +42,7 @@ describe('Rule Generators', () => {
 
     const msg2 = 'It should be a number string.'
     const Some2Type = new Dict({
-      some: shouldmatch(Numeric, msg2),
+      some: shouldmatch(Numeric.String, msg2),
     })
 
     expect(() => Some2Type.assert({ some: '123' })).not.toThrowError()

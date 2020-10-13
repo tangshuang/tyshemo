@@ -14,7 +14,7 @@ describe('Prototypes', () => {
   test('Numeric', () => {
     const SomeType = new Type(Numeric)
     expect(SomeType.test('10')).toBe(true)
-    expect(SomeType.test(10)).toBe(false)
+    expect(SomeType.test(10)).toBe(true)
     expect(SomeType.test('10a')).toBe(false)
 
     const NumType = new Type(Numeric.Number)
@@ -25,7 +25,7 @@ describe('Prototypes', () => {
     const SomeType = new Type(Int)
     expect(SomeType.test(10)).toBe(true)
     expect(SomeType.test(10.1)).toBe(false)
-    expect(SomeType.test('10')).toBe(false)
+    expect(SomeType.test('10')).toBe(true)
 
     const IntType = new Type(Int.String)
     expect(IntType.test('10')).toBe(true)
@@ -35,7 +35,7 @@ describe('Prototypes', () => {
     const SomeType = new Type(Float)
     expect(SomeType.test(10.1)).toBe(true)
     expect(SomeType.test(10)).toBe(false)
-    expect(SomeType.test('10.1')).toBe(false)
+    expect(SomeType.test('10.1')).toBe(true)
 
     const NumType = new Type(Float.String)
     expect(NumType.test(10.1)).toBe(false)
