@@ -883,8 +883,8 @@ export class Model {
     const Constructor = inherit(this)
     if (isObject(next)) {
       const metas = map(next, (value) => {
-        // make it easy to extend
-        if (isObject(value)) {
+        // make it easy to extend, 'default' is required
+        if (isObject(value) && value.default) {
           return new Meta(value)
         }
         else {
