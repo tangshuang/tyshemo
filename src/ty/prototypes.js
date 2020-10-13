@@ -31,58 +31,65 @@ export class Any extends Prototype {
 
 export class Numeric extends Prototype {
   name = 'Numeric'
-  validate = isNumeric
-  static String = Numeric
+  validate = value => isNumber(value) || isNumeric(value)
   static Number = class extends Numeric {
     validate = isNumber
+  }
+  static String = class extends Numeric {
+    validate = isNumeric
   }
 }
 
 export class Int extends Prototype {
   name = 'Int'
-  validate = value => isNumber(value) && Number.isInteger(value)
-  static Number = Int
+  validate = value => (isNumber(value) && Number.isInteger(value)) || (isNumeric(value) && Number.isInteger(+value))
+  static Number = class extends Int {
+    validate = value => isNumber(value) && Number.isInteger(value)
+  }
   static String = class extends Int {
-    validate = value => isNumeric(value) && value.indexOf('.') === -1
+    validate = value => isNumeric(value) && Number.isInteger(+value)
   }
 }
 
 export class Float extends Prototype {
   name = 'Float'
-  validate = value => isNumber(value) && !Number.isInteger(value)
-  static Number = Float
+  validate = value => (isNumber(value) && !Number.isInteger(value)) || (isNumeric(value) && !Number.isInteger(+value))
+  static Number = class extends Float {
+    validate = value => isNumber(value) && !Number.isInteger(value)
+  }
   static String = class extends Float {
-    validate = value => isNumeric(value) && value.indexOf('.') > -1
+    validate = value => isNumeric(value) && !Number.isInteger(+value)
   }
 }
 
 export class Negative extends Prototype {
   name = 'Negative'
-  validate = value => isNumber(value) && value < 0
-  static Number = Negative
+  validate = value => (isNumber(value) && value < 0) || (isNumeric(value) && +value < 0)
+  static Number = class extends Negative {
+    validate = value => isNumber(value) && value < 0
+  }
   static String = class extends Negative {
-    validate = value => isNumeric(value) && value.substr(0, 1) === '-'
+    validate = value => isNumeric(value) && +value < 0
   }
 }
 
 export class Positive extends Prototype {
   name = 'Positive'
-  validate = value => isNumber(value) && value > 0
-  static Number = Positive
-  static String = class extends Positive {
-    validate = value => isNumeric(value) && value.substr(0, 1) !== '-'
+  validate = value => (isNumber(value) && value > 0) || (isNumeric(value) && +value > 0)
+  static Number = class extends Positive {
+    validate = value => isNumber(value) && value > 0
   }
-}
-
-export class Finity extends Prototype {
-  name = 'Finity'
-  validate = value => isNumber(value) && Number.isFinite(value)
+  static String = class extends Positive {
+    validate = value => isNumeric(value) && +value > 0
+  }
 }
 
 export class Zero extends Prototype {
   name = 'Zero'
-  validate = value => value === 0
-  static Number = Zero
+  validate = value => value === 0 || value + '' === '0'
+  static Number = class extends Zero {
+    validate = value => value === 0
+  }
   static String = class extends Zero {
     validate = value => value + '' === '0'
   }
@@ -90,11 +97,18 @@ export class Zero extends Prototype {
 
 export class Natural extends Prototype {
   name = 'Natural'
-  validate = value => isNumber(value) && Number.isInteger(value) && value >= 0
-  static Number = Natural
+  validate = value => (isNumber(value) || isNumeric(value)) && Number.isInteger(+value) && +value >= 0
+  static Number = class extends Natural {
+    validate = value => isNumber(value) && Number.isInteger(value) && value >= 0
+  }
   static String = class extends Natural {
     validate = value => isNumeric(value) && Number.isInteger(+value) && +value >= 0
   }
+}
+
+export class Finity extends Prototype {
+  name = 'Finity'
+  validate = value => isNumber(value) && Number.isFinite(value)
 }
 
 export class String8 extends Prototype {
