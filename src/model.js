@@ -234,6 +234,10 @@ export class Model {
 
       // unwritable mandatory view properties
       Object.assign(viewDef, {
+        key: {
+          get: () => key,
+          enumerable: true,
+        },
         value: {
           get: () => this.get(key),
           set: (value) => this.set(key, value),
