@@ -3,7 +3,6 @@ import {
   isInheritedOf,
   isArray,
   map,
-  filter,
   each,
   flat,
   flatArray,
@@ -88,6 +87,7 @@ export class Model {
           return
         }
         $this.onError(e)
+        $this.emit('error', e)
       }
     }
     // create schema
@@ -97,6 +97,7 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
+    define(this, '$hooks', [])
 
     /**
      * create store
@@ -448,7 +449,7 @@ export class Model {
     }, true)
 
     // reset into store
-    const initParams = this.onSwitch(params) || params
+    const initParams = this.emit('switch', this.onSwitch(params) || params) || params
     this.$store.init(initParams)
 
     // patch those which are not in store but on `this`
@@ -469,6 +470,7 @@ export class Model {
     }
 
     this.onRestore()
+    this.emit('restore')
 
     return this
   }
@@ -587,7 +589,7 @@ export class Model {
     if (!key) {
       const errors = []
 
-      const errs = this.onCheck() || []
+      const errs = this.emit('check', this.onCheck()) || []
       errors.push(...errs)
 
       const keys = Object.keys(this.$schema)
@@ -619,7 +621,7 @@ export class Model {
     if (!key) {
       const errors = []
 
-      const errs = this.onCheck() || []
+      const errs = this.emit('check', this.onCheck()) || []
       errors.push(...errs)
 
       const keys = Object.keys(this.$schema)
@@ -655,7 +657,7 @@ export class Model {
     this.$children = []
 
     // when new Model, onParse may throw error
-    const entry = tryGet(() => this.onParse(json), json)
+    const entry = tryGet(() => this.emit('parse', this.onParse(json) || json) || json, json)
     const data = this.$schema.parse(entry, this)
     const next = { ...json, ...data }
     this.restore(next)
@@ -672,7 +674,7 @@ export class Model {
     this._check()
     const data = clone(this.$store.state) // original data
     const output = this.$schema.record(data, this)
-    const result = this.onRecord(output)
+    const result = this.emit('record', this.onRecord(output) || output) || output
     return result
   }
 
@@ -680,7 +682,7 @@ export class Model {
     this._check()
     const data = clone(this.$store.state) // original data
     const output = this.$schema.export(data, this)
-    const result = this.onExport(output)
+    const result = this.emit('export', this.onExport(output) || output) || output
     return result
   }
 
@@ -697,6 +699,32 @@ export class Model {
       formdata.append(key, value)
     })
     return formdata
+  }
+
+  on(hook, fn) {
+    this.$hooks.push({ hook, fn })
+    return this
+  }
+
+  off(hook, fn) {
+    this.$hooks.forEach((item, i) => {
+      if (hook === item.hook && (isUndefined(fn) || fn === item.fn)) {
+        this.$hooks.splice(i, 1)
+      }
+    })
+    return this
+  }
+
+  emit(hook, arg) {
+    let res = arg
+    this.$hooks.forEach((item) => {
+      if (hook !== item.hook) {
+        return
+      }
+      const { fn } = item
+      res = fn.call(this, res)
+    })
+    return res
   }
 
   // when initialized
@@ -791,6 +819,7 @@ export class Model {
       if (isInstanceOf(value, Model) && !value.$parent) {
         value.setParent(this, keys)
         value.onEnsure(this)
+        value.emit('ensure', this)
       }
     }
     const use = (value, key) => {
@@ -831,12 +860,14 @@ export class Model {
           str += isFunction(value) ? value + '' : ''
         }
         if (str.indexOf('this.$parent') > -1 && !this.$parent) {
-          this.onError({
+          const e = {
             key,
             attr,
             action: '_check $parent',
             message: `this.$parent is called in ${attr}, but current model has no $parent`,
-          })
+          }
+          this.onError(e)
+          this.emit('error', e)
         }
       })
     })
@@ -897,8 +928,13 @@ export class Model {
         return super.submit($this)
       }
     }
-    return new Editor(this)
+    const editor = new Editor(this)
+    this.onEdit(editor)
+    this.emit('edit', editor)
+    return editor
   }
+
+  onEdit() {}
 
   static enter(Model, fn) {
     if (isArray(Model)) {
@@ -972,7 +1008,7 @@ export class Model {
       const key = keys[i]
       const meta = this.$schema[key]
       if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
-        return  isFunction(fn) ? fn(key) : this.$views[key]
+        return isFunction(fn) ? fn(key) : this.$views[key]
       }
     }
   }
