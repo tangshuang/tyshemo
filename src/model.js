@@ -525,6 +525,8 @@ export class Model {
 
     this.$views[key].changed = true
 
+    this.emit('set', { key: keyPath, next: coming, prev })
+
     return coming
   }
 
