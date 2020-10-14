@@ -365,13 +365,14 @@ export class Schema {
       return prev
     }
 
+    const value = this.$set(key, next, context)
+
     // run checking even though force=false, so that we can catch the error
-    const error = this.check(key, next, context)
+    const error = this.check(key, value, context)
     if (meta.force && error) {
       return prev
     }
 
-    const value = this.$set(key, next, context)
     return value
   }
 
