@@ -323,7 +323,13 @@ export class Model {
       const { key } = e
       const root = key[0]
       const def = this.$schema[root]
+
       if (!def) {
+        return
+      }
+
+      // disable for private properties
+      if (inArray(key[key.length - 1][0], ['$', '_'])) {
         return
       }
 
@@ -331,8 +337,10 @@ export class Model {
       if (def.watch) {
         def.watch.call(this, e)
       }
+
       // check $parent
       this._ensure(root)
+
       // modify view.changed
       this.$views[root].changed = true
     }, true)
