@@ -681,6 +681,9 @@ export class Model {
     // we do not need $children
     delete this.$children
 
+    // reset changed, make sure changed=false after recompute
+    this.$views.$changed = false
+
     return this
   }
 
