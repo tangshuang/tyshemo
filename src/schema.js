@@ -285,8 +285,6 @@ export class Schema {
       )
     }
 
-    this.check(key, value, context)
-
     return value
   }
 
@@ -364,6 +362,12 @@ export class Schema {
         message: this.$message(key, 'readonly', context)(readonly),
       }
       this._catch(key, e, context)
+      return prev
+    }
+
+    // run checking even though force=false, so that we can catch the error
+    const error = this.check(key, next, context)
+    if (meta.force && error) {
       return prev
     }
 
@@ -784,7 +788,7 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { catch: handle, asset, create } = meta
+      const { catch: handle, asset, create, force } = meta
       const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
       const value = json[dataKey]
 
@@ -801,11 +805,10 @@ export class Schema {
         )
       }
 
-      if (isUndefined(coming)) {
+      if (isUndefined(coming) || (force && this.check(key, coming, context))) {
         coming = this.getDefault(key)
       }
 
-      this.check(key, coming, context)
       output[key] = coming
     })
 

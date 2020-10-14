@@ -1,6 +1,7 @@
 import Model from '../src/model.js'
 import Meta from '../src/meta.js'
 import { formatDate, createDate } from 'ts-fns'
+import { Numeric } from '../src/ty/index.js'
 
 describe('Meta', () => {
   test('extend', () => {
@@ -58,5 +59,25 @@ describe('Meta', () => {
 
     const json = some.toJSON()
     expect(json.time_at).toBe('2020-10-01')
+  })
+
+  test('force', () => {
+    class Price extends Meta {
+      static default = 0
+      static type = Numeric
+      static force = true
+    }
+    class Good extends Model {
+      static price = Price
+    }
+
+    const good = new Good()
+    expect(good.price).toBe(0)
+
+    good.price = null
+    expect(good.price).toBe(0)
+
+    good.price = 10
+    expect(good.price).toBe(10)
   })
 })

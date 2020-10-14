@@ -63,6 +63,8 @@ const attrs = {
   type: String,
   // optional, string, message to return when type checking fail
   message: '',
+  // optional, if true, when the given value does not pass type checking, the value will be replace with default value or previous value
+  force: Boolean,
 
   // optional
   validators: [

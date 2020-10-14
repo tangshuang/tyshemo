@@ -150,6 +150,7 @@ export class Model {
       compute: null,
       type: null,
       message: null,
+      force: null,
       validators: null,
       create: null,
       save: null,
@@ -472,6 +473,9 @@ export class Model {
         }
       })
     }
+
+    // reset changed
+    this.$views.$changed = false
 
     this.onRestore()
     this.emit('restore')
@@ -993,7 +997,7 @@ export class Model {
   }
 
   /**
-   * use a meta definition to find out schema node
+   * use a meta definition to find out view
    * @param {Meta} Meta
    * @param {function} [fn] key => any
    * @returns {view}
