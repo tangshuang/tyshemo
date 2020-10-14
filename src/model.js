@@ -310,14 +310,6 @@ export class Model {
       return output
     })
 
-    keys.forEach((key) => {
-      const def = this.$schema[key]
-      // watch
-      if (def.watch) {
-        this.watch(key, def.watch, true)
-      }
-    })
-
     // init data
     this._initData(data)
 
@@ -326,10 +318,24 @@ export class Model {
       value: () => this.recompute(['$parent']),
     })
 
-    // ensure top properties
-    this.watch('*', ({ key }) => {
-      this._ensure(key)
-    })
+    // register a listener
+    this.watch('*', (e) => {
+      const { key } = e
+      const root = key[0]
+      const def = this.$schema[root]
+      if (!def) {
+        return
+      }
+
+      // response for def.watch attribute
+      if (def.watch) {
+        def.watch.call(this, e)
+      }
+      // check $parent
+      this._ensure(root)
+      // modify view.changed
+      this.$views[root].changed = true
+    }, true)
   }
 
   _initData(data) {
@@ -530,8 +536,6 @@ export class Model {
     const prev = this.$store.get(key)
     const value = force ? this.$schema.$set(key, next, this) : this.$schema.set(key, next, prev, this)
     const coming = this.$store.set(key, value)
-
-    this.$views[key].changed = true
 
     this.emit('set', { key: keyPath, next: coming, prev })
 
