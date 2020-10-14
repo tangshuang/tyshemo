@@ -35,7 +35,7 @@ export class Validator {
 }
 export default Validator
 
-function required(message, fn) {
+function required(message, emptyFn) {
   return new Validator({
     determine(_, key) {
       if (!this || isUndefined(this.$views)) {
@@ -43,7 +43,7 @@ function required(message, fn) {
       }
       return this.$views && this.$views[key] && this.$views[key].required
     },
-    validate: value => !isEmpty(fn ? fn(value) : value),
+    validate: value => emptyFn ? !emptyFn(value) : !isEmpty(value),
     message,
     break: true,
   })
