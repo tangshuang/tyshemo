@@ -419,8 +419,13 @@ export class Schema {
         dontTry,
       )
 
-      // true, 'xxx', [], {}, 1, 2, 3...
       // private: if the validate result is an array, it may the submodel return the validate error directly
+      if (isArray(res)) {
+        return res
+      }
+
+      // true, 'xxx', {}, 1, 2, 3... are allowed
+      // if a dev want to use custom message, he can return an Error
       if (res && !isInstanceOf(res, Error)) {
         return
       }
@@ -468,7 +473,8 @@ export class Schema {
 
       const error = validate(validator, i, dontTry)
       if (isArray(error)) {
-        errors.push(...error)
+        const errs = error.filter(item => !!item && typeof item === 'object' && item.message)
+        errors.push(...errs)
         return isBreak
       }
       else if (error) {
@@ -661,11 +667,17 @@ export class Schema {
 
       const run = () => {
         return check().then((res) => {
-          // true, 'xxx', [], {}, 1, 2, 3...
           // private: if the validate result is an array, it may the submodel return the validate error directly
+          if (isArray(res)) {
+            return res
+          }
+
+          // true, 'xxx', {}, 1, 2, 3... are allowed
+          // if a dev want to use custom message, he can return an Error
           if (res && !isInstanceOf(res, Error)) {
             return
           }
+
           return create(res)
         })
       }
@@ -694,7 +706,8 @@ export class Schema {
         return validate(dontTry, validator, i).then((error) => {
           if (error) {
             if (isArray(error)) {
-              errors.push(...error)
+              const errs = error.filter(item => !!item && typeof item === 'object' && item.message)
+              errors.push(...errs)
             }
             else {
               errors.push(error)
