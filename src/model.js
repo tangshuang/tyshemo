@@ -177,8 +177,7 @@ export class Model {
       return
     }
 
-    const schema = this.$schema
-    const keys = Object.keys(schema)
+    const keys = Object.keys(this.$schema)
 
     // patch keys to this
     keys.forEach((key) => {
@@ -310,6 +309,14 @@ export class Model {
       return output
     })
 
+    // invoke `init` attribute
+    keys.forEach((key) => {
+      const meta = this.$schema[key]
+      if (meta.init) {
+        meta.init.call(this, key)
+      }
+    })
+
     // init data
     this._initData(data)
 
@@ -335,7 +342,7 @@ export class Model {
 
       // response for def.watch attribute
       if (def.watch) {
-        def.watch.call(this, e)
+        def.watch.call(this, e, key)
       }
 
       // check $parent

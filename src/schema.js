@@ -111,8 +111,8 @@ export class Schema {
         // required: { message() { return 'xxx' } }
         if (isFunction(message)) {
           finalMessage = this._trydo(
-            () => message.call(context, attr),
-            (error) => isFunction(handle) && handle.call(context, error) || defualtMessage,
+            () => message.call(context, attr, key),
+            (error) => isFunction(handle) && handle.call(context, error, key) || defualtMessage,
             {
               key,
               attr: 'message',
@@ -164,7 +164,7 @@ export class Schema {
         if (isFunction(determine)) {
           return this._trydo(
             () => determine.call(context, key),
-            (error) => isFunction(handle) && handle.call(context, error) || fallback,
+            (error) => isFunction(handle) && handle.call(context, error, key) || fallback,
             {
               key,
               attr,
@@ -182,7 +182,7 @@ export class Schema {
       if (isFunction(node)) {
         return this._trydo(
           () => node.call(context, key),
-          (error) => isFunction(handle) && handle.call(context, error) || fallback,
+          (error) => isFunction(handle) && handle.call(context, error, key) || fallback,
           {
             key,
             attr,
@@ -220,8 +220,8 @@ export class Schema {
 
     if (isFunction(getter)) {
       const coming = this._trydo(
-        () => getter.call(context, value),
-        (error) => isFunction(handle) && handle.call(context, error) || value,
+        () => getter.call(context, value, key),
+        (error) => isFunction(handle) && handle.call(context, error, key) || value,
         {
           key,
           attr: 'getter',
@@ -245,8 +245,8 @@ export class Schema {
 
     if (isFunction(formatter)) {
       const coming = this._trydo(
-        () => formatter.call(context, value),
-        (error) => isFunction(handle) && handle.call(context, error) || value,
+        () => formatter.call(context, value, key),
+        (error) => isFunction(handle) && handle.call(context, error, key) || value,
         {
           key,
           attr: 'formatter',
@@ -276,8 +276,8 @@ export class Schema {
 
     if (isFunction(setter)) {
       value = this._trydo(
-        () => setter.call(context, value),
-        (error) => isFunction(handle) && handle.call(context, error) || value,
+        () => setter.call(context, value, key),
+        (error) => isFunction(handle) && handle.call(context, error, key) || value,
         {
           key,
           attr: 'setter',
@@ -397,7 +397,7 @@ export class Schema {
       if (isFunction(determine)) {
         const bool = this._trydo(
           () => determine.call(context, value, key),
-          (error) => isFunction(handle) && handle.call(context, error) || false,
+          (error) => isFunction(handle) && handle.call(context, error, key) || false,
           {
             key,
             attr: 'validators[' + index + '].determine',
@@ -411,7 +411,7 @@ export class Schema {
 
       const res = this._trydo(
         () => validate.call(context, value, key),
-        (error) => isFunction(handle) && handle.call(context, error) || true,
+        (error) => isFunction(handle) && handle.call(context, error, key) || true,
         {
           key,
           attr: 'validators[' + index + '].validate',
@@ -433,7 +433,7 @@ export class Schema {
       if (isFunction(message)) {
         msg = this._trydo(
           () => message.call(context, value, key, res),
-          (error) => isFunction(handle) && handle.call(context, error) || msg || `${key} did not pass validators[${index}]`,
+          (error) => isFunction(handle) && handle.call(context, error, key) || msg || `${key} did not pass validators[${index}]`,
           {
             key,
             attr: 'validators[' + index + '].message',
@@ -798,7 +798,7 @@ export class Schema {
       if (isFunction(create)) {
         coming = this._trydo(
           () => create.call(context, value, key, json),
-          (error) => isFunction(handle) && handle.call(context, error) || value,
+          (error) => isFunction(handle) && handle.call(context, error, key) || value,
           {
             key,
             attr: 'create',
@@ -832,7 +832,7 @@ export class Schema {
       if (isFunction(flat)) {
         const res = this._trydo(
           () => flat.call(context, value, key, data) || {},
-          (error) => isFunction(handle) && handle.call(context, error) || {},
+          (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
             attr: 'flat',
@@ -848,7 +848,7 @@ export class Schema {
       if (isFunction(drop)) {
         const bool = this._trydo(
           () => drop.call(context, value, key, data),
-          (error) => isFunction(handle) && handle.call(context, error) || false,
+          (error) => isFunction(handle) && handle.call(context, error, key) || false,
           {
             key,
             attr: 'drop',
@@ -862,7 +862,7 @@ export class Schema {
       if (isFunction(map)) {
         const res = this._trydo(
           () => map.call(context, value, key, data),
-          (error) => isFunction(handle) && handle.call(context, error) || value,
+          (error) => isFunction(handle) && handle.call(context, error, key) || value,
           {
             key,
             attr: 'map',
@@ -895,7 +895,7 @@ export class Schema {
       if (isFunction(save)) {
         const res = this._trydo(
           () => save.call(context, value, key, data) || {},
-          (error) => isFunction(handle) && handle.call(context, error) || {},
+          (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
             attr: 'save',
@@ -944,7 +944,7 @@ export class Schema {
 
     const { catch: handle } = meta
     if (isFunction(handle)) {
-      handle.call(context, e)
+      handle.call(context, e, key)
     }
   }
 
