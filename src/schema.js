@@ -209,6 +209,10 @@ export class Schema {
     return this.$decide(key, 'readonly', context)(false)
   }
 
+  hidden(key, context) {
+    return this.$decide(key, 'hidden', context)(false)
+  }
+
   get(key, value, context) {
     const meta = this[key]
 
