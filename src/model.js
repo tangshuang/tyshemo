@@ -688,7 +688,7 @@ export class Model {
     // when new Model, onParse may throw error
     const entry = tryGet(() => this.emit('parse', this.onParse(json) || json) || json, json)
     const data = this.$schema.parse(entry, this)
-    const next = { ...json, ...data }
+    const next = { ...entry, ...data }
     this.restore(next)
 
     // ask children to recompute computed properties
