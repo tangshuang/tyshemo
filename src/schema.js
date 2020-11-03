@@ -797,6 +797,34 @@ export class Schema {
     return this.$validateAsync(key, value, context)([])
   }
 
+  $parse(key, value, data, context) {
+    const meta = this[key]
+    if (!meta) {
+      return value
+    }
+
+    const { catch: handle, create, force } = meta
+
+    let coming = value
+
+    if (isFunction(create)) {
+      coming = this._trydo(
+        () => create.call(context, value, key, data),
+        (error) => isFunction(handle) && handle.call(context, error, key) || value,
+        {
+          key,
+          attr: 'create',
+        },
+      )
+    }
+
+    if (isUndefined(coming) || (force && this.check(key, coming, context))) {
+      coming = this.getDefault(key)
+    }
+
+    return coming
+  }
+
   /**
    * parse data by passed data with `create` option, you'd better to call ensure to after parse to make sure your data is fix with type
    * @param {*} json
@@ -806,26 +834,11 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { catch: handle, asset, create, force } = meta
+      const { asset } = meta
       const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
       const value = json[dataKey]
 
-      let coming = value
-
-      if (isFunction(create)) {
-        coming = this._trydo(
-          () => create.call(context, value, key, json),
-          (error) => isFunction(handle) && handle.call(context, error, key) || value,
-          {
-            key,
-            attr: 'create',
-          },
-        )
-      }
-
-      if (isUndefined(coming) || (force && this.check(key, coming, context))) {
-        coming = this.getDefault(key)
-      }
+      const coming = this.$parse(key, value, json, context)
 
       output[key] = coming
     })

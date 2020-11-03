@@ -386,8 +386,9 @@ export class Model {
    * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
    * notice that, properties which are in original model be not in schema may be removed.
    * @param {*} data
+   * @param {string[]} keysPatchToThis keys those not in schema but path to this
    */
-  restore(data) {
+  restore(data, keysPatchToThis = []) {
     if (!this.$store.editable) {
       return this
     }
@@ -482,6 +483,12 @@ export class Model {
     each(data, (value, key) => {
       if (!inObject(key, params) && inObject(key, this)) {
         this[key] = value
+      }
+    })
+    // patch keys to this, i.e. this.fromJSON(data, ['polices']) => this.polices
+    keysPatchToThis.forEach((key) => {
+      if (!inObject(key, this)) {
+        this[key] = json[key]
       }
     })
 
@@ -677,7 +684,7 @@ export class Model {
    * use schema `create` option to generate and restore data
    * @param {*} json
    */
-  fromJSON(json) {
+  fromJSON(json, keysPatchToThis) {
     if (!this.$store.editable) {
       return this
     }
@@ -689,7 +696,7 @@ export class Model {
     const entry = tryGet(() => this.emit('parse', this.onParse(json) || json) || json, json)
     const data = this.$schema.parse(entry, this)
     const next = { ...entry, ...data }
-    this.restore(next)
+    this.restore(next, keysPatchToThis)
 
     // ask children to recompute computed properties
     this.$children.forEach(child => child.recompute(['$parent'], true))
@@ -708,6 +715,22 @@ export class Model {
     const output = this.$schema.record(data, this)
     const result = this.emit('record', this.onRecord(output) || output) || output
     return result
+  }
+
+  /**
+   * update model by passing data, which will use schema `create` attribute to generate value
+   * @param {*} data
+   */
+  fromParts(data) {
+    const output = {}
+
+    each(data, (value, key) => {
+      const coming = this.$schema.$parse(key, value, data, this)
+      output[key] = coming
+    })
+
+    this.update(output)
+    return this
   }
 
   toData() {
