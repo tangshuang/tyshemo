@@ -720,11 +720,15 @@ export class Model {
   /**
    * update model by passing data, which will use schema `create` attribute to generate value
    * @param {*} data
+   * @param {string[]} onlyKeys the keys outside of this array will not be set, if not set, all keys will be used
    */
-  fromParts(data) {
+  fromParts(data, onlyKeys) {
     const output = {}
 
     each(data, (value, key) => {
+      if (onlyKeys && !inArray(key, onlyKeys)) {
+        return
+      }
       const coming = this.$schema.$parse(key, value, data, this)
       output[key] = coming
     })
