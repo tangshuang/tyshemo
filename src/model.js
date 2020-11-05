@@ -860,6 +860,14 @@ export class Model {
     return this
   }
 
+  setAttr(key) {
+    return (attr, value) => {
+      if (this.$views[key]) {
+        this.$views[key][attr] = value
+      }
+    }
+  }
+
   recompute(matchers, silent) {
     each(this.$schema, (meta, key) => {
       const { compute } = meta
@@ -981,7 +989,18 @@ export class Model {
             configurable: true,
           })
         }
+
         super.init(data)
+
+        // override current metas to editable metas
+        each($this.$views, (view, key) => {
+          each(view, (descriptor, attr) => {
+            if ('value' in descriptor) {
+              const { value } = descriptor
+              this.setAttr(key, attr, value)
+            }
+          }, true)
+        })
       }
       submit() {
         return super.submit($this)
