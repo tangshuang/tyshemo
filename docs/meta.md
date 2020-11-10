@@ -119,6 +119,8 @@ const attrs = {
   required: Boolean,
   // optional, function or boolean
   hidden: Boolean,
+  // optional, function to determine the value is empty
+  empty: Function,
 
   // when this field's value changed, the `watch` function will be invoke
   watch({ value }) {},

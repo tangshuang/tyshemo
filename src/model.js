@@ -166,6 +166,7 @@ export class Model {
       disabled: false,
       required: false,
       hidden: false,
+      empty: null,
       watch: null,
       catch: null,
       state: null,
@@ -233,6 +234,7 @@ export class Model {
       }, true)
 
       // unwritable mandatory view properties
+      const getData = () => this.$store.get(key)
       Object.assign(viewDef, {
         key: {
           get: () => key,
@@ -244,15 +246,19 @@ export class Model {
           enumerable: true,
         },
         errors: {
-          get: () => makeMsg(this.$schema.$validate(key, this.$store.get(key), this)([])),
+          get: () => makeMsg(this.$schema.$validate(key, getData(), this)([])),
+          enumerable: true,
+        },
+        empty: {
+          get: () => this.$schema.empty(key, getData(), this),
           enumerable: true,
         },
         data: {
-          get: () => this.$store.get(key),
+          get: () => getData(),
           enumerable: true,
         },
         text: {
-          get: () => this.$schema.format(key, this.$store.get(key), this) + '',
+          get: () => this.$schema.format(key, getData(), this) + '',
           enumerable: true,
         },
         state: {

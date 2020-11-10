@@ -213,6 +213,24 @@ export class Schema {
     return this.$decide(key, 'hidden', context)(false)
   }
 
+  empty(key, value, context) {
+    const meta = this[key]
+    const { empty, catch: handle } = meta
+
+    if (!empty) {
+      return isEmpty(value)
+    }
+
+    return this._trydo(
+      () => empty.call(context, value, key),
+      (error) => isFunction(handle) && handle.call(context, error, key) || isEmpty(value),
+      {
+        key,
+        attr: 'empty',
+      },
+    )
+  }
+
   get(key, value, context) {
     const meta = this[key]
 
