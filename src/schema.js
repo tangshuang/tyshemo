@@ -859,6 +859,10 @@ export class Schema {
       const { drop, map, flat, catch: handle } = meta
       const value = data[key]
 
+      if (this.disabled(key, context)) {
+        return
+      }
+
       if (isFunction(flat)) {
         const res = this._trydo(
           () => flat.call(context, value, key, data) || {},
