@@ -44,10 +44,14 @@ function required(message, emptyFn) {
       return this.$views && this.$views[key] && this.$views[key].required
     },
     validate(value) {
+      // emptyFn has higher priority
+      if (emptyFn) {
+        return !emptyFn(value)
+      }
       if (this && this.$views && this.$views[key]) {
         return this.$views[key].empty
       }
-      return emptyFn ? !emptyFn(value) : !isEmpty(value)
+      return !isEmpty(value)
     },
     message,
     break: true,
