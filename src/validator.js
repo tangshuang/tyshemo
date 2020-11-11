@@ -49,7 +49,7 @@ function required(message, emptyFn) {
         return !emptyFn(value)
       }
       if (this && this.$views && this.$views[key]) {
-        return this.$views[key].empty
+        return !this.$views[key].empty
       }
       return !isEmpty(value)
     },
