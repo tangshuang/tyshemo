@@ -953,7 +953,12 @@ export class Schema {
             attr: 'save',
           },
         )
-        if (asset) {
+
+        // has asset but return an object which contains the asset key
+        if (asset && isObject(res) && inObject(dataKey, res)) {
+          patchObj(output, res)
+        }
+        else if (asset) {
           patchObj(output, { [dataKey]: res })
         }
         else if (isObject(res)) {
