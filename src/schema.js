@@ -956,8 +956,12 @@ export class Schema {
         if (asset) {
           patchObj(output, { [dataKey]: res })
         }
-        else {
+        else if (isObject(res)) {
           patchObj(output, res)
+        }
+        // if res is not an object, use it as value directly
+        else {
+          patchObj(output, { [dataKey]: res })
         }
       }
       else {
