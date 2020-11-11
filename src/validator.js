@@ -43,7 +43,12 @@ function required(message, emptyFn) {
       }
       return this.$views && this.$views[key] && this.$views[key].required
     },
-    validate: value => emptyFn ? !emptyFn(value) : !isEmpty(value),
+    validate(value) {
+      if (this && this.$views && this.$views[key]) {
+        return this.$views[key].empty
+      }
+      return emptyFn ? !emptyFn(value) : !isEmpty(value)
+    },
     message,
     break: true,
   })
