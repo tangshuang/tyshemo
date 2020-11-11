@@ -38,12 +38,12 @@ export default Validator
 function required(message, emptyFn) {
   return new Validator({
     determine(_, key) {
-      if (!this || isUndefined(this.$views)) {
-        return true
+      if (this && this.$views && this.$views[key]) {
+        return this.$views[key].required
       }
-      return this.$views && this.$views[key] && this.$views[key].required
+      return true
     },
-    validate(value) {
+    validate(value, key) {
       // emptyFn has higher priority
       if (emptyFn) {
         return !emptyFn(value)
