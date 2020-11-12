@@ -5,6 +5,7 @@ import {
   isInheritedOf,
   isConstructor,
   isArray,
+  isObject,
 } from 'ts-fns'
 
 export function ofChain(target, TopConstructor) {
