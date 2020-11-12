@@ -57,6 +57,9 @@ export function patchObj(source, input) {
     if (isArray(src) && isArray(value)) {
       src.push(...value)
     }
+    else if (isObject(src) && isObject(value)) {
+      patchObj(src, value)
+    }
     else {
       source[key] = value
     }
