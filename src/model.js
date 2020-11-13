@@ -728,7 +728,7 @@ export class Model {
    * @param {*} data
    * @param {string[]} onlyKeys the keys outside of this array will not be set, if not set, all keys will be used
    */
-  fromParts(data, onlyKeys) {
+  fromJSONPatch(data, onlyKeys) {
     const output = {}
 
     each(data, (value, key) => {
@@ -740,6 +740,15 @@ export class Model {
     })
 
     this.update(output)
+
+    // reset changed, make sure changed=false after recompute
+    const keys = Object.keys(output)
+    keys.forEach((key) => {
+      if (this.$views[key]) {
+        this.$views[key].changed = false
+      }
+    })
+
     return this
   }
 
