@@ -1,4 +1,4 @@
-import { Store, COMPUTED_FAILURE } from '../src/store.js'
+import { Store } from '../src/store.js'
 import { Model } from '../src/model.js'
 import Meta from '../src/meta.js'
 
@@ -255,34 +255,10 @@ describe('Store', () => {
     expect(store.get('name')).toBe('tomy')
   })
 
-  test('computed with error at the first time', () => {
-    const store = new Store({
-      get age() {
-        return this.$parent.age - 24
-      }
-    })
-
-    // at the first time, this.$parent is undefined,
-    // an error ocurs when compute,
-    // `age` will be set COMPUTED_FAILURE
-    expect(store.state.age).toBeUndefined()
-    expect(store.data.age).toBe(COMPUTED_FAILURE)
-
-    let count = 0
-    store.watch('age', () => count ++)
-
-    // patch $parent, so that computed property will work
-    store.state.$parent = {
-      age: 30,
-    }
-    expect(store.state.age).toBe(6)
-    expect(count).toBe(1)
-  })
-
   test('change computed manually', () => {
     const store = new Store({
       get age() {
-        return this.$parent.age - 24
+        return
       }
     })
 

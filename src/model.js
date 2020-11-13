@@ -18,7 +18,6 @@ import {
   isNull,
   inherit,
   inArray,
-  isEmpty,
   getConstructorOf,
   isEqual,
   isConstructor,
@@ -26,7 +25,7 @@ import {
 } from 'ts-fns'
 
 import _Schema from './schema.js'
-import _Store, { COMPUTED_FAILURE } from './store.js'
+import _Store from './store.js'
 import { ofChain, tryGet, makeMsg } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import Meta from './meta.js'
@@ -234,7 +233,7 @@ export class Model {
       }, true)
 
       // unwritable mandatory view properties
-      const getData = () => this.$store.get(key)
+      const getData = () => this._getData(key)
       Object.assign(viewDef, {
         key: {
           get: () => key,
@@ -325,11 +324,6 @@ export class Model {
 
     // init data
     this._initData(data)
-
-    // bind recompute
-    define(this, '$recomputeByParent', {
-      value: () => this.recompute(['$parent']),
-    })
 
     // register a listener
     this.watch('*', (e) => {
@@ -424,16 +418,7 @@ export class Model {
 
     // those on schema
     each(schema, (def, key) => {
-      const { compute } = def
-      if (compute) {
-        define(params, key, {
-          enumerable: true,
-          get: () => compute.call(this),
-        })
-        // may restore computed property
-        record(key)
-      }
-      else if (inObject(key, data)) {
+      if (inObject(key, data)) {
         const value = data[key]
         params[key] = value
         ensure(value, [key])
@@ -498,16 +483,6 @@ export class Model {
       }
     })
 
-    // reset `input` to store
-    if (!isEmpty(input)) {
-      each(input, (value, key) => {
-        // only reset those which are computing failure
-        if (this.$store.get(key) === COMPUTED_FAILURE) {
-          this.$store.set(key, value, true)
-        }
-      })
-    }
-
     // reset changed
     this.$views.$changed = false
 
@@ -525,9 +500,8 @@ export class Model {
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.shift()
 
-    const value = this.$store.get(key)
+    const value = this._getData(key)
     const transformed = this.$schema.get(key, value, this)
-
     const output = parse(transformed, chain)
     return output
   }
@@ -653,7 +627,7 @@ export class Model {
     }
 
     this._check(key, true)
-    const value = this.$store.get(key)
+    const value = this._getData(key)
     const errors = this.$schema.validate(key, value, this)
     return makeMsg(errors)
   }
@@ -681,9 +655,36 @@ export class Model {
     }
 
     this._check(key, true)
-    const value = this.$store.get(key)
+    const value = this._getData(key)
     const errors =  this.$schema.validateAsync(key, value, this)
     return makeMsg(errors)
+  }
+
+  _getData(key) {
+    const value = this.$store.get(key)
+    const meta = this.$schema[key]
+
+    if (meta && meta.compute) {
+      return tryGet(() => meta.compute.call(this), value)
+    }
+    else {
+      return value
+    }
+  }
+
+  _bundleData() {
+    const state = this.$store.state
+    const schema = this.$schema
+    const computed = {}
+
+    each(schema, (meta, key) => {
+      if (meta.compute) {
+        const value = tryGet(() => meta.compute.call(this), state[key])
+        computed[key] = value
+      }
+    })
+
+    return { ...state, ...computed }
   }
 
   /**
@@ -705,7 +706,7 @@ export class Model {
     this.restore(next, keysPatchToThis)
 
     // ask children to recompute computed properties
-    this.$children.forEach(child => child.recompute(['$parent'], true))
+    this.$children.forEach(child => child.onRegress())
     // we do not need $children
     delete this.$children
 
@@ -717,7 +718,7 @@ export class Model {
 
   toJSON() {
     this._check()
-    const data = clone(this.$store.state) // original data
+    const data = clone(this._bundleData()) // original data
     const output = this.$schema.record(data, this)
     const result = this.emit('record', this.onRecord(output) || output) || output
     return result
@@ -754,7 +755,7 @@ export class Model {
 
   toData() {
     this._check()
-    const data = clone(this.$store.state) // original data
+    const data = clone(this._bundleData()) // original data
     const output = this.$schema.export(data, this)
     const result = this.emit('export', this.onExport(output) || output) || output
     return result
@@ -832,6 +833,8 @@ export class Model {
 
   onRestore() {}
 
+  onRegress() {}
+
   lock() {
     this.$store.editable = true
   }
@@ -844,13 +847,6 @@ export class Model {
     if (this.$parent && this.$parent === parent && this.$keyPath && isEqual(this.$keyPath, keyPath)) {
       return this
     }
-
-    // unbind previous parent
-    if (this.$parent) {
-      this.$parent.unwatch('*', this.$recomputeByParent)
-    }
-    // recompute when parent change
-    parent.watch('*', this.$recomputeByParent, true)
 
     define(this, '$parent', {
       value: parent,
@@ -869,7 +865,7 @@ export class Model {
     }
     // recompute depend on $parent
     else {
-      this.recompute(['$parent'])
+      this.onRegress()
     }
 
     return this
@@ -881,19 +877,6 @@ export class Model {
         this.$views[key][attr] = value
       }
     }
-  }
-
-  recompute(matchers, silent) {
-    each(this.$schema, (meta, key) => {
-      const { compute } = meta
-      if (!compute) {
-        return
-      }
-      if (matchers && !matchers.some(matcher => (compute + '').indexOf(matcher) > -1)) {
-        return
-      }
-      this.$store._refine(key, silent)
-    })
   }
 
   _ensure(key) {
@@ -914,7 +897,7 @@ export class Model {
     }
 
     const root = isArray(key) ? key[0] : key
-    const value = this.$store.get(root)
+    const value = this._getData(root)
     use(value, key)
   }
 

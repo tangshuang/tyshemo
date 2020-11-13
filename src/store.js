@@ -12,10 +12,6 @@ import {
   isSymbol,
 } from 'ts-fns'
 
-import { tryGet } from './shared/utils.js'
-
-export const COMPUTED_FAILURE = Symbol('COMPUTED_FAILURE')
-
 export class Store {
   constructor(params = {}) {
     this.data = null
@@ -38,6 +34,7 @@ export class Store {
   }
 
   init(params) {
+    const latestSilent = this.silent
     this.silent = true
 
     // remove binders if exist
@@ -71,11 +68,7 @@ export class Store {
 
         this._depend(keyPath)
 
-        if (active !== COMPUTED_FAILURE) {
-          return active
-        }
-
-        // if it is a computed property, but calculation failure, return undefined
+        return active
       },
       set: (keyPath, value) => {
         // computed property
@@ -128,8 +121,7 @@ export class Store {
     // descriptors
     each(params, (descriptor, key) => {
       // make value patch to data, so that the data has initialized value which is needed in compute
-      const value = descriptor.get ? tryGet(() => params[key], COMPUTED_FAILURE) : params[key]
-      this.state[key] = value
+      this.state[key] = params[key]
 
       // now all keys have been generated
 
@@ -148,7 +140,7 @@ export class Store {
       }
     })
 
-    this.silent = false
+    this.silent = latestSilent
   }
 
   get(keyPath) {
@@ -392,7 +384,7 @@ export class Store {
     }
 
     const value = this._compute(key)
-    this.set(key, value, silent || value === COMPUTED_FAILURE)
+    this.set(key, value, silent)
   }
 
   // collect dependencies, re-compute value
@@ -415,7 +407,7 @@ export class Store {
       return
     }
 
-    const value = tryGet(() => descriptor.get.call(this.state), COMPUTED_FAILURE)
+    const value = descriptor.get.call(this.state)
     return value
   }
 

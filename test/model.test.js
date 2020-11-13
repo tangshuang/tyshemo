@@ -605,12 +605,8 @@ describe('Model', () => {
 
     expect(one.child.age).toBe(4)
 
-    let count = 0
-    one.child.watch('age', () => count ++)
-
     one.age = 40
     expect(one.child.age).toBe(14)
-    expect(count).toBe(1)
   })
 
   test('children (list) depend on $parent', () => {
