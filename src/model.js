@@ -663,8 +663,14 @@ export class Model {
   _getData(key) {
     const value = this.$store.get(key)
     const meta = this.$schema[key]
+    const view = this.$views[key]
 
-    if (meta && meta.compute) {
+    // if value is changed manully, we will use changed value
+    if (view && view.changed) {
+      return value
+    }
+    // if value is not changed, we will use computed value
+    else if (meta && meta.compute) {
       return tryGet(() => meta.compute.call(this), value)
     }
     else {
@@ -675,9 +681,13 @@ export class Model {
   _bundleData() {
     const state = this.$store.state
     const schema = this.$schema
+    const views = this.$views
     const computed = {}
 
     each(schema, (meta, key) => {
+      if (views[key] && views[key].changed) {
+        return
+      }
       if (meta.compute) {
         const value = tryGet(() => meta.compute.call(this), state[key])
         computed[key] = value
