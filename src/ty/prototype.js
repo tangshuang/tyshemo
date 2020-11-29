@@ -78,7 +78,7 @@ Prototype.is = (proto) => ({
     }
 
     if (isConstructor(proto)) {
-      return isInstanceOf(value, proto)
+      return isInstanceOf(value, proto) || (isConstructor(value) && isInheritedOf(value, proto))
     }
 
     return false
