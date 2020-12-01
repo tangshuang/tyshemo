@@ -560,6 +560,12 @@ export class Model {
     return this
   }
 
+  reset(key) {
+    const value = this.$schema.getDefault(key)
+    this.set(key, value, true)
+    return this
+  }
+
   define(key, value) {
     if (!this.$store.editable) {
       return parse(this, keyPath)
