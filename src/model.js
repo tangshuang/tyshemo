@@ -327,7 +327,7 @@ export class Model {
 
     // register a listener
     this.watch('*', (e) => {
-      const { key } = e
+      const { key, value } = e
       const root = key[0]
       const def = this.$schema[root]
 
@@ -350,6 +350,8 @@ export class Model {
 
       // modify view.changed
       this.$views[root].changed = true
+
+      this.onChange(key)
     }, true)
   }
 
@@ -820,36 +822,28 @@ export class Model {
 
   // when initialized
   onInit() {}
-
   // before restore model datas
   onSwitch(params) {
     return params
   }
-
   // parse data before parse, should be override
   onParse(data) {
     return data
   }
-
   // by toJSON
   onRecord(data) {
     return data
   }
-
   // serialize data after export, should be override
   onExport(data) {
     return data
   }
-
   onCheck() {}
-
   onError() {}
-
   onEnsure() {}
-
   onRestore() {}
-
   onRegress() {}
+  onChange(key) {}
 
   lock() {
     this.$store.editable = true
