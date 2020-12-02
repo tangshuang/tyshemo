@@ -327,7 +327,7 @@ export class Model {
 
     // register a listener
     this.watch('*', (e) => {
-      const { key, value } = e
+      const { key } = e
       const root = key[0]
       const def = this.$schema[root]
 
@@ -351,7 +351,7 @@ export class Model {
       // modify view.changed
       this.$views[root].changed = true
 
-      this.onChange(key)
+      this.onChange(root)
     }, true)
   }
 
