@@ -400,6 +400,8 @@ export class Model {
     const params = {}
     const input = {}
 
+    let stored = false
+
     const ensure = (value, keys) => {
       if (isArray(value)) {
         value.forEach((item, i) => ensure(item, [...keys, i]))
@@ -418,20 +420,6 @@ export class Model {
       }
     }
 
-    // those on schema
-    each(schema, (def, key) => {
-      if (inObject(key, data)) {
-        const value = data[key]
-        params[key] = value
-        ensure(value, [key])
-      }
-      else {
-        const value = schema.getDefault(key, this)
-        params[key] = value
-        ensure(value, [key])
-      }
-    })
-
     // patch state
     each(state, (descriptor, key) => {
       if (descriptor.get || descriptor.set) {
@@ -447,12 +435,29 @@ export class Model {
       }
       // define state here so that we can invoke this.state() only once when initialize
       define(this, key, {
-        get: () => this.get(key),
+        // why here we use stored to determine?
+        // when we call new Model, here we will get the passed state, so that we can get state value in default()
+        get: () => stored ? this.get(key) : inObject(key, data) ? data[key] : state[key],
         set: (value) => this.set(key, value),
         enumerable: true,
         configurable: true,
       })
     }, true)
+
+    // those on schema
+    each(schema, (def, key) => {
+      if (inObject(key, data)) {
+        const value = data[key]
+        params[key] = value
+        ensure(value, [key])
+      }
+      else {
+        // notice here, we call this in default(), we can get passed state properties
+        const value = schema.getDefault(key, this)
+        params[key] = value
+        ensure(value, [key])
+      }
+    })
 
     // delete the outdate properties
     each(this.$store.state, (_, key) => {
@@ -471,6 +476,8 @@ export class Model {
     // reset into store
     const initParams = this.emit('switch', this.onSwitch(params) || params) || params
     this.$store.init(initParams)
+
+    stored = true
 
     // patch those which are not in store but on `this`
     each(data, (value, key) => {
