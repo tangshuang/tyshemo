@@ -51,11 +51,11 @@ export class Schema {
    * get default value by using `default` option
    * @param {*} key
    */
-  getDefault(key) {
+  getDefault(key, context) {
     const meta = this[key]
     const { default: defaultValue } = meta
     if (isFunction(defaultValue)) {
-      return defaultValue()
+      return defaultValue.call(context)
     }
     else if (isObject(defaultValue) || isArray(defaultValue)) {
       return clone(defaultValue)
@@ -837,7 +837,7 @@ export class Schema {
     }
 
     if (isUndefined(coming) || (force && this.check(key, coming, context))) {
-      coming = this.getDefault(key)
+      coming = this.getDefault(key, context)
     }
 
     return coming

@@ -426,7 +426,7 @@ export class Model {
         ensure(value, [key])
       }
       else {
-        const value = schema.getDefault(key)
+        const value = schema.getDefault(key, this)
         params[key] = value
         ensure(value, [key])
       }
@@ -563,7 +563,7 @@ export class Model {
   }
 
   reset(key) {
-    const value = this.$schema.getDefault(key)
+    const value = this.$schema.getDefault(key, this)
     this.set(key, value, true)
     return this
   }
