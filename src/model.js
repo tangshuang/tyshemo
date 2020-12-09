@@ -45,7 +45,7 @@ import Meta from './meta.js'
  *            onInit, onParse, onExport,
  */
 export class Model {
-  constructor(data = {}) {
+  constructor(data = {}, keyPath, parent) {
     const $this = this
 
     /**
@@ -97,6 +97,11 @@ export class Model {
     }
     define(this, '$schema', schema)
     define(this, '$hooks', [])
+
+    // use passed parent
+    if (keyPath && isInstanceOf(parent, Model)) {
+      this.setParent(isArray(keyPath) ? keyPath : [keyPath], parent)
+    }
 
     /**
      * create store
@@ -410,7 +415,7 @@ export class Model {
       if (!isInstanceOf(value, Model)) {
         return
       }
-      value.setParent(this, keys)
+      value.setParent(keys, this)
     }
     const record = (key) => {
       if (inObject(key, data)) {
@@ -860,7 +865,11 @@ export class Model {
     this.$store.editable = false
   }
 
-  setParent(parent, keyPath) {
+  /**
+   * @param {array} keyPath
+   * @param {Model} parent
+   */
+  setParent(keyPath, parent) {
     if (this.$parent && this.$parent === parent && this.$keyPath && isEqual(this.$keyPath, keyPath)) {
       return this
     }
@@ -899,7 +908,7 @@ export class Model {
   _ensure(key) {
     const add = (value, keys) => {
       if (isInstanceOf(value, Model) && !value.$parent) {
-        value.setParent(this, keys)
+        value.setParent(keys, this)
         value.onEnsure(this)
         value.emit('ensure', this)
       }
@@ -1032,11 +1041,24 @@ export class Model {
   static enter(Model, fn) {
     if (isArray(Model)) {
       const SubModel = Model[0]
-      const create = (items) => items.map((item) => {
-        return Model.some(One => isInstanceOf(item, One)) ? item
-          : isObject(item) ? new SubModel(item)
-          : null
-      }).filter(item => !!item)
+      const gen = function(items, key) {
+        const nexts = items.filter((item) => {
+          if (Model.some(One => isInstanceOf(item, One))) {
+            return true
+          }
+          if (isObject(item)) {
+            return true
+          }
+          return false
+        })
+        const values = nexts.map((next, i) => {
+          const value = isInstanceOf(next, Model) ? next.setParent([key, i], this)
+            : isObject(next) ? new SubModel(next, [key, i], this)
+            : new SubModel({}, [key, i], this)
+          return value
+        })
+        return values
+      }
       return new Meta({
         default: () => [],
         type: Model,
@@ -1045,36 +1067,42 @@ export class Model {
             validate: ms => flatArray(map(ms, m => m.validate())),
           },
         ],
-        create: (value, key, data) => {
-          const next = fn ? fn(value, key, data) || value : value
-          return isArray(next) ? create(next) : []
+        create(value, key, data) {
+          const items = fn ? fn.call(this, value, key, data) || value : value
+          return isArray(items) ? gen.call(this, items, key) : []
         },
         save: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
         map: ms => ms.map(m => m.toData()),
-        setter: value => isArray(value) ? create(value) : [],
+        setter(value, key) {
+          return isArray(value) ? gen.call(this, value, key) : []
+        },
       })
     }
     else {
-      const create = (value) => {
-        return isInstanceOf(value, Model) ? value
-          : isObject(value) ? new Model(value)
-          : new Model()
+      const gen = function(value, key) {
+        return isInstanceOf(value, Model) ? value.setParent([key], this)
+          : isObject(value) ? new Model(value, [key], this)
+          : new Model({}, [key], this)
       }
       return new Meta({
-        default: () => create(),
+        default(key){
+          return gen.call(this, {}, key)
+        },
         type: Model,
         validators: [
           {
             validate: m => m.validate(),
           },
         ],
-        create: (value, key, data) => {
-          const next = fn ? fn(value, key, data) || value : value
-          return create(next)
+        create(value, key, data) {
+          const next = fn ? fn.call(this, value, key, data) || value : value
+          return gen.call(this, next, key)
         },
         save: (m, key) => ({ [key]: m.toJSON() }),
         map: m => m.toData(),
-        setter: value => create(value),
+        setter(value, key) {
+          return gen.call(this, value, key)
+        },
       })
     }
   }

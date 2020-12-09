@@ -55,7 +55,7 @@ export class Schema {
     const meta = this[key]
     const { default: defaultValue } = meta
     if (isFunction(defaultValue)) {
-      return defaultValue.call(context)
+      return defaultValue.call(context, key)
     }
     else if (isObject(defaultValue) || isArray(defaultValue)) {
       return clone(defaultValue)
