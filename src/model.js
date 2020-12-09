@@ -361,9 +361,9 @@ export class Model {
   }
 
   _initData(data) {
-    this.$init = true
+    this.$initing = true
     this.fromJSON(data)
-    delete this.$init
+    delete this.$initing
   }
 
   _combineState() {
@@ -1052,7 +1052,7 @@ export class Model {
           return false
         })
         const values = nexts.map((next, i) => {
-          const value = isInstanceOf(next, Model) ? next.setParent([key, i], this)
+          const value = Model.some(One => isInstanceOf(next, One)) ? next.setParent([key, i], this)
             : isObject(next) ? new SubModel(next, [key, i], this)
             : new SubModel({}, [key, i], this)
           return value
