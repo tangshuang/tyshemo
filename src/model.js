@@ -405,8 +405,6 @@ export class Model {
     const params = {}
     const input = {}
 
-    let stored = false
-
     const ensure = (value, keys) => {
       if (isArray(value)) {
         value.forEach((item, i) => ensure(item, [...keys, i]))
@@ -440,9 +438,7 @@ export class Model {
       }
       // define state here so that we can invoke this.state() only once when initialize
       define(this, key, {
-        // why here we use stored to determine?
-        // when we call new Model, here we will get the passed state, so that we can get state value in default()
-        get: () => stored ? this.get(key) : inObject(key, data) ? data[key] : state[key],
+        get: () => this.get(key),
         set: (value) => this.set(key, value),
         enumerable: true,
         configurable: true,
@@ -481,8 +477,6 @@ export class Model {
     // reset into store
     const initParams = this.emit('switch', this.onSwitch(params) || params) || params
     this.$store.init(initParams)
-
-    stored = true
 
     // patch those which are not in store but on `this`
     each(data, (value, key) => {
@@ -728,6 +722,19 @@ export class Model {
 
     // prepare for sub models
     this.$children = []
+
+    // patch state into this, so that we can get passed state in default()
+    // dont be worried about reactive, the properties will be override by restore()
+    const state = this._combineState()
+    const patches = map(state, (value, key) => {
+      if (inObject(key, json)) {
+        return json[key]
+      }
+      else {
+        return value
+      }
+    })
+    Object.assign(this, patches)
 
     // when new Model, onParse may throw error
     const entry = tryGet(() => this.emit('parse', this.onParse(json) || json) || json, json)
