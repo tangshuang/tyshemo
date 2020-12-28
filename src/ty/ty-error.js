@@ -300,9 +300,12 @@ function makeValueString(value, sensitive = false, breakline = true, space = 2) 
     else if (typeof value === 'function') { // for native functions or classes
       return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
     }
-    else {
+    else if (value.toString) {
       const output = value.toString()
       return output
+    }
+    else {
+      return value + ''
     }
   }
 
