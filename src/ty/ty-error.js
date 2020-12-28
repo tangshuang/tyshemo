@@ -184,7 +184,6 @@ function makeErrorMessage(type, params, templates) {
 }
 
 function makeValueString(value, sensitive = false, breakline = true, space = 2) {
-  const totype = typeof value
   const britems = (items, start, end, space = 2) => {
     if (!breakline) {
       return start + items.join(',') + end
@@ -257,6 +256,7 @@ function makeValueString(value, sensitive = false, breakline = true, space = 2) 
   const records = []
 
   function make(value, sensitive = false, breakline = true, space = 2) {
+    const totype = typeof value
     if (inArray(totype, ['boolean', 'undefined']) || isNull(value) || isNaN(value)) {
       return value + ''
     }
@@ -300,12 +300,9 @@ function makeValueString(value, sensitive = false, breakline = true, space = 2) 
     else if (typeof value === 'function') { // for native functions or classes
       return value.name ? value.name : value.constructor ? value.constructor.name : 'Function'
     }
-    else if (value.toString) {
+    else {
       const output = value.toString()
       return output
-    }
-    else {
-      return value + ''
     }
   }
 
