@@ -93,6 +93,18 @@ export class Model {
     let schema = this.schema(Schema)
     // support schema instance or object
     if (!isInstanceOf(schema, _Schema)) {
+      schema = map(schema, (value) => {
+        if (!value) {
+          return
+        }
+        if (isInstanceOf(value, Meta) || isInheritedOf(value, Meta)) {
+          return value
+        }
+        // support use a object which contains a 'default' property to be a Meta
+        if (isObject(value) && inObject('default', value)) {
+          return new Meta(value)
+        }
+      })
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
