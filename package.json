@@ -43,6 +43,6 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "ts-fns": "^8.1.10"
+    "ts-fns": "^9.0.2"
   }
 }

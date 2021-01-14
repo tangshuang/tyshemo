@@ -104,6 +104,8 @@ export class Model {
         if (isObject(value) && inObject('default', value)) {
           return new Meta(value)
         }
+        // default, support Model
+        return value
       })
       schema = new Schema(schema)
     }
