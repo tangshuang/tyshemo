@@ -29,6 +29,7 @@ import _Store from './store.js'
 import { ofChain, tryGet, makeMsg } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import Meta from './meta.js'
+import Entity from './entity.js'
 
 /**
  * class SomeModel extends Model {
@@ -64,7 +65,7 @@ export class Model {
            * }
            */
           if (isInheritedOf(def, Model)) {
-            return Model.enter(def)
+            return Entity.getMeta(def)
           }
 
           /**
@@ -73,7 +74,7 @@ export class Model {
            * }
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
-            return Model.enter(def)
+            return Entity.getMeta(def)
           }
 
           return def
@@ -1058,75 +1059,6 @@ export class Model {
   }
 
   onEdit() {}
-
-  static enter(Model, fn) {
-    if (isArray(Model)) {
-      const SubModel = Model[0]
-      const gen = function(items, key) {
-        const nexts = items.filter((item) => {
-          if (Model.some(One => isInstanceOf(item, One))) {
-            return true
-          }
-          if (isObject(item)) {
-            return true
-          }
-          return false
-        })
-        const values = nexts.map((next, i) => {
-          const value = Model.some(One => isInstanceOf(next, One)) ? next.setParent([key, i], this)
-            : isObject(next) ? new SubModel(next, [key, i], this)
-            : new SubModel({}, [key, i], this)
-          return value
-        })
-        return values
-      }
-      return new Meta({
-        default: () => [],
-        type: Model,
-        validators: [
-          {
-            validate: ms => flatArray(map(ms, m => m.validate())),
-          },
-        ],
-        create(value, key, data) {
-          const items = fn ? fn.call(this, value, key, data) || value : value
-          return isArray(items) ? gen.call(this, items, key) : []
-        },
-        save: (ms, key) => ({ [key]: ms.map(m => m.toJSON()) }),
-        map: ms => ms.map(m => m.toData()),
-        setter(value, key) {
-          return isArray(value) ? gen.call(this, value, key) : []
-        },
-      })
-    }
-    else {
-      const gen = function(value, key) {
-        return isInstanceOf(value, Model) ? value.setParent([key], this)
-          : isObject(value) ? new Model(value, [key], this)
-          : new Model({}, [key], this)
-      }
-      return new Meta({
-        default(key){
-          return gen.call(this, {}, key)
-        },
-        type: Model,
-        validators: [
-          {
-            validate: m => m.validate(),
-          },
-        ],
-        create(value, key, data) {
-          const next = fn ? fn.call(this, value, key, data) || value : value
-          return gen.call(this, next, key)
-        },
-        save: (m, key) => ({ [key]: m.toJSON() }),
-        map: m => m.toData(),
-        setter(value, key) {
-          return gen.call(this, value, key)
-        },
-      })
-    }
-  }
 
   /**
    * use a meta definition to find out view
