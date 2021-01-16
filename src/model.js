@@ -29,7 +29,7 @@ import _Store from './store.js'
 import { ofChain, tryGet, makeMsg } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import Meta from './meta.js'
-import Entity from './entity.js'
+import Factory from './factory.js'
 
 /**
  * class SomeModel extends Model {
@@ -65,7 +65,7 @@ export class Model {
            * }
            */
           if (isInheritedOf(def, Model)) {
-            return Entity.getMeta(def)
+            return Factory.getMeta(def)
           }
 
           /**
@@ -74,7 +74,7 @@ export class Model {
            * }
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
-            return Entity.getMeta(def)
+            return Factory.getMeta(def)
           }
 
           return def

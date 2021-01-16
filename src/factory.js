@@ -8,7 +8,7 @@ import {
 } from 'ts-fns'
 import Meta from './meta.js'
 
-export class Entity {
+export class Factory {
   // entries should be a Model constructor or an array of Model constructors
   constructor(entries) {
     this.entries = entries
@@ -115,6 +115,10 @@ export class Entity {
     return fn
   }
 
+  getMeta() {
+    return this.meta
+  }
+
   static useAttrs(Model, attrs) {
     class NewModel extends Model {}
     attrs.forEach(([field, attr, fn]) => {
@@ -139,4 +143,4 @@ export class Entity {
     return entity.meta
   }
 }
-export default Entity
+export default Factory

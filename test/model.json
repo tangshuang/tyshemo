@@ -1,0 +1,19 @@
+{
+  "schema": {
+    "name": {
+      "default": "tomy",
+      "type": "string",
+      "required()": "age > 10"
+    },
+    "age": {
+      "default": 10,
+      "type": "number"
+    }
+  },
+  "state": {
+    "is_adult": false
+  },
+  "methods": {
+    "getWeight()": "age * 5"
+  }
+}
