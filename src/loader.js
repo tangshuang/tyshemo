@@ -1,6 +1,7 @@
 import Parser from './ty/parser.js'
 import Model from './model.js'
 import ScopeX from 'scopex'
+import Validator from './validator.js'
 import {
   clone,
   each,
@@ -155,10 +156,21 @@ export class Loader {
                 return
               }
               const items = []
+              const defaultValidators = new ScopeX(Validator)
               exp.forEach((validator) => {
+                if (isString(validator)) {
+                  // i.e. validators: [ "required('some is required!')" ]
+                  const [key, params] = parseAttr(validator)
+                  if (Validator[key] && params) {
+                    items.push(defaultValidators.parse(validator))
+                  }
+                  return
+                }
+
                 if (!isObject(validator)) {
                   return
                 }
+
                 const item = {}
                 each(validator, (_exp, attr) => {
                   const [_key, _params] = parseAttr(attr)
