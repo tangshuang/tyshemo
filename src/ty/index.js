@@ -45,6 +45,7 @@ export {
   instance,
   equal,
   nullable,
+  nonable,
   lambda,
 } from './rules.js'
 
