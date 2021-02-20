@@ -5,8 +5,7 @@ import {
   isObject,
   isEqual,
   isNull,
-  isUndefined,
-  isNaN,
+  isNone,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -330,8 +329,7 @@ export function nonable(pattern) {
     name: 'nullable',
     pattern,
     shouldcheck(data, key) {
-      const value = data[key]
-      return !isNull(value) && !isUndefined(value) && !isNaN(value)
+      return !isNone(data[key])
     },
     use: () => type,
   })
