@@ -47,13 +47,9 @@ export class Loader {
     const loader = this
     const typeParser = new Parser(types)
 
-    const createFn = (scopex, exp, params, _attr) => (...args) => {
-      const { data } = scopex
+    const createFn = (scopex, exp, params) => (...args) => {
       const locals = {}
       params.forEach((param, i) => {
-        if (inObject(param, data)) {
-          throw new Error(`"${param}" has been declared in model, should not be declared again in "${_attr}"!`)
-        }
         const value = args[i]
         locals[param] = value
       })
@@ -157,7 +153,7 @@ export class Loader {
               }
               const items = []
               const defaultValidators = new ScopeX(Validator)
-              exp.forEach((validator) => {
+              exp.forEach((validator, i) => {
                 if (isString(validator)) {
                   // i.e. validators: [ "required('some is required!')" ]
                   const [key, params] = parseAttr(validator)
@@ -182,7 +178,7 @@ export class Loader {
                   }
 
                   if (isArray(params)) {
-                    const value = createFn(scopex, exp, params, attr)
+                    const value = createFn(scopex, exp, params)
                     item[key] = value
                     return
                   }
@@ -206,7 +202,7 @@ export class Loader {
                 meta[key] = () => exp
               }
               else {
-                const value = createFn(scopex, exp, params, attr)
+                const value = createFn(scopex, exp, params)
                 meta[key] = value
               }
               return
@@ -274,9 +270,24 @@ export class Loader {
         return
       }
 
+      const isInjected = /await fetch\(.*?\)/.test(exp)
+      const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
+
       ParsedModel.prototype[key] = function(...args) {
         const scopex = new ScopeX(this)
-        const res = createFn(scopex, exp, params, attr)(...args)
+        if (isInjected) {
+          return new Promise((resolve, reject) => {
+            const url = createFn(scopex, _url, params)(...args)
+            loader.fetch(url).then((data) => {
+              const subScopex = scopex.$new({ __await__: data })
+              const subExp = [before, '__await__', after].join('')
+              const res = createFn(subScopex, subExp, params)(...args)
+              resolve(res)
+            }).catch(reject)
+          })
+        }
+
+        const res = createFn(scopex, exp, params)(...args)
         return res
       }
     })
@@ -301,11 +312,12 @@ export class Loader {
     return [key, params, exp]
   }
 
-  fetchJSON(url) {
+  fetch(url) {
     return fetch(url).then(res => res.json())
   }
+
   load(url) {
-    return this.fetchJSON(url).then(json => this.parse(json))
+    return this.fetch(url).then(json => this.parse(json))
   }
 
   static getModelAsync(url) {

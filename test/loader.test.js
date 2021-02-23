@@ -27,4 +27,30 @@ describe('Loader', () => {
 
     expect(model.getWeight()).toBe(55)
   })
+  test('async fetch method', (done) => {
+    class AsyncLoader extends Loader {
+      fetch() {
+        return Promise.resolve({ a: 2 })
+      }
+    }
+    const loader = new AsyncLoader()
+    const SomeModel = loader.parse({
+      schema: {},
+      state: {
+        a: 0,
+      },
+      methods: {
+        'fetchA()': 'a = await fetch("").a',
+        'onInit()': 'a = 1',
+      },
+    })
+
+    const some = new SomeModel()
+    expect(some.a).toBe(1)
+
+    some.fetchA().then(() => {
+      expect(some.a).toBe(2)
+      done()
+    })
+  })
 })
