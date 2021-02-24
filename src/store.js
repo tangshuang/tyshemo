@@ -6,6 +6,7 @@ import {
   makeKeyChain,
   each,
   createProxy,
+  getSymbolContent,
   assign,
   remove,
   isUndefined,
@@ -51,7 +52,7 @@ export class Store {
         const key = keyPath[0]
 
         // keep store in state
-        if (isSymbol(key) && key.description === 'store') {
+        if (isSymbol(key) && getSymbolContent(key) === 'STORE') {
           return this
         }
 
