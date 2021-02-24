@@ -26,10 +26,37 @@ import {
 
 import _Schema from './schema.js'
 import _Store from './store.js'
-import { ofChain, tryGet, makeMsg } from './shared/utils.js'
+import { ofChain, tryGet, makeMsg, isAsyncRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import Meta from './meta.js'
 import Factory from './factory.js'
+
+export const DEFAULT_ATTRIBUTES = {
+  default: null,
+  compute: null,
+  type: null,
+  message: null,
+  force: null,
+  validators: null,
+  create: null,
+  save: null,
+  drop: null,
+  map: null,
+  flat: null,
+  from: null,
+  to: null,
+  getter: null,
+  setter: null,
+  formatter: null,
+  readonly: false,
+  disabled: false,
+  required: false,
+  hidden: false,
+  empty: null,
+  watch: null,
+  catch: null,
+  state: null,
+}
 
 /**
  * class SomeModel extends Model {
@@ -164,32 +191,7 @@ export class Model {
 
   attrs() {
     // default attributes on meta, `null` to disable patching to view
-    return {
-      default: null,
-      compute: null,
-      type: null,
-      message: null,
-      force: null,
-      validators: null,
-      create: null,
-      save: null,
-      drop: null,
-      map: null,
-      flat: null,
-      from: null,
-      to: null,
-      getter: null,
-      setter: null,
-      formatter: null,
-      readonly: false,
-      disabled: false,
-      required: false,
-      hidden: false,
-      empty: null,
-      watch: null,
-      catch: null,
-      state: null,
-    }
+    return DEFAULT_ATTRIBUTES
   }
 
   init(data = {}) {
@@ -233,22 +235,32 @@ export class Model {
         }
       })
 
-      each(meta, (descriptor, key) => {
-        if (inObject(key, attrs)) {
+      each(meta, (descriptor, attr) => {
+        if (inObject(attr, attrs)) {
           return
         }
         const { value, get, set } = descriptor
         if (get || set) {
-          viewDef[key] = {
+          viewDef[attr] = {
             get: get && get.bind(this),
             set: set && set.bind(this),
             enumerable: true,
             configurable: true,
           }
         }
+        else if (isAsyncRef(value)) {
+          const { current, setter } = value
+          view[attr] = current
+          // async set attr value
+          Promise.resolve().then(() => setter.call(this, key, attr)).then((next) => {
+            view[attr] = next
+            value.current = next
+            this.$store.forceDispatch(key, attr, next)
+          })
+        }
         else {
           // patch to view directly
-          view[key] = value
+          view[attr] = value
         }
       }, true)
 
@@ -386,6 +398,24 @@ export class Model {
     const state = this.state.call(null)
     const combine = (state) => {
       each(state, (descriptor, key) => {
+        const { value } = descriptor
+        if (isAsyncRef(value)) {
+          const { current, setter } = value
+          output[key] = current
+
+          if (this.$ready) {
+            return
+          }
+
+          // async set attr value
+          Promise.resolve().then(() => setter.call(this, key)).then((next) => {
+            this[key] = next // will trigger watcher
+            value.current = next // use new value
+          })
+
+          return
+        }
+
         define(output, key, {
           ...descriptor,
           enumerable: true,

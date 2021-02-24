@@ -458,6 +458,9 @@ export class Store {
     })
     // watchers which watch any change
     const anys = watchers.filter((item) => {
+      if (isEqual(item.key, ['!'])) {
+        return false
+      }
       if (!isEqual(item.key, ['*'])) {
         return false
       }
@@ -474,6 +477,19 @@ export class Store {
     items.forEach((item) => {
       const target = item.key
       item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid })
+    })
+  }
+
+  forceDispatch(...args) {
+    if (this.silent) {
+      return
+    }
+
+    this._watchers.forEach((item) => {
+      if (!isEqual(item.key, ['!'])) {
+        return
+      }
+      item.fn.call(item.context || this.state, ...args)
     })
   }
 

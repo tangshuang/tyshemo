@@ -127,3 +127,37 @@ Loader.getModelAsync(url).then((SomeModel) => {
   ...
 })
 ```
+
+## Special Fetch Syntax
+
+You should override `Loader.fetch` method to provide fetch operator.
+
+**await fetch**
+
+`await fetch` only works in `methods` option.
+
+```json
+{
+  "methods": {
+    "fetchBookPrice(id)": "book.price = await fetch('...' + id).price"
+  }
+}
+```
+
+**:fetch**
+
+This is for `AsyncSetter`, only works for Meta.Attribute and state:
+
+```json
+{
+  "schema": {
+    "book": {
+      "default": null,
+      "priceRange": "[0,100]:fetch('....').range"
+    },
+  },
+  "state": {
+    "someGlobalOptions": "[]:fetch('....')"
+  }
+}
+```

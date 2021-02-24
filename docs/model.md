@@ -611,3 +611,52 @@ The only difference is that, submit should recive a instance of Some.
 const some = new Some()
 editor.submit(some)
 ```
+
+## AsyncSetter
+
+```
+Meta.AsyncSetter(defaultValue:Any, asyncSetter:Function)
+```
+
+In some cases, you need to fetch data from backend async to change some property, `AsyncSetter` helps you to implement.
+
+```js
+import { Meta } from 'tyshemo'
+
+class BookPrice extends Meta {
+  static default = 0
+  static range = Meta.AsyncSetter([0, 100], function(key) {
+    const bookId = this.id // this point to model
+    return fetch('/books/' + bookId).then(res => res.json()).then((data) => {
+      const { range } = data
+      return range // range will be used finally
+    })
+  })
+}
+```
+
+```js
+model.watch('!', function(key, attr, newRange) {
+  if (key === this.reflect(BookPrice) && attr === 'range') {
+    // model.$views.price.range has been set to be newRange, you can do something here, i.e. rerender ui
+  }
+})
+```
+
+The tag `!` for watch is a special operator, when `AsyncSetter` trigger meta.attribute changing, the callback function will be invoked.
+
+`AsyncSetter` can be used on `state` too.
+
+```js
+import { Model, Meta } from 'tyshemo'
+
+class SomeModel extends Model {
+  state() {
+    return {
+      some: Meta.AsyncSetter('', () => fetch('...').then(res => res.text())),
+    }
+  }
+}
+```
+
+However, `AsyncSetter` for state will not trigger `!`, because you can watch state directly.

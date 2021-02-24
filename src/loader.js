@@ -1,18 +1,18 @@
 import Parser from './ty/parser.js'
 import Model from './model.js'
+import { createAsyncRef } from './shared/utils.js'
 import ScopeX from 'scopex'
 import Validator from './validator.js'
 import {
-  clone,
   each,
   isUndefined,
   isString,
   isFunction,
   isArray,
-  inObject,
   isObject,
   isInstanceOf,
   isEmpty,
+  parse,
 } from 'ts-fns'
 
 export class Loader {
@@ -91,9 +91,38 @@ export class Loader {
       return defs[key]
     }
 
+    const parseAsyncSetter = (value) => {
+      if (isString(value)) {
+        const isAsyncSetter = /:fetch\(.*?\)/.test(value)
+        if (isAsyncSetter) {
+          const [_all, before, _matched, url, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
+          const defaultValue = tryGetExp(before)
+          return createAsyncRef(defaultValue, () => loader.fetch(url).then((data) => {
+            if (data && typeof data === 'object' && after && after[0] === '.') {
+              const keyPath = after.substr(1)
+              return parse(data, keyPath)
+            }
+            else {
+              return data
+            }
+          }))
+        }
+        else {
+          return value
+        }
+      }
+      else {
+        return value
+      }
+    }
+
     class ParsedModel extends Model {
       state() {
-        return clone(state)
+        const stat = {}
+        each(state, (value, key) => {
+          stat[key] = parseAsyncSetter(value)
+        })
+        return stat
       }
       schema() {
         const scopex = new ScopeX(this)
@@ -233,7 +262,7 @@ export class Loader {
               return
             }
 
-            meta[key] = exp
+            meta[key] = parseAsyncSetter(exp)
           })
 
           if (!isEmpty(meta)) {
@@ -326,3 +355,18 @@ export class Loader {
   }
 }
 export default Loader
+
+function tryGetExp(exp) {
+  try {
+    return JSON.parse(exp)
+  }
+  catch (e) {
+    const scopex = new ScopeX({})
+    try {
+      return scopex.parse(exp)
+    }
+    catch (e) {
+      return exp
+    }
+  }
+}

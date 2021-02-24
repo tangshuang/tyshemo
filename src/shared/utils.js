@@ -6,6 +6,7 @@ import {
   isConstructor,
   isArray,
   isObject,
+  isEqual,
 } from 'ts-fns'
 
 export function ofChain(target, TopConstructor) {
@@ -65,4 +66,16 @@ export function patchObj(source, input) {
       source[key] = value
     }
   })
+}
+
+export function createAsyncRef(defaultValue, asyncSetter) {
+  return {
+    current: defaultValue,
+    setter: asyncSetter,
+    $$type: 'asyncRef',
+  }
+}
+
+export function isAsyncRef(ref) {
+  return isObject(ref) && ref.$$type === 'asyncRef' && isEqual(Object.keys(ref), ['$$type', 'current'])
 }
