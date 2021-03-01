@@ -139,10 +139,12 @@ You should override `Loader.fetch` method to provide fetch operator.
 ```json
 {
   "methods": {
-    "fetchBookPrice(id)": "book.price = await fetch('...' + id).price"
+    "fetchBookPrice(id)": "await fetch('...' + id).price"
   }
 }
 ```
+
+Notice, the syntax is `await fetch(...).property`, give `.property` directly after `await fetch(...)`
 
 **:fetch**
 

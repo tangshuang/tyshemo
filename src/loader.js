@@ -116,7 +116,7 @@ export class Loader {
       }
     }
 
-    class ParsedModel extends Model {
+    class LoadedModel extends Model {
       state() {
         const stat = {}
         each(state, (value, key) => {
@@ -291,7 +291,7 @@ export class Loader {
       const [key, params, exp] = loader.method(_key, _params, _exp)
 
       if (isFunction(exp)) {
-        ParsedModel.prototype[key] = exp
+        LoadedModel.prototype[key] = exp
         return
       }
 
@@ -302,7 +302,7 @@ export class Loader {
       const isInjected = /await fetch\(.*?\)/.test(exp)
       const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
 
-      ParsedModel.prototype[key] = function(...args) {
+      LoadedModel.prototype[key] = function(...args) {
         const scopex = new ScopeX(this)
         if (isInjected) {
           return new Promise((resolve, reject) => {
@@ -321,7 +321,7 @@ export class Loader {
       }
     })
 
-    return ParsedModel
+    return LoadedModel
   }
 
   types() {

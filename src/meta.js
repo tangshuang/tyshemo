@@ -10,7 +10,7 @@ import {
   isEmpty,
 } from 'ts-fns'
 import Validator from './validator.js'
-import { ofChain, createAsyncRef } from './shared/utils.js'
+import { ofChain } from './shared/utils.js'
 
 export class Meta {
   constructor(attrs = {}) {
@@ -67,7 +67,5 @@ export class Meta {
     const Constructor = inherit(this, null, attrs)
     return Constructor
   }
-
-  static AsyncSetter = createAsyncRef
 }
 export default Meta
