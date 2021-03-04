@@ -87,8 +87,10 @@ export class Loader {
       return [method, params]
     }
 
+    const defScope = new ScopeX(defs)
+    defScope.filters = loader.filters()
     const parseDef = (key) => {
-      return defs[key]
+      return defScope.parse(key)
     }
 
     const parseAsyncGetter = (value) => {
@@ -126,6 +128,7 @@ export class Loader {
       }
       schema() {
         const scopex = new ScopeX(this)
+        scopex.filters = loader.filters()
         const $schema = {}
         each(schema, (def, field) => {
           // sub model(s)
@@ -182,6 +185,7 @@ export class Loader {
               }
               const items = []
               const defaultValidators = new ScopeX(Validator)
+              defaultValidators.filters = loader.filters()
               exp.forEach((validator, i) => {
                 if (isString(validator)) {
                   // i.e. validators: [ "required('some is required!')" ]
@@ -304,6 +308,7 @@ export class Loader {
 
       LoadedModel.prototype[key] = function(...args) {
         const scopex = new ScopeX(this)
+        scopex.filters = loader.filters()
         if (isInjected) {
           return new Promise((resolve, reject) => {
             const url = createFn(scopex, _url, params)(...args)
@@ -328,6 +333,9 @@ export class Loader {
     return {}
   }
   defs() {
+    return {}
+  }
+  filters() {
     return {}
   }
 
