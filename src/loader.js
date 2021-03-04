@@ -5,7 +5,6 @@ import ScopeX from 'scopex'
 import Validator from './validator.js'
 import {
   each,
-  isUndefined,
   isString,
   isFunction,
   isArray,
@@ -42,10 +41,38 @@ export class Loader {
   parse(json) {
     const types = this.types()
     const defs = this.defs()
+    const filters = this.filters()
     const { schema, state = {}, attrs = {}, methods = {} } = json
 
     const loader = this
     const typeParser = new Parser(types)
+
+    let hasDefUsed = false
+    const defProxy = new Proxy(defs, {
+      get(target, key, receiver) {
+        if (key in defs) {
+          hasDefUsed = true
+        }
+        return Reflect.get(target, key, receiver)
+      },
+    })
+
+    const defScopex = new ScopeX(defProxy)
+    defScopex.filters = filters
+
+    const parseDef = (exp, scopex = defScopex) => {
+      if (!exp) {
+        return
+      }
+      if (!isString(exp)) {
+        return
+      }
+
+      const value = scopex.parse(exp)
+      const hasUsed = hasDefUsed
+      hasDefUsed = false
+      return hasUsed ? { value } : null
+    }
 
     const createFn = (scopex, exp, params) => (...args) => {
       const locals = {}
@@ -54,43 +81,23 @@ export class Loader {
         locals[param] = value
       })
 
+      const newDefScopex = defScopex.$new(locals)
+      const res = parseDef(exp, newDefScopex)
+      if (res) {
+        return res.value
+      }
+
       const newScopex = scopex.$new(locals)
       const result = newScopex.parse(exp)
       return result
     }
 
-    const parseAttr = (str) => {
-      const matched = str.match(/([a-zA-Z0-9_$]+)(\((.*?)\))?/)
-      if (!matched) {
-        return [str]
-      }
-
-      const method = matched[1]
-      if (!method) {
-        return [str]
-      }
-
-      const m = matched[3]
-      if (isUndefined(m)) {
-        return [method]
-      }
-
-      // empty string, i.e. `required()`
-      if (!m) {
-        return [method, []]
-      }
-
-      const s = m || ''
-      const none = void 0
-      const params = s.split(',').map(item => item.trim() || none)
-
-      return [method, params]
-    }
-
-    const defScope = new ScopeX(defs)
-    defScope.filters = loader.filters()
-    const parseDef = (key) => {
-      return defScope.parse(key)
+    const parseKey = (str) => {
+      const matched = str.match(/([a-zA-Z0-9_$]+)(\((.*?)\))?(!(.*))?/)
+      const [_, name, _p, _params, _m, _macro] = matched
+      const params = isString(_params) ? _params.split(',').map(item => item.trim()).filter(item => !!item) : void 0
+      const macro = _m ? _macro || '' : void 0
+      return [name, params, macro]
     }
 
     const parseAsyncGetter = (value) => {
@@ -128,7 +135,8 @@ export class Loader {
       }
       schema() {
         const scopex = new ScopeX(this)
-        scopex.filters = loader.filters()
+        scopex.filters = filters
+
         const $schema = {}
         each(schema, (def, field) => {
           // sub model(s)
@@ -137,9 +145,9 @@ export class Loader {
 
             const parse = (exp) => {
               if (isString(exp)) {
-                const sub = parseDef(exp)
-                if (sub && isInstanceOf(sub, Model)) {
-                  return sub
+                const res = parseDef(exp)
+                if (res && isInstanceOf(res.value, Model)) {
+                  return res.value
                 }
               }
               else if (exp && !isArray(exp) && typeof exp === 'object') {
@@ -170,7 +178,7 @@ export class Loader {
 
           const meta = {}
           each(def, (_exp, attr) => {
-            const [_key, _params] = parseAttr(attr)
+            const [_key, _params] = parseKey(attr)
             const [key, params, exp] = loader.meta(_key, _params, _exp)
 
             if (key === 'type') {
@@ -184,12 +192,14 @@ export class Loader {
                 return
               }
               const items = []
+
               const defaultValidators = new ScopeX(Validator)
-              defaultValidators.filters = loader.filters()
+              defaultValidators.filters = filters
+
               exp.forEach((validator, i) => {
                 if (isString(validator)) {
                   // i.e. validators: [ "required('some is required!')" ]
-                  const [key, params] = parseAttr(validator)
+                  const [key, params] = parseKey(validator)
                   if (Validator[key] && params) {
                     items.push(defaultValidators.parse(validator))
                   }
@@ -202,7 +212,7 @@ export class Loader {
 
                 const item = {}
                 each(validator, (_exp, attr) => {
-                  const [_key, _params] = parseAttr(attr)
+                  const [_key, _params] = parseKey(attr)
                   const [key, params, exp] = loader.validator(_key, _params, _exp)
 
                   if (isFunction(exp)) {
@@ -260,9 +270,9 @@ export class Loader {
               return
             }
 
-            const def = parseDef(exp)
-            if (!isUndefined(def)) {
-              meta[key] = def
+            const res = parseDef(exp)
+            if (res) {
+              meta[key] = res.value
               return
             }
 
@@ -287,7 +297,7 @@ export class Loader {
         return
       }
 
-      const [_key, _params] = parseAttr(attr)
+      const [_key, _params] = parseKey(attr)
       if (!_params) {
         return
       }
@@ -308,7 +318,8 @@ export class Loader {
 
       LoadedModel.prototype[key] = function(...args) {
         const scopex = new ScopeX(this)
-        scopex.filters = loader.filters()
+        scopex.filters = filters
+
         if (isInjected) {
           return new Promise((resolve, reject) => {
             const url = createFn(scopex, _url, params)(...args)

@@ -43,7 +43,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "scopex": "^1.2.3",
+    "scopex": "^1.2.4",
     "ts-fns": "^9.3.0"
   }
 }
