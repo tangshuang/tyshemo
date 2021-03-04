@@ -199,6 +199,7 @@ export class Model {
       return
     }
 
+    const Constructor = getConstructorOf(this)
     const keys = Object.keys(this.$schema)
 
     // patch keys to this
@@ -217,7 +218,7 @@ export class Model {
       // patch attributes from meta
       const meta = this.$schema[key]
       // default attributes which will be used by Model/Schema, can not be reset by userself
-      const attrs = this.attrs()
+      const attrs = Constructor.prototype.attrs.call(null)
       // define a view
       const view = {
         changed: false, // whether the field has changed
@@ -394,8 +395,9 @@ export class Model {
   }
 
   _combineState() {
+    const Constructor = getConstructorOf(this)
     const output = {}
-    const state = this.state.call(null)
+    const state = Constructor.prototype.state.call(null)
     const combine = (state) => {
       each(state, (descriptor, key) => {
         const { value } = descriptor
