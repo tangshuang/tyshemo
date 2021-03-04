@@ -93,8 +93,8 @@ export class Loader {
       }
 
       const newScopex = scopex.$new(locals)
-      const res2 = parseExp(exp, newScopex)
-      return res2 ? res2.value : exp
+      const output = newScopex.parse(exp)
+      return output
     }
 
     const parseKey = (str) => {
