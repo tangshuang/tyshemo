@@ -60,7 +60,7 @@ export class Loader {
     const defScopex = new ScopeX(defProxy)
     defScopex.filters = filters
 
-    const parseDef = (exp, scopex = defScopex) => {
+    const parseExp = (exp, scopex = defScopex) => {
       if (!exp) {
         return
       }
@@ -68,10 +68,15 @@ export class Loader {
         return
       }
 
-      const value = scopex.parse(exp)
-      const hasUsed = hasDefUsed
-      hasDefUsed = false
-      return hasUsed ? { value } : null
+      try {
+        const value = scopex.parse(exp)
+        const hasUsed = hasDefUsed
+        hasDefUsed = false
+        return hasUsed ? { value } : null
+      }
+      catch (e) {
+        hasDefUsed = false
+      }
     }
 
     const createFn = (scopex, exp, params) => (...args) => {
@@ -82,14 +87,14 @@ export class Loader {
       })
 
       const newDefScopex = defScopex.$new(locals)
-      const res = parseDef(exp, newDefScopex)
+      const res = parseExp(exp, newDefScopex)
       if (res) {
         return res.value
       }
 
       const newScopex = scopex.$new(locals)
-      const result = newScopex.parse(exp)
-      return result
+      const res2 = parseExp(exp, newScopex)
+      return res2 ? res2.value : exp
     }
 
     const parseKey = (str) => {
@@ -145,7 +150,7 @@ export class Loader {
 
             const parse = (exp) => {
               if (isString(exp)) {
-                const res = parseDef(exp)
+                const res = parseExp(exp)
                 if (res && isInstanceOf(res.value, Model)) {
                   return res.value
                 }
@@ -270,7 +275,7 @@ export class Loader {
               return
             }
 
-            const res = parseDef(exp)
+            const res = parseExp(exp)
             if (res) {
               meta[key] = res.value
               return
