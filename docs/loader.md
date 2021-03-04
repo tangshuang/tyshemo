@@ -148,7 +148,7 @@ Notice, the syntax is `await fetch(...).property`, give `.property` directly aft
 
 **:fetch**
 
-This is for `AsyncSetter`, only works for Meta.Attribute and state:
+This is for `AsyncGetter`, only works for Meta.Attribute and state:
 
 ```json
 {

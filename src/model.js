@@ -249,10 +249,10 @@ export class Model {
           }
         }
         else if (isAsyncRef(value)) {
-          const { current, setter } = value
+          const { current, getter } = value
           view[attr] = current
           // async set attr value
-          Promise.resolve().then(() => setter.call(this, key, attr)).then((next) => {
+          Promise.resolve().then(() => getter.call(this, key, attr)).then((next) => {
             view[attr] = next
             value.current = next
             this.$store.forceDispatch(key, attr, next)
@@ -400,7 +400,7 @@ export class Model {
       each(state, (descriptor, key) => {
         const { value } = descriptor
         if (isAsyncRef(value)) {
-          const { current, setter } = value
+          const { current, getter } = value
           output[key] = current
 
           if (this.$ready) {
@@ -408,7 +408,7 @@ export class Model {
           }
 
           // async set attr value
-          Promise.resolve().then(() => setter.call(this, key)).then((next) => {
+          Promise.resolve().then(() => getter.call(this, key)).then((next) => {
             this[key] = next // will trigger watcher
             value.current = next // use new value
           })

@@ -68,10 +68,10 @@ export function patchObj(source, input) {
   })
 }
 
-export function createAsyncRef(defaultValue, asyncSetter) {
+export function createAsyncRef(defaultValue, getter) {
   return {
     current: defaultValue,
-    setter: asyncSetter,
+    getter,
     $$type: 'asyncRef',
   }
 }

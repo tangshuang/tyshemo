@@ -612,22 +612,22 @@ const some = new Some()
 editor.submit(some)
 ```
 
-## AsyncSetter
+## AsyncGetter
 
 ```
-import { AsyncSetter } from 'tyshemo'
+import { AsyncGetter } from 'tyshemo'
 
-AsyncSetter(defaultValue:Any, asyncSetter:Function)
+AsyncGetter(defaultValue:Any, AsyncGetter:Function)
 ```
 
-In some cases, you need to fetch data from backend async to change some property, `AsyncSetter` helps you to implement.
+In some cases, you need to fetch data from backend async to change some property, `AsyncGetter` helps you to implement.
 
 ```js
-import { Meta, AsyncSetter } from 'tyshemo'
+import { Meta, AsyncGetter } from 'tyshemo'
 
 class BookPrice extends Meta {
   static default = 0
-  static range = AsyncSetter([0, 100], function(key) {
+  static range = AsyncGetter([0, 100], function(key) {
     const bookId = this.id // this point to model
     return fetch('/books/' + bookId).then(res => res.json()).then((data) => {
       const { range } = data
@@ -645,23 +645,23 @@ model.watch('!', function(key, attr, newRange) {
 })
 ```
 
-The tag `!` for watch is a special operator, when `AsyncSetter` trigger meta.attribute changing, the callback function will be invoked.
+The tag `!` for watch is a special operator, when `AsyncGetter` trigger meta.attribute changing, the callback function will be invoked.
 
-`AsyncSetter` can be used on `state` too.
+`AsyncGetter` can be used on `state` too.
 
 ```js
-import { Model, AsyncSetter } from 'tyshemo'
+import { Model, AsyncGetter } from 'tyshemo'
 
 class SomeModel extends Model {
   state() {
     return {
-      some: AsyncSetter('', () => fetch('...').then(res => res.text())),
+      some: AsyncGetter('', () => fetch('...').then(res => res.text())),
     }
   }
 }
 ```
 
-However, `AsyncSetter` for state will not trigger `!`, because you can watch state changing directly.
+However, `AsyncGetter` for state will not trigger `!`, because you can watch state changing directly.
 
 ```js
 model.watch('some', ...)

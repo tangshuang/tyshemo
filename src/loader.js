@@ -91,10 +91,10 @@ export class Loader {
       return defs[key]
     }
 
-    const parseAsyncSetter = (value) => {
+    const parseAsyncGetter = (value) => {
       if (isString(value)) {
-        const isAsyncSetter = /:fetch\(.*?\)/.test(value)
-        if (isAsyncSetter) {
+        const isAsyncGetter = /:fetch\(.*?\)/.test(value)
+        if (isAsyncGetter) {
           const [_all, before, _matched, url, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
           const defaultValue = tryGetExp(before)
           return createAsyncRef(defaultValue, () => loader.fetch(url).then((data) => {
@@ -120,7 +120,7 @@ export class Loader {
       state() {
         const stat = {}
         each(state, (value, key) => {
-          stat[key] = parseAsyncSetter(value)
+          stat[key] = parseAsyncGetter(value)
         })
         return stat
       }
@@ -262,7 +262,7 @@ export class Loader {
               return
             }
 
-            meta[key] = parseAsyncSetter(exp)
+            meta[key] = parseAsyncGetter(exp)
           })
 
           if (!isEmpty(meta)) {
