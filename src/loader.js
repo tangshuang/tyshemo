@@ -57,8 +57,7 @@ export class Loader {
       },
     })
 
-    const defScopex = new ScopeX(defProxy)
-    defScopex.filters = filters
+    const defScopex = new ScopeX(defProxy, { loose: true, filters })
 
     const parseExp = (exp, scopex = defScopex) => {
       if (!exp) {
@@ -139,9 +138,7 @@ export class Loader {
         return stat
       }
       schema() {
-        const scopex = new ScopeX(this)
-        scopex.filters = filters
-
+        const scopex = new ScopeX(this, { loose: true, filters })
         const $schema = {}
         each(schema, (def, field) => {
           // sub model(s)
@@ -198,9 +195,7 @@ export class Loader {
               }
               const items = []
 
-              const defaultValidators = new ScopeX(Validator)
-              defaultValidators.filters = filters
-
+              const defaultValidators = new ScopeX(Validator, { filters })
               exp.forEach((validator, i) => {
                 if (isString(validator)) {
                   // i.e. validators: [ "required('some is required!')" ]
@@ -322,8 +317,7 @@ export class Loader {
       const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
 
       LoadedModel.prototype[key] = function(...args) {
-        const scopex = new ScopeX(this)
-        scopex.filters = filters
+        const scopex = new ScopeX(this, { loose: true, filters })
 
         if (isInjected) {
           return new Promise((resolve, reject) => {
