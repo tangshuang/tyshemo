@@ -117,8 +117,6 @@ const attrs = {
   // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
   // `Empty` rule: null|undefined|''|NaN|[]|{}
   required: Boolean,
-  // optional, function or boolean
-  hidden: Boolean,
   // optional, function to determine the value is empty
   empty: Function,
 

@@ -150,7 +150,7 @@ const { $views } = model
 const { age } = $views
 
 // Here `age` is called 'field view' (short as 'view'). What's on age? =>
-// { value, required, disabled, readonly, hidden, errors, ...attrs }
+// { value, required, disabled, readonly, errors, ...attrs }
 ```
 
 Why I provide a `$views` property and give structure like this? Because in most cases, we use a field as a single view drived by state.

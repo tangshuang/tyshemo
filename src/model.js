@@ -51,7 +51,6 @@ export const DEFAULT_ATTRIBUTES = {
   readonly: false,
   disabled: false,
   required: false,
-  hidden: false,
   empty: null,
   watch: null,
   catch: null,
@@ -1102,7 +1101,7 @@ export class Model {
    *   ...
    * }
    * class Dog extends Meta {
-   *   hidden() {
+   *   drop() {
    *     const some = this.reflect(Some) || {} // undefined if Some not used
    *     return some.value
    *   }
