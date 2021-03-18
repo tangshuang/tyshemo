@@ -190,7 +190,7 @@ export class Model {
 
   attrs() {
     // default attributes on meta, `null` to disable patching to view
-    return DEFAULT_ATTRIBUTES
+    return { ...DEFAULT_ATTRIBUTES }
   }
 
   init(data = {}) {
@@ -249,12 +249,14 @@ export class Model {
           }
         }
         else if (isAsyncRef(value)) {
-          const { current, getter } = value
+          const { current, emit } = value
           view[attr] = current
           // async set attr value
-          Promise.resolve().then(() => getter.call(this, key, attr)).then((next) => {
+          emit(key, attr).then((next) => {
+            if (next === view[attr]) {
+              return
+            }
             view[attr] = next
-            value.current = next
             this.$store.forceDispatch(key, attr, next)
           })
         }
@@ -401,7 +403,7 @@ export class Model {
       each(state, (descriptor, key) => {
         const { value } = descriptor
         if (isAsyncRef(value)) {
-          const { current, getter } = value
+          const { current, emit } = value
           output[key] = current
 
           if (this.$ready) {
@@ -409,9 +411,14 @@ export class Model {
           }
 
           // async set attr value
-          Promise.resolve().then(() => getter.call(this, key)).then((next) => {
+          emit(key).then((next) => {
+            if (this[key] === next) {
+              return
+            }
+            if (this[key] && typeof this[key] === 'object' && this[key][Symbol('ORIGIN')] === next) {
+              return
+            }
             this[key] = next // will trigger watcher
-            value.current = next // use new value
           })
 
           return

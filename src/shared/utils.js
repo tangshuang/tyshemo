@@ -69,11 +69,24 @@ export function patchObj(source, input) {
 }
 
 export function createAsyncRef(defaultValue, getter) {
-  return {
+  const ref = {
     current: defaultValue,
+    deferer: null,
     getter,
     $$type: 'asyncRef',
+    emit(...args) {
+      if (ref.deferer) {
+        return ref.deferer
+      }
+
+      ref.deferer = Promise.resolve().then(() => getter.call(this, ...args)).then((next) => {
+        ref.current = next
+        return next
+      })
+      return ref.deferer
+    },
   }
+  return ref
 }
 
 export function isAsyncRef(ref) {

@@ -12,9 +12,13 @@ import {
   isInstanceOf,
   isEmpty,
   parse,
+  async_,
 } from 'ts-fns'
 
 export class Loader {
+  constructor() {
+    this.fetch = async_(this.fetch.bind(this))
+  }
   /**
    *
    * @param {object} json {
@@ -104,21 +108,22 @@ export class Loader {
       return [name, params, macro]
     }
 
-    const parseAsyncGetter = (value) => {
+    const parseGetter = (value) => {
       if (isString(value)) {
-        const isAsyncGetter = /:fetch\(.*?\)/.test(value)
-        if (isAsyncGetter) {
-          const [_all, before, _matched, url, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
+        if (/:fetch\(.*?\)/.test(value)) {
+          const [_all, before, _matched, matched, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
           const defaultValue = tryGetExp(before)
-          return createAsyncRef(defaultValue, () => loader.fetch(url).then((data) => {
-            if (data && typeof data === 'object' && after && after[0] === '.') {
-              const keyPath = after.substr(1)
-              return parse(data, keyPath)
-            }
-            else {
-              return data
-            }
-          }))
+          return createAsyncRef(defaultValue, () => {
+            return loader.fetch(matched).then((data) => {
+              if (data && typeof data === 'object' && after && after[0] === '.') {
+                const keyPath = after.substr(1)
+                return parse(data, keyPath)
+              }
+              else {
+                return data
+              }
+            })
+          })
         }
         else {
           return value
@@ -133,7 +138,7 @@ export class Loader {
       state() {
         const stat = {}
         each(state, (value, key) => {
-          stat[key] = parseAsyncGetter(value)
+          stat[key] = parseGetter(value)
         })
         return stat
       }
@@ -276,7 +281,7 @@ export class Loader {
               return
             }
 
-            meta[key] = parseAsyncGetter(exp)
+            meta[key] = parseGetter(exp)
           })
 
           if (!isEmpty(meta)) {
