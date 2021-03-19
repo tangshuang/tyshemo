@@ -12,13 +12,9 @@ import {
   isInstanceOf,
   isEmpty,
   parse,
-  async_,
 } from 'ts-fns'
 
 export class Loader {
-  constructor() {
-    this.fetch = async_(this.fetch.bind(this))
-  }
   /**
    *
    * @param {object} json {
