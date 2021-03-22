@@ -74,7 +74,7 @@ export function createAsyncRef(defaultValue, getter) {
     deferer: null,
     getter,
     $$type: 'asyncRef',
-    emit(...args) {
+    attach(...args) {
       if (ref.deferer) {
         return ref.deferer
       }

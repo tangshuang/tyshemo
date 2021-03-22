@@ -249,10 +249,10 @@ export class Model {
           }
         }
         else if (isAsyncRef(value)) {
-          const { current, emit } = value
+          const { current, attach } = value
           view[attr] = current
           // async set attr value
-          emit(key, attr).then((next) => {
+          attach(key, attr).then((next) => {
             if (next === view[attr]) {
               return
             }
@@ -403,7 +403,7 @@ export class Model {
       each(state, (descriptor, key) => {
         const { value } = descriptor
         if (isAsyncRef(value)) {
-          const { current, emit } = value
+          const { current, attach } = value
           output[key] = current
 
           if (this.$ready) {
@@ -411,7 +411,7 @@ export class Model {
           }
 
           // async set attr value
-          emit(key).then((next) => {
+          attach(key).then((next) => {
             if (this[key] === next) {
               return
             }
@@ -508,8 +508,27 @@ export class Model {
       else {
         // notice here, we call this in default(), we can get passed state properties
         const value = schema.getDefault(key, this)
-        params[key] = value
-        ensure(value, [key])
+
+        // default can be an AsyncGetter, so that we can set default value asyncly
+        if (isAsyncRef(value)) {
+          const { current, attach } = value
+          params[key] = current
+          ensure(current, [key])
+
+          attach(key, 'default').then((next) => {
+            if (this[key] === next) {
+              return
+            }
+            if (this[key] && typeof this[key] === 'object' && this[key][Symbol('ORIGIN')] === next) {
+              return
+            }
+            this[key] = next // will trigger watcher
+          })
+        }
+        else {
+          params[key] = value
+          ensure(value, [key])
+        }
       }
     })
 
