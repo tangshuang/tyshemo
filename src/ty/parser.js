@@ -513,6 +513,7 @@ export class Parser {
     promise: Promise,
     error: Error,
     regexp: RegExp,
+    file: File,
   }
 }
 export default Parser

@@ -5,13 +5,15 @@ import {
   map,
   flatArray,
   isInstanceOf,
+  isFunction,
 } from 'ts-fns'
 import Meta from './meta.js'
 
 export class Factory {
   // entries should be a Model constructor or an array of Model constructors
-  constructor(entries) {
+  constructor(entries, options) {
     this.entries = entries
+    this.options = options
     this.meta = null
     this.init(entries)
   }
@@ -83,6 +85,14 @@ export class Factory {
           return gen.call(this, value, key)
         }),
       })
+    }
+
+    if (isFunction(this.options)) {
+      const next = this.options(this.meta) || {}
+      this.meta = { ...this.meta, ...next }
+    }
+    else if (this.options) {
+      this.meta = { ...this.meta, ...this.options }
     }
   }
 

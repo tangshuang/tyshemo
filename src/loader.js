@@ -3,6 +3,7 @@ import Model from './model.js'
 import { createAsyncRef } from './shared/utils.js'
 import ScopeX from 'scopex'
 import Validator from './validator.js'
+import Factory from './factory.js'
 import {
   each,
   isString,
@@ -141,6 +142,8 @@ export class Loader {
       schema() {
         const scopex = new ScopeX(this, { loose: true, filters })
         const $schema = {}
+        const factories = {}
+
         each(schema, (def, field) => {
           // sub model(s)
           if (/^<.+?>$/.test(field)) {
@@ -280,9 +283,27 @@ export class Loader {
             meta[key] = parseGetter(exp)
           })
 
+          // |submodel| sub model(s) factory, should must be used with <submodel>
+          if (/^\|.+?\|$/.test(field)) {
+            const name = field.substring(1, field.length - 1)
+            factories[name] = meta
+            return
+          }
+
           if (!isEmpty(meta)) {
             $schema[field] = meta
           }
+        })
+
+        // factory wrapper should must come after schema finished, or schema sub model will not be ready
+        each(factories, (fac, name) => {
+          if (!$schema[name]) {
+            return
+          }
+          if (!isObject(fac)) {
+            return
+          }
+          $schema[name] = new Factory($schema[name], fac)
         })
 
         return $schema
