@@ -209,6 +209,10 @@ export class Schema {
     return this.$decide(key, 'readonly', context)(false)
   }
 
+  hidden(key, context) {
+    return this.$decide(key, 'hidden', context)(false)
+  }
+
   empty(key, value, context) {
     const meta = this[key]
     const { empty, catch: handle } = meta

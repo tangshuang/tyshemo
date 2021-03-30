@@ -113,6 +113,10 @@ const attrs = {
   // when you invoke `validate`, the validators will be ignored,
   // when you invoke `export`, the `drop` will be set to be `true` automaticly, `flat` will not work too
   disabled: Boolean,
+  // optional, function or boolean or string,
+  // if `hidden` is true, it means you want to hide the field related ui component
+  hidden: Boolean,
+
   // optional, function or boolean or string.
   // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
   // `Empty` rule: null|undefined|''|NaN|[]|{}

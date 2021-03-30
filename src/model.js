@@ -50,6 +50,7 @@ export const DEFAULT_ATTRIBUTES = {
   formatter: null,
   readonly: false,
   disabled: false,
+  hidden: false,
   required: false,
   empty: null,
   watch: null,
