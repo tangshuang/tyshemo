@@ -175,6 +175,16 @@ export class Type {
         }
       }
     }
+    // fix: new Mapping({ key: String, value: new Dict(...) })
+    else if (isInstanceOf(pattern, Type)) {
+      if (this.isStrict && !pattern.isStrict) {
+        pattern = pattern.strict
+      }
+      const error = pattern.catch(value)
+      if (error) {
+        tyerr.add({ error, value, name: pattern.name, pattern })
+      }
+    }
     // check prototypes
     else if (Prototype.is(pattern).existing()) {
       const res = Prototype.is(pattern).typeof(value)
