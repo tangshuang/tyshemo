@@ -506,7 +506,7 @@ export class Parser {
     zero: Zero,
     natural: Natural,
     any: Any,
-    nn: NaN,
+    nan: NaN,
     infinity: Infinity,
     finity: Finity,
     date: Date,
