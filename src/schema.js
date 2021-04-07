@@ -874,7 +874,7 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, catch: handle } = meta
+      const { drop, map, flat, catch: handle, to = key } = meta
       const value = data[key]
 
       if (this.disabled(key, context)) {
@@ -920,10 +920,10 @@ export class Schema {
             attr: 'map',
           },
         )
-        output[key] = res
+        output[to] = res
       }
       else {
-        output[key] = value
+        output[to] = value
       }
     })
 

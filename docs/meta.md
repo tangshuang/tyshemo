@@ -97,6 +97,8 @@ const attrs = {
   map: (value, key, data) => newValue,
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
   flat: (value, key, data) => ({ [key]: newValue }),
+  // optional, submit the key to be another name, for example: { to: 'table_1.field_1' } -> { 'table_1.field_1': value }
+  to: String,
 
   // optional, function, format this property value when set
   setter: (value) => value,
