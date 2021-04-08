@@ -678,4 +678,44 @@ describe('Model', () => {
       done()
     })
   })
+
+  test('view.keyPath & $root', () => {
+    class Child extends Model {
+      static name = new Meta({
+        type: String,
+        default: '',
+      })
+      static age = new Meta({
+        type: Number,
+        default: 0,
+      })
+    }
+
+    class One extends Model {
+      static name = new Meta({
+        type: String,
+        default: '',
+      })
+      static age = new Meta({
+        type: Number,
+        default: 0,
+      })
+      static children = [Child]
+    }
+
+    const one = new One({
+      name: 'tomy',
+      age: 30,
+      children: [
+        {
+          name: 'lily',
+          age: 6,
+        },
+      ],
+    })
+
+    expect(one.children[0].$root).toBe(one)
+    expect(one.children[0].$absKeyPath).toEqual(['children', 0])
+    expect(one.children[0].$views.name.absKeyPath).toEqual(['children', 0, 'name'])
+  })
 })

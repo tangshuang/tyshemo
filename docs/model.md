@@ -227,6 +227,30 @@ class Some extends Model {
 
 In this code block, `$views.$state` will be `{ isFund, isPaid }`.
 
+### Nested Model System
+
+Your model may contains submodels, in submodels, you will have:
+
+**$parent**
+
+Get current model's parent model
+
+**$keyPath**
+
+Get current model's keyPath relative to parent model
+
+**$root**
+
+Get current model's root model
+
+**$absKeyPath**
+
+Get current model's keyPath from $root to current model.
+
+**view.absKeyPath**
+
+Get current field's keyPath from $root to current model.
+
 ### Read
 
 To read data on a model instance, you have 3 ways.

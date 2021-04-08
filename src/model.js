@@ -161,6 +161,38 @@ export class Model {
     const store = new Store()
     define(this, '$store', store)
 
+
+    define(this, '$root', () => {
+      let parent = this.$parent
+
+      if (!parent) {
+        return this
+      }
+
+      while (parent.$parent) {
+        parent = parent.$parent
+      }
+
+      return parent
+    })
+
+    define(this, '$absKeyPath', () => {
+      let parent = this.$parent
+      let keyPath = this.$keyPath
+      const path = []
+
+      if (!parent) {
+        return path
+      }
+
+      while (parent) {
+        path.unshift(...keyPath)
+        parent = parent.$parent
+      }
+
+      return path
+    })
+
     this.init(data)
 
     /**
@@ -304,6 +336,13 @@ export class Model {
               set: (target, key, value) => inArray(key, keys) && this.set(key, value),
             })
             return proxy
+          },
+          enumerable: true,
+        },
+        absKeyPath: {
+          get: () => {
+            const absKeyPath = this.$absKeyPath
+            return [...absKeyPath, key]
           },
           enumerable: true,
         },
