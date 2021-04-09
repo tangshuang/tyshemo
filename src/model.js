@@ -258,12 +258,12 @@ export class Model {
       // use defineProperties to define view properties
       const viewDef = {}
 
-      each(attrs, (value, attr) => {
-        if (isNull(value)) {
+      each(attrs, (fallback, attr) => {
+        if (isNull(fallback)) {
           return
         }
         viewDef[attr] = {
-          get: () => this.$schema.$decide(key, attr, this)(value),
+          get: () => this.$schema.$decide(key, attr, this)(fallback),
           enumerable: true,
         }
       })
@@ -293,8 +293,12 @@ export class Model {
             this.$store.forceDispatch(key, attr, next)
           })
         }
+        // use as a getter
+        else if (isFunction(value)) {
+          return value.call(this, key)
+        }
+        // patch to view directly
         else {
-          // patch to view directly
           view[attr] = value
         }
       }, true)

@@ -142,12 +142,16 @@ export class Schema {
     return (fallback) => {
       const meta = this[key]
 
+      const callback = () => {
+        return isFunction(fallback) ? fallback.call(context, key) : fallback
+      }
+
       if (!meta) {
-        return fallback
+        return callback()
       }
 
       if (!inObject(attr, meta)) {
-        return fallback
+        return callback()
       }
 
       const node = meta[attr]
@@ -164,7 +168,7 @@ export class Schema {
         if (isFunction(determine)) {
           return this._trydo(
             () => determine.call(context, key),
-            (error) => isFunction(handle) && handle.call(context, error, key) || fallback,
+            (error) => isFunction(handle) && handle.call(context, error, key) || callback(),
             {
               key,
               attr,
@@ -177,7 +181,7 @@ export class Schema {
       }
 
       /**
-       * node is a function
+       * node is a function, use as a getter
        */
       if (isFunction(node)) {
         return this._trydo(

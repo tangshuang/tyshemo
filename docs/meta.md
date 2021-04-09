@@ -133,6 +133,8 @@ const attrs = {
   catch: (error) => {},
 
   // any other attr name, which can be used in Model by Model.attrs method
+  // notice, if it is a function, it will be used as a getter whose parameter is the key name and return value will be treated as the real value when called on view
+  // i.e. some(key) { return 'real_value' } -> model.$views.field.some -> 'real_value'
   [attr]: any,
 }
 ```
