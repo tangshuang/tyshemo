@@ -718,4 +718,41 @@ describe('Model', () => {
     expect(one.children[0].$absKeyPath).toEqual(['children', 0])
     expect(one.children[0].$views.name.absKeyPath).toEqual(['children', 0, 'name'])
   })
+
+  test('attrs()', () => {
+    class SomeModel extends Model {
+      static dot = new Meta({
+        type: String,
+        default: '',
+      })
+      attrs() {
+        return {
+          some: true,
+        }
+      }
+    }
+
+    const some = new SomeModel()
+    expect(some.$views.dot.hidden).toBe(false)
+    expect(some.$views.dot.some).toBe(true)
+
+    class FnModel extends SomeModel {
+      static dot = new Meta({
+        type: String,
+        default: '',
+      })
+      attrs() {
+        const attrs = super.attrs()
+        return {
+          ...attrs,
+          fn: (key) => key,
+        }
+      }
+    }
+
+    const fn = new FnModel()
+    expect(fn.$views.dot.hidden).toBe(false)
+    expect(fn.$views.dot.some).toBe(true)
+    expect(fn.$views.dot.fn).toBe('dot')
+  })
 })

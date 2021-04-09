@@ -31,7 +31,7 @@ import { edit } from './shared/edit.js'
 import Meta from './meta.js'
 import Factory from './factory.js'
 
-export const DEFAULT_ATTRIBUTES = {
+const DEFAULT_ATTRIBUTES = {
   default: null,
   compute: null,
   type: null,
@@ -139,6 +139,8 @@ export class Model {
     }
     define(this, '$schema', schema)
     define(this, '$hooks', [])
+    define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this.attrs() })
+    define(this, '$$state', this.state())
 
     // use passed parent
     if (keyPath && isInstanceOf(parent, Model)) {
@@ -222,8 +224,7 @@ export class Model {
   }
 
   attrs() {
-    // default attributes on meta, `null` to disable patching to view
-    return { ...DEFAULT_ATTRIBUTES }
+    return {}
   }
 
   init(data = {}) {
@@ -231,7 +232,6 @@ export class Model {
       return
     }
 
-    const Constructor = getConstructorOf(this)
     const keys = Object.keys(this.$schema)
 
     // patch keys to this
@@ -250,7 +250,7 @@ export class Model {
       // patch attributes from meta
       const meta = this.$schema[key]
       // default attributes which will be used by Model/Schema, can not be reset by userself
-      const attrs = Constructor.prototype.attrs.call(null)
+      const attrs = this.$$attrs
       // define a view
       const view = {
         changed: false, // whether the field has changed
@@ -440,9 +440,8 @@ export class Model {
   }
 
   _combineState() {
-    const Constructor = getConstructorOf(this)
     const output = {}
-    const state = Constructor.prototype.state.call(null)
+    const state = this.$$state
     const combine = (state) => {
       each(state, (descriptor, key) => {
         const { value } = descriptor
@@ -1183,7 +1182,7 @@ export class Model {
       const key = keys[i]
       const meta = this.$schema[key]
       if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
-        return isFunction(fn) ? fn(key) : this.$views[key]
+        return isFunction(fn) ? fn.call(this, key) : this.$views[key]
       }
     }
   }
