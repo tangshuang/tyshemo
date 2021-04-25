@@ -23,6 +23,7 @@ import {
   isConstructor,
   mixin,
   makeKeyPath,
+  isEmpty,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -329,7 +330,11 @@ export class Model {
           enumerable: true,
         },
         text: {
-          get: () => this.$schema.format(key, getData(), this) + '',
+          get: () => {
+            const text = this.$schema.format(key, getData(), this)
+            // return original `null` `undefined` `NaN` to stand for different meanings
+            return isEmpty(text) ? text : text + '';
+          },
           enumerable: true,
         },
         state: {

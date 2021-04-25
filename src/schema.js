@@ -268,17 +268,11 @@ export class Schema {
     }
 
     const { formatter, catch: handle } = meta
-    const fall = (value) => {
-      if (isEmpty(value)) {
-        return ''
-      }
-      return value + ''
-    }
 
     if (isFunction(formatter)) {
       const coming = this._trydo(
         () => formatter.call(context, value, key),
-        (error) => isFunction(handle) && handle.call(context, error, key) || fall(value),
+        (error) => isFunction(handle) && handle.call(context, error, key) || value,
         {
           key,
           attr: 'formatter',
@@ -287,7 +281,7 @@ export class Schema {
       return coming
     }
     else {
-      return fall(value)
+      return value
     }
   }
 
