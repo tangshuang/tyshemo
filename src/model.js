@@ -22,6 +22,7 @@ import {
   isEqual,
   isConstructor,
   mixin,
+  makeKeyPath,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -630,6 +631,26 @@ export class Model {
   }
 
   /**
+   * get a view of field by its keyPath
+   * @param {*} keyPath
+   */
+  use(keyPath) {
+    const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
+    const key = chain.pop()
+
+    if (!chain.length) {
+      return this.$views[key]
+    }
+
+    const target = parse(this, chain)
+    if (!isInstanceOf(target, Model)) {
+      throw new Error(`${makeKeyPath(chain)} is not a model`)
+    }
+
+    return target.$views[key]
+  }
+
+  /**
    * set field value, with `readonly`, `disabled`, `editable`, `type` checking, and formatting by `setter`
    * @param {array|string} keyPath
    * @param {*} next
@@ -1186,6 +1207,8 @@ export class Model {
       }
     }
   }
+
+
 }
 
 export default Model
