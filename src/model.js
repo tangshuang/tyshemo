@@ -330,11 +330,7 @@ export class Model {
           enumerable: true,
         },
         text: {
-          get: () => {
-            const text = this.$schema.format(key, getData(), this)
-            // return original `null` `undefined` `NaN` to stand for different meanings
-            return isEmpty(text) ? text : text + '';
-          },
+          get: () => this.$schema.format(key, getData(), this),
           enumerable: true,
         },
         state: {
@@ -648,11 +644,9 @@ export class Model {
     }
 
     const target = parse(this, chain)
-    if (!isInstanceOf(target, Model)) {
-      throw new Error(`${makeKeyPath(chain)} is not a model`)
+    if (isInstanceOf(target, Model)) {
+      return target.$views[key]
     }
-
-    return target.$views[key]
   }
 
   /**

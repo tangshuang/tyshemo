@@ -14,6 +14,7 @@ import {
   inObject,
   isInheritedOf,
   isEmpty,
+  isNone,
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
@@ -268,11 +269,12 @@ export class Schema {
     }
 
     const { formatter, catch: handle } = meta
+    const text = isNone(value) ? '' : value
 
     if (isFunction(formatter)) {
       const coming = this._trydo(
         () => formatter.call(context, value, key),
-        (error) => isFunction(handle) && handle.call(context, error, key) || value,
+        (error) => isFunction(handle) && handle.call(context, error, key) || text,
         {
           key,
           attr: 'formatter',
@@ -281,7 +283,7 @@ export class Schema {
       return coming
     }
     else {
-      return value
+      return text
     }
   }
 
