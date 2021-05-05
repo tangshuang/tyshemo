@@ -4,7 +4,6 @@ const path = require('path')
 const babelConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '.babelrc')))
 
 babelConfig.presets[0][1].modules = false
-babelConfig.presets[0][1].loose = true
 
 const basic = {
   mode: 'none',
@@ -26,6 +25,9 @@ const basic = {
       {
         test: /\.js$/,
         loader: 'babel-loader',
+        exclude: [
+          /node_modules\/scopex/,
+        ],
         options: babelConfig,
       },
     ],
