@@ -4,6 +4,7 @@ examples/
 docs/
 .github/
 
+.babelrc
 babel.config.js
 gulpfile.js
 webpack.config.js
