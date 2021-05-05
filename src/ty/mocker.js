@@ -52,12 +52,12 @@ export class Mocker {
     this.loaders = [...loaders, ...Mocker.defaultLoaders]
   }
 
-  define(target, loader) {
-    if (arguments.length === 2) {
-      this.loaders.unshift([target, loader])
+  define(...args) {
+    if (args.length === 2) {
+      this.loaders.unshift(args)
     }
-    else if (arguments.length === 1) {
-      this.loaders.unshift(target)
+    else if (args.length === 1) {
+      this.loaders.unshift(args[0])
     }
     return this
   }

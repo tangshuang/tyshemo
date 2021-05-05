@@ -35,12 +35,13 @@ Prototype.register = (proto, validate) => {
     prototypes.push({ proto, validate })
   }
 }
-Prototype.unregister = (proto) => {
-  if (arguments.length === 0) {
+Prototype.unregister = (...args) => {
+  if (args.length === 0) {
     prototypes.length = 0
     return
   }
 
+  const proto = args[0]
   for (let i = 0, len = prototypes.length; i < len; i ++) {
     const item = prototypes[i]
     if (item.proto === proto) {

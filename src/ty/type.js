@@ -7,6 +7,7 @@ import {
   getConstructorOf,
   isUndefined,
   isString,
+  decideby,
 } from 'ts-fns'
 
 import Prototype from './prototype.js'
@@ -31,10 +32,15 @@ export class Type {
    * @param {*} value
    * @param {*} pattern
    */
-  validate(value, pattern) {
-    if (arguments.length === 1) {
-      pattern = this.pattern
-    }
+  validate(...args) {
+    const [value, pattern] = decideby(() => {
+      if (args.length === 1) {
+        return [args[0], this.pattern]
+      }
+      else {
+        return args
+      }
+    })
 
     const tyerr = new TyError()
 
