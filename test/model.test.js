@@ -755,4 +755,27 @@ describe('Model', () => {
     expect(fn.$views.dot.some).toBe(true)
     expect(fn.$views.dot.fn).toBe('dot')
   })
+
+  test('change sub-model list directly', () => {
+    class Child extends Model {
+      static name = new Meta({
+        default: '',
+        type: String,
+      })
+
+      static age = new Meta({
+        default: 0,
+        type: Number,
+      })
+    }
+
+    class Parent extends Model {
+      static children = [Child]
+    }
+
+    const parent = new Parent()
+    // expect(parent.children).toEqual([])
+    parent.children.push({})
+    expect(parent.children[0]).toBeInstanceOf(Child)
+  })
 })

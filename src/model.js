@@ -19,11 +19,8 @@ import {
   inherit,
   inArray,
   getConstructorOf,
-  isEqual,
   isConstructor,
   mixin,
-  makeKeyPath,
-  isEmpty,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -75,7 +72,7 @@ const DEFAULT_ATTRIBUTES = {
  *            onInit, onParse, onExport,
  */
 export class Model {
-  constructor(data = {}, keyPath, parent) {
+  constructor(data = {}, [parent, key] = []) {
     const $this = this
 
     /**
@@ -145,26 +142,9 @@ export class Model {
     define(this, '$$state', this.state())
 
     // use passed parent
-    if (keyPath && isInstanceOf(parent, Model)) {
-      this.setParent(isArray(keyPath) ? keyPath : [keyPath], parent)
+    if (parent && isInstanceOf(parent, Model) && key) {
+      this.setParent([parent, key])
     }
-
-    /**
-     * create store
-     */
-    class Store extends _Store {
-      dispatch(keyPath, next, prev, force) {
-        const notify = super.dispatch(keyPath, next, prev, force)
-        // propagation
-        if ($this.$parent && $this.$keyPath) {
-          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
-        }
-        return notify
-      }
-    }
-    const store = new Store()
-    define(this, '$store', store)
-
 
     define(this, '$root', () => {
       let parent = this.$parent
@@ -196,6 +176,22 @@ export class Model {
 
       return path
     })
+
+    /**
+     * create store
+     */
+    class Store extends _Store {
+      dispatch(keyPath, next, prev, force) {
+        const notify = super.dispatch(keyPath, next, prev, force)
+        // propagation
+        if ($this.$parent && $this.$keyPath) {
+          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
+        }
+        return notify
+      }
+    }
+    const store = new Store()
+    define(this, '$store', store)
 
     this.init(data)
 
@@ -338,8 +334,8 @@ export class Model {
             const state = meta.state ? meta.state.call(null) : {}
             const keys = Object.keys(state)
             const proxy = new Proxy(state, {
-              get: (target, key) => inArray(key, keys) ? this.get(key) : undefined,
-              set: (target, key, value) => inArray(key, keys) && this.set(key, value),
+              get: (_, key) => inArray(key, keys) ? this.get(key) : undefined,
+              set: (_, key, value) => inArray(key, keys) && this.set(key, value),
             })
             return proxy
           },
@@ -503,15 +499,13 @@ export class Model {
     const params = {}
     const input = {}
 
-    const ensure = (value, keys) => {
+    const ensure = (value, key) => {
       if (isArray(value)) {
-        value.forEach((item, i) => ensure(item, [...keys, i]))
-        return
+        value.forEach((item, i) => ensure(item, key))
       }
-      if (!isInstanceOf(value, Model)) {
-        return
+      else if (isInstanceOf(value, Model)) {
+        value.setParent([this, key])
       }
-      value.setParent(keys, this)
     }
     const record = (key) => {
       if (inObject(key, data)) {
@@ -548,7 +542,7 @@ export class Model {
       if (inObject(key, data)) {
         const value = data[key]
         params[key] = value
-        ensure(value, [key])
+        ensure(value, key)
       }
       else {
         // notice here, we call this in default(), we can get passed state properties
@@ -558,7 +552,7 @@ export class Model {
         if (isAsyncRef(value)) {
           const { current, attach } = value
           params[key] = current
-          ensure(current, [key])
+          ensure(current, key)
 
           attach(key, 'default').then((next) => {
             if (this[key] === next) {
@@ -572,7 +566,7 @@ export class Model {
         }
         else {
           params[key] = value
-          ensure(value, [key])
+          ensure(value, key)
         }
       }
     })
@@ -1007,12 +1001,8 @@ export class Model {
     this.$store.editable = false
   }
 
-  /**
-   * @param {array} keyPath
-   * @param {Model} parent
-   */
-  setParent(keyPath, parent) {
-    if (this.$parent && this.$parent === parent && this.$keyPath && isEqual(this.$keyPath, keyPath)) {
+  setParent([parent, key]) {
+    if (this.$parent && this.$parent === parent && this.$keyPath && this.$keyPath[0] === key) {
       return this
     }
 
@@ -1022,8 +1012,15 @@ export class Model {
       configurable: true,
     })
     define(this, '$keyPath', {
-      value: keyPath,
-      writable: false,
+      get: () => {
+        const field = parent[key]
+        if (isArray(field)) {
+          return [key, field.indexOf(this)]
+        }
+        else {
+          return [key]
+        }
+      },
       configurable: true,
     })
 
@@ -1048,19 +1045,19 @@ export class Model {
   }
 
   _ensure(key) {
-    const add = (value, keys) => {
+    const add = (value, key) => {
       if (isInstanceOf(value, Model) && !value.$parent) {
-        value.setParent(keys, this)
+        value.setParent([this, key])
         value.onEnsure(this)
         value.emit('ensure', this)
       }
     }
     const use = (value, key) => {
       if (isArray(value)) {
-        value.forEach((item, i) => add(item, [key, i]))
+        value.forEach((item) => add(item, key))
       }
       else {
-        add(value, [key])
+        add(value, key)
       }
     }
 
@@ -1144,16 +1141,7 @@ export class Model {
         // set parent before restore
         const { $parent, $keyPath } = $this
         if ($parent) {
-          define(this, '$parent', {
-            value: $parent,
-            writable: false,
-            configurable: true,
-          })
-          define(this, '$keyPath', {
-            value: $keyPath,
-            writable: false,
-            configurable: true,
-          })
+          this.setParent([$parent, $keyPath[0]])
         }
 
         super.init(data)

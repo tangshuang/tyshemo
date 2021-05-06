@@ -11,9 +11,11 @@ class SomeModel extends Model {
 
 class SomeFactory extends Factory {
   create(fn) {
-    const res = fn(value, key, data)
-    modify(res)
-    return res
+    return (value, key, data) => {
+      const res = fn(value, key, data)
+      modify(res)
+      return res
+    }
   }
 }
 
