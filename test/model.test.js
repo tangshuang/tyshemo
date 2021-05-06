@@ -774,8 +774,18 @@ describe('Model', () => {
     }
 
     const parent = new Parent()
-    // expect(parent.children).toEqual([])
-    parent.children.push({})
+    expect(parent.children).toEqual([])
+    parent.children.push({
+      name: 'tomy',
+    })
     expect(parent.children[0]).toBeInstanceOf(Child)
+    expect(parent.children[0].name).toBe('tomy')
+    parent.children.unshift({
+      name: 'holy',
+    })
+    expect(parent.children.length).toBe(2)
+    expect(parent.children[0]).toBeInstanceOf(Child)
+    expect(parent.children[1]).toBeInstanceOf(Child)
+    expect(parent.children[0].name).toBe('holy')
   })
 })

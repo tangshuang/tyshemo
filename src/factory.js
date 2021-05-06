@@ -6,10 +6,17 @@ import {
   flatArray,
   isInstanceOf,
   isFunction,
-  isNumeric,
-  isNumber,
+  define,
 } from 'ts-fns'
 import Meta from './meta.js'
+
+export class FactoryMeta extends Meta {
+  constructor(options) {
+    const { entries, ...opts } = options
+    super(opts)
+    define(this, 'entries', () => entries)
+  }
+}
 
 export class Factory {
   // entries should be a Model constructor or an array of Model constructors
@@ -35,78 +42,6 @@ export class Factory {
         })
         return nexts
       }
-      const prox = function(ctx, items, key) {
-        const createInserter = (method) => {
-          const originalInsert = items[method].bind(items)
-          const inserter = function(...args) {
-            const nexts = filter(...args)
-            const values = nexts.map((next) => {
-              const model = Entries.some(One => isInstanceOf(next, One)) ? next
-                : isObject(next) ? new Model(next)
-                : new Model({})
-              return model
-            })
-            const res = originalInsert(...values)
-            items.forEach((item) => {
-              item.setParent([ctx, key])
-            })
-            ctx.dispatch(key, items, items, true)
-            return res
-          }
-          return inserter
-        }
-        const createModifier = (method) => {
-          const originalModify = items[method].bind(items)
-          const modifier = function(...args) {
-            const res = originalModify(...args)
-            ctx.dispatch(key, items, items, true)
-            return res
-          }
-          return modifier
-        }
-        const proxy = new Proxy(items, {
-          get: (_, k) => {
-            // const methods = [
-            //   'push', 'unshift',
-            //   'splice',
-            //   'shift', 'pop',
-            //   'sort', 'reverse', 'fill',
-            // ]
-            if (['push', 'unshift'].includes(k)) {
-              console.log(k)
-              return createInserter(k)
-            }
-            else if (['splice', 'shift', 'pop', 'sort', 'reverse', 'fill'].includes(k)) {
-              return createModifier(k)
-            }
-            else if (isFunction(items[k])) {
-              return items[k].bind(items)
-            }
-            else {
-              return items[k]
-            }
-          },
-          set: (_, k, value) => {
-            if (isNumber(k) || isNumeric(k)) {
-              const model = Entries.some(One => isInstanceOf(value, One)) ? value.setParent([ctx, key])
-                : isObject(value) ? new Model(value, [ctx, key])
-                : new Model({}, [ctx, key])
-              model.setParent([ctx, key])
-            }
-            else {
-              items[k] = value
-            }
-            ctx.dispatch(key, items, items, true)
-            return true
-          },
-          defineProperty: (_, k) => {
-            delete items[k]
-            ctx.dispatch(key, items, items, true)
-            return true
-          }
-        })
-        return proxy
-      }
       const gen = (ctx, items, key) => {
         const nexts = filter(items)
         const values = nexts.map((next) => {
@@ -115,11 +50,10 @@ export class Factory {
             : new Model({}, [ctx, key])
           return entity.instance(model, ctx)
         })
-
-        return prox(ctx, values, key)
+        return values
       }
 
-      this.meta = new Meta({
+      this.meta = new FactoryMeta({
         default: entity.default(() => []),
         type: entity.type(Entries),
         validators: entity.validators([
@@ -135,9 +69,7 @@ export class Factory {
         setter: entity.setter(function(value, key) {
           return gen(this, isArray(value) ? value : [], key)
         }),
-        getter(value, key) {
-          return prox(ctx, value, key)
-        },
+        entries: Entries,
       })
     }
     else {
@@ -148,7 +80,7 @@ export class Factory {
           : new Model({}, [key], ctx)
         return entity.instance(model, ctx)
       }
-      this.meta = new Meta({
+      this.meta = new FactoryMeta({
         default: entity.default(function(key) {
           return gen(this, {}, key)
         }),
@@ -166,6 +98,7 @@ export class Factory {
         setter: entity.setter(function(value, key) {
           return gen(this, value, key)
         }),
+        entries: Entries,
       })
     }
 

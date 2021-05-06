@@ -28,7 +28,7 @@ import _Store from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import Meta from './meta.js'
-import Factory from './factory.js'
+import { Factory, FactoryMeta } from './factory.js'
 
 const DEFAULT_ATTRIBUTES = {
   default: null,
@@ -181,11 +181,49 @@ export class Model {
      * create store
      */
     class Store extends _Store {
-      dispatch(keyPath, next, prev, force) {
-        const notify = super.dispatch(keyPath, next, prev, force)
+      init(params) {
+        super.init(params)
+        const inserter = (keyPath, args) => {
+          if (keyPath.length !== 1) {
+            return
+          }
+
+          const [key] = keyPath
+          const meta = $this.$schema[key]
+          if (!meta) {
+            return
+          }
+          if (!isInstanceOf(meta, FactoryMeta)) {
+            return
+          }
+
+          const { entries } = meta
+          const nexts = args.filter((item) => {
+            if (entries.some(One => isInstanceOf(item, One))) {
+              return true
+            }
+            if (isObject(item)) {
+              return true
+            }
+            return false
+          })
+          const [Entry] = entries
+          const values = nexts.map((next) => {
+            const model = entries.some(One => isInstanceOf(next, One)) ? next.setParent([$this, key])
+              : isObject(next) ? new Entry(next, [$this, key])
+              : new Entry({}, [$this, key])
+            return model
+          })
+          return values
+        }
+        this._traps.push = inserter
+        this._traps.unshift = inserter
+      }
+      dispatch(keyPath, { value, next, prev, active, invalid }, force) {
+        const notify = super.dispatch(keyPath, { value, next, prev, active, invalid }, force)
         // propagation
         if ($this.$parent && $this.$keyPath) {
-          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], next, prev, true)
+          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], { value, next, prev, active, invalid }, true)
         }
         return notify
       }
