@@ -10,3 +10,4 @@ gulpfile.js
 webpack.config.js
 jest.config.js
 docserver.js
+.browserslistrc
