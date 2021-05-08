@@ -197,9 +197,9 @@ export class Model {
             return
           }
 
-          const { entries } = meta
+          const { $entries } = meta
           const nexts = args.filter((item) => {
-            if (entries.some(One => isInstanceOf(item, One))) {
+            if ($entries.some(One => isInstanceOf(item, One))) {
               return true
             }
             if (isObject(item)) {
@@ -207,9 +207,9 @@ export class Model {
             }
             return false
           })
-          const [Entry] = entries
+          const [Entry] = $entries
           const values = nexts.map((next) => {
-            const model = entries.some(One => isInstanceOf(next, One)) ? next.setParent([$this, key])
+            const model = $entries.some(One => isInstanceOf(next, One)) ? next.setParent([$this, key])
               : isObject(next) ? new Entry(next, [$this, key])
               : new Entry({}, [$this, key])
             return model
