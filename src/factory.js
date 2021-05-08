@@ -28,6 +28,13 @@ export class Factory {
   }
   init(Entries) {
     const entity = this
+
+    const genAttrs = (attrs) => {
+      const options = isFunction(this.options) ? this.options(attrs) || {} : this.options
+      // attrs is force set, developer can pass a options(attrs) function to modify it before initialized
+      return { ...options, ...attrs }
+    }
+
     if (isArray(Entries)) {
       const Model = entity.entry(Entries[0])
       const filter = (items) => {
@@ -53,7 +60,7 @@ export class Factory {
         return values
       }
 
-      this.meta = new FactoryMeta({
+      const options = {
         default: entity.default(() => []),
         type: entity.type(Entries),
         validators: entity.validators([
@@ -70,7 +77,9 @@ export class Factory {
           return gen(this, isArray(value) ? value : [], key)
         }),
         entries: Entries,
-      })
+      }
+      const attrs = genAttrs(options)
+      this.meta = new FactoryMeta(attrs)
     }
     else {
       const Model = entity.entry(Entries)
@@ -80,7 +89,7 @@ export class Factory {
           : new Model({}, [key], ctx)
         return entity.instance(model, ctx)
       }
-      this.meta = new FactoryMeta({
+      const options = {
         default: entity.default(function(key) {
           return gen(this, {}, key)
         }),
@@ -99,15 +108,9 @@ export class Factory {
           return gen(this, value, key)
         }),
         entries: Entries,
-      })
-    }
-
-    if (isFunction(this.options)) {
-      const next = this.options(this.meta) || {}
-      this.meta = { ...this.meta, ...next }
-    }
-    else if (this.options) {
-      this.meta = { ...this.meta, ...this.options }
+      }
+      const attrs = genAttrs(options)
+      this.meta = new FactoryMeta(attrs)
     }
   }
 

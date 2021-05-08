@@ -296,14 +296,14 @@ export class Loader {
         })
 
         // factory wrapper should must come after schema finished, or schema sub model will not be ready
-        each(factories, (fac, name) => {
+        each(factories, (attrs, name) => {
           if (!$schema[name]) {
             return
           }
-          if (!isObject(fac)) {
+          if (!isObject(attrs)) {
             return
           }
-          $schema[name] = new Factory($schema[name], fac)
+          $schema[name] = Factory.getMeta($schema[name], attrs)
         })
 
         return $schema
