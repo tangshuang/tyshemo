@@ -1,6 +1,6 @@
 {
   "name": "tyshemo",
-  "version": "11.1.0",
+  "version": "11.1.1",
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
   "scripts": {
