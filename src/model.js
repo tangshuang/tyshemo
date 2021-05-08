@@ -305,9 +305,14 @@ export class Model {
       })
 
       each(meta, (descriptor, attr) => {
+        if (inArray(attr[0], ['$', '_'])) {
+          return
+        }
+
         if (inObject(attr, attrs)) {
           return
         }
+
         const { value, get, set } = descriptor
         if (get || set) {
           viewDef[attr] = {
@@ -576,36 +581,36 @@ export class Model {
     }, true)
 
     // those on schema
-    each(schema, (def, key) => {
+    each(schema, (_, key) => {
       if (inObject(key, data)) {
         const value = data[key]
         params[key] = value
         ensure(value, key)
+        return
+      }
+
+      // notice here, we call this in default(), we can get passed state properties
+      const value = schema.getDefault(key, this)
+
+      // default can be an AsyncGetter, so that we can set default value asyncly
+      if (isAsyncRef(value)) {
+        const { current, attach } = value
+        params[key] = current
+        ensure(current, key)
+
+        attach(key, 'default').then((next) => {
+          if (this[key] === next) {
+            return
+          }
+          if (this[key] && typeof this[key] === 'object' && this[key][Symbol('ORIGIN')] === next) {
+            return
+          }
+          this[key] = next // will trigger watcher
+        })
       }
       else {
-        // notice here, we call this in default(), we can get passed state properties
-        const value = schema.getDefault(key, this)
-
-        // default can be an AsyncGetter, so that we can set default value asyncly
-        if (isAsyncRef(value)) {
-          const { current, attach } = value
-          params[key] = current
-          ensure(current, key)
-
-          attach(key, 'default').then((next) => {
-            if (this[key] === next) {
-              return
-            }
-            if (this[key] && typeof this[key] === 'object' && this[key][Symbol('ORIGIN')] === next) {
-              return
-            }
-            this[key] = next // will trigger watcher
-          })
-        }
-        else {
-          params[key] = value
-          ensure(value, key)
-        }
+        params[key] = value
+        ensure(value, key)
       }
     })
 
@@ -615,7 +620,8 @@ export class Model {
         return
       }
 
-      if (key.indexOf('$') === 0 || key.indexOf('_') === 0) {
+      // disable for private properties
+      if (inArray(key[0], ['$', '_'])) {
         return
       }
 

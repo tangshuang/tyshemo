@@ -14,7 +14,7 @@ export class FactoryMeta extends Meta {
   constructor(options) {
     const { entries, ...opts } = options
     super(opts)
-    define(this, 'entries', () => entries)
+    define(this, '$entries', () => entries)
   }
 }
 
