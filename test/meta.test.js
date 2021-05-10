@@ -80,4 +80,29 @@ describe('Meta', () => {
     good.price = 10
     expect(good.price).toBe(10)
   })
+
+  test('attribute getter', () => {
+    class Price extends Meta {
+      static default = 0
+      static type = Numeric
+      static force = true
+    }
+    class Discount extends Meta {
+      static default = 0
+      static will_cost() {
+        return this.reflect(Price).value
+      }
+      static type = Numeric
+    }
+
+    class Good extends Model {
+      static price = Price
+      static discount = Discount
+    }
+
+    const good = new Good({
+      price: 12,
+    })
+    expect(good.use('discount').will_cost).toBe(12)
+  })
 })

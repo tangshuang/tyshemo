@@ -336,7 +336,11 @@ export class Model {
         }
         // use as a getter
         else if (isFunction(value)) {
-          return value.call(this, key)
+          viewDef[attr] = {
+            get: value.bind(this),
+            enumerable: true,
+            configurable: true,
+          }
         }
         // patch to view directly
         else {
