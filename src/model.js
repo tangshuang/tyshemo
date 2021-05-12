@@ -670,7 +670,22 @@ export class Model {
     const value = this._getData(key)
     const transformed = this.$schema.get(key, value, this)
     const output = parse(transformed, chain)
-    return output
+
+    // developers can hook on `dependon` to know which fields are called in a block of code
+    /* i.e.
+      const deps = []
+      const collect = (key) => {
+        deps.push(key)
+      }
+      model.on('dependon', collect)
+      // .... do something ....
+      model.off('dependon', collect)
+      console.log(deps)
+     */
+    const hooked = this.emit('dependon', keyPath, value, output)
+    const res = isUndefined(hooked) ? output : hooked
+
+    return res
   }
 
   /**
