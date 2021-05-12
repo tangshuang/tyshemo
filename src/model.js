@@ -634,7 +634,8 @@ export class Model {
     }, true)
 
     // reset into store
-    const initParams = this.emit('switch', this.onSwitch(params) || params) || params
+    const initParams = this.onSwitch(params)
+    this.emit('switch', initParams)
     this.$store.init(initParams)
 
     // patch those which are not in store but on `this`
@@ -682,10 +683,9 @@ export class Model {
       model.off('dependon', collect)
       console.log(deps)
      */
-    const hooked = this.emit('dependon', output, keyPath)
-    const res = isUndefined(hooked) ? output : hooked
+    this.emit('get', keyPath, output)
 
-    return res
+    return output
   }
 
   /**
@@ -739,7 +739,7 @@ export class Model {
     const value = force ? this.$schema.$set(key, next, this) : this.$schema.set(key, next, prev, this)
     const coming = this.$store.set(key, value)
 
-    this.emit('set', { key: keyPath, next: coming, prev })
+    this.emit('set', keyPath, coming, prev)
 
     return coming
   }
@@ -811,7 +811,8 @@ export class Model {
     if (!key) {
       const errors = []
 
-      const errs = this.emit('check', this.onCheck()) || []
+      const errs = this.onCheck() || []
+      this.emit('check', errs)
       errors.push(...errs)
 
       const keys = Object.keys(this.$schema)
@@ -843,7 +844,8 @@ export class Model {
     if (!key) {
       const errors = []
 
-      const errs = this.emit('check', this.onCheck()) || []
+      const errs = this.onCheck() || []
+      this.emit('check', errs)
       errors.push(...errs)
 
       const keys = Object.keys(this.$schema)
@@ -929,7 +931,8 @@ export class Model {
     Object.assign(this, patches)
 
     // when new Model, onParse may throw error
-    const entry = tryGet(() => this.emit('parse', this.onParse(json) || json) || json, json)
+    const entry = tryGet(() => this.onParse(json) || json, json)
+    this.emit('parse', entry)
     const data = this.$schema.parse(entry, this)
     const next = { ...entry, ...data }
     this.restore(next, keysPatchToThis)
@@ -949,7 +952,8 @@ export class Model {
     this._check()
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.record(data, this)
-    const result = this.emit('record', this.onRecord(output) || output) || output
+    const result = this.onRecord(output) || output
+    this.emit('record', result)
     return result
   }
 
@@ -986,7 +990,8 @@ export class Model {
     this._check()
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.export(data, this)
-    const result = this.emit('export', this.onExport(output) || output) || output
+    const result = this.onExport(output) || output
+    this.emit('export', result)
     return result
   }
 
@@ -1019,16 +1024,13 @@ export class Model {
     return this
   }
 
-  emit(hook, arg) {
-    let res = arg
+  emit(hook, ...args) {
     this.$hooks.forEach((item) => {
       if (hook !== item.hook) {
         return
       }
-      const { fn } = item
-      res = fn.call(this, res)
+      item.fn.call(this, ...args)
     })
-    return res
   }
 
   // when initialized
