@@ -682,7 +682,7 @@ export class Model {
       model.off('dependon', collect)
       console.log(deps)
      */
-    const hooked = this.emit('dependon', keyPath, value, output)
+    const hooked = this.emit('dependon', output, keyPath)
     const res = isUndefined(hooked) ? output : hooked
 
     return res
