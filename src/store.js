@@ -189,7 +189,7 @@ export class Store {
     each(data, (value, key) => {
       this.set(key, value, silent)
     })
-    return this.state
+    return Promise.resolve(this.state)
   }
 
   // define a computed property
@@ -433,15 +433,15 @@ export class Store {
 
   dispatch(keyPath, { value, next, prev, active, invalid }, force = false) {
     if (this.silent) {
-      return
+      return false
     }
 
     if (!force && next === prev) {
-      return
+      return false
     }
 
     if (!force && isEqual(next, prev)) {
-      return
+      return false
     }
 
     const key = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
@@ -479,11 +479,13 @@ export class Store {
       const target = item.key
       item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid })
     })
+
+    return true
   }
 
   forceDispatch(...args) {
     if (this.silent) {
-      return
+      return false
     }
 
     this._watchers.forEach((item) => {
@@ -492,6 +494,8 @@ export class Store {
       }
       item.fn.call(item.context || this.state, ...args)
     })
+
+    return true
   }
 
 }

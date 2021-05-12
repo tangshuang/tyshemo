@@ -220,12 +220,12 @@ export class Model {
         this._traps.unshift = inserter
       }
       dispatch(keyPath, { value, next, prev, active, invalid }, force) {
-        const notify = super.dispatch(keyPath, { value, next, prev, active, invalid }, force)
+        const notified = super.dispatch(keyPath, { value, next, prev, active, invalid }, force)
         // propagation
-        if ($this.$parent && $this.$keyPath) {
+        if (notified && $this.$parent && $this.$keyPath) {
           $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], { value, next, prev, active, invalid }, true)
         }
-        return notify
+        return notified
       }
     }
     const store = new Store()
