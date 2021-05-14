@@ -183,9 +183,10 @@ export class Loader {
           }
 
           const meta = {}
-          each(def, (_exp, attr) => {
+          const defi = this.meta(def)
+          each(defi, (_exp, attr) => {
             const [_key, _params] = parseKey(attr)
-            const [key, params, exp] = loader.meta(_key, _params, _exp)
+            const [key, params, exp] = loader.attr(_key, _params, _exp)
 
             if (key === 'type') {
               const type = typeParser.parse(exp)
@@ -361,26 +362,38 @@ export class Loader {
     return LoadedModel
   }
 
+  // set types
   types() {
     return {}
   }
+  // set defs
   defs() {
     return {}
   }
+  // set filters
   filters() {
     return {}
   }
 
-  meta(key, params, exp) {
+  // you can modify json meta object here
+  meta(meta) {
+    return meta
+  }
+  // you can modify an attribute json here
+  attr(key, params, exp) {
     return [key, params, exp]
   }
+  // you can modify an validator json here
   validator(key, params, exp) {
     return [key, params, exp]
   }
+
+  // you can modify a method json here
   method(key, params, exp) {
     return [key, params, exp]
   }
 
+  // define fetch factory
   fetch(url) {
     return fetch(url).then(res => res.json())
   }
