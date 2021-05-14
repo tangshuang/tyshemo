@@ -183,7 +183,7 @@ export class Loader {
           }
 
           const meta = {}
-          const defi = this.meta(def)
+          const defi = loader.meta(def)
           each(defi, (_exp, attr) => {
             const [_key, _params] = parseKey(attr)
             const [key, params, exp] = loader.attr(_key, _params, _exp)
