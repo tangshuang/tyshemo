@@ -12,9 +12,9 @@ import Meta from './meta.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
-    const { entries, ...opts } = options
+    const { $entries, ...opts } = options
     super(opts)
-    define(this, '$entries', () => entries)
+    define(this, '$entries', () => $entries)
   }
 }
 
@@ -29,11 +29,18 @@ export class Factory {
   init(Entries) {
     const entity = this
 
-    const genAttrs = (attrs) => {
-      const options = isFunction(this.options) ? this.options(attrs) || {} : this.options
-      // attrs is force set, developer can pass a options(attrs) function to modify it before initialized
-      return { ...options, ...attrs }
-    }
+    const {
+      default: _default,
+      validators: _validators = [],
+      // the following ones are no use
+      type: _type,
+      create: _create,
+      save: _save,
+      map: _map,
+      setter: _setter,
+      getter: _getter,
+      ...attrs
+    } = this.options || {}
 
     if (isArray(Entries)) {
       const Model = entity.entry(Entries[0])
@@ -61,12 +68,18 @@ export class Factory {
       }
 
       const options = {
-        default: entity.default(() => []),
+        ...attrs,
+        default: entity.default(function(key) {
+          const items = isFunction(_default) ? _default.call(this, key) : _default
+          const values = isArray(items) ? items : []
+          return gen(this, values, key)
+        }),
         type: entity.type(Entries),
         validators: entity.validators([
           {
             validate: ms => flatArray(map(ms, m => m.validate())),
           },
+          ..._validators,
         ]),
         create: entity.create(function(value, key) {
           return gen(this, isArray(value) ? value : [], key)
@@ -76,10 +89,9 @@ export class Factory {
         setter: entity.setter(function(value, key) {
           return gen(this, isArray(value) ? value : [], key)
         }),
-        entries: Entries,
+        $entries: Entries,
       }
-      const attrs = genAttrs(options)
-      this.meta = new FactoryMeta(attrs)
+      this.meta = new FactoryMeta(options)
     }
     else {
       const Model = entity.entry(Entries)
@@ -90,14 +102,17 @@ export class Factory {
         return entity.instance(model, ctx)
       }
       const options = {
+        ...attrs,
         default: entity.default(function(key) {
-          return gen(this, {}, key)
+          const value = isFunction(_default) ? _default.call(this, key) : _default
+          return gen(this, value, key)
         }),
         type: entity.type(Model),
         validators: entity.validators([
           {
             validate: m => m.validate(),
           },
+          ..._validators,
         ]),
         create: entity.create(function(value, key) {
           return gen(this, value, key)
@@ -107,10 +122,9 @@ export class Factory {
         setter: entity.setter(function(value, key) {
           return gen(this, value, key)
         }),
-        entries: Entries,
+        $entries: Entries,
       }
-      const attrs = genAttrs(options)
-      this.meta = new FactoryMeta(attrs)
+      this.meta = new FactoryMeta(options)
     }
   }
 
