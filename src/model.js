@@ -21,6 +21,7 @@ import {
   getConstructorOf,
   isConstructor,
   mixin,
+  createArray,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -218,6 +219,41 @@ export class Model {
         }
         this._traps.push = inserter
         this._traps.unshift = inserter
+
+        this._traps.splice = (keyPath, args) => {
+          const [start, count, ...items] = args
+          const values = items.length ? inserter(keyPath, items) : []
+          return [start, count, ...values]
+        }
+
+        this._traps.fill = (keyPath, args) => {
+          const [value, start, end] = args
+          const [key] = keyPath
+          const current = $this[key]
+          const len = current.length
+
+          // without effects
+          if (start && start >= len) {
+            return false
+          }
+
+          const from = start || 0
+
+          if (end && end <= from) {
+            return false
+          }
+
+          const to = !end || end > len ? len : end
+          const count = to - from
+
+          const items = createArray(value, count)
+          const values = inserter(keyPath, items)
+
+          return {
+            to: 'splice',
+            args: [start, count, ...values],
+          }
+        }
       }
       dispatch(keyPath, { value, next, prev, active, invalid }, force) {
         const notified = super.dispatch(keyPath, { value, next, prev, active, invalid }, force)

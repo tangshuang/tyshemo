@@ -788,4 +788,84 @@ describe('Model', () => {
     expect(parent.children[1]).toBeInstanceOf(Child)
     expect(parent.children[0].name).toBe('holy')
   })
+
+  test('splice for sub-models', () => {
+    class Child extends Model {
+      static name = new Meta({
+        default: '',
+        type: String,
+      })
+
+      static age = new Meta({
+        default: 0,
+        type: Number,
+      })
+    }
+
+    class Parent extends Model {
+      static children = [Child]
+    }
+
+    const some = new Parent({
+      children: [{}, {}],
+    })
+
+    expect(some.children.length).toBe(2)
+    expect(some.children[0]).toBeInstanceOf(Child)
+    expect(some.children[1]).toBeInstanceOf(Child)
+
+    const child2 = some.children[1]
+    some.children.splice(1, 0, {}, {})
+    expect(some.children.length).toBe(4)
+    expect(some.children[1]).toBeInstanceOf(Child)
+    expect(some.children[2]).toBeInstanceOf(Child)
+    expect(some.children[3]).toBeInstanceOf(Child)
+
+    expect(some.children[1]).not.toBe(child2)
+    expect(some.children[3]).toBe(child2)
+  })
+
+  test('fill for sub-models', () => {
+    class Child extends Model {
+      static name = new Meta({
+        default: '',
+        type: String,
+      })
+
+      static age = new Meta({
+        default: 0,
+        type: Number,
+      })
+    }
+
+    class Parent extends Model {
+      static children = [Child]
+    }
+
+    const some = new Parent({
+      children: [{}, {}],
+    })
+
+    expect(some.children.length).toBe(2)
+    expect(some.children[0]).toBeInstanceOf(Child)
+    expect(some.children[1]).toBeInstanceOf(Child)
+
+    const [child1, child2] = some.children
+    some.children.fill({})
+    expect(some.children.length).toBe(2)
+    expect(some.children[0]).toBeInstanceOf(Child)
+    expect(some.children[1]).toBeInstanceOf(Child)
+    expect(some.children[0]).not.toBe(child1)
+    expect(some.children[1]).not.toBe(child2)
+
+    some.children.fill({}, 1)
+    expect(some.children[1]).toBeInstanceOf(Child)
+    expect(some.children[1]).not.toBe(child2)
+
+    const child3 = some.children[1]
+    some.children.fill({}, 1, 3) // greater than length
+    expect(some.children.length).toBe(2)
+    expect(some.children[1]).toBeInstanceOf(Child)
+    expect(some.children[1]).not.toBe(child3)
+  })
 })
