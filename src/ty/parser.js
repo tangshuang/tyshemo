@@ -7,6 +7,7 @@ import {
   isInheritedOf,
   map,
   each,
+  filter,
 } from 'ts-fns'
 
 import Ty from './ty.js'
@@ -264,7 +265,7 @@ export class Parser {
     const comments = {}
     const build = (value, key) => {
       if (key && key.indexOf('#') === 0) {
-        comments[key.substr(2)] = value
+        comments[key.substr(1)] = value
       }
       else if (isObject(value)) {
         const subtype = parser.parse(value)
@@ -299,7 +300,7 @@ export class Parser {
       }
     }
 
-    const pattern = isObject(target) ? map(target, build) : build(target)
+    const pattern = isObject(target) ? filter(map(target, build), (_, key) => key.indexOf('#') !== 0) : build(target)
     const type = Ty.create(pattern)
     type.__comments__ = comments
 
