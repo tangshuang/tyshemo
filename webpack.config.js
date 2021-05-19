@@ -1,9 +1,4 @@
 const DeepScope = require('webpack-deep-scope-plugin').default
-const fs = require('fs')
-const path = require('path')
-const babelConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '.babelrc')))
-
-babelConfig.presets[0][1].modules = false
 
 const basic = {
   mode: 'none',
@@ -25,10 +20,6 @@ const basic = {
       {
         test: /\.js$/,
         loader: 'babel-loader',
-        exclude: [
-          /node_modules\/scopex/,
-        ],
-        options: babelConfig,
       },
     ],
   },
@@ -63,8 +54,6 @@ const ty = {
     library: 'ty',
     filename: 'ty.js',
   },
-  resolve: undefined,
-  externals: undefined,
 }
 
 const tymini = {
@@ -75,8 +64,6 @@ const tymini = {
     library: 'ty',
     filename: 'ty.min.js',
   },
-  resolve: undefined,
-  externals: undefined,
 }
 
 const store = {
@@ -87,8 +74,6 @@ const store = {
     library: 'store',
     filename: 'store.js',
   },
-  resolve: undefined,
-  externals: undefined,
 }
 
 const storemini = {
@@ -99,8 +84,6 @@ const storemini = {
     library: 'store',
     filename: 'store.min.js',
   },
-  resolve: undefined,
-  externals: undefined,
 }
 
 module.exports = [
