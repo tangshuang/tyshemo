@@ -829,12 +829,14 @@ export class Schema {
 
     const { catch: handle, create, force } = meta
 
-    let coming = value
+    const defaultValue = this.getDefault(key, context)
+
+    let coming = isUndefined(value) ? defaultValue : value
 
     if (isFunction(create)) {
       coming = this._trydo(
-        () => create.call(context, value, key, data),
-        (error) => isFunction(handle) && handle.call(context, error, key) || value,
+        () => create.call(context, coming, key, data),
+        (error) => isFunction(handle) && handle.call(context, error, key) || coming,
         {
           key,
           attr: 'create',
@@ -843,7 +845,7 @@ export class Schema {
     }
 
     if (isUndefined(coming) || (force && this.check(key, coming, context))) {
-      coming = this.getDefault(key, context)
+      coming = defaultValue
     }
 
     return coming

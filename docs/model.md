@@ -52,6 +52,8 @@ class ParentModel extends Model {
 }
 ```
 
+*Notice: type=undefined is not allowed in a Model, when a field's value is undefined, tyshemo treat it as no value (treat as that the field is not existing).*
+
 ## Schema
 
 You can return an object as Model definition in `schema` method for a model so that you do not need to define static properties and is easy to extend the model.

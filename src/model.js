@@ -163,15 +163,15 @@ export class Model {
 
     define(this, '$absKeyPath', () => {
       let parent = this.$parent
-      let keyPath = this.$keyPath
-      const path = []
 
       if (!parent) {
-        return path
+        return []
       }
 
-      while (parent) {
-        path.unshift(...keyPath)
+      const path = [...this.$keyPath]
+
+      while (parent && parent.$keyPath) {
+        path.unshift(...parent.$keyPath)
         parent = parent.$parent
       }
 
@@ -184,20 +184,30 @@ export class Model {
     class Store extends _Store {
       init(params) {
         super.init(params)
-        const inserter = (keyPath, args) => {
+
+        const isNotAllowed = (keyPath) => {
           if (keyPath.length !== 1) {
-            return
+            return false
           }
 
           const [key] = keyPath
           const meta = $this.$schema[key]
           if (!meta) {
-            return
-          }
-          if (!isInstanceOf(meta, FactoryMeta)) {
-            return
+            return false
           }
 
+          if (!isInstanceOf(meta, FactoryMeta)) {
+            return false
+          }
+        }
+
+        const inserter = (keyPath, args) => {
+          if (isNotAllowed(keyPath)) {
+            return false
+          }
+
+          const [key] = keyPath
+          const meta = $this.$schema[key]
           const { $entries } = meta
           const nexts = args.filter((item) => {
             if ($entries.some(One => isInstanceOf(item, One))) {
@@ -221,12 +231,20 @@ export class Model {
         this._traps.unshift = inserter
 
         this._traps.splice = (keyPath, args) => {
+          if (isNotAllowed(keyPath)) {
+            return false
+          }
+
           const [start, count, ...items] = args
           const values = items.length ? inserter(keyPath, items) : []
           return [start, count, ...values]
         }
 
         this._traps.fill = (keyPath, args) => {
+          if (isNotAllowed(keyPath)) {
+            return false
+          }
+
           const [value, start, end] = args
           const [key] = keyPath
           const current = $this[key]

@@ -1,5 +1,6 @@
 import Model from '../src/model.js'
 import Meta from '../src/meta.js'
+import Factory from '../src/factory.js'
 
 describe('Model', () => {
   class PersonModel extends Model {
@@ -867,5 +868,56 @@ describe('Model', () => {
     expect(some.children.length).toBe(2)
     expect(some.children[1]).toBeInstanceOf(Child)
     expect(some.children[1]).not.toBe(child3)
+  })
+
+  test('Factory list', () => {
+    class Child extends Model {
+      static name = new Meta({
+        default: '',
+        type: String,
+      })
+    }
+
+    class Parent extends Model {
+      static children = Factory.getMeta([Child], {
+        default: () => [{}],
+      })
+    }
+
+    const some = new Parent()
+    expect(some.children.length).toBe(1)
+    expect(some.children[0]).toBeInstanceOf(Child)
+  })
+
+  test('$absKeyPath in sub-models', () => {
+    class Sun extends Model {
+      static age = new Meta({
+        default: 0,
+        type: Number,
+      })
+    }
+
+    class Child extends Model {
+      static name = new Meta({
+        default: '',
+        type: String,
+      })
+      static sub = Factory.getMeta([Sun], {
+        default: () => [{}],
+      })
+    }
+
+    class Parent extends Model {
+      static top = [Child]
+    }
+
+    const some = new Parent({
+      top: [{}, {}],
+    })
+
+    const child2 = some.top[1]
+    expect(child2.$absKeyPath).toEqual(['top', 1])
+
+    expect(child2.sub[0].$absKeyPath).toEqual(['top', 1, 'sub', 0])
   })
 })
