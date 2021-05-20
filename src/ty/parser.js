@@ -152,12 +152,12 @@ export class Parser {
           // list a[]
           else if (item.substr(-2) === '[]') {
             item = item.substr(0, item.length - 2)
-            const prototype = types[item] || item
-            return prototype ? new List([prototype]) : Array
+            const type = types[item] || item
+            return type ? new List([type]) : Array
           }
           // range 10<-20
-          else if (item.indexOf('-') > 0) {
-            const [minStr, maxStr] = item.split(/<{0,1}\->{0,1}/)
+          else if (/^\-?\d+<?\->?\-?\d+$/.test(item)) {
+            const [_, minStr, maxStr] = item.match(/^(\-?\d+)<?\->?(\-?\d+)$/)
             const min = +minStr
             const max = +maxStr
             const minBound = item.indexOf('<-') > 0
@@ -165,7 +165,7 @@ export class Parser {
             return new Range({ min, max, minBound, maxBound })
           }
           // mapping {string:array}
-          else if (item.charAt(0) === '{' && item.substr(-1) === '}' && item.indexOf(':') > 0) {
+          else if (/^\{\w+?:\w+?\}$/.test(item)) {
             const [k, v] = item.split(/\{\:\}/).filter(item => !!item)
             const kp = types[k] || k
             const vp = types[v] || v

@@ -111,4 +111,12 @@ describe('Parser', () => {
       },
     })).not.toThrowError()
   })
+
+  test('range', () => {
+    const type = new Parser().parse({
+      range: '-5-5',
+    })
+    expect(() => type.assert({ range: 0 })).not.toThrowError()
+    expect(() => type.assert({ range: 10 })).toThrowError()
+  })
 })
