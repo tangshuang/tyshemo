@@ -53,4 +53,26 @@ describe('Loader', () => {
       done()
     })
   })
+  test('call $parent in compute()', () => {
+    const loader = new Loader()
+    const Some = loader.parse({
+      schema: {
+        age: {
+          default: 0,
+        },
+        '<child>': {
+          schema: {
+            age: {
+              default: 0,
+              'compute()': '$parent.age - 24',
+            },
+          },
+        },
+      },
+    })
+    const one = new Some({
+      age: 36,
+    })
+    expect(one.child.age).toBe(12)
+  })
 })

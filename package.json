@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.14.0",
-    "scopex": "^2.1.1",
+    "scopex": "^3.0.2",
     "ts-fns": "^10.3.0"
   }
 }
