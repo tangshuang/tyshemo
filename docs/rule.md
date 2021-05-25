@@ -1,8 +1,8 @@
 # Rule
 
-Rule is to describe the existing logic of a property.
+Rule is to describe the logic type of a property.
 
-In tyshemo, you should use rule in `Dict` and `Tuple` to control properties' type logic.
+In tyshemo, you should use rule in `Dict` and `Tuple` to control properties' logic type.
 
 ## Usage
 
@@ -16,7 +16,7 @@ const SomeDict = new Dict({
 
 const SomeTuple = new Tuple([
   Number,
-  // use `ifexist` rule on the last item of tuple
+  // use `ifexist` rule on the last items of tuple
   ifexist(String),
 ])
 ```
@@ -25,7 +25,7 @@ const SomeTuple = new Tuple([
 
 We provide internal rules, you can use them by `import` very easy.
 
-### ifexist
+### ifexist/ife
 
 ```
 ifexist(:Rule|Type)
@@ -68,6 +68,20 @@ const SomeType = new Dict({
 ### match
 
 ```
+match(:Rule|Type, message:string) => shouldmatch
+```
+
+If you pass two parameters, it is an alias of `shouldmatch`.
+
+```js
+const SomeType = new Dict({
+  some: match(String, 'some shoulid be a string'),
+})
+```
+
+If you pass an array, it will be a composed function:
+
+```
 match([:Rule|Type])
 ```
 
@@ -87,7 +101,7 @@ Rules in the array with be checked one by one, if one fail, the left rules will 
 ### ifnotmatch
 
 ```
-ifnotmatch(:Rule|Type, defaultValue:any|Function)
+ifnotmatch(:Rule|Type, value:any|Function)
 ```
 
 Help you to give a default value.
@@ -103,7 +117,7 @@ The second parameter can be a function to compute default value dynamicly.
 ### ifmatch
 
 ```
-ifmatch(:Rule|Type, defaultValue:any|Function)
+ifmatch(:Rule|Type, override:any|Function)
 ```
 
 ```js
@@ -135,7 +149,7 @@ When condition returns true, use the second parameter as type, or returns false,
 
 *Notice, the `data` parameter is the whole dict object.*
 
-### lazy
+### lazy/async
 
 ```
 lazy(async function:Function<:Type>)
@@ -309,16 +323,16 @@ Notice here, a `validate` function receive (data, key) not (value). This is beca
 Except `validate`, it supports options:
 
 - name: string // name of this rule, will be used in error
-- pattern: Type // will be used in error
+- pattern: Type|\[Type] // will be used in error
 - message: string|function // will be used to replace error message
 - shouldcheck(data, key)?: boolean // to determine whether to go to check, if return false, the rule validate will not work
 - use(data, key)?: Type // use which Type as property value type
 - validate(data, key)?: boolean|Error // check logic
-- decorate(data, key)? // run when checking pass
-- override(data, key)? // run when checking does not pass
+- decorate(data, key)? // modify value when checking pass
+- override(data, key)? // modify value when checking does not pass
 - complete(data, key, error)? // run after checking, return a new Error to replace original Error
 
-If you pass `override`, valdiate will run again to make sure the value fit the type.
+If you pass `override`, `valdiate` will run again to make sure the value fit the type.
 
 To create a rule, it is recommeded to declare a function:
 

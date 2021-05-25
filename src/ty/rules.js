@@ -75,7 +75,12 @@ export function lazy(fn) {
  * the passed value should match all passed patterns
  * @param {Array} patterns
  */
-export function match(patterns) {
+export function match(...args) {
+  if (args.length === 2) {
+    return shouldmatch(...args)
+  }
+
+  const [patterns] = args
   const rule = new Rule({
     name: 'match',
     pattern: patterns,

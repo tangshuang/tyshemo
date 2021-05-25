@@ -4,6 +4,7 @@ import {
   getConstructorOf,
   each,
   inObject,
+  isArray,
 } from 'ts-fns'
 
 import Type from './type.js'
@@ -50,8 +51,12 @@ export class Dict extends Type {
   extract(fields = {}) {
     const current = this.pattern
     const next = {}
+    const isArr = isArray(fields)
     each(fields, (value, key) => {
-      if (value && inObject(key, current)) {
+      if (isArr && inObject(value, current)) {
+        next[value] = current[value]
+      }
+      else if (value && inObject(key, current)) {
         next[key] = current[key]
       }
     })

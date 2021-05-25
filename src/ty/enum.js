@@ -7,7 +7,9 @@ import Type from './type.js'
 import TyError from './ty-error.js'
 
 export class Enum extends Type {
-  constructor(pattern) {
+  constructor(...patterns) {
+    const pattern = patterns.length > 1 ? patterns : patterns[0]
+
     if (!isArray(pattern)) {
       throw new Error('[Enum]: pattern should be an array.')
     }
@@ -65,8 +67,8 @@ export class Enum extends Type {
   }
 }
 
-export function enumerate(pattern) {
-  const type = new Enum(pattern)
+export function enumerate(...patterns) {
+  const type = new Enum(...patterns)
   return type
 }
 

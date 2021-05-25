@@ -33,7 +33,9 @@ export { SelfRef, selfref } from './self-ref.js'
 export { Rule } from './rule.js'
 export {
   lazy,
+  lazy as async,
   ifexist,
+  ifexist as ife,
   match,
   determine,
   shouldmatch,

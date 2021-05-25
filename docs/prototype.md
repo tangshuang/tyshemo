@@ -10,7 +10,7 @@ We use native definition/interface as prototypes:
 
 - String
 - Number: finite number, not match `NaN` `"123"`
-- Boolean: `true` or `false`
+- Boolean: only `true` or `false`
 - Object: normal object like `{}`, not match instances, array and Object self
 - Array: normal array like `[]`
 - Function: function
@@ -20,6 +20,8 @@ We use native definition/interface as prototypes:
 - Infinity
 - Date: an instanceof Data (new Date)
 - Promise: an instance of Promise (new Promise)
+- Error: an instance of Error
+- RegExp: an instance of RegExp
 
 In fact, all classes can be a prototype, even the custom classes which are defined by yourself.
 For example, `const a = new A()`, here `A` is the prototype of `a`.
@@ -35,7 +37,7 @@ And we have some prototypes:
 - Finity
 - Zero
 - Natural
-- Numeric: number string
+- Numeric: number string, read more under the following
 - String8: string max-length 8
 - String16
 - String32
@@ -68,7 +70,7 @@ const some = new Dict({
 
 ## Custom Prototype
 
-You can define your own prototype by using tyshemo's `Prototype` interface.
+You can create your own prototype by using tyshemo's `Prototype` class.
 
 ```js
 import { Prototype } from 'tyshemo'
@@ -84,7 +86,7 @@ const SomePrototype = new Prototype({
 
 const SomeType = new Dict({
   // use prototype instance directly in Type
-  some: SomePrototype,
+  a: SomePrototype,
 })
 ```
 

@@ -14,18 +14,21 @@ The word `tyshemo` is made up with `type` `schema` and `model`.
 ## Knowledge Graph
 
 ```
-                               Validator      Store ----+
-                                   |                    |
-Prototype ----+                    |                    |
-              |                    |                    |
-              +------ Type ------ Meta ----- Schema ----+--> Model
-              |        |
-Rule ---------+        |
-                       |
-                +------+------+
-                |             |
-                v             v
-               Ty       Parser, Mocker
+                               Validator             Store, Factory
+                                   |                        |
+                                   |                        |
+                                   |                        |
+Prototype ----+                    |                        |
+              |                    v                        v
+              +------ Type ------ Meta ------- Schema ------+--> Model
+              |        |                                          |
+Rule ---------+        |                                          |
+                       |                                          |
+                       |                                          |
+                +------+------+                                   |
+                |             |                                   |
+                v             v                                   v
+               Ty       Parser, Mocker                          Loader
 ```
 
 ## About this document

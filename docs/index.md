@@ -5,7 +5,7 @@
 - [Ty](ty.md)
 - [TyError](error.md)
 - [Parser](parser.md)
-- [Mocker](mokcer.md)
+- [Mocker](mocker.md)
 - [Store](store.md)
 - [Meta](meta.md)
 - [Validator](validator.md)

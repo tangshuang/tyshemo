@@ -24,28 +24,32 @@ class Sex extends Meta {
 }
 
 class PersonModel extends Model {
-  static name = new Name()
-  static age = new Age()
-  static sex = new Sex()
-}
-```
-
-As you seen, we create several metas which are extended from `Meta` (you can read more from [meta](meta.md)) and a model which is extended from Model.
-We use static properties on the class to define each feild's definition by given meta's instance.
-
-As metioned in [schema document](schema.md), you can pass Meta class directly into Model definition.
-
-```js
-class PersonModel extends Model {
   static name = Name
   static age = Age
   static sex = Sex
 }
 ```
 
+As you seen, we create several metas which are extended from `Meta` (you can read more from [meta](meta.md)) and a model which is extended from Model.
+We use static properties on the class to define each feild's definition by given meta.
+
+You can pass Meta instance directly into Model definition.
+
+```js
+class PersonModel extends Model {
+  static name = new Meta({ ... })
+  static age = new Meta({ ... })
+  static sex = new Meta({ ... })
+}
+```
+
 It supports sub-model too, for example:
 
 ```js
+class ChildModel extends Model {
+  ...
+}
+
 class ParentModel extends Model {
   static child = ChildModel // use ChildModel directly, it will be transformed to a meta inside
   static children = [ChildModel] // use as a ChildModel list
@@ -114,6 +118,7 @@ class One extends Model {
 
 const one = new One()
 expect(one.some_name).toBe('some')
+expect(one.$views.$state.some_name).toBe('some')
 expect(one.$views.some.state.some_name).toBe('some')
 ```
 
@@ -207,6 +212,14 @@ It is useful in forms:
 
 In this block code, we show error message only after the value of `some` changed.
 
+**$views.$changed**
+
+Check wheather all views changed.
+
+```js
+const changed = some.$views.$changed
+```
+
 **$views.$state**
 
 `$views.$state` conbime all states which are defined in `state()` method.
@@ -253,7 +266,7 @@ Get current model's keyPath from $root to current model.
 
 Get current field's keyPath from $root to current model.
 
-### Read
+### Read Data
 
 To read data on a model instance, you have 3 ways.
 
@@ -281,7 +294,7 @@ Read value from a field view.
 const age = model.$views.age.value
 ```
 
-### Update
+### Update Data
 
 To update data on a model instance, you have 4 ways too.
 
@@ -322,13 +335,13 @@ model.$views.age.value = 40
 
 ### watch/unwatch
 
+*Watch system is based on `Store`, read more [here](store.md).*
+
 It is the core feature of model to implement reactive.
 
 ```js
 model.watch('age', (e) => console.log(e), true)
 ```
-
-Its parameters has bee told in `Store` [here](store.md).
 
 In schema, it supports `watch` attr, which will listen the field's change, and invoke the function.
 
@@ -640,7 +653,7 @@ editor.submit(some)
 
 ## AsyncGetter
 
-```
+```js
 import { AsyncGetter } from 'tyshemo'
 
 AsyncGetter(defaultValue:Any, AsyncGetter:Function)

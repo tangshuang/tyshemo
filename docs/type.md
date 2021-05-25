@@ -6,7 +6,7 @@ We have 6 types in tyshemo, they are `Dict` `List` `Tuple` `Enum` `Range` `Mappi
 
 ## Type
 
-As the basic class, `Type` is container which is based on prototype. You should pass prototypes into `Type` to initialize.
+As the basic class, `Type` is container which is based on prototype.
 
 ```js
 const SomeType = new Type(String)
@@ -83,6 +83,8 @@ SomeDict.track({
 `toBeStrict` is a method which turns the current `Type` to be or not to be in strict mode, pass `true` or `false` into it.
 
 ```js
+const StrictSomeType = SomeDict.Strict;
+
 SomeDict.toBeStrict(true)
 ```
 
@@ -119,13 +121,11 @@ const Some2Dict = SomeDict.extend({
 Create a new `Dict` by extracting from original definition.
 
 ```js
-const Some3Dict = Some2Dict.extract({
-  name: true,
-  height: true,
-})
+const Some3Dict = Some2Dict.extract([
+  'name',
+  'height',
+])
 ```
-
-If you need some properties, pass them into extract and set them to be `true`.
 
 ## List
 
@@ -170,6 +170,12 @@ const SomeEnum = new Enum([Number, Numeric]) // the value should only be number 
 const ColorEnum = new Enum(['red', 'green', 'blue']) // the value should only be 'read' 'green' or 'blue'
 ```
 
+To make it easy to use, you can spread the items:
+
+```js
+const SomeList = new Enum(Number, Numeric) // the same as new Enum([Number, Numeric])
+```
+
 ## Range
 
 `Range` is to describe a number which should must be in the given range.
@@ -181,6 +187,9 @@ const SomePercent = new Range({
   minBound: true, // whether contains the min, default true
   maxBound: false, // whether contains the max, default true
 })
+
+SomePercent.assert(79)
+SomePercent.assert(101)
 ```
 
 ## Mapping
@@ -191,6 +200,11 @@ const SomePercent = new Range({
 const SomeMapping = new Mapping({
   key: Numeric, // type of key
   value: Number, // type of value
+})
+
+SomeMapping.assert({
+  2001: 1,
+  2002: 4,
 })
 ```
 
