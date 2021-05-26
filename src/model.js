@@ -56,6 +56,7 @@ const DEFAULT_ATTRIBUTES = {
   watch: null,
   catch: null,
   state: null,
+  deps: null,
 }
 
 /**
