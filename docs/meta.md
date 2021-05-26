@@ -89,7 +89,8 @@ const attrs = {
   //   create: value => value, // value = data.some
   //   save: value => value, // json.some = value
   // }
-  asset: Function|String,
+  // notice, if you want to return custom object in create or save, dont pass asset
+  asset: String,
 
   // optional, function, whether to not use this property when `toData`
   drop: (value, key, data) => Boolean,
@@ -128,6 +129,21 @@ const attrs = {
 
   // when this field's value changed, the `watch` function will be invoke
   watch({ value }) {},
+
+  // optional, return an object to be attached to model
+  state() {
+    return {
+      some: 'default value',
+    }
+  },
+  // optional, return an object which has the same structure of a schema defs object whose node should must be Meta
+  // if depend on a existing field, the field in deps() will not work
+  deps() {
+    return {
+      field_a: A_Meta, // A_Meta is a Meta which defined before
+      field_b: B_Meta, // if there is another field called `field_b` on Model, this will not work
+    }
+  },
 
   // optional, when an error occurs caused by this property, what to do with the error
   catch: (error) => {},

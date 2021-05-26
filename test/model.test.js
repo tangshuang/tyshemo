@@ -920,4 +920,36 @@ describe('Model', () => {
 
     expect(child2.sub[0].$absKeyPath).toEqual(['top', 1, 'sub', 0])
   })
+
+  test('Meta.deps', () => {
+    class Name extends Meta {
+      static default = ''
+      static type = String
+    }
+
+    class Age extends Meta {
+      static default = 10
+      static type = Number
+    }
+
+    class Birth extends Meta {
+      static default = 0
+      static deps() {
+        return {
+          age: Age,
+        }
+      }
+      static compute() {
+        return this.age + 1990
+      }
+    }
+
+    class Some extends Model {
+      static name = Name
+      static birth = Birth
+    }
+
+    const some = new Some()
+    expect(some.age).toBe(10)
+  })
 })

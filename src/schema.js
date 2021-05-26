@@ -23,25 +23,37 @@ import { patchObj } from './shared/utils.js'
 
 export class Schema {
   constructor(metas) {
-    each(metas, (meta, key) => {
-      if (!meta) {
-        return
-      }
+    const use = (metas) => {
+      each(metas, (meta, key) => {
+        if (!meta) {
+          return
+        }
 
-      // only metas will be used
-      const value = isInstanceOf(meta, Meta) ? meta
-        : isInheritedOf(meta, Meta) ? new meta()
-        : null
+        if (this[key]) {
+          return
+        }
 
-      if (!value) {
-        return
-      }
+        // only metas will be used
+        const value = isInstanceOf(meta, Meta) ? meta
+          : isInheritedOf(meta, Meta) ? new meta()
+          : null
 
-      define(this, key, {
-        value,
-        enumerable: true,
+        if (!value) {
+          return
+        }
+
+        if (value.deps && isFunction(meta.deps)) {
+          const deps = meta.deps.call(null)
+          use(deps)
+        }
+
+        define(this, key, {
+          value,
+          enumerable: true,
+        })
       })
-    })
+    }
+    use(metas)
   }
 
   has(key) {
