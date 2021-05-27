@@ -47,7 +47,7 @@ export class Store {
 
     // data & state
     this.data = {}
-    this._traps = {
+    const traps = this._traps({
       get: (keyPath, active) => {
         const key = keyPath[0]
 
@@ -117,8 +117,8 @@ export class Store {
         // chould not change the value any more
         return this.editable
       },
-    }
-    this.state = createProxy(this.data, this._traps)
+    })
+    this.state = createProxy(this.data, traps)
 
     // descriptors
     each(params, (descriptor, key) => {
@@ -143,6 +143,10 @@ export class Store {
     })
 
     this.silent = latestSilent
+  }
+
+  _traps(traps) {
+    return traps
   }
 
   get(keyPath) {

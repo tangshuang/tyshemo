@@ -705,3 +705,22 @@ However, `AsyncGetter` for state will not trigger `!`, because you can watch sta
 ```js
 model.watch('some', ...)
 ```
+
+## Dependencies Collecting
+
+You can use `collect` method to begin and end a collection.
+
+```
+model.collect(end?:boolean)
+```
+
+When `end` is true, it will return the dependencies in an array.
+
+```js
+model.collect()
+model.a
+model.b
+const deps = model.collect(true) // -> ['a', 'b']
+```
+
+Notice: `collect` will pollute sub models, so sub models should not collect deps during parent are collecting.

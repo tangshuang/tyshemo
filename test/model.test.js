@@ -952,4 +952,45 @@ describe('Model', () => {
     const some = new Some()
     expect(some.age).toBe(10)
   })
+
+  test('collect', () => {
+    class Sun extends Model {
+      static age = new Meta({
+        default: 0,
+        type: Number,
+      })
+    }
+
+    class Child extends Model {
+      static name = new Meta({
+        default: '',
+        type: String,
+      })
+      static sub = Factory.getMeta([Sun], {
+        default: () => [{}],
+      })
+    }
+
+    class Parent extends Model {
+      static top = [Child]
+    }
+
+    const some = new Parent({
+      top: [{}],
+    })
+
+    const sun = some.top[0].sub[0]
+    expect(sun).toBeInstanceOf(Sun)
+    sun.collect()
+    sun.age
+    const deps = sun.collect(true)
+    expect(deps).toEqual(['age'])
+
+    some.collect()
+    some.top[0].sub[0].age
+    some.top[0]
+    some.top
+    const deps2 = some.collect(true)
+    expect(deps2).toEqual(['top[0].sub[0].age', 'top[0]', 'top'])
+  })
 })

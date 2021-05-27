@@ -22,6 +22,7 @@ import {
   isConstructor,
   mixin,
   createArray,
+  makeKeyPath,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -183,9 +184,7 @@ export class Model {
      * create store
      */
     class Store extends _Store {
-      init(params) {
-        super.init(params)
-
+      _traps(traps) {
         const isNotAllowed = (keyPath) => {
           if (keyPath.length !== 1) {
             return false
@@ -228,10 +227,10 @@ export class Model {
           })
           return values
         }
-        this._traps.push = inserter
-        this._traps.unshift = inserter
+        traps.push = inserter
+        traps.unshift = inserter
 
-        this._traps.splice = (keyPath, args) => {
+        traps.splice = (keyPath, args) => {
           if (isNotAllowed(keyPath)) {
             return false
           }
@@ -241,7 +240,7 @@ export class Model {
           return [start, count, ...values]
         }
 
-        this._traps.fill = (keyPath, args) => {
+        traps.fill = (keyPath, args) => {
           if (isNotAllowed(keyPath)) {
             return false
           }
@@ -273,6 +272,22 @@ export class Model {
             args: [start, count, ...values],
           }
         }
+
+        const trapGet = traps.get
+        traps.get = (keyPath, active) => {
+          trapGet(keyPath, active)
+
+          if ($this.$collection) {
+            $this.$collection.items.push([keyPath, active])
+            if (isInstanceOf(active, Model)) {
+              active.collect()
+            }
+          }
+
+          return active
+        }
+
+        return traps
       }
       dispatch(keyPath, { value, next, prev, active, invalid }, force) {
         const notified = super.dispatch(keyPath, { value, next, prev, active, invalid }, force)
@@ -721,27 +736,111 @@ export class Model {
    */
   get(keyPath) {
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
-    const path = [...chain]
     const key = chain.shift()
 
     const value = this._getData(key)
     const transformed = this.$schema.get(key, value, this)
     const output = parse(transformed, chain)
 
-    // developers can hook on `dependon` to know which fields are called in a block of code
-    /* i.e.
-      const deps = []
-      const collect = (key) => {
-        deps.push(key)
-      }
-      model.on('dependon', collect)
-      // .... do something ....
-      model.off('dependon', collect)
-      console.log(deps)
-     */
-    this.emit('get', path, output)
-
     return output
+  }
+
+  /**
+   * @param {*} type 0: start, 1: end
+   */
+  collect(end) {
+    const summarize = () => {
+      const { items } = this.$collection
+
+      const records = []
+      items.forEach(([keyPath, value]) => {
+        const key = isArray(keyPath) ? makeKeyPath(keyPath, true) : keyPath
+        records.push({ key, value })
+
+        if (isInstanceOf(value, Model)) {
+          const deps = value.collect(true)
+          const keys = deps.map((dep) => {
+            const chain = makeKeyChain(dep)
+            const key = makeKeyPath([...keyPath, ...chain], true)
+            return key
+          })
+          keys.forEach((key) => {
+            records.push({ key, subof: value })
+          })
+        }
+      })
+
+      const res = []
+      let prev = null
+      records.forEach((record, i) => {
+        if (i === 0 && i !== records.length - 1) {
+          prev = record
+          return
+        }
+
+        const { key, value, subof } = record
+
+        if (prev) {
+          const { key: prevKey, value: prevValue } = prev
+          if (subof && subof !== prevValue) {
+            if (!isFunction(prevValue)) {
+              res.push(prevKey)
+            }
+          }
+          else if (prevKey === key) {
+            if (!isFunction(prevValue)) {
+              res.push(prevKey)
+            }
+          }
+          else if (key.indexOf(prevKey) !== 0) {
+            if (!isFunction(prevValue)) {
+              res.push(prevKey)
+            }
+          }
+        }
+
+        if (i === records.length - 1) {
+          if (!isFunction(value)) {
+            res.push(key)
+          }
+        }
+
+        prev = record
+      })
+
+      return res
+    }
+
+    if (end) {
+      const collection = this.$collection
+      if (!collection) {
+        return []
+      }
+
+      const keys = summarize()
+      const { timer } = collection
+      clearTimeout(timer)
+      delete this.$collection
+      return keys
+    }
+
+    if (this.$collection) {
+      return summarize
+    }
+
+    const items = []
+    const timer = setTimeout(() => this.collect(true), 32)
+    define(this, '$collection', {
+      value: {
+        items,
+        // clear automaticly to free memory
+        timer,
+      },
+      configurable: true,
+    })
+
+    // end before timeout
+    return summarize
   }
 
   /**
