@@ -806,10 +806,9 @@ export class Model {
 
       const res = []
       const push = (key, value) => {
-        // if (!isFunction(value) && !res.includes(key) && key.split('.').pop() !== 'length') {
-        //   res.push(key)
-        // }
-        res.push(key)
+        if (!isFunction(value) && !res.includes(key) && key.split('.').pop() !== 'length') {
+          res.push(key)
+        }
       }
       let prev = null
       records.forEach((record, i) => {
