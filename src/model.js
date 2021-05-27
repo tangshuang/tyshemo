@@ -153,7 +153,7 @@ export class Model {
       let parent = this.$parent
 
       if (!parent) {
-        return this
+        return
       }
 
       while (parent.$parent) {
@@ -277,7 +277,30 @@ export class Model {
         traps.get = (keyPath, active) => {
           trapGet(keyPath, active)
 
-          if ($this.$collection) {
+          if (!$this.$collection) {
+            const deep = []
+            let child = $this
+            let parent = child.$parent
+            let flag = null
+            while (parent) {
+              const keyPath = child.$keyPath
+              deep.unshift(...keyPath)
+
+              if (parent.$collection) {
+                flag = parent
+                break
+              }
+
+              child = parent
+              parent = child.$parent
+            }
+            if (flag) {
+              flag.$collection.items.push([deep, $this])
+              $this.collect()
+            }
+          }
+
+          if ($this.$collection && $this.$collection.enable) {
             $this.$collection.items.push([keyPath, active])
             if (isInstanceOf(active, Model)) {
               active.collect()
@@ -748,7 +771,18 @@ export class Model {
   /**
    * @param {*} type 0: start, 1: end
    */
-  collect(end) {
+  collect(x) {
+    if (isFunction(x)) {
+      if (this.$collection) {
+        this.$collection.enable = false
+      }
+      const res = x()
+      if (this.$collection) {
+        this.$collection.enable = true
+      }
+      return res
+    }
+
     const summarize = () => {
       const { items } = this.$collection
 
@@ -771,10 +805,11 @@ export class Model {
       })
 
       const res = []
-      const push = (key) => {
-        if (!res.includes(key)) {
-          res.push(key)
-        }
+      const push = (key, value) => {
+        // if (!isFunction(value) && !res.includes(key) && key.split('.').pop() !== 'length') {
+        //   res.push(key)
+        // }
+        res.push(key)
       }
       let prev = null
       records.forEach((record, i) => {
@@ -788,26 +823,18 @@ export class Model {
         if (prev) {
           const { key: prevKey, value: prevValue } = prev
           if (subof && subof !== prevValue) {
-            if (!isFunction(prevValue)) {
-              push(prevKey)
-            }
+            push(prevKey, prevValue)
           }
           else if (prevKey === key) {
-            if (!isFunction(prevValue)) {
-              push(prevKey)
-            }
+            push(prevKey, prevValue)
           }
           else if (key.indexOf(prevKey) !== 0) {
-            if (!isFunction(prevValue)) {
-              push(prevKey)
-            }
+            push(prevKey, prevValue)
           }
         }
 
         if (i === records.length - 1) {
-          if (!isFunction(value)) {
-            push(key)
-          }
+          push(key, value)
         }
 
         prev = record
@@ -816,7 +843,7 @@ export class Model {
       return res
     }
 
-    if (end) {
+    if (x) {
       const collection = this.$collection
       if (!collection) {
         return []
@@ -840,6 +867,7 @@ export class Model {
         items,
         // clear automaticly to free memory
         timer,
+        enable: true,
       },
       configurable: true,
     })
@@ -1239,12 +1267,8 @@ export class Model {
     define(this, '$keyPath', {
       get: () => {
         const field = parent[key]
-        if (isArray(field)) {
-          return [key, field.indexOf(this)]
-        }
-        else {
-          return [key]
-        }
+        const res = parent.collect(() => isArray(field) ? [key, field.indexOf(this)] : [key])
+        return res
       },
       configurable: true,
     })

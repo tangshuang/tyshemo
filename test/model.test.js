@@ -992,5 +992,12 @@ describe('Model', () => {
     some.top
     const deps2 = some.collect(true)
     expect(deps2).toEqual(['top[0].sub[0].age', 'top[0]', 'top'])
+    expect(some.$collection).toBeUndefined()
+
+    some.collect()
+    sun.age
+    const deps3 = some.collect(true)
+    expect(deps3).toEqual(['top[0].sub[0].age'])
+    expect(sun.$collection).toBeUndefined()
   })
 })
