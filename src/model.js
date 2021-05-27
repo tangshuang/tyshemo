@@ -771,6 +771,11 @@ export class Model {
       })
 
       const res = []
+      const push = (key) => {
+        if (!res.includes(key)) {
+          res.push(key)
+        }
+      }
       let prev = null
       records.forEach((record, i) => {
         if (i === 0 && i !== records.length - 1) {
@@ -784,24 +789,24 @@ export class Model {
           const { key: prevKey, value: prevValue } = prev
           if (subof && subof !== prevValue) {
             if (!isFunction(prevValue)) {
-              res.push(prevKey)
+              push(prevKey)
             }
           }
           else if (prevKey === key) {
             if (!isFunction(prevValue)) {
-              res.push(prevKey)
+              push(prevKey)
             }
           }
           else if (key.indexOf(prevKey) !== 0) {
             if (!isFunction(prevValue)) {
-              res.push(prevKey)
+              push(prevKey)
             }
           }
         }
 
         if (i === records.length - 1) {
           if (!isFunction(value)) {
-            res.push(key)
+            push(key)
           }
         }
 
