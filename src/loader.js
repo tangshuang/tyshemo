@@ -359,7 +359,7 @@ export class Loader {
       }
     })
 
-    return LoadedModel
+    return this.extend(LoadedModel) || LoadedModel
   }
 
   // set types
@@ -387,10 +387,14 @@ export class Loader {
   validator(key, params, exp) {
     return [key, params, exp]
   }
-
   // you can modify a method json here
   method(key, params, exp) {
     return [key, params, exp]
+  }
+
+  // extend LoadedModel
+  extend(Model) {
+    return Model
   }
 
   // define fetch factory
