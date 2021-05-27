@@ -721,6 +721,7 @@ export class Model {
    */
   get(keyPath) {
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
+    const path = [...chain]
     const key = chain.shift()
 
     const value = this._getData(key)
@@ -738,7 +739,7 @@ export class Model {
       model.off('dependon', collect)
       console.log(deps)
      */
-    this.emit('get', keyPath, output)
+    this.emit('get', path, output)
 
     return output
   }
