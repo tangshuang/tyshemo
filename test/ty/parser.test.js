@@ -119,4 +119,47 @@ describe('Parser', () => {
     expect(() => type.assert({ range: 0 })).not.toThrowError()
     expect(() => type.assert({ range: 10 })).toThrowError()
   })
+
+  test('rules on property', () => {
+    const type = new Parser().parse({
+      "name&": "string",
+      "age?": "number",
+      "weight?&": "number",
+      "some!": "string",
+      "dog?": {
+        "name": "string",
+        "age": "number"
+      }
+    })
+
+    const data = {
+      name: 'a',
+      age: 1,
+      weight: 1,
+      some: 0,
+      dog: {
+        name: 'dg',
+        age: 1,
+      },
+    }
+    expect(() => type.assert(data)).not.toThrowError()
+
+    data.name = null
+    expect(() => type.assert(data)).not.toThrowError()
+
+    delete data.age
+    expect(() => type.assert(data)).not.toThrowError()
+
+    data.weight = null
+    expect(() => type.assert(data)).not.toThrowError()
+
+    delete data.weight
+    expect(() => type.assert(data)).not.toThrowError()
+
+    delete data.dog
+    expect(() => type.assert(data)).not.toThrowError()
+
+    data.some = 'a'
+    expect(() => type.assert(data)).toThrowError()
+  })
 })

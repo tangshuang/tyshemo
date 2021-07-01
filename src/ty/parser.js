@@ -8,6 +8,7 @@ import {
   map,
   each,
   filter,
+  decideby,
 } from 'ts-fns'
 
 import Ty from './ty.js'
@@ -65,7 +66,7 @@ export class Parser {
   }
 
   /**
-   * parse idl by using string
+   * description -> type
    * @param {*} description should must be an object
    * {
    *   __def__: [
@@ -109,6 +110,7 @@ export class Parser {
       '=': equal,
       '!': shouldnotmatch,
     }
+
     const parse = (text) => {
       const exp = []
 
@@ -300,16 +302,56 @@ export class Parser {
       }
     }
 
-    const pattern = isObject(target) ? filter(map(target, build), (_, key) => key.indexOf('#') !== 0) : build(target)
+    const pattern = decideby(() => {
+      if (isObject(target)) {
+        const res = {}
+
+        each(target, (value, key) => {
+          const chars = key.split('')
+          const use = []
+
+          for (let i = chars.length - 1; i > 0; i --) {
+            const char = chars[i]
+            if (!rules[char]) {
+              break
+            }
+
+            use.push(chars.pop())
+          }
+
+          const prop = chars.join('')
+
+          const type = build(value, prop)
+          if (key.indexOf('#') === 0) { // should return after build, because we are collecting comments
+            return
+          }
+
+          const t = use.length ? use.reverse().map(char => rules[char]).reduce((t, fn) => fn(t), type) : type
+          res[prop] = t
+        })
+
+        return res
+      }
+
+      return build(target)
+    })
     const type = Ty.create(pattern)
     type.__comments__ = comments
 
     return type
   }
 
+  /**
+   * type -> description
+   * @param {object} dict
+   * @param {object} options
+   * @param {number} [options.arrayStyle] 1: "[string|number]" 2: ["string", "number"] default: "string[]|number[]"
+   * @param {number} [options.ruleStyle] 1: { "name?": "string" } default: { "name": "?string" }
+   * @returns
+   */
   describe(dict, options = {}) {
     const __def__ = []
-    const { arrayStyle } = options
+    const { arrayStyle, ruleStyle } = options
 
     const types = Object.entries(this.types)
     const getProto = (value) => {
@@ -346,13 +388,13 @@ export class Parser {
     }
     const buildList = (items, type = 0) => {
       return type === 2
-        ? items.map(item => define(item) + '[]').join(',')
+        ? items.map(item => define(item) + '[]').join('|')
         : type === 1
-          ? '[' + items.map(item => define(item)).join(',') + ']'
+          ? '[' + items.map(item => define(item)).join('|') + ']'
           : items.map(item => build(item))
     }
 
-    const create = (value) => {
+    const create = (value, rules = []) => {
       const proto = getProto(value)
       if (proto) {
         return proto
@@ -401,20 +443,44 @@ export class Parser {
       else if (isInstanceOf(value, Rule)) {
         const { name, pattern } = value
         if (name === 'ifexist') {
-          const inner = create(pattern)
-          sign = '?' + define(inner)
+          if (ruleStyle) {
+            rules.push('?')
+            sign = create(pattern, rules)
+          }
+          else {
+            const inner = create(pattern)
+            sign = '?' + define(inner)
+          }
         }
         else if (name === 'equal') {
-          const inner = create(pattern)
-          sign = '=' + define(inner, true)
+          if (ruleStyle) {
+            rules.push('=')
+            sign = create(pattern, rules)
+          }
+          else {
+            const inner = create(pattern)
+            sign = '=' + define(inner, true)
+          }
         }
         else if (name === 'shouldnotmatch') {
-          const inner = create(pattern)
-          sign = '!' + define(inner)
+          if (ruleStyle) {
+            rules.push('!')
+            sign = create(pattern, rules)
+          }
+          else {
+            const inner = create(pattern)
+            sign = '!' + define(inner)
+          }
         }
         else if (name === 'nullable') {
-          const inner = create(pattern)
-          sign = '&' + define(inner)
+          if (ruleStyle) {
+            rules.push('&')
+            sign = create(pattern, rules)
+          }
+          else {
+            const inner = create(pattern)
+            sign = '&' + define(inner)
+          }
         }
         else if (name === 'match') {
           const items = build(pattern)
@@ -456,6 +522,7 @@ export class Parser {
         const desc = buildList(items)
         sign = desc
       }
+
       return sign
     }
     const build = (type) => {
@@ -468,8 +535,10 @@ export class Parser {
       const desc = isArray(pattern) ? [] : {}
 
       each(pattern, (value, key) => {
-        const sign = create(value)
-        desc[key] = sign
+        const rules = []
+        const sign = create(value, rules)
+        const symb = rules.join('')
+        desc[key + symb] = sign
       })
       return desc
     }

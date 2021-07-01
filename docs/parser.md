@@ -84,6 +84,21 @@ Currently only supports for 5 rules:
 
 Almostly, `?` `&` and `!` will not use together; `?` and `!` come before `=`.
 
+`?` `&` and `!` can be used in property, for example:
+
+```
+{
+  "name&": "string",
+  "age?": "number",
+  "weight?&": "number",
+  "some!": "string",
+  "dog?": {
+    "name": "string",
+    "age": "number"
+  }
+}
+```
+
 *The priority of Type Expression is higher than Rule Expression. So when you use `,` to conbime to expression, they will be treated as types firstly.*
 
 ### Types Text
