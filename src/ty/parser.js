@@ -552,6 +552,54 @@ export class Parser {
     }
   }
 
+
+  /**
+   * data -> description
+   * @param {object} data
+   * @param {object} prev
+   * @param {object} [options]
+   * @param {number} [options.arrayStyle]
+   * @param {number} [options.ruleStyle]
+   */
+   guess(data, prev, options = {}) {
+    const getType = (value) => {}
+
+    const hasPrev = !!prev
+
+    const keysOfData = Object.keys(data)
+    const keysOfPrev = hasPrev ? Object.keys(prev) : []
+
+    const desc = {}
+
+    const write = (desc, data, key) => {
+      const value = data[key]
+      const type = getType(value)
+      desc[key] = type
+    }
+
+    const append = (desc, data, key, prevData, prevKey) => {
+      const value = data[key]
+      const prev = prevData[prevKey]
+      const type = getType(value, isEqual(value, prev))
+      desc[key] = type
+    }
+
+    const max = Math.max(keysOfData.length, keysOfPrev.length)
+    for (let i = 0; i < max; i ++) {
+      const keyOfData = keysOfData[i]
+      const keyOfPrev = keysOfPrev[i]
+
+      if (hasPrev) {
+        write(desc, data, keyOfData)
+      }
+      else {
+        append(desc, data, keyOfData, prev, keyOfPrev)
+      }
+    }
+
+    return desc
+  }
+
   static defaultTypes = {
     string: String,
     string8: String8,
