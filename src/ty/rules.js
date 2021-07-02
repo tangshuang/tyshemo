@@ -15,6 +15,7 @@ import TyError from './ty-error.js'
 
 import Dict from './dict.js'
 import List from './list.js'
+import Enum from './enum.js'
 import { Any } from './prototypes.js'
 
 export function createType(type) {
@@ -331,7 +332,7 @@ export function nullable(pattern) {
 export function nonable(pattern) {
   const type = createRule(pattern)
   const rule = new Rule({
-    name: 'nullable',
+    name: 'nonable',
     pattern,
     shouldcheck(data, key) {
       return !isNone(data[key])

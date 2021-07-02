@@ -51,7 +51,7 @@ describe('Parser', () => {
       '#name': 'the name of someone',
       name: 'string',
       '#books[0].price': 'the price of this book',
-      books: [
+      "books*": [
         {
           '#name': 'the name of this book',
           name: 'string',

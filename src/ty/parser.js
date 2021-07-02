@@ -5,9 +5,7 @@ import {
   isString,
   isEqual,
   isInheritedOf,
-  map,
   each,
-  filter,
   decideby,
 } from 'ts-fns'
 
@@ -36,8 +34,8 @@ import {
 import { Type } from './type.js'
 import { Dict } from './dict.js'
 import { List } from './list.js'
-import { Tuple } from './tuple.js'
-import { Enum } from './enum.js'
+import { Tuple, tuple } from './tuple.js'
+import { Enum, enumerate } from './enum.js'
 import { Range } from './range.js'
 import { Mapping } from './mapping.js'
 import { SelfRef } from './self-ref.js'
@@ -48,8 +46,15 @@ import {
   match,
   shouldnotmatch,
   equal,
-  nullable,
+  nonable,
 } from './rules.js'
+
+const RULES = {
+  '&': nonable,
+  '?': ifexist,
+  '=': equal,
+  '!': shouldnotmatch,
+}
 
 export class Parser {
   constructor(types) {
@@ -104,20 +109,13 @@ export class Parser {
   parse(description) {
     let types = this.types
 
-    const rules = {
-      '&': nullable,
-      '?': ifexist,
-      '=': equal,
-      '!': shouldnotmatch,
-    }
-
     const parse = (text) => {
       const exp = []
 
       const checkRule = () => {
         const firstChar = text.charAt(0)
-        if (rules[firstChar]) {
-          exp.push(rules[firstChar])
+        if (RULES[firstChar]) {
+          exp.push(RULES[firstChar])
           text = text.substr(1)
           checkRule()
         }
@@ -126,17 +124,18 @@ export class Parser {
 
       // prepare for '(a,b)' and '[a|b]'
       text = text.replace(/\[.*\]/g, (item) => {
-        return item.replace(/\|/g, '::')
+        return item.replace(/\|/g, ':@:')
       })
       text = text.replace(/\(.*\)/g, (item) => {
-        return item.replace(/,/g, '::')
+        return item.replace(/,/g, ':@:')
       })
+
       const items = text.split(',').map((word) => {
         const words = word.split('|').map((item) => {
           // tuple (a,b)
           if (item.charAt(0) === '(' && item.substr(-1) === ')') {
             item = item.substr(1, item.length - 2)
-            const texts = item.split('::')
+            const texts = item.split(':@:')
             const prototypes = texts.map(item => parse(item))
             return new Tuple(prototypes)
           }
@@ -147,7 +146,7 @@ export class Parser {
             if (!item) {
               return Array
             }
-            const texts = item.split('::')
+            const texts = item.split(':@:')
             const prototypes = texts.map(item => parse(item))
             return new List(prototypes)
           }
@@ -306,13 +305,24 @@ export class Parser {
       if (isObject(target)) {
         const res = {}
 
+        const customRules = {
+          ...RULES,
+          '|': enumerate,
+          '*': tuple,
+        }
+
         each(target, (value, key) => {
+          if (key.indexOf('#') === 0) {
+            comments[key.substr(1)] = value
+            return
+          }
+
           const chars = key.split('')
           const use = []
 
           for (let i = chars.length - 1; i > 0; i --) {
             const char = chars[i]
-            if (!rules[char]) {
+            if (!customRules[char]) {
               break
             }
 
@@ -321,12 +331,32 @@ export class Parser {
 
           const prop = chars.join('')
 
-          const type = build(value, prop)
-          if (key.indexOf('#') === 0) { // should return after build, because we are collecting comments
-            return
-          }
+          const type = decideby(() => {
+            // deal with |,: type should be an array
+            if (use.indexOf('|') > -1 || use.indexOf('*') > -1) {
+              if (!isArray(value)) {
+                throw new Error(`${key} should be an array, but receive ${typeof value}`)
+              }
+              const items = value.map((item, i) => {
+                const subtype = build(item)
+                if (typeof subtype !== 'object') {
+                  return subtype
+                }
+                const subcomments = subtype.__comments__
+                if (subcomments) {
+                  each(subcomments, (m, k) => {
+                    comments[prop + '[' + i + ']' + '.' + k] = m
+                  })
+                }
+                return subtype
+              })
+              return items
+            }
 
-          const t = use.length ? use.reverse().map(char => rules[char]).reduce((t, fn) => fn(t), type) : type
+            return build(value, prop)
+          })
+
+          const t = use.length ? use.reverse().map(char => customRules[char]).reduce((t, fn) => fn(t), type) : type
           res[prop] = t
         })
 
@@ -407,14 +437,24 @@ export class Parser {
       else if (isInstanceOf(value, Tuple)) {
         const { pattern } = value
         const items = pattern.map(build)
-        const desc = '(' + items.map(item => define(item)).join(',') + ')'
-        sign = desc
+        if (ruleStyle) {
+          rules.push('*')
+          sign = items
+        }
+        else {
+          sign = '(' + items.map(item => define(item)).join(',') + ')'
+        }
       }
       else if (isInstanceOf(value, List)) {
         const { pattern } = value
         const items = pattern.map(build)
-        const desc = buildList(items, arrayStyle)
-        sign = desc
+        if (ruleStyle) {
+          rules.push('|')
+          sign = items
+        }
+        else {
+          sign = buildList(items, arrayStyle)
+        }
       }
       else if (isInstanceOf(value, Enum)) {
         const { pattern } = value
@@ -472,14 +512,14 @@ export class Parser {
             sign = '!' + define(inner)
           }
         }
-        else if (name === 'nullable') {
+        else if (name === 'nullable' || name === 'nonable') {
           if (ruleStyle) {
-            rules.push('&')
+            rules.push('*')
             sign = create(pattern, rules)
           }
           else {
             const inner = create(pattern)
-            sign = '&' + define(inner)
+            sign = '*' + define(inner)
           }
         }
         else if (name === 'match') {

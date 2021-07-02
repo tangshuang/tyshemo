@@ -74,17 +74,17 @@ The grammar is very easy:
 
 ### Rule Expression
 
-Currently only supports for 5 rules:
+Currently only supports rules:
 
 - ifexist: `?` at the first letter of expression, `"?string"`
-- nullable: `&` at the first letter of expression, `"&string"`
+- nonable: `&` at the first letter of expression, `"&string"`
 - equal: `=` at the first letter, `"='it is a dog'"`
 - shouldnotmatch: `!` at the first letter, `"!string"`
 - match: `,` to link several expression, for example `"string,numeric"` means the property should must be a string and must be a numeric
 
 Almostly, `?` `&` and `!` will not use together; `?` and `!` come before `=`.
 
-`?` `&` and `!` can be used in property, for example:
+In some case, you need to use an object or an array to stand for type, and want a rule, you can put the rule symbols into propert name:
 
 ```
 {
@@ -98,6 +98,19 @@ Almostly, `?` `&` and `!` will not use together; `?` and `!` come before `=`.
   }
 }
 ```
+
+And in this time, we have two more rule exp:
+
+- enumerate: `|`, value should be an array
+- tuple: `*`, value should be an array
+
+```
+{
+  "color|": ["'blue'", "'red'", "'yellow'"], // be one of the given colors
+  "sum*": ["number", "number"] // should be an array, and two items should be number
+}
+```
+
 
 *The priority of Type Expression is higher than Rule Expression. So when you use `,` to conbime to expression, they will be treated as types firstly.*
 
