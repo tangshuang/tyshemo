@@ -553,7 +553,7 @@ export class Schema {
       }
 
       // if user did not fill the value, and the field is not required, there is no need to get error
-      if (this.empty(value) && !this.required(key, context)) {
+      if (this.empty(key, value, context) && !this.required(key, context)) {
         return []
       }
 
@@ -793,7 +793,7 @@ export class Schema {
       }
 
       // if user did not fill the value, and the field is not required, there is no need to get error
-      if (this.empty(value) && !this.required(key, context)) {
+      if (this.empty(key, value, context) && !this.required(key, context)) {
         return Promise.resolve([])
       }
 
