@@ -214,6 +214,46 @@ const type = parser.parse(json)
 // => Dict instance
 ```
 
+**guess**
+
+Guess type description from a exisiting data.
+
+```js
+const data = {
+  name: 'tomy',
+  age: 10,
+  books: [
+    {
+      title: 'Told Sad',
+      price: 12.5,
+    },
+  ],
+}
+
+const description = parser.guess(data)
+// -> json { "name": "string", "age": "number" ... }
+
+const type = parser.parse(description)
+// -> Dict
+```
+
+**merge**
+
+Guess type description, and merge it into existing description to create a new one.
+
+```js
+const next = {
+  name: null,
+}
+
+const description2 = parser.merge(description, next)
+// -> json { "name&": "string", "age?": "number" ... }
+// name is nullable, age can not exist
+
+const type = parser.parse(description2)
+// -> Dict
+```
+
 ## Custom Types Text
 
 However, the previous default type descirption texts are not enough for you, and you want to define your own types, you can implement with 3 ways:

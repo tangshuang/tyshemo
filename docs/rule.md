@@ -244,7 +244,7 @@ const SomeType = new Dict({
 nullable(:any)
 ```
 
-The property can be `null` or the given type.
+Can be `null`.
 
 ```js
 const SomeType = dict({
@@ -258,11 +258,11 @@ const SomeType = dict({
 nonable(:any)
 ```
 
-The property can be `null` `undefined` `NaN` or non-exisiting or the given type.
+Can be `null` or `undefined`.
 
 ```js
 const SomeType = dict({
-  some: nonable(String), // null or String
+  some: nonable(String), // null or undefined or String
 })
 ```
 

@@ -162,4 +162,47 @@ describe('Parser', () => {
     data.some = 'a'
     expect(() => type.assert(data)).toThrowError()
   })
+
+  test('guess', () => {
+    const loader = new Parser()
+    const data = {
+      name: 'tomy',
+      age: 10,
+      books: [
+        {
+          title: 'Told Sad',
+          price: 12.5,
+        },
+      ],
+    }
+
+    const description = loader.guess(data)
+
+    expect(description.name).toBe('string')
+    expect(description.age).toBe('number')
+    expect(description.books).toBeInstanceOf(Array)
+    expect(description.books[0].title).toBe('string')
+    expect(description.books[0].price).toBe('number')
+  })
+
+  test('merge', () => {
+    const loader = new Parser()
+    const data = {
+      name: 'tomy',
+      age: 10,
+      height: 60,
+    }
+
+    const desc1 = loader.guess(data)
+
+    const next = {
+      name: null,
+      height: '60',
+    }
+    const desc2 = loader.merge(desc1, next)
+
+    expect(desc2['name&']).toBe('string')
+    expect(desc2['height|']).toEqual(['number', 'numeric'])
+    expect(desc2['age?']).toBe('number')
+  })
 })

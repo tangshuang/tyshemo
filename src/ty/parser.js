@@ -7,6 +7,13 @@ import {
   isInheritedOf,
   each,
   decideby,
+  isUndefined,
+  isNull,
+  isNone,
+  map,
+  isNumeric,
+  createSafeExp,
+  isNaN,
 } from 'ts-fns'
 
 import Ty from './ty.js'
@@ -589,6 +596,100 @@ export class Parser {
     }
     else {
       return description
+    }
+  }
+
+  guess(data) {
+    const res = map(data, value => this.getType(value))
+    return res
+  }
+
+  merge(exist, data) {
+    const res = {}
+    const checkedKeys = {}
+    const existKeys = Object.keys(exist)
+
+    const findKey = (key) => {
+      const existKey = existKeys.find(item => new RegExp(`^${createSafeExp(key)}[?!&=|*]*$`).test(item))
+      return existKey
+    }
+
+    each(data, (value, key) => {
+      const prevKey = findKey(key)
+      const hasKey = !!prevKey
+      const next = this.getType(value)
+
+      if (hasKey) {
+        checkedKeys[prevKey] = 1
+
+        // TODO 基于权重决定是应该替换部分，还是整体作为enum
+        // TODO list -> tuple
+
+        const prev = exist[prevKey]
+        const prevRules = prevKey.replace(key, '')
+        const isEnum = prevRules.indexOf('|') > -1
+        if (isEnum && !isArray(prev)) {
+          throw new Error(`${prevKey} in previous type description should be an array, but receive ${typeof prev}`)
+        }
+
+        const prevItems = isEnum ? prev : [].concat(prev)
+        const inPrev = prevItems.some(item => isEqual(item, next))
+        if (inPrev) {
+          res[prevKey] = prev
+          return
+        }
+
+        if (next === 'null' || next === 'undefined') {
+          const isNonable = prevKey.indexOf('&') > -1
+          const nextKey = isNonable ? prevKey : prevKey + '&'
+          res[nextKey] = prev
+          return
+        }
+
+        const nextKey = isEnum ? prevKey : prevKey + '|'
+        prevItems.push(next)
+        res[nextKey] = prevItems
+      }
+      else {
+        checkedKeys[key] = 1
+        res[key] = next
+      }
+    })
+
+    each(exist, (value, key) => {
+      if (checkedKeys[key]) {
+        return
+      }
+
+      const isOptional = key.indexOf('?') > -1
+      const nextKey = isOptional ? nextKey : key + '?'
+      res[nextKey] = value
+    })
+
+    return res
+  }
+
+  getType(value) {
+    if (isObject(value)) {
+      return this.guess(value)
+    }
+    else if (isArray(value)) {
+      return value.map(item => this.guess(item))
+    }
+    else if (isNull(value)) {
+      return 'null'
+    }
+    else if (isUndefined(value)) {
+      return 'undefined'
+    }
+    else if (isNaN(value)) {
+      return 'nan'
+    }
+    else if (isNumeric(value)) {
+      return 'numeric'
+    }
+    else {
+      return typeof value
     }
   }
 
