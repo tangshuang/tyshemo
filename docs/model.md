@@ -455,6 +455,13 @@ So that each time we create a model instance or invoke `restore` method, name wi
 
 **fromJSON**
 
+```
+fromJSON(json: object, keysPatchToThis: string[]): this
+```
+
+- json: JSON data contains fields
+- keysPatchToThis: if you want a property of `json` which is not in fields to be patched to this, you should use `keysPatchToThis` to tell model
+
 `restore` method will override the whole model data directly, `fromJSON` method will use `create` attr in schema to create data and then use created data for restore.
 
 ```js
@@ -463,6 +470,23 @@ model.fromJSON({
   age: 12,
 })
 ```
+
+*Notice: when you intialize Model by use `new` for example `new Model({ name: 'some' })`, it will use `fromJSON` to restore data.*
+
+**fromJSONPatch**
+
+`fromJSON` need you to pass all fields, however, sometimes you do not have all fields' data, at this time, you want to update model by less fields, you can use `fromJSONPath`.
+
+It use `update` to update model, so will trigger watchers.
+
+```
+fromJSONPatch(data: object, onlyKeys: string[]): this
+```
+
+- data: object which contains fields you want to update
+- onlyKeys: only this fields will be updated
+
+It will use `create` attribute to generate data.
 
 **onParse**
 

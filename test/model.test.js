@@ -1000,4 +1000,44 @@ describe('Model', () => {
     expect(deps3).toEqual(['top[0].sub[0].age'])
     expect(sun.$collection).toBeUndefined()
   })
+
+  test('create', () => {
+    class Some extends Model {
+      static some = new Meta({
+        default: {},
+        create(value, key, data) {
+          const { name, age } = data
+          return { name, age }
+        },
+        type: {
+          name: String,
+          age: Number,
+        },
+      })
+    }
+
+    const some = new Some({
+      name: 'tomy',
+      age: 10,
+    })
+
+    expect(some.toData()).toEqual({
+      some: {
+        name: 'tomy',
+        age: 10,
+      }
+    })
+
+    some.fromJSON({
+      name: 'tim',
+      age: 12,
+    })
+
+    expect(some.toData()).toEqual({
+      some: {
+        name: 'tim',
+        age: 12,
+      }
+    })
+  })
 })
