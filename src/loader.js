@@ -12,6 +12,7 @@ import {
   isObject,
   isInstanceOf,
   isEmpty,
+  inObject,
   parse,
 } from 'ts-fns'
 
@@ -142,6 +143,7 @@ export class Loader {
       schema() {
         const scopex = new ScopeX(this, { loose: true, filters })
         const $schema = {}
+        const submodels = {}
         const factories = {}
 
         each(schema, (def, field) => {
@@ -165,13 +167,13 @@ export class Loader {
             if (isArray(def)) {
               const items = def.map(item => parse(item)).filter(item => !!item)
               if (items.length) {
-                $schema[name] = items
+                submodels[name] = items
               }
             }
             else {
               const sub = parse(def)
               if (sub) {
-                $schema[name] = sub
+                submodels[name] = sub
               }
             }
 
@@ -284,10 +286,11 @@ export class Loader {
             meta[key] = parseGetter(exp)
           })
 
+          // DEPARTED Compatible for old version
           // |submodel| sub model(s) factory, should must be used with <submodel>
           if (/^\|.+?\|$/.test(field)) {
-            const name = field.substring(1, field.length - 1)
-            factories[name] = meta
+            const key = field.substring(1, field.length - 1)
+            factories[key] = meta
             return
           }
 
@@ -297,14 +300,14 @@ export class Loader {
         })
 
         // factory wrapper should must come after schema finished, or schema sub model will not be ready
-        each(factories, (attrs, name) => {
-          if (!$schema[name]) {
-            return
+        each(submodels, (model, field) => {
+          const attrs = factories[field] || $schema[field] // -> new version support submodel field name directly
+          if (attrs) {
+            $schema[field] = Factory.getMeta(model, attrs)
           }
-          if (!isObject(attrs)) {
-            return
+          else {
+            $schema[field] = model
           }
-          $schema[name] = Factory.getMeta($schema[name], attrs)
         })
 
         return $schema

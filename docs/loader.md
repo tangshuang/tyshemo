@@ -97,7 +97,10 @@ To support sub-model, you should use `<..>` to point out the key:
       {
         "schema": { }
       }
-    ]
+    ],
+    "submodel": { // supplement for submodel, some content as a normal field meta
+      // ...
+    }
   }
 }
 ```
