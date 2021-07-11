@@ -32,6 +32,13 @@ A json schema of a Model should be like:
     "age": {
       "default": 10,
       "type": "number"
+    },
+    "height": {
+      "default": 0,
+      "type": { "a": "number" },
+      "amount": "{ age * 12 }", // -> special syntax, use {} to wrap expression, equal: "amount()": "age * 12"
+      "count(v)": "{ age / 12 }", // -> special syntax, use {} to wrap expression, equal: "count(v)": "age / 12"
+      "isNeeded": "{ ..name.required }" // -> special syntax, use .. to instead of `$views.`, equal: "isNeeded": "$views.name.required"
     }
   },
   "state": {

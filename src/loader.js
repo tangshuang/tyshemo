@@ -12,7 +12,6 @@ import {
   isObject,
   isInstanceOf,
   isEmpty,
-  inObject,
   parse,
 } from 'ts-fns'
 
@@ -59,9 +58,9 @@ export class Loader {
       },
     })
 
-    const defScopex = new ScopeX(defProxy, { loose: true, filters })
+    const defScopex = new ScopeX(defProxy, { filters })
 
-    const parseExp = (exp, scopex = defScopex) => {
+    const parseDefExp = (exp, scopex = defScopex) => {
       if (!exp) {
         return
       }
@@ -80,7 +79,20 @@ export class Loader {
       }
     }
 
+    const getFinalExp = (exp) => exp.replace(/\.\./g, '$views.')
+
     const createFn = (scopex, exp, params) => (...args) => {
+      if (!params) {
+        const res = parseDefExp(exp)
+        if (res) {
+          return res.value
+        }
+
+        const finalExp = getFinalExp(exp)
+        const output = scopex.parse(finalExp)
+        return output
+      }
+
       const locals = {}
       params.forEach((param, i) => {
         const value = args[i]
@@ -88,13 +100,14 @@ export class Loader {
       })
 
       const newDefScopex = defScopex.$new(locals)
-      const res = parseExp(exp, newDefScopex)
+      const res = parseDefExp(exp, newDefScopex)
       if (res) {
         return res.value
       }
 
       const newScopex = scopex.$new(locals)
-      const output = newScopex.parse(exp)
+      const finalExp = getFinalExp(exp)
+      const output = newScopex.parse(finalExp)
       return output
     }
 
@@ -123,12 +136,28 @@ export class Loader {
             })
           })
         }
-        else {
-          return value
+      }
+      return value
+    }
+
+    const isInnerExp = (str) => {
+      return str[0] === '{' && str[str.length - 1] === '}'
+    }
+
+    const getInnerExp = (str) => {
+      return str.substring(1, str.length - 1)
+    }
+
+    const parseSubModel = (exp) => {
+      if (isString(exp)) {
+        const res = parseDefExp(exp)
+        if (res && isInstanceOf(res.value, Model)) {
+          return res.value
         }
       }
-      else {
-        return value
+      else if (exp && !isArray(exp) && typeof exp === 'object') {
+        const sub = loader.parse(exp)
+        return sub
       }
     }
 
@@ -141,7 +170,7 @@ export class Loader {
         return stat
       }
       schema() {
-        const scopex = new ScopeX(this, { loose: true, filters })
+        const scopex = new ScopeX(this, { filters })
         const $schema = {}
         const submodels = {}
         const factories = {}
@@ -151,27 +180,14 @@ export class Loader {
           if (/^<.+?>$/.test(field)) {
             const name = field.substring(1, field.length - 1)
 
-            const parse = (exp) => {
-              if (isString(exp)) {
-                const res = parseExp(exp)
-                if (res && isInstanceOf(res.value, Model)) {
-                  return res.value
-                }
-              }
-              else if (exp && !isArray(exp) && typeof exp === 'object') {
-                const sub = loader.parse(exp)
-                return sub
-              }
-            }
-
             if (isArray(def)) {
-              const items = def.map(item => parse(item)).filter(item => !!item)
+              const items = def.map(item => parseSubModel(item)).filter(item => !!item)
               if (items.length) {
                 submodels[name] = items
               }
             }
             else {
-              const sub = parse(def)
+              const sub = parseSubModel(def)
               if (sub) {
                 submodels[name] = sub
               }
@@ -250,11 +266,12 @@ export class Loader {
             if (isArray(params)) {
               if (!isString(exp)) { // not a string like: `"default()": {}`, it will be `default() { return {} }`
                 meta[key] = () => exp
+                return
               }
-              else {
-                const value = createFn(scopex, exp, params)
-                meta[key] = value
-              }
+
+              const realExp = isInnerExp(exp) ? getInnerExp(exp) : exp
+              const value = createFn(scopex, realExp, params)
+              meta[key] = value
               return
             }
 
@@ -277,7 +294,14 @@ export class Loader {
               return
             }
 
-            const res = parseExp(exp)
+            // some: "{ name.length }" -> "some()": "{ name.length }"
+            if (isInnerExp(exp)) {
+              const realExp = getInnerExp(exp)
+              meta[key] = createFn(scopex, realExp)
+              return
+            }
+
+            const res = parseDefExp(exp)
             if (res) {
               meta[key] = res.value
               return
@@ -343,7 +367,7 @@ export class Loader {
       const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
 
       LoadedModel.prototype[key] = function(...args) {
-        const scopex = new ScopeX(this, { loose: true, filters })
+        const scopex = new ScopeX(this, { filters })
 
         if (isInjected) {
           return new Promise((resolve, reject) => {
