@@ -79,7 +79,9 @@ export class Loader {
       }
     }
 
-    const getFinalExp = (exp) => exp.replace(/\.\./g, '$views.')
+    const getFinalExp = (exp) => exp.trim()
+      .replace(/^\.\./g, '$views.') // -> { ..a.value }
+      .replace(/\.\./g, '.$views.') // -> { $parent..b.value }
 
     const createFn = (scopex, exp, params) => (...args) => {
       if (!params) {

@@ -75,4 +75,36 @@ describe('Loader', () => {
     })
     expect(one.child.age).toBe(12)
   })
+  test('.. syntax', () => {
+    const loader = new Loader()
+    const Some = loader.parse({
+      "schema": {
+        "name": {
+          "default": "tomy",
+          "type": "string",
+          "required()": "age > 10"
+        },
+        "age": {
+          "default": 11,
+          "type": "number"
+        },
+        "height": {
+          "default": 0,
+          "isNeeded": "{ ..name.required }" // -> special syntax, use .. to instead of `$views.`, equal: "isNeeded": "$views.name.required"
+        },
+        "<child>": {
+          "schema": {
+            "ghost": {
+              "default": "",
+              "required": "{ $parent..height.isNeeded }" // -> read height field view from parent
+            }
+          }
+        }
+      }
+    })
+
+    const some = new Some()
+    expect(some.$views.height.isNeeded).toBe(true)
+    expect(some.child.$views.ghost.required).toBe(true)
+  })
 })
