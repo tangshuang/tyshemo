@@ -435,7 +435,7 @@ export class Store {
     return this
   }
 
-  dispatch(keyPath, { value, next, prev, active, invalid }, force = false) {
+  dispatch(keyPath, { value, next, prev, active, invalid, compute }, force = false) {
     if (this.silent) {
       return false
     }
@@ -481,7 +481,7 @@ export class Store {
 
     items.forEach((item) => {
       const target = item.key
-      item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid })
+      item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid, compute })
     })
 
     return true

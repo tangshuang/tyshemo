@@ -143,6 +143,7 @@ export class Model {
     define(this, '$hooks', [])
     define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this.attrs() })
     define(this, '$$state', this.state())
+    define(this, '$$deps', {})
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {
@@ -312,11 +313,11 @@ export class Model {
 
         return traps
       }
-      dispatch(keyPath, { value, next, prev, active, invalid }, force) {
-        const notified = super.dispatch(keyPath, { value, next, prev, active, invalid }, force)
+      dispatch(keyPath, e, force) {
+        const notified = super.dispatch(keyPath, e, force)
         // propagation
         if (notified && $this.$parent && $this.$keyPath) {
-          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], { value, next, prev, active, invalid }, true)
+          $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], e, true)
         }
         return notified
       }
@@ -543,7 +544,7 @@ export class Model {
 
     // register a listener
     this.watch('*', (e) => {
-      const { key } = e
+      const { key, compute } = e
       const root = key[0]
       const def = this.$schema[root]
 
@@ -565,7 +566,9 @@ export class Model {
       this._ensure(root)
 
       // modify view.changed
-      this.$views[root].changed = true
+      if (!compute) {
+        this.$views[root].changed = true
+      }
 
       this.onChange(root)
     }, true)
@@ -749,6 +752,14 @@ export class Model {
 
     this.onRestore()
     this.emit('restore')
+
+    // dependencies collection
+    // after onRestore, so that developers can do some thing before collection
+    each(this.$schema, (meta, key) => {
+      if (meta.compute) {
+        this._getData(key)
+      }
+    })
 
     return this
   }
@@ -1066,7 +1077,35 @@ export class Model {
     }
     // if value is not changed, we will use computed value
     else if (meta && meta.compute) {
-      return tryGet(() => meta.compute.call(this), value)
+      this.collect()
+      const res = tryGet(() => meta.compute.call(this), value)
+      const deps = this.collect(true)
+
+      // clear previous watchers
+      const depent = this.$$deps[key]
+      if (depent && depent.deps && depent.deps.length) {
+        const away = depent.deps.filter(item => !deps.includes(item))
+        const { fn } = depent
+        away.forEach((key) => {
+          this.unwatch(key, fn)
+        })
+      }
+
+      // // subscribe new watchers
+      if (deps.length) {
+        const fn = () => {
+          const prev = res
+          const value = this.$store.get(key)
+          const next = tryGet(() => meta.compute.call(this), value)
+          this.$store.dispatch(key, { value: next, next, prev, active: next, invalid: prev, compute: true })
+        }
+        deps.forEach((key) => {
+          this.watch(key, fn, true)
+        })
+        this.$$deps[key] = { deps, fn }
+      }
+
+      return res
     }
     else {
       return value

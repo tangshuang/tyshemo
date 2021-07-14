@@ -42,11 +42,13 @@ describe('Model', () => {
   }
 
   test('computed', () => {
+    global.__debug = true
     const person = new PersonModel()
     expect(person.height).toBe(120)
 
     person.body.feet = false
     expect(person.height).toBe(60)
+    global.__debug = false
   })
   test('get', () => {
     const person = new PersonModel()
@@ -1001,7 +1003,7 @@ describe('Model', () => {
     expect(sun.$collection).toBeUndefined()
   })
 
-  test('create', () => {
+  test('init use create', () => {
     class Some extends Model {
       static some = new Meta({
         default: {},
@@ -1039,5 +1041,27 @@ describe('Model', () => {
         age: 12,
       }
     })
+  })
+
+  test('compute trigger watch by deps', () => {
+    class Some extends Model {
+      static age = new Meta({
+        default: 10,
+      })
+      static height = new Meta({
+        default: 20,
+        compute() {
+          return this.age * 2
+        },
+      })
+    }
+    const some = new Some()
+
+    let count = 0
+    some.watch('height', () => count ++)
+
+    some.age ++
+    expect(some.height).toBe(22)
+    expect(count).toBe(1)
   })
 })
