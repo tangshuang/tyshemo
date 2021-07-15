@@ -570,6 +570,13 @@ export class Model {
         this.$views[root].changed = true
       }
 
+      if (this.$$deps[root]) {
+        const { deps, fn } = this.$$deps[root]
+        deps.forEach((dep) => {
+          this.unwatch(dep, fn)
+        })
+      }
+
       this.onChange(root)
     }, true)
   }
