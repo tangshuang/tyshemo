@@ -51,6 +51,8 @@ const attrs = {
 
   // optional, computed property, will compute at each time digest end
   // when it is a compute property, it is not able to use `set` to update value
+  // - computed field can be changed by set a value, after changed, it will lose computing ability and to be a normal value, so dont set a value to the computed fields, or you may use `getter` instead
+  // - computed filed will notify watchers when dependencies changed (before setting a value)
   compute() {
     const a = this.a
     const b = this.b
