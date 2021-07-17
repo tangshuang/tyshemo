@@ -86,6 +86,17 @@ export class Loader {
       }
     }
 
+    const tryGetInGlobal = (exp) => {
+      try {
+        let isIn = false
+        const res = globalScope.parse(exp, deps => isIn = !!deps.length)
+        return [isIn, res]
+      }
+      catch (e) {
+        return []
+      }
+    }
+
     const parseGetter = (value) => {
       if (isString(value)) {
         if (/:fetch\(.*?\)/.test(value)) {
@@ -117,9 +128,8 @@ export class Loader {
 
     const parseSubModel = (exp) => {
       if (isString(exp)) {
-        let hasUsed = false
-        const res = globalScope.parse(exp, deps => hasUsed = !!deps.length)
-        if (hasUsed && res && isInstanceOf(res, Model)) {
+        const [isIn, res] = tryGetInGlobal(exp)
+        if (isIn && res && isInstanceOf(res, Model)) {
           return res
         }
       }
@@ -293,9 +303,8 @@ export class Loader {
               return
             }
 
-            let hasUsed = false
-            const res = globalScope.parse(exp, deps => hasUsed = !!deps.length)
-            if (hasUsed) {
+            const [isIn, res] = tryGetInGlobal(exp)
+            if (isIn) {
               meta[key] = res
               return
             }
