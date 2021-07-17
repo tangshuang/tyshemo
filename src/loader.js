@@ -1,7 +1,7 @@
 import Parser from './ty/parser.js'
 import Model from './model.js'
 import { createAsyncRef } from './shared/utils.js'
-import ScopeX from 'scopex'
+import { ScopeX, createScope } from 'scopex'
 import Validator from './validator.js'
 import Factory from './factory.js'
 import {
@@ -16,6 +16,20 @@ import {
 } from 'ts-fns'
 
 export class Loader {
+  constructor(options = {}) {
+    const { global: globalVars = {}, filters: thisFilters = {} } = options
+    const defs = this.defs()
+    const filters = this.filters()
+    this.globalScope = createScope({ ...globalVars, ...defs }, {
+      filters: {
+        ...thisFilters,
+        ...filters,
+      },
+    })
+
+    const types = this.types()
+    this.typeParser = new Parser(types)
+  }
   /**
    *
    * @param {object} json {
@@ -40,92 +54,43 @@ export class Loader {
    * }
    */
   parse(json) {
-    const types = this.types()
-    const defs = this.defs()
-    const filters = this.filters()
-    const { schema, state = {}, attrs = {}, methods = {} } = json
-
     const loader = this
-    const typeParser = new Parser(types)
+    const { globalScope, typeParser } = this
 
-    let hasDefUsed = false
-    const defProxy = new Proxy(defs, {
-      get(target, key, receiver) {
-        if (key in defs) {
-          hasDefUsed = true
-        }
-        return Reflect.get(target, key, receiver)
-      },
-    })
-
-    const defScopex = new ScopeX(defProxy, { filters })
-
-    const parseDefExp = (exp, scopex = defScopex) => {
-      if (!exp) {
-        return
-      }
-      if (!isString(exp)) {
-        return
-      }
-
-      try {
-        const value = scopex.parse(exp)
-        const hasUsed = hasDefUsed
-        hasDefUsed = false
-        return hasUsed ? { value } : null
-      }
-      catch (e) {
-        hasDefUsed = false
-      }
-    }
+    const { schema, state = {}, attrs = {}, methods = {} } = json
 
     const getFinalExp = (exp) => exp.trim()
       .replace(/^\.\./g, '$views.') // -> { ..a.value }
-      .replace(/\.\./g, '.$views.') // -> { $parent..b.value }
-
-    const createFn = (scopex, exp, params) => (...args) => {
-      if (!params) {
-        const res = parseDefExp(exp)
-        if (res) {
-          return res.value
-        }
-
-        const finalExp = getFinalExp(exp)
-        const output = scopex.parse(finalExp)
-        return output
-      }
-
-      const locals = {}
-      params.forEach((param, i) => {
-        const value = args[i]
-        locals[param] = value
-      })
-
-      const newDefScopex = defScopex.$new(locals)
-      const res = parseDefExp(exp, newDefScopex)
-      if (res) {
-        return res.value
-      }
-
-      const newScopex = scopex.$new(locals)
-      const finalExp = getFinalExp(exp)
-      const output = newScopex.parse(finalExp)
-      return output
-    }
+      .replace(/(\s)\.\./g, ' $views.') // -> { a + ..b.value }
+      .replace(/(.)\.\./g, '$1.$views.') // -> { $parent..b.value }
 
     const parseKey = (str) => {
-      const matched = str.match(/([a-zA-Z0-9_$]+)(\((.*?)\))?(!(.*))?/)
-      const [_, name, _p, _params, _m, _macro] = matched
+      const matched = str.match(/([a-zA-Z0-9_$]+)(\((.*?)\))?/)
+      const [_, name, _p, _params] = matched
       const params = isString(_params) ? _params.split(',').map(item => item.trim()).filter(item => !!item) : void 0
-      const macro = _m ? _macro || '' : void 0
-      return [name, params, macro]
+      return [name, params]
+    }
+
+    const tryGetRealValue = (exp) => {
+      try {
+        return JSON.parse(exp)
+      }
+      catch (e) {
+        const scope = new ScopeX({})
+        try {
+          return scope.parse(exp)
+        }
+        catch (e) {
+          return exp
+        }
+      }
     }
 
     const parseGetter = (value) => {
       if (isString(value)) {
         if (/:fetch\(.*?\)/.test(value)) {
           const [_all, before, _matched, matched, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
-          const defaultValue = tryGetExp(before)
+          const defaultValue = tryGetRealValue(before)
           return createAsyncRef(defaultValue, () => {
             return loader.fetch(matched).then((data) => {
               if (data && typeof data === 'object' && after && after[0] === '.') {
@@ -142,25 +107,45 @@ export class Loader {
       return value
     }
 
-    const isInnerExp = (str) => {
+    const isInlineExp = (str) => {
       return str[0] === '{' && str[str.length - 1] === '}'
     }
 
-    const getInnerExp = (str) => {
-      return str.substring(1, str.length - 1)
+    const getInlineExp = (str) => {
+      return isInlineExp(str) ? str.substring(1, str.length - 1).trim() : str
     }
 
     const parseSubModel = (exp) => {
       if (isString(exp)) {
-        const res = parseDefExp(exp)
-        if (res && isInstanceOf(res.value, Model)) {
-          return res.value
+        let hasUsed = false
+        const res = globalScope.parse(exp, deps => hasUsed = !!deps.length)
+        if (hasUsed && res && isInstanceOf(res, Model)) {
+          return res
         }
       }
       else if (exp && !isArray(exp) && typeof exp === 'object') {
         const sub = loader.parse(exp)
         return sub
       }
+    }
+
+    const createFn = (scope, exp, params) => (...args) => {
+      const finalExp = getFinalExp(exp)
+
+      if (!params) {
+        const output = scope.parse(finalExp)
+        return output
+      }
+
+      const locals = {}
+      params.forEach((param, i) => {
+        const value = args[i]
+        locals[param] = value
+      })
+
+      const newScope = scope.$new(locals)
+      const output = newScope.parse(finalExp)
+      return output
     }
 
     class LoadedModel extends Model {
@@ -171,9 +156,13 @@ export class Loader {
         })
         return stat
       }
+      attrs() {
+        const originalAttrs = super.attrs()
+        return { ...originalAttrs, ...attrs }
+      }
       schema() {
-        const scopex = new ScopeX(this, { filters })
-        const $schema = {}
+        const scope = globalScope.$new(this)
+        const metas = {}
         const submodels = {}
         const factories = {}
 
@@ -218,15 +207,16 @@ export class Loader {
               if (!isArray(exp)) {
                 return
               }
+
               const items = []
 
-              const defaultValidators = new ScopeX(Validator, { filters })
-              exp.forEach((validator, i) => {
+              const builtinValidators = globalScope.$new(Validator)
+              exp.forEach((validator) => {
                 if (isString(validator)) {
                   // i.e. validators: [ "required('some is required!')" ]
                   const [key, params] = parseKey(validator)
                   if (Validator[key] && params) {
-                    items.push(defaultValidators.parse(validator))
+                    items.push(builtinValidators.parse(validator))
                   }
                   return
                 }
@@ -246,7 +236,7 @@ export class Loader {
                   }
 
                   if (isArray(params)) {
-                    const value = createFn(scopex, exp, params)
+                    const value = createFn(scope, exp, params)
                     item[key] = value
                     return
                   }
@@ -271,8 +261,8 @@ export class Loader {
                 return
               }
 
-              const realExp = isInnerExp(exp) ? getInnerExp(exp) : exp
-              const value = createFn(scopex, realExp, params)
+              const realExp = getInlineExp(exp)
+              const value = createFn(scope, realExp, params)
               meta[key] = value
               return
             }
@@ -297,15 +287,16 @@ export class Loader {
             }
 
             // some: "{ name.length }" -> "some()": "{ name.length }"
-            if (isInnerExp(exp)) {
-              const realExp = getInnerExp(exp)
-              meta[key] = createFn(scopex, realExp)
+            if (isInlineExp(exp)) {
+              const realExp = getInlineExp(exp)
+              meta[key] = createFn(scope, realExp)
               return
             }
 
-            const res = parseDefExp(exp)
-            if (res) {
-              meta[key] = res.value
+            let hasUsed = false
+            const res = globalScope.parse(exp, deps => hasUsed = !!deps.length)
+            if (hasUsed) {
+              meta[key] = res
               return
             }
 
@@ -321,26 +312,22 @@ export class Loader {
           }
 
           if (!isEmpty(meta)) {
-            $schema[field] = meta
+            metas[field] = meta
           }
         })
 
         // factory wrapper should must come after schema finished, or schema sub model will not be ready
         each(submodels, (model, field) => {
-          const attrs = factories[field] || $schema[field] // -> new version support submodel field name directly
+          const attrs = factories[field] || metas[field] // -> new version support submodel field name directly
           if (attrs) {
-            $schema[field] = Factory.getMeta(model, attrs)
+            metas[field] = Factory.getMeta(model, attrs)
           }
           else {
-            $schema[field] = model
+            metas[field] = model
           }
         })
 
-        return $schema
-      }
-      attrs() {
-        const originalAttrs = super.attrs()
-        return { ...originalAttrs, ...attrs }
+        return metas
       }
     }
 
@@ -369,21 +356,21 @@ export class Loader {
       const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
 
       LoadedModel.prototype[key] = function(...args) {
-        const scopex = new ScopeX(this, { filters })
+        const scope = globalScope.$new(this)
 
         if (isInjected) {
           return new Promise((resolve, reject) => {
-            const url = createFn(scopex, _url, params)(...args)
+            const url = createFn(scope, _url, params)(...args)
             loader.fetch(url).then((data) => {
-              const subScopex = scopex.$new({ __await__: data })
+              const subScope = scope.$new({ __await__: data })
               const subExp = [before, '__await__', after].join('')
-              const res = createFn(subScopex, subExp, params)(...args)
+              const res = createFn(subScope, subExp, params)(...args)
               resolve(res)
             }).catch(reject)
           })
         }
 
-        const res = createFn(scopex, exp, params)(...args)
+        const res = createFn(scope, exp, params)(...args)
         return res
       }
     })
@@ -397,6 +384,10 @@ export class Loader {
   }
   // set defs
   defs() {
+    return {}
+  }
+  // global vars
+  global() {
     return {}
   }
   // set filters
@@ -441,18 +432,3 @@ export class Loader {
   }
 }
 export default Loader
-
-function tryGetExp(exp) {
-  try {
-    return JSON.parse(exp)
-  }
-  catch (e) {
-    const scopex = new ScopeX({})
-    try {
-      return scopex.parse(exp)
-    }
-    catch (e) {
-      return exp
-    }
-  }
-}
