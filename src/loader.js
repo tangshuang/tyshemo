@@ -71,6 +71,20 @@ export class Loader {
       return [name, params]
     }
 
+    const isInlineExp = (str) => {
+      return str[0] === '{' && str[str.length - 1] === '}'
+    }
+
+    const getInlineExp = (str) => {
+      return str.substring(1, str.length - 1).trim()
+    }
+
+    const getExp = (str) => {
+      const line = isInlineExp(str) ? getInlineExp(str) : str
+      const exp = getFinalExp(line)
+      return exp
+    }
+
     const tryGetRealValue = (exp) => {
       try {
         return JSON.parse(exp)
@@ -86,10 +100,10 @@ export class Loader {
       }
     }
 
-    const tryGetInGlobal = (exp) => {
+    const tryGetInScope = (exp, scope = globalScope) => {
       try {
         let isIn = false
-        const res = globalScope.parse(exp, deps => isIn = !!deps.length)
+        const res = scope.parse(exp, deps => isIn = !!deps.length)
         return [isIn, res]
       }
       catch (e) {
@@ -118,17 +132,10 @@ export class Loader {
       return value
     }
 
-    const isInlineExp = (str) => {
-      return str[0] === '{' && str[str.length - 1] === '}'
-    }
-
-    const getInlineExp = (str) => {
-      return isInlineExp(str) ? str.substring(1, str.length - 1).trim() : str
-    }
-
     const parseSubModel = (exp) => {
-      if (isString(exp)) {
-        const [isIn, res] = tryGetInGlobal(exp)
+      // if string, only support inline exp
+      if (isString(exp) && isInlineExp(exp)) {
+        const [isIn, res] = tryGetInScope(getInlineExp(exp))
         if (isIn && res && isInstanceOf(res, Model)) {
           return res
         }
@@ -140,10 +147,8 @@ export class Loader {
     }
 
     const createFn = (scope, exp, params) => (...args) => {
-      const finalExp = getFinalExp(exp)
-
       if (!params) {
-        const output = scope.parse(finalExp)
+        const output = scope.parse(exp)
         return output
       }
 
@@ -154,8 +159,57 @@ export class Loader {
       })
 
       const newScope = scope.$new(locals)
-      const output = newScope.parse(finalExp)
+      const output = newScope.parse(exp)
       return output
+    }
+
+    const createValue = (scope, value, params) => {
+      // not a string like: `"default()": {}`, it will be `default() { return {} }`
+      if (!isString(value)) {
+        return params ? (() => value) : value
+      }
+
+      const isInline = isInlineExp(value)
+      if (!params && !isInline) {
+        return parseGetter(value)
+      }
+
+      const line = isInline ? getInlineExp(value) : value
+      const exp = getFinalExp(line)
+
+      const getter = parseGetter(exp)
+      if (getter !== exp) {
+        return getter
+      }
+
+      // only inline exp
+      // { "some": "{ field }" }
+      if (!params && isInline) {
+        return createFn(scope, exp, [])
+      }
+
+      // function attr
+      /**
+       * {
+       *   "drop(v)": "v > 6 && age > 20"
+       * }
+       */
+
+      /**
+       * {
+       *   "default": "content text",
+       *   "type": "string",
+       *   "validators": [
+       *     {
+       *       "determine(value)": "value > 0"
+       *       "validate(value)": "value > 5",
+       *       "message": "should greater then 5"
+       *     }
+       *   ]
+       * }
+       */
+
+      return createFn(scope, exp, params)
     }
 
     class LoadedModel extends Model {
@@ -219,7 +273,6 @@ export class Loader {
               }
 
               const items = []
-
               const builtinValidators = globalScope.$new(Validator)
               exp.forEach((validator) => {
                 if (isString(validator)) {
@@ -245,13 +298,7 @@ export class Loader {
                     return
                   }
 
-                  if (isArray(params)) {
-                    const value = createFn(scope, exp, params)
-                    item[key] = value
-                    return
-                  }
-
-                  item[key] = exp
+                  item[key] = createValue(scope, exp, params)
                 })
                 items.push(item)
               })
@@ -259,57 +306,7 @@ export class Loader {
               return
             }
 
-            // function attr
-            /**
-             * {
-             *   "drop(v)": "v > 6 && age > 20"
-             * }
-             */
-            if (isArray(params)) {
-              if (!isString(exp)) { // not a string like: `"default()": {}`, it will be `default() { return {} }`
-                meta[key] = () => exp
-                return
-              }
-
-              const realExp = getInlineExp(exp)
-              const value = createFn(scope, realExp, params)
-              meta[key] = value
-              return
-            }
-
-            /**
-             * {
-             *   "default": "content text",
-             *   "type": "string",
-             *   "validators": [
-             *     {
-             *       "determine(value)": "value > 0"
-             *       "validate(value)": "value > 5",
-             *       "message": "should greater then 5"
-             *     }
-             *   ]
-             * }
-             */
-
-            if (!isString(exp)) {
-              meta[key] = exp
-              return
-            }
-
-            // some: "{ name.length }" -> "some()": "{ name.length }"
-            if (isInlineExp(exp)) {
-              const realExp = getInlineExp(exp)
-              meta[key] = createFn(scope, realExp)
-              return
-            }
-
-            const [isIn, res] = tryGetInGlobal(exp)
-            if (isIn) {
-              meta[key] = res
-              return
-            }
-
-            meta[key] = parseGetter(exp)
+            meta[key] = createValue(scope, exp, params)
           })
 
           // DEPARTED Compatible for old version
@@ -340,8 +337,8 @@ export class Loader {
       }
     }
 
-    each(methods, (_exp, attr) => {
-      if (!isString(_exp)) {
+    each(methods, (value, attr) => {
+      if (!isString(value)) {
         return
       }
 
@@ -350,6 +347,7 @@ export class Loader {
         return
       }
 
+      const _exp = getExp(value)
       const [key, params, exp] = loader.method(_key, _params, _exp)
 
       if (isFunction(exp)) {
