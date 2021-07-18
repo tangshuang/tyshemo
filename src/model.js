@@ -301,7 +301,7 @@ export class Model {
             }
           }
 
-          if ($this.$collection && $this.$collection.enable) {
+          if ($this.$collection && $this.$collection.enable && $this.$collection.fields) {
             $this.$collection.items.push([keyPath, active])
             if (isInstanceOf(active, Model)) {
               active.collect()
@@ -438,7 +438,16 @@ export class Model {
         }
         // patch to view directly
         else {
-          view[attr] = value
+          let attrValue = value
+          viewDef[attr] = {
+            get: () => attrValue,
+            set: (value) => {
+              attrValue = value
+              this.$store.forceDispatch(key, attr, value)
+            },
+            enumerable: true,
+            configurable: true,
+          }
         }
       }, true)
 
@@ -494,7 +503,12 @@ export class Model {
       Object.defineProperties(view, viewDef)
 
       define(views, key, {
-        value: view,
+        get: () => {
+          if (this.$collection && this.$collection.enable && this.$collection.views) {
+            this.$collection.items.push([`!${key}`])
+          }
+          return view
+        },
         enumerable: true,
       })
     })
@@ -789,16 +803,23 @@ export class Model {
   /**
    * @param {*} type 0: start, 1: end
    */
-  collect(x) {
-    if (isFunction(x)) {
-      if (this.$collection) {
-        this.$collection.enable = false
+  collect(collector, inverse) {
+    if (isFunction(collector)) {
+      if (inverse) { // if true, do not collect deps, and return normal value of collector fn
+        if (this.$collection) {
+          this.$collection.enable = false
+        }
+        const res = collector()
+        if (this.$collection) {
+          this.$collection.enable = true
+        }
+        return res
       }
-      const res = x()
-      if (this.$collection) {
-        this.$collection.enable = true
-      }
-      return res
+
+      // if false, do fn, return deps
+      this.collect()
+      collector()
+      return this.collect(true)
     }
 
     const summarize = () => {
@@ -860,7 +881,8 @@ export class Model {
       return res
     }
 
-    if (x) {
+    // end, clear, and return deps
+    if (collector === true) {
       const collection = this.$collection
       if (!collection) {
         return []
@@ -873,10 +895,12 @@ export class Model {
       return keys
     }
 
+    // dont start collect again
     if (this.$collection) {
       return summarize
     }
 
+    // start collecting
     const items = []
     const timer = setTimeout(() => this.collect(true), 32)
     define(this, '$collection', {
@@ -885,6 +909,8 @@ export class Model {
         // clear automaticly to free memory
         timer,
         enable: true,
+        views: collector && typeof collector === 'object' ? collector.views : false,
+        fields: collector && typeof collector === 'object' && 'fields' in collector ? collector.fields : true
       },
       configurable: true,
     })
@@ -1312,7 +1338,7 @@ export class Model {
     define(this, '$keyPath', {
       get: () => {
         const field = parent[key]
-        const res = parent.collect(() => isArray(field) ? [key, field.indexOf(this)] : [key])
+        const res = parent.collect(() => isArray(field) ? [key, field.indexOf(this)] : [key], true)
         return res
       },
       configurable: true,

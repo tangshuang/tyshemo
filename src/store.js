@@ -463,7 +463,7 @@ export class Store {
     })
     // watchers which watch any change
     const anys = watchers.filter((item) => {
-      if (isEqual(item.key, ['!'])) {
+      if (item.key[0] && item.key[0][0] === '!') {
         return false
       }
       if (!isEqual(item.key, ['*'])) {
@@ -487,17 +487,27 @@ export class Store {
     return true
   }
 
-  forceDispatch(...args) {
+  forceDispatch(key = '!', ...args) {
     if (this.silent) {
       return false
     }
 
+    const forceItems = []
     this._watchers.forEach((item) => {
-      if (!isEqual(item.key, ['!'])) {
+      if (item.key[0] === '!') {
+        forceItems.push(item)
         return
       }
-      item.fn.call(item.context || this.state, ...args)
+      if (item.key[0] && item.key[0][0] === '!' && (item.key[0] === key || item.key[0] === `!${key}`)) {
+        item.fn.call(item.context || this.state, ...args)
+      }
     })
+
+    if (forceItems.length) {
+      forceItems.forEach((item) => {
+        item.fn.call(item.context || this.state, key, ...args)
+      })
+    }
 
     return true
   }

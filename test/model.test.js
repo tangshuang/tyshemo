@@ -1003,6 +1003,27 @@ describe('Model', () => {
     expect(sun.$collection).toBeUndefined()
   })
 
+  test('collect views', () => {
+    class Sun extends Model {
+      static age = new Meta({
+        default: 0,
+        type: Number,
+      })
+    }
+
+    const sun = new Sun()
+    sun.collect({ views: true, fields: false })
+    sun.$views.age
+    const deps = sun.collect(true)
+    expect(deps).toEqual(['!age'])
+
+    sun.collect({ views: true })
+    sun.age
+    sun.$views.age
+    const deps2 = sun.collect(true)
+    expect(deps2).toEqual(['age', '!age'])
+  })
+
   test('init use create', () => {
     class Some extends Model {
       static some = new Meta({
@@ -1064,4 +1085,28 @@ describe('Model', () => {
     expect(some.height).toBe(22)
     expect(count).toBe(1)
   })
+
+  test('watch view prop change by !', () => {
+    class Some extends Model {
+      static age = new Meta({
+        default: 10,
+        max: 100,
+      })
+    }
+    const some = new Some()
+    let count = 0
+    some.watch('!', () => {
+      count ++
+    })
+    some.watch('!age', () => {
+      count ++
+    })
+
+    expect(some.$views.age.max).toBe(100)
+
+    some.$views.age.max = 50
+    expect(some.$views.age.max).toBe(50)
+    expect(count).toBe(2)
+  })
+
 })
