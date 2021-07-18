@@ -1022,6 +1022,12 @@ describe('Model', () => {
     sun.$views.age
     const deps2 = sun.collect(true)
     expect(deps2).toEqual(['age', '!age'])
+
+    // bugfix
+    sun.collect({ views: true })
+    sun.age
+    const deps3 = sun.collect(true)
+    expect(deps3).toEqual(['age'])
   })
 
   test('init use create', () => {

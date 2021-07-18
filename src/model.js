@@ -526,8 +526,8 @@ export class Model {
 
     // create changed, so that it's easy to find out whether the data has changed
     define(this.$views, '$changed', {
-      get: () => keys.some((key) => this.$views[key].changed),
-      set: (status) => keys.forEach(key => this.$views[key].changed = !!status)
+      get: () => this.collect(() => keys.some((key) => this.$views[key].changed), true),
+      set: (status) => this.collect(() => keys.forEach(key => this.$views[key].changed = !!status), true),
     })
 
     // create $state, so that it's easy to read state from $views
@@ -581,7 +581,9 @@ export class Model {
 
       // modify view.changed
       if (!compute) {
-        this.$views[root].changed = true
+        this.collect(() => {
+          this.$views[root].changed = true
+        }, true)
       }
 
       if (this.$$deps[root]) {
@@ -1102,7 +1104,7 @@ export class Model {
   _getData(key) {
     const value = this.$store.get(key)
     const meta = this.$schema[key]
-    const view = this.$views[key]
+    const view = this.collect(() => this.$views[key], true)
 
     // if value is changed manully, we will use changed value
     if (view && view.changed) {
@@ -1152,7 +1154,7 @@ export class Model {
     const computed = {}
 
     each(schema, (meta, key) => {
-      if (views[key] && views[key].changed) {
+      if (this.collect(() => views[key] && views[key].changed, true)) {
         return
       }
       if (meta.compute) {
@@ -1235,12 +1237,14 @@ export class Model {
     this.update(output)
 
     // reset changed, make sure changed=false after recompute
-    const keys = Object.keys(output)
-    keys.forEach((key) => {
-      if (this.$views[key]) {
-        this.$views[key].changed = false
-      }
-    })
+    this.collect(() => {
+      const keys = Object.keys(output)
+      keys.forEach((key) => {
+        if (this.$views[key]) {
+          this.$views[key].changed = false
+        }
+      })
+    }, true)
 
     return this
   }
