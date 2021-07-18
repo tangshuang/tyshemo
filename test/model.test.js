@@ -1008,20 +1008,28 @@ describe('Model', () => {
       static age = new Meta({
         default: 0,
         type: Number,
+        max: 100,
       })
     }
 
     const sun = new Sun()
     sun.collect({ views: true, fields: false })
-    sun.$views.age
+    sun.age
+    sun.$views.age.max
     const deps = sun.collect(true)
-    expect(deps).toEqual(['!age'])
+    expect(deps).toEqual(['!age.max'])
+
+    sun.collect({ views: true })
+    sun.age
+    sun.$views.age.max
+    const deps2 = sun.collect(true)
+    expect(deps2).toEqual(['age', '!age.max'])
 
     sun.collect({ views: true })
     sun.age
     sun.$views.age
-    const deps2 = sun.collect(true)
-    expect(deps2).toEqual(['age', '!age'])
+    const deps4 = sun.collect(true)
+    expect(deps4).toEqual(['age', '!age'])
 
     // bugfix
     sun.collect({ views: true })
@@ -1103,8 +1111,8 @@ describe('Model', () => {
     let count = 0
     some.watch('!', () => {
       count ++
-    })
-    some.watch('!age', () => {
+    }, true)
+    some.watch('!age.max', () => {
       count ++
     })
 

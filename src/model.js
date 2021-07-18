@@ -418,15 +418,31 @@ export class Model {
         }
         else if (isAsyncRef(value)) {
           const { current, attach } = value
-          view[attr] = current
+          let attrValue = current
           // async set attr value
           attach(key, attr).then((next) => {
-            if (next === view[attr]) {
+            if (next === attrValue) {
               return
             }
-            view[attr] = next
-            this.$store.forceDispatch(key, attr, next)
+            const prev = attrValue
+            attrValue = next
+            this.$store.forceDispatch(`!${key}.${attr}`, next, prev)
           })
+          viewDef[attr] = {
+            get: () => {
+              if (this.$collection && this.$collection.enable && this.$collection.views) {
+                this.$collection.items.push([`!${key}.${attr}`])
+              }
+              return attrValue
+            },
+            set: (value) => {
+              const prev = attrValue
+              attrValue = value
+              this.$store.forceDispatch(`!${key}.${attr}`, value, prev)
+            },
+            enumerable: true,
+            configurable: true,
+          }
         }
         // use as a getter
         else if (isFunction(value)) {
@@ -440,10 +456,16 @@ export class Model {
         else {
           let attrValue = value
           viewDef[attr] = {
-            get: () => attrValue,
+            get: () => {
+              if (this.$collection && this.$collection.enable && this.$collection.views) {
+                this.$collection.items.push([`!${key}.${attr}`])
+              }
+              return attrValue
+            },
             set: (value) => {
+              const prev = attrValue
               attrValue = value
-              this.$store.forceDispatch(key, attr, value)
+              this.$store.forceDispatch(`!${key}.${attr}`, value, prev)
             },
             enumerable: true,
             configurable: true,

@@ -454,12 +454,10 @@ export class Store {
       if (isEqual(item.key, key)) {
         return true
       }
-      else if (item.deep && isEqual(item.key, key.slice(0, item.key.length))) {
+      if (item.deep && isEqual(item.key, key.slice(0, item.key.length))) {
         return true
       }
-      else {
-        return false
-      }
+      return false
     })
     // watchers which watch any change
     const anys = watchers.filter((item) => {
@@ -470,12 +468,10 @@ export class Store {
         return false
       }
       // if watch('*', fn, false), only top level will be watched
-      else if (!item.deep && key.length > 1) {
+      if (!item.deep && key.length > 1) {
         return false
       }
-      else {
-        return true
-      }
+      return true
     })
     items.push(...anys)
 
@@ -487,27 +483,45 @@ export class Store {
     return true
   }
 
-  forceDispatch(key = '!', ...args) {
+  forceDispatch(keyPath = '!', ...args) {
     if (this.silent) {
       return false
     }
 
-    const forceItems = []
-    this._watchers.forEach((item) => {
+    const key = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
+    const watchers = this._watchers
+    const items = watchers.filter((item) => {
+      if (!(item.key[0] && item.key[0][0] === '!')) {
+        return false
+      }
       if (item.key[0] === '!') {
-        forceItems.push(item)
-        return
+        return false
       }
-      if (item.key[0] && item.key[0][0] === '!' && (item.key[0] === key || item.key[0] === `!${key}`)) {
-        item.fn.call(item.context || this.state, ...args)
+      if (isEqual(item.key, key)) {
+        return true
       }
+      if (item.deep && isEqual(item.key, key.slice(0, item.key.length))) {
+        return true
+      }
+      return false
     })
+    // watchers which watch any change
+    const anys = watchers.filter((item) => {
+      if (!isEqual(item.key, ['!'])) {
+        return false
+      }
+      // if watch('!', fn, false), only top level will be watched
+      if (!item.deep && key.length > 1) {
+        return false
+      }
+      return true
+    })
+    items.push(...anys)
 
-    if (forceItems.length) {
-      forceItems.forEach((item) => {
-        item.fn.call(item.context || this.state, key, ...args)
-      })
-    }
+    items.forEach((item) => {
+      const target = item.key
+      item.fn.call(item.context || this.state, keyPath, ...args)
+    })
 
     return true
   }
