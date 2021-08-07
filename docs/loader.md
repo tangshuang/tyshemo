@@ -17,7 +17,7 @@ new SomeLoader().load(url).then((SomeModel) => {
 })
 ```
 
-## JSON Schema
+## Schema JSON
 
 A json schema of a Model should be like:
 
@@ -27,7 +27,7 @@ A json schema of a Model should be like:
     "name": {
       "default": "tomy",
       "type": "string",
-      "required()": "age > 10" // use () after a key to mean a function attribute
+      "required()": "{ age > 10 }" // use () after a key to mean a function attribute
     },
     "age": {
       "default": 10,
@@ -50,7 +50,7 @@ A json schema of a Model should be like:
 
   // methods for Model
   "methods": {
-    "getWeight()": "age * 5"
+    "getWeight()": "age * 5" // -> functions can ignore {}, not recommanded
   }
 }
 ```
@@ -116,12 +116,16 @@ To support sub-model, you should use `<..>` to point out the key:
 
 Override the following hooks methods to modify the output:
 
-- meta(key, params, exp)
-- validator(key, params, exp)
-- method(key, params, exp)
-- fetchJSON(url)
+- meta(meta): meta
+- attr(key, params, exp): [key, params, exp]
+- validator(key, params, exp): [key, params, exp]
+- method(key, params, exp): [key, params, exp]
 - types(): pass into type `Parser`
 - defs(): define some unknow keys
+- global(): global scope
+- filters(): filters inside
+- extends(Model): Model
+- fetch(url): define the fetch function inside, use window.fetch as default
 
 ## API
 
@@ -144,15 +148,17 @@ You should override `Loader.fetch` method to provide fetch operator.
 
 **await fetch**
 
-`await fetch` only works in `methods` option.
+`await fetch` help you to create async functions. For example:
 
 ```json
 {
   "methods": {
-    "fetchBookPrice(id)": "await fetch('...' + id).price"
+    "fetchBookPrice(id)": "{ await fetch('...' + id).price }"
   }
 }
 ```
+
+When tyshemo loader saw the word `await fetch`, it will treate this function as an async function. (only works in functions.)
 
 Notice, the syntax is `await fetch(...).property`, give `.property` directly after `await fetch(...)`
 

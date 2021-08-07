@@ -111,7 +111,7 @@ export class Loader {
       }
     }
 
-    const parseGetter = (value) => {
+    const parseAsyncGetter = (value) => {
       if (isString(value)) {
         if (/:fetch\(.*?\)/.test(value)) {
           const [_all, before, _matched, matched, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
@@ -163,6 +163,29 @@ export class Loader {
       return output
     }
 
+    const createComposeFn = (params, exp) => {
+      const isInjected = /await fetch\(.*?\)/.test(exp)
+      const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
+
+      return function(...args) {
+        const scope = globalScope.$new(this)
+        if (isInjected) {
+          return new Promise((resolve, reject) => {
+            const url = createFn(scope, _url, params)(...args)
+            loader.fetch(url).then((data) => {
+              const subScope = scope.$new({ __await__: data })
+              const subExp = [before, '__await__', after].join('')
+              const res = createFn(subScope, subExp, params)(...args)
+              resolve(res)
+            }).catch(reject)
+          })
+        }
+
+        const res = createFn(scope, exp, params)(...args)
+        return res
+      }
+    }
+
     const createValue = (scope, value, params) => {
       // not a string like: `"default()": {}`, it will be `default() { return {} }`
       if (!isString(value)) {
@@ -171,13 +194,13 @@ export class Loader {
 
       const isInline = isInlineExp(value)
       if (!params && !isInline) {
-        return parseGetter(value)
+        return parseAsyncGetter(value)
       }
 
       const line = isInline ? getInlineExp(value) : value
       const exp = getFinalExp(line)
 
-      const getter = parseGetter(exp)
+      const getter = parseAsyncGetter(exp)
       if (getter !== exp) {
         return getter
       }
@@ -209,14 +232,14 @@ export class Loader {
        * }
        */
 
-      return createFn(scope, exp, params)
+      return createComposeFn(scope, exp, params)
     }
 
     class LoadedModel extends Model {
       state() {
         const stat = {}
         each(state, (value, key) => {
-          stat[key] = parseGetter(value)
+          stat[key] = parseAsyncGetter(value)
         })
         return stat
       }
@@ -359,27 +382,7 @@ export class Loader {
         return
       }
 
-      const isInjected = /await fetch\(.*?\)/.test(exp)
-      const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
-
-      LoadedModel.prototype[key] = function(...args) {
-        const scope = globalScope.$new(this)
-
-        if (isInjected) {
-          return new Promise((resolve, reject) => {
-            const url = createFn(scope, _url, params)(...args)
-            loader.fetch(url).then((data) => {
-              const subScope = scope.$new({ __await__: data })
-              const subExp = [before, '__await__', after].join('')
-              const res = createFn(subScope, subExp, params)(...args)
-              resolve(res)
-            }).catch(reject)
-          })
-        }
-
-        const res = createFn(scope, exp, params)(...args)
-        return res
-      }
+      LoadedModel.prototype[key] = createComposeFn(params, exp)
     })
 
     return this.extend(LoadedModel) || LoadedModel
