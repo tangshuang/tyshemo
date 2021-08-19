@@ -164,13 +164,14 @@ export class Loader {
     }
 
     const createComposeFn = (params, exp) => {
-      const isInjected = /await fetch\(.*?\)/.test(exp)
-      const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*)(await fetch\((.*?)\))(.*)/) : []
+      const isInjected = /\W?await fetch\(.*?\)/.test(exp)
 
       return function(...args) {
         const scope = globalScope.$new(this)
+
         if (isInjected) {
           return new Promise((resolve, reject) => {
+            const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*\W)(await fetch\((.*?)\))(.*)/) : []
             const url = createFn(scope, _url, params)(...args)
             loader.fetch(url).then((data) => {
               const subScope = scope.$new({ __await__: data })
@@ -232,7 +233,7 @@ export class Loader {
        * }
        */
 
-      return createComposeFn(scope, exp, params)
+      return createComposeFn(params, exp)
     }
 
     class LoadedModel extends Model {
