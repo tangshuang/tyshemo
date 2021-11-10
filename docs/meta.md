@@ -146,6 +146,15 @@ const attrs = {
       field_b: B_Meta, // if there is another field called `field_b` on Model, this will not work
     }
   },
+  // optional, return an array which contains Metas or Models to point out that this model needs some Metas or Models,
+  // if you did not given them in your model, an error will be thrown out
+  // when you know which property name you will use, use `deps` instead
+  needs() {
+    return [
+      A_Meta,
+      B_Meta,
+    ]
+  }
 
   // optional, when an error occurs caused by this property, what to do with the error
   catch: (error) => {},
