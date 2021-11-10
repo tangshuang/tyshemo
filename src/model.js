@@ -83,9 +83,28 @@ export class Model {
      */
     class Schema extends _Schema {
       constructor(metas) {
+        const needs = []
+        const gives = []
+
         const defs = map(metas, (def) => {
           if (!def) {
             return
+          }
+
+          if (isInstanceOf(def, Meta) || isInheritedOf(def, Meta)) {
+            if (isFunction(def.needs)) {
+              needs.push(...def.needs())
+            }
+            gives.push(def)
+            return def
+          }
+
+          if (isObject(def) && inObject('default', def)) {
+            const meta = new Meta(def)
+            if (isFunction(meta.needs)) {
+              needs.push(...meta.needs())
+            }
+            return meta
           }
 
           /**
@@ -94,6 +113,7 @@ export class Model {
            * }
            */
           if (isInheritedOf(def, Model)) {
+            gives.push(def)
             return Factory.getMeta(def)
           }
 
@@ -103,11 +123,30 @@ export class Model {
            * }
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
+            gives.push(...def)
             return Factory.getMeta(def)
           }
 
           return def
         })
+
+        if (needs.length) {
+          for (let i = 0, len = needs.length; i < len; i ++) {
+            const need = needs[i]
+            let flag = false
+            for (let j = 0, leng = gives.length; j < leng; j ++) {
+              const give = gives[j]
+              if (give === need || isInstanceOf(give, need) || isInheritedOf(give, need)) {
+                flag = true
+                break
+              }
+            }
+            if (!flag) {
+              throw new Error(`${need} is needed, but not given in Model.`)
+            }
+          }
+        }
+
         super(defs)
       }
       onError(e) {
@@ -123,20 +162,6 @@ export class Model {
     let schema = this.schema(Schema)
     // support schema instance or object
     if (!isInstanceOf(schema, _Schema)) {
-      schema = map(schema, (value) => {
-        if (!value) {
-          return
-        }
-        if (isInstanceOf(value, Meta) || isInheritedOf(value, Meta)) {
-          return value
-        }
-        // support use a object which contains a 'default' property to be a Meta
-        if (isObject(value) && inObject('default', value)) {
-          return new Meta(value)
-        }
-        // default, support Model
-        return value
-      })
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
