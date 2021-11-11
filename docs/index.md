@@ -11,6 +11,7 @@
 - [Validator](validator.md)
 - [Schema](schema.md)
 - [Model](model.md)
+- [decorators](decorators.md)
 - [Factory](factory.md)
 - [Loader](loader.md)
 - [tyshemo-service](tyshemo-service.md)
