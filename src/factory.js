@@ -179,9 +179,10 @@ export class Factory {
     return NewModel
   }
 
-  static getMeta(entries, options) {
+  static getMeta(entries, options, methods = {}) {
     const Constructor = this
     const entity = new Constructor(entries, options)
+    Object.assign(entity, methods)
     return entity.meta
   }
 }
