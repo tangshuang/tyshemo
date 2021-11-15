@@ -92,3 +92,17 @@ export function createAsyncRef(defaultValue, getter) {
 export function isAsyncRef(ref) {
   return isObject(ref) && ref.$$type === 'asyncRef' && isEqual(Object.keys(ref), ['$$type', 'current'])
 }
+
+export function createMemoRef(getter, compare, depend) {
+  const ref = {
+    $$type: 'memoRef',
+    getter,
+    compare,
+    depend,
+  }
+  return ref
+}
+
+export function isMemoRef(ref) {
+  return isObject(ref) && ref.$$type === 'memoRef' && !Object.keys(ref).some(item => !['getter', 'compare', 'depend'].includes(item))
+}

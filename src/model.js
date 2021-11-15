@@ -27,7 +27,7 @@ import {
 
 import _Schema from './schema.js'
 import _Store from './store.js'
-import { ofChain, tryGet, makeMsg, isAsyncRef } from './shared/utils.js'
+import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import Meta from './meta.js'
 import { Factory, FactoryMeta } from './factory.js'
@@ -465,6 +465,16 @@ export class Model {
               const prev = attrValue
               attrValue = value
               this.$store.forceDispatch(`!${key}.${attr}`, value, prev)
+            },
+            enumerable: true,
+            configurable: true,
+          }
+        }
+        else if (isMemoRef(value)) {
+          const { getter, compare, depend } = value
+          viewDef[attr] = {
+            get: () => {
+              return this.memo(getter, compare, depend)
             },
             enumerable: true,
             configurable: true,
