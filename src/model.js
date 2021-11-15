@@ -1567,32 +1567,54 @@ export class Model {
     }
   }
 
-  memo(getter, compare, deps = []) {
+  /**
+   * remember a value when using for getter in meta
+   * @param {function} getter () => any
+   * @param {function} [depend] (value: any) => any, value is the return value of `getter`
+   * @param {function} compare (deps: any) => boolean, when `true` use memoried value, when `false` re-compute, deps is the return value of `depend`
+   * @returns
+   * @example
+   * class SomeMeta extends Meta {
+   *   static custom_value() {
+   *     let count = 0
+   *     return this.memo(
+   *       () => this.reflect(SomeMeta).value + 12,
+   *       (value) => {
+   *         count ++
+   *         return { value, count }
+   *       },
+   *       (deps) => deps.count < 10, // when count < 10, use memoried value for each time
+   *     )
+   *   }
+   * }
+   */
+  memo(getter, compare, depend) {
     const memory = this.$$memories.find(item => item.getter === getter && item.compare === compare)
 
     if (!memory) {
       const value = getter.call(this)
+      const deps = depend ? depend.call(this, value) : null
       this.$$memories.push({
         getter,
         compare,
+        depend,
         value,
         deps,
       })
       return value
     }
 
-    const prevValue = memory.value
-    const prevDeps = memory.deps
-    const isEqual = compare.call(this, prevValue, ...prevDeps)
+    const prev = memory.value
+    const deps = memory.deps
+    const isEqual = compare.call(this, deps)
 
     if (isEqual) {
-      memory.deps = deps
-      return prevValue
+      return prev
     }
 
     const value = getter.call(this)
     memory.value = value
-    memory.deps = deps
+    memory.deps = depend ? depend.call(this, value) : null
     return value
   }
 }
