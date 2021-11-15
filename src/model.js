@@ -169,6 +169,7 @@ export class Model {
     define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this.attrs() })
     define(this, '$$state', this.state())
     define(this, '$$deps', {})
+    define(this, '$$memories', [])
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {
@@ -1566,7 +1567,29 @@ export class Model {
     }
   }
 
+  memo(getter, compare) {
+    const memory = this.$$memories.find(item => item.getter === getter && item.compare === compare)
 
+    if (!memory) {
+      const value = getter.call(this)
+      this.$$memories.push({
+        getter,
+        compare,
+        value,
+      })
+      return value
+    }
+
+    const prev = memory.value
+    const isEqual = compare.call(this, prev)
+    if (isEqual) {
+      return prev
+    }
+
+    const value = getter.call(this)
+    memory.value = value
+    return value
+  }
 }
 
 export default Model
