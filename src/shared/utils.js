@@ -104,5 +104,6 @@ export function createMemoRef(getter, compare, depend) {
 }
 
 export function isMemoRef(ref) {
-  return isObject(ref) && ref.$$type === 'memoRef' && !Object.keys(ref).some(item => !['getter', 'compare', 'depend'].includes(item))
+  const keys = Object.keys(ref)
+  return isObject(ref) && ref.$$type === 'memoRef' && !['getter', 'compare', 'depend'].some(item => !keys.includes(item))
 }
