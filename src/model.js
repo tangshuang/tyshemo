@@ -1567,7 +1567,7 @@ export class Model {
     }
   }
 
-  memo(getter, compare) {
+  memo(getter, compare, deps = []) {
     const memory = this.$$memories.find(item => item.getter === getter && item.compare === compare)
 
     if (!memory) {
@@ -1576,18 +1576,23 @@ export class Model {
         getter,
         compare,
         value,
+        deps,
       })
       return value
     }
 
-    const prev = memory.value
-    const isEqual = compare.call(this, prev)
+    const prevValue = memory.value
+    const prevDeps = memory.deps
+    const isEqual = compare.call(this, prevValue, ...prevDeps)
+
     if (isEqual) {
-      return prev
+      memory.deps = deps
+      return prevValue
     }
 
     const value = getter.call(this)
     memory.value = value
+    memory.deps = deps
     return value
   }
 }
