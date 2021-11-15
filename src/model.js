@@ -539,7 +539,7 @@ export class Model {
         },
         state: {
           get: () => {
-            const state = meta.state ? meta.state.call(null) : {}
+            const state = meta.state ? meta.state() : {}
             const keys = Object.keys(state)
             const proxy = new Proxy(state, {
               get: (_, key) => inArray(key, keys) ? this.get(key) : undefined,
@@ -661,7 +661,7 @@ export class Model {
     delete this.$initing
   }
 
-  _combineState() {
+  _initState() {
     const output = {}
     const state = this.$$state
     const combine = (state) => {
@@ -696,15 +696,51 @@ export class Model {
         })
       }, true)
     }
+
     combine(state)
+
     each(this.$schema, (meta) => {
       if (!meta.state) {
         return
       }
-      const metaState = meta.state.call(null)
-      combine(metaState)
+
+      const metaState = meta.state()
+      if (metaState) {
+        combine(metaState)
+      }
     })
+
     return output
+  }
+
+  _combineState() {
+    const basicState = this.$$state
+    const metasState = {}
+
+    each(this.$schema, (meta) => {
+      if (!meta.state) {
+        return
+      }
+
+      const metaState = meta.state()
+      if (metaState) {
+        Object.assign(metasState, metaState)
+      }
+    })
+
+    const combinedState = {
+      ...basicState,
+      ...metasState,
+    }
+
+    const keys = Object.keys(combinedState)
+    const state = {}
+
+    keys.forEach((key) => {
+      state[key] = this[key]
+    })
+
+    return state
   }
 
   /**
@@ -719,7 +755,7 @@ export class Model {
     }
 
     const schema = this.$schema
-    const state = this._combineState()
+    const state = this._initState()
     const params = {}
     const input = {}
 
@@ -1238,7 +1274,7 @@ export class Model {
 
     // patch state into this, so that we can get passed state in default()
     // dont be worried about reactive, the properties will be override by restore()
-    const state = this._combineState()
+    const state = this._initState()
     const patches = map(state, (value, key) => {
       if (inObject(key, json)) {
         return json[key]
@@ -1269,9 +1305,17 @@ export class Model {
 
   toJSON() {
     this._check()
+
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.record(data, this)
-    const result = this.onRecord(output) || output
+
+    const state = this._combineState()
+    const res = {
+      ...state,
+      ...output,
+    }
+
+    const result = this.onRecord(res) || res
     this.emit('record', result)
     return result
   }
