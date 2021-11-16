@@ -42,15 +42,17 @@ export class Schema {
           return
         }
 
-        if (value.deps && isFunction(meta.deps)) {
-          const deps = meta.deps.call(null)
-          use(deps)
-        }
-
         define(this, key, {
           value,
           enumerable: true,
         })
+
+        // bugfix: should put after define, because two metas may referer to each other
+        // which cause die loop
+        if (value.deps && isFunction(meta.deps)) {
+          const deps = meta.deps()
+          use(deps)
+        }
       })
     }
     use(metas)
