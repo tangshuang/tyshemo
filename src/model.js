@@ -218,7 +218,7 @@ export class Model {
      */
     class Store extends _Store {
       _traps(traps) {
-        const isNotNeedTrap = (keyPath) => {
+        const isNotNeed = (keyPath) => {
           if (keyPath.length !== 1) {
             return true
           }
@@ -232,16 +232,22 @@ export class Model {
           if (!isInstanceOf(meta, FactoryMeta)) {
             return true
           }
+
+          const { $entries } = meta
+          if (!isArray($entries)) {
+            return true
+          }
         }
 
         const inserter = (keyPath, args) => {
-          if (isNotNeedTrap(keyPath)) {
-            return false
+          if (isNotNeed(keyPath)) {
+            return args
           }
 
           const [key] = keyPath
           const meta = $this.$schema[key]
           const { $entries } = meta
+
           const nexts = args.filter((item) => {
             if ($entries.some(One => isInstanceOf(item, One))) {
               return true
@@ -264,8 +270,8 @@ export class Model {
         traps.unshift = inserter
 
         traps.splice = (keyPath, args) => {
-          if (isNotNeedTrap(keyPath)) {
-            return false
+          if (isNotNeed(keyPath)) {
+            return args
           }
 
           const [start, count, ...items] = args
@@ -274,8 +280,8 @@ export class Model {
         }
 
         traps.fill = (keyPath, args) => {
-          if (isNotNeedTrap(keyPath)) {
-            return false
+          if (isNotNeed(keyPath)) {
+            return args
           }
 
           const [value, start, end] = args
@@ -402,6 +408,7 @@ export class Model {
         get: () => this.get(key),
         set: (value) => this.set(key, value),
         enumerable: true,
+        configurable: true,
       })
     })
 
@@ -1016,6 +1023,7 @@ export class Model {
         views: collector && typeof collector === 'object' ? collector.views : false,
         fields: collector && typeof collector === 'object' && 'fields' in collector ? collector.fields : true
       },
+      writable: false,
       configurable: true,
     })
 
