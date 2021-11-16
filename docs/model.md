@@ -713,6 +713,20 @@ const some = new Some()
 editor.submit(some)
 ```
 
+## reflect()
+
+When you are writing a Meta, you may not know which field to operate, you can use `reflect` to find out the right field:
+
+```js
+class SomeField extends Meta {
+  static required() {
+    const view = this.reflect(SomeField) // here, we do not know the field name of SomeField Meta, so we use reflect to find out the view of this field
+    const { readonly } = view
+    ...
+  }
+}
+```
+
 ## AsyncGetter
 
 ```js
@@ -767,6 +781,30 @@ However, `AsyncGetter` for state will not trigger `!`, because you can watch sta
 ```js
 model.watch('some', ...)
 ```
+
+## MemoGetter
+
+In some cases, you need to keep a computed property with same reference if dependencies not changed, you can use `MemoGetter` to generate:
+
+```js
+class SomeField extends Meta {
+  static some_value = MemoGetter(
+    function getter() {
+      return this.reflect(OtherField).value + 10
+    },
+    function compare(prev) {
+      const { some_code } = this
+      return prev.some_code === some_code // if equal, it means some_value should not recompute, use previous value
+    },
+    function depend(value) { // previous value
+      const { some_code } = this
+      return { some_code } // will be used by compare
+    },
+  )
+}
+```
+
+Now when you call `view.some_value`, it will give you the right reference.
 
 ## Dependencies Collecting
 
