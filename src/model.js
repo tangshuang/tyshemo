@@ -218,24 +218,24 @@ export class Model {
      */
     class Store extends _Store {
       _traps(traps) {
-        const isNotAllowed = (keyPath) => {
+        const isNotNeedTrap = (keyPath) => {
           if (keyPath.length !== 1) {
-            return false
+            return true
           }
 
           const [key] = keyPath
           const meta = $this.$schema[key]
           if (!meta) {
-            return false
+            return true
           }
 
           if (!isInstanceOf(meta, FactoryMeta)) {
-            return false
+            return true
           }
         }
 
         const inserter = (keyPath, args) => {
-          if (isNotAllowed(keyPath)) {
+          if (isNotNeedTrap(keyPath)) {
             return false
           }
 
@@ -264,7 +264,7 @@ export class Model {
         traps.unshift = inserter
 
         traps.splice = (keyPath, args) => {
-          if (isNotAllowed(keyPath)) {
+          if (isNotNeedTrap(keyPath)) {
             return false
           }
 
@@ -274,7 +274,7 @@ export class Model {
         }
 
         traps.fill = (keyPath, args) => {
-          if (isNotAllowed(keyPath)) {
+          if (isNotNeedTrap(keyPath)) {
             return false
           }
 
