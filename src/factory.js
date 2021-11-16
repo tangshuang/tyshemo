@@ -42,7 +42,60 @@ export class Factory {
       ...attrs
     } = this.options || {}
 
-    if (isArray(Entries)) {
+    const isList = isArray(Entries)
+
+    const setupTransport = (child, parent, key) => {
+      if (!entity.transport) {
+        return
+      }
+
+      entity.transport(child, parent)
+
+      let deps = null
+
+      const fn = () => {
+        entity.transport(child, parent)
+
+        // -------
+        // check whether the child is in parent model, if not, remove watchers
+
+        if (!deps) {
+          return
+        }
+
+        const unwatch = () => {
+          deps.forEach((dep) => {
+            parent.unwatch(dep, fn)
+          })
+        }
+
+        const sub = parent[key]
+        if (isList) {
+          if (!sub.includes(child)) {
+            unwatch()
+          }
+        }
+        else {
+          if (sub !== child) {
+            unwatch()
+          }
+        }
+      }
+
+      // when the first time initialize, we can not collect deps,
+      // so we collect deps after the first change
+      const firstWatch = () => {
+        deps = parent.collect(() => entity.transport(child, parent))
+        parent.unwatch('*', firstWatch)
+        deps.forEach((dep) => {
+          parent.watch(dep, fn) // did not watch deeply
+        })
+      }
+
+      parent.watch('*', firstWatch) // did not watch deeply
+    }
+
+    if (isList) {
       const Model = entity.entry(Entries[0])
       const filter = (items) => {
         const nexts = items.filter((item) => {
@@ -56,13 +109,15 @@ export class Factory {
         })
         return nexts
       }
-      const gen = (ctx, items, key) => {
+      const gen = (parent, items, key) => {
         const nexts = filter(items)
         const values = nexts.map((next) => {
-          const model = Entries.some(One => isInstanceOf(next, One)) ? next.setParent([ctx, key])
-            : isObject(next) ? new Model(next, [ctx, key])
-            : new Model({}, [ctx, key])
-          return entity.instance(model, ctx)
+          const model = Entries.some(One => isInstanceOf(next, One)) ? next.setParent([parent, key])
+            : isObject(next) ? new Model(next, [parent, key])
+            : new Model({}, [parent, key])
+          const child = entity.instance(model, parent)
+          setupTransport(child, parent, key)
+          return child
         })
         return values
       }
@@ -95,11 +150,13 @@ export class Factory {
     }
     else {
       const Model = entity.entry(Entries)
-      const gen = function(ctx, value, key) {
-        const model = isInstanceOf(value, Model) ? value.setParent([ctx, key])
-          : isObject(value) ? new Model(value, [key], ctx)
-          : new Model({}, [key], ctx)
-        return entity.instance(model, ctx)
+      const gen = function(parent, value, key) {
+        const model = isInstanceOf(value, Model) ? value.setParent([parent, key])
+          : isObject(value) ? new Model(value, [key], parent)
+          : new Model({}, [key], parent)
+        const child = entity.instance(model, parent)
+        setupTransport(child, parent, key)
+        return child
       }
       const options = {
         ...attrs,

@@ -29,7 +29,8 @@ class AnyModel extends Model {
 You can override the methods for meta generators by hooks functions, they are:
 
 - entry(Model)
-- instance(model)
+- instance(childModel, parentModel) // do when a new child model initialize
+- transport(childModel, parentModel) // do when parent model change, transport parent's properties value to child, never use condition sentence inside transport function
 - default(fn)
 - type(type)
 - validators(validators)

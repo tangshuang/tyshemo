@@ -33,5 +33,11 @@ describe('Decorators', () => {
 
     expect(count).toBe(1)
     some.unwatch('age', fn)
+
+    some.watch('weight', fn)
+    some.weight ++
+    expect(some.weight).toBe(41)
+    expect(count).toBe(2)
+    some.unwatch('weight', fn)
   })
 })

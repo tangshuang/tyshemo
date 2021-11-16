@@ -1038,6 +1038,22 @@ describe('Model', () => {
     expect(deps3).toEqual(['age'])
   })
 
+  test('collect state', () => {
+    class Some extends Model {
+      state() {
+        return {
+          is_ok: false,
+        }
+      }
+    }
+
+    const some = new Some()
+    some.collect()
+    some.is_ok
+    const deps = some.collect(true)
+    expect(deps).toEqual(['is_ok'])
+  })
+
   test('init use create', () => {
     class Some extends Model {
       static some = new Meta({
