@@ -53,50 +53,49 @@ export class Factory {
         return
       }
 
-      entity.transport(child, parent)
+      const register = () => {
+        const deps = parent.collect(() => {
+          entity.transport(child, parent)
+        })
 
-      let deps = null
+        const fn = () => {
+          entity.transport(child, parent)
 
-      const fn = () => {
-        entity.transport(child, parent)
+          // -------
+          // check whether the child is in parent model, if not, remove watchers
 
-        // -------
-        // check whether the child is in parent model, if not, remove watchers
+          if (!deps) {
+            return
+          }
 
-        if (!deps) {
-          return
-        }
+          const unwatch = () => {
+            deps.forEach((dep) => {
+              parent.unwatch(dep, fn)
+            })
+          }
 
-        const unwatch = () => {
-          deps.forEach((dep) => {
-            parent.unwatch(dep, fn)
-          })
-        }
-
-        const sub = parent[key]
-        if (isList) {
-          if (!sub.includes(child)) {
-            unwatch()
+          const sub = parent[key]
+          if (isList) {
+            if (!sub.includes(child)) {
+              unwatch()
+            }
+          }
+          else {
+            if (sub !== child) {
+              unwatch()
+            }
           }
         }
-        else {
-          if (sub !== child) {
-            unwatch()
-          }
-        }
-      }
 
-      // when the first time initialize, we can not collect deps,
-      // so we collect deps after the first change
-      const firstWatch = () => {
-        deps = parent.collect(() => entity.transport(child, parent))
-        parent.unwatch('*', firstWatch)
         deps.forEach((dep) => {
           parent.watch(dep, fn) // did not watch deeply
         })
-      }
 
-      parent.watch('*', firstWatch) // did not watch deeply
+        parent.off('init', register)
+      }
+      // when setup transport, the parent is not built ready,
+      // we should must wait it ready to collect deps
+      parent.on('init', register)
     }
 
     if (isList) {

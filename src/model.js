@@ -659,6 +659,8 @@ export class Model {
 
       this.onChange(root)
     }, true)
+
+    this.emit('init')
   }
 
   _initData(data) {
