@@ -26,6 +26,10 @@ export class Factory {
     this.meta = null
     this.init(entries)
   }
+
+  /**
+   * @param {Model|Model[]} Entries
+   */
   init(Entries) {
     const entity = this
 

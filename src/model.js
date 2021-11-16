@@ -95,7 +95,13 @@ export class Model {
             if (isFunction(def.needs)) {
               needs.push(...def.needs())
             }
-            gives.push(def)
+            if (isInstanceOf(def, FactoryMeta)) {
+              const entries = def.$entries
+              gives.push(...[].concat(entries))
+            }
+            else {
+              gives.push(def)
+            }
             return def
           }
 
