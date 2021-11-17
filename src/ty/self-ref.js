@@ -12,7 +12,20 @@ export class SelfRef extends Type {
 
     this.fn = fn
     this.name = 'SelfRef'
-    this.pattern = fn(this)
+    this._pattern = null
+  }
+
+  // make pattern compute later
+  get pattern() {
+    if (!this._pattern) {
+      this._pattern = this.fn(this)
+    }
+    return this._pattern
+  }
+
+  // leave for Type.constructor
+  set pattern(v) {
+    //.. do nothing
   }
 
   _decide(value) {
