@@ -7,6 +7,10 @@ import {
   isArray,
   isObject,
   isEqual,
+  isString,
+  makeKeyChain,
+  isNumeric,
+  isNumber,
 } from 'ts-fns'
 
 export function ofChain(target, TopConstructor) {
@@ -106,4 +110,37 @@ export function createMemoRef(getter, compare, depend) {
 export function isMemoRef(ref) {
   const keys = Object.keys(ref)
   return isObject(ref) && ref.$$type === 'memoRef' && !['getter', 'compare', 'depend'].some(item => !keys.includes(item))
+}
+
+
+export function isKeyPathEqual(keyPath1, keyPath2) {
+  if (isString(keyPath1) && isString(keyPath2)) {
+    return keyPath1 === keyPath2
+  }
+
+  const key1 = isArray(keyPath1) ? [...keyPath1] : makeKeyChain(keyPath1)
+  const key2 = isArray(keyPath2) ? [...keyPath2] : makeKeyChain(keyPath2)
+
+  const len = Math.max(key1.length, key2.length)
+
+  for (let i = 0; i < len; i ++) {
+    const path1 = key1[i]
+    const path2 = key2[i]
+
+    if (path1 === path2) {
+      continue
+    }
+
+    if (isNumeric(path1) && isNumber(path2) && path1 === (path2 + '')) {
+      continue
+    }
+
+    if (isNumeric(path2) && isNumber(path1) && path2 === (path1 + '')) {
+      continue
+    }
+
+    return false
+  }
+
+  return true
 }

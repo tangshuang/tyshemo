@@ -12,6 +12,9 @@ import {
   isUndefined,
   isSymbol,
 } from 'ts-fns'
+import {
+  isKeyPathEqual,
+} from './shared/utils.js'
 
 export class Store {
   constructor(params = {}) {
@@ -61,7 +64,7 @@ export class Store {
           const value = parse(this.data, keyPath)
           const { nodes, trap } = observer
           const { match, register } = trap
-          const existing = nodes.find(item => item.value === value && isEqual(item.key, keyPath))
+          const existing = nodes.find(item => item.value === value && isKeyPathEqual(item.key, keyPath))
           if (!existing && (match(value) || match(active))) {
             register(keyPath, value, active)
           }
@@ -280,7 +283,7 @@ export class Store {
       }
 
       // unsubscribe
-      const index = nodes.findIndex(item => item.value === prev && isEqual(item.key, key))
+      const index = nodes.findIndex(item => item.value === prev && isKeyPathEqual(item.key, key))
       if (index > -1) {
         const { dispatch, unsubscribe: _unsubscribe, value } = nodes[index]
         if (isFunction(_unsubscribe)) {
@@ -428,7 +431,7 @@ export class Store {
     const items = this._watchers
     const key = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
     items.forEach((item, i) => {
-      if (isEqual(item.key, key) && (item.fn === fn || isUndefined(fn))) {
+      if (isKeyPathEqual(item.key, key) && (item.fn === fn || isUndefined(fn))) {
         items.splice(i, 1)
       }
     })
@@ -451,10 +454,10 @@ export class Store {
     const key = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const watchers = this._watchers
     const items = watchers.filter((item) => {
-      if (isEqual(item.key, key)) {
+      if (isKeyPathEqual(item.key, key)) {
         return true
       }
-      if (item.deep && isEqual(item.key, key.slice(0, item.key.length))) {
+      if (item.deep && isKeyPathEqual(item.key, key.slice(0, item.key.length))) {
         return true
       }
       return false
@@ -464,7 +467,7 @@ export class Store {
       if (item.key[0] && item.key[0][0] === '!') {
         return false
       }
-      if (!isEqual(item.key, ['*'])) {
+      if (!isKeyPathEqual(item.key, ['*'])) {
         return false
       }
       // if watch('*', fn, false), only top level will be watched
@@ -497,17 +500,17 @@ export class Store {
       if (item.key[0] === '!') {
         return false
       }
-      if (isEqual(item.key, key)) {
+      if (isKeyPathEqual(item.key, key)) {
         return true
       }
-      if (item.deep && isEqual(item.key, key.slice(0, item.key.length))) {
+      if (item.deep && isKeyPathEqual(item.key, key.slice(0, item.key.length))) {
         return true
       }
       return false
     })
     // watchers which watch any change
     const anys = watchers.filter((item) => {
-      if (!isEqual(item.key, ['!'])) {
+      if (!isKeyPathEqual(item.key, ['!'])) {
         return false
       }
       // if watch('!', fn, false), only top level will be watched
