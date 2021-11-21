@@ -3,7 +3,7 @@
 If you do not want to use `Meta` in `Model`, you can use decorators to define like this:
 
 ```js
-import { Model, meta, state } from 'tyshemo'
+import { Model, meta, state, type } from 'tyshemo'
 
 class SomeModel extends Model {
   @meta({
@@ -40,6 +40,18 @@ class SomeModel extends Model {
 }
 ```
 
+```js
+class Person {
+  @type(String)
+  name = ''
+
+  @type(Number)
+  age = 10
+}
+```
+
+Read more from [ty](./ty.md) to read more about `@type` which alias to `@Ty.decorate.with()`.
+
 Use decorators to make your coding more mordern.
 
-> Notice: we are following `@babel/plugin-proposal-decorators@^7.14.5` decorators rules. Welcome to create PR for typescirpt.
+> Notice: we are following `@babel/plugin-proposal-decorators@^7.14.5` decorators rules and should open `legacy` (stage 1) options. Welcome to create PR for typescirpt.

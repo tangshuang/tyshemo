@@ -144,3 +144,10 @@ export function isKeyPathEqual(keyPath1, keyPath2) {
 
   return true
 }
+
+export function onlySupportLegacy(protos) {
+  // new version of decorators
+  if (protos && protos[Symbol.toStringTag] === 'Descriptor') {
+    throw new Error(`TySheMo: decorators only support legacy(stage 1) version.`)
+  }
+}

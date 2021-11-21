@@ -2,9 +2,13 @@ import { Meta } from './meta.js'
 import { isInheritedOf, isInstanceOf, isObject, isArray } from 'ts-fns'
 import { Model } from './model.js'
 import { Factory } from './factory.js'
+import { onlySupportLegacy } from './shared/utils.js'
+import Ty from './ty/ty.js'
 
 export function meta(entry, options, methods) {
   return (protos, prop, descriptor) => {
+    onlySupportLegacy(protos)
+
     const { initializer } = descriptor
 
     if (isInheritedOf(entry, Meta) || isInstanceOf(entry, Meta)) {
@@ -43,6 +47,8 @@ export function meta(entry, options, methods) {
 
 export function state() {
   return (protos, prop, descriptor) => {
+    onlySupportLegacy(protos)
+
     const { initializer, ...others } = descriptor
     const state = protos.state()
     const desc = {
@@ -58,4 +64,8 @@ export function state() {
 
     return desc
   }
+}
+
+export function type(...args) {
+  return Ty.decorate.with(...args)
 }

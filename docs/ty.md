@@ -120,18 +120,17 @@ class Some {
     return { ... }
   }
 
-  @Ty.decorate.with([], Number)
+  @Ty.decorate.with(Number)
   get age() {
     return 10
   }
-  @Ty.decorate.with([Number])
   set age(v) {
     ...
   }
 }
 ```
 
-Notice, getter and setter will be treated functions, so you can see, we follow functions decorating.
+Notice, computed property with getter and setter will be treated as proerty, so you do just need decorate once
 
 ### create(pattern): Type
 

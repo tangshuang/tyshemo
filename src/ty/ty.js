@@ -13,6 +13,7 @@ import {
 
 import { createType } from './rules.js'
 import Tuple from './tuple.js'
+import { onlySupportLegacy } from '../shared/utils.js'
 
 export class Ty {
   constructor() {
@@ -222,6 +223,8 @@ export class Ty {
     }
     function describe(...types) {
       return (target, prop, descriptor) => {
+        onlySupportLegacy(target)
+
         const [type] = types
         // decorate class constructor
         if (target && !prop) {
@@ -231,9 +234,8 @@ export class Ty {
         else if (target && prop) {
           // computed property with setter
           if (descriptor.set || descriptor.get) {
-            const [input, output] = types
-            const get = descriptor.get ? (!input.length ? wrap(`${target.constructor.name}.${prop} getter`, descriptor.get, [], output) : descriptor.get) : void 0
-            const set = descriptor.set ? (!output ? wrap(`${target.constructor.name}.${prop} setter`, descriptor.set, input) : descriptor.set) : void 0
+            const get = descriptor.get ? wrap(`${target.constructor.name}.${prop} getter`, descriptor.get, [], type) : void 0
+            const set = descriptor.set ? wrap(`${target.constructor.name}.${prop} setter`, descriptor.set, [type]) : void 0
             return {
               ...descriptor,
               set,
@@ -244,9 +246,10 @@ export class Ty {
           else if (descriptor.writable && isFunction(descriptor.value)) {
             return {
               ...descriptor,
-              value: wrap(`${target.constructor.name}.${prop}`,descriptor.value, ...types),
+              value: wrap(`${target.constructor.name}.${prop}`, descriptor.value, ...types),
             }
           }
+          // normal property with initializer
           else if (descriptor.writable && descriptor.initializer) {
             let value = descriptor.initializer()
             $this.try(() => $this.expect(value).to.be(type), `${target.name}.${prop} should be {should} but receive {receive}`)
@@ -300,7 +303,6 @@ Ty.trace = ty.trace.bind(ty)
 Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
 Ty.create = createType
-
 Object.defineProperty(Ty, 'decorate', { get: () => ty.decorate })
 
 export default Ty
