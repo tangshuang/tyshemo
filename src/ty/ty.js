@@ -158,21 +158,17 @@ export class Ty {
     const $this = this
     function wrap(title, target, ...types) {
       const [type, type2] = types
-      const check = (type, keyPath, value) => {
-        if (!keyin(keyPath, type)) {
-          return
-        }
+      const chekcer = createType(type, null, true)
 
-        // create a fake data to check
-        const data = assign({}, keyPath, value)
-        const node = parse(type, keyPath)
-        const chekcer = assign({}, keyPath, node)
-        $this.try(() => $this.expect(data).to.be(chekcer), `{keyPath} should match {should} but receive {receive}`)
+      const check = () => {
+        $this.try(() => $this.expect(target).to.be(chekcer), `{keyPath} should match {should} but receive {receive}`)
       }
+
       if (isObject(target)) {
         const proxy = createProxy(target, {
           set(keyPath, value) {
-            check(type, keyPath, value)
+            assign(target, keyPath, value)
+            check()
             return value
           },
         })
@@ -181,7 +177,8 @@ export class Ty {
       else if (isArray(target)) {
         const proxy = createProxy(target, {
           set(keyPath, value) {
-            check(type, keyPath, value)
+            assign(target, keyPath, value)
+            check()
             return value
           },
           push(keyPath, items) {

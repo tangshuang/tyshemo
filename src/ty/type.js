@@ -22,6 +22,7 @@ export class Type {
    */
   constructor(pattern) {
     this.isStrict = false
+    this.isLoose = false
     this.pattern = pattern
     this.name = 'Type'
     this.$msg = null
@@ -64,6 +65,10 @@ export class Type {
               if (this.isStrict && !pattern.isStrict) {
                 pattern = pattern.strict
               }
+              else if (!this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose) {
+                pattern = pattern.loose
+              }
+
               const error = pattern.catch(value)
               if (!error) {
                 return []
@@ -126,13 +131,21 @@ export class Type {
 
         for (let i = 0, len = patternKeys.length; i < len; i ++) {
           const key = patternKeys[i]
+
+          // skip in loose mode when has no property
+          if (!this.isStrict && this.isLoose && !Object.prototype.hasOwnProperty.call(data, key)) {
+            continue
+          }
+
           const value = data[key]
 
           let pattern = patterns[key]
 
           const isRule = isInstanceOf(pattern, Rule)
           if (isRule) {
-            const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+            const rule = this.isStrict && !pattern.isStrict ? pattern.strict
+              : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
+              : pattern
             const error = rule.catch(data, key)
             if (!error) {
               continue
@@ -166,6 +179,10 @@ export class Type {
             if (this.isStrict && !pattern.isStrict) {
               pattern = pattern.strict
             }
+            else if (!this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose) {
+              pattern = pattern.loose
+            }
+
             const error = pattern.catch(value)
             if (error) {
               tyerr.add({ error, key })
@@ -186,6 +203,10 @@ export class Type {
       if (this.isStrict && !pattern.isStrict) {
         pattern = pattern.strict
       }
+      else if (!this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose) {
+        pattern = pattern.loose
+      }
+
       const error = pattern.catch(value)
       if (error) {
         tyerr.add({ error, value, name: pattern.name, pattern })
@@ -271,6 +292,7 @@ export class Type {
     const Constructor = getConstructorOf(this)
     const ins = new Constructor(this.pattern)
     ins.isStrict = this.isStrict
+    ins.isLoose = this.isStrict ? false : this.isLoose
     ins.name = this.name
     ins.$msg = this.$msg
     return ins
@@ -278,16 +300,37 @@ export class Type {
 
   toBeStrict(mode = true) {
     this.isStrict = !!mode
+    if (mode) {
+      this.isLoose = false
+    }
     return this
   }
 
   get strict() {
-    const ins = this.clone()
-    ins.toBeStrict()
+    const ins = this.clone().toBeStrict()
     return ins
   }
   get Strict() {
     return this.strict
+  }
+
+  toBeLoose(mode = true) {
+    if (this.isStrict) {
+      console.error('TySheMo: strict Type can not change to be loose.')
+      return this
+    }
+
+    this.isLoose = !!mode
+    return this
+  }
+
+  get loose() {
+    const ins = this.clone().toBeLoose()
+    return ins
+  }
+
+  get Loose() {
+    return this.loose
   }
 
   with({ name, strict, message, prefix, suffix }) {

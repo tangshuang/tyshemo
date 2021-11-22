@@ -74,14 +74,12 @@ describe('Ty', () => {
       @Ty.decorate.with(String)
       name = 'xxx'
 
-      @Ty.decorate.with([String])
-      set family(v) {
-        this.name = v + 'xxx'
-      }
-
-      @Ty.decorate.with([], String)
+      @Ty.decorate.with(String)
       get family() {
         return 'fa'
+      }
+      set family(v) {
+        this.name = v + 'xxx'
       }
 
       constructor(a, b) {

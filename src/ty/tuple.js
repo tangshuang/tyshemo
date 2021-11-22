@@ -39,7 +39,9 @@ export class Tuple extends Type {
 
         const isRule = isInstanceOf(pattern, Rule)
         if (isRule) {
-          const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+          const rule = this.isStrict && !pattern.isStrict ? pattern.strict
+            : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
+            : pattern
           const error = rule.catch(items, index)
           if (!error) {
             continue
@@ -61,6 +63,10 @@ export class Tuple extends Type {
           if (this.isStrict && !pattern.isStrict) {
             pattern = pattern.strict
           }
+          else if (!this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose) {
+            pattern = pattern.loose
+          }
+
           let error = pattern.catch(value)
           if (error) {
             tyerr.add({ error, index })

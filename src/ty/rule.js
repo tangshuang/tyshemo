@@ -28,6 +28,7 @@ export class Rule {
     this.pattern = pattern
     this.message = message
     this.isStrict = false
+    this.isLoose = false
     this.options = options
   }
 
@@ -54,12 +55,16 @@ export class Rule {
     let error = null
 
     if (isInstanceOf(pattern, Rule)) {
-      const rule = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+      const rule = this.isStrict && !pattern.isStrict ? pattern.strict
+        : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
+        : pattern
       const err = rule.catch(data, key)
       error = makeError(err)
     }
     else if (isInstanceOf(pattern, Type)) {
-      const type = this.isStrict && !pattern.isStrict ? pattern.strict : pattern
+      const type = this.isStrict && !pattern.isStrict ? pattern.strict
+        : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
+        : pattern
       const err = type.catch(data[key])
       error = makeError(err)
     }
@@ -131,16 +136,37 @@ export class Rule {
 
   toBeStrict(mode = true) {
     this.isStrict = !!mode
+    if (mode) {
+      this.isLoose = false
+    }
     return this
   }
 
   get strict() {
-    const ins = this.clone()
-    ins.toBeStrict()
+    const ins = this.clone().toBeStrict()
     return ins
   }
   get Strict() {
     return this.strict
+  }
+
+  toBeLoose(mode = true) {
+    if (this.isStrict) {
+      console.error('TySheMo: strict Type can not change to be loose.')
+      return this
+    }
+
+    this.isLoose = !!mode
+    return this
+  }
+
+  get loose() {
+    const ins = this.clone().toBeLoose()
+    return ins
+  }
+
+  get Loose() {
+    return this.loose
   }
 
   toString() {

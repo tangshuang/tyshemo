@@ -31,6 +31,9 @@ export class Enum extends Type {
         if (this.isStrict && !pattern.isStrict) {
           pattern = pattern.strict
         }
+        else if (!this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose) {
+          pattern = pattern.loose
+        }
 
         const error = pattern.catch(value)
         if (!error) {

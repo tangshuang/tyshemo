@@ -15,24 +15,33 @@ import TyError from './ty-error.js'
 
 import Dict from './dict.js'
 import List from './list.js'
-import Enum from './enum.js'
 import { Any } from './prototypes.js'
 
-export function createType(type) {
+export function createType(type, strict, loose) {
+  let checker = null
+
   if (isInstanceOf(type, Type)) {
-    return type.clone()
+    checker = type.clone()
   }
   else if (isObject(type)) {
-    type = new Dict(type)
+    checker = new Dict(type)
   }
   else if (isArray(type)) {
-    type = new List(type)
+    checker = new List(type)
   }
   else {
-    type = new Type(type)
+    checker = new Type(type)
   }
 
-  return type
+  if (strict) {
+    checker.toBeStrict()
+  }
+
+  if (loose) {
+    checker.toBeLoose()
+  }
+
+  return checker
 }
 
 function createRule(type) {
