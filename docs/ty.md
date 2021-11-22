@@ -101,6 +101,8 @@ f('1', '1') // error
 
 When decorate function, `with` should receive 2 parameters, the first should be an array which stands for function's parameters' types, and the second stands for function's return's type.
 
+Notice: when you use `Ty.decorate({}).with({ ... })` you should must pass pure object or array into `with`, donot pass instance of Type into it. This only works with pure objects!!!
+
 ### @decorate.with()
 
 This is a higher usage, which require your build tool (['@babel/plugin-proposal-decorators', { **legacy: true** }]) supports *decorate*.

@@ -4,15 +4,14 @@ import {
   isConstructor,
   isObject,
   createProxy,
-  parse,
-  assign,
-  clone,
   isInstanceOf,
-  makeKeyPath,
+  assign,
+  parse,
+  keyin,
 } from 'ts-fns'
 
 import { createType } from './rules.js'
-import Tuple from './tuple.js'
+import { Tuple } from './tuple.js'
 import { onlySupportLegacy } from '../shared/utils.js'
 
 export class Ty {
@@ -159,23 +158,30 @@ export class Ty {
     const $this = this
     function wrap(title, target, ...types) {
       const [type, type2] = types
+      const check = (type, keyPath, value) => {
+        if (!keyin(keyPath, type)) {
+          return
+        }
+
+        // create a fake data to check
+        const data = assign({}, keyPath, value)
+        const node = parse(type, keyPath)
+        const chekcer = assign({}, keyPath, node)
+        $this.try(() => $this.expect(data).to.be(chekcer), `{keyPath} should match {should} but receive {receive}`)
+      }
       if (isObject(target)) {
-        return createProxy(target, {
+        const proxy = createProxy(target, {
           set(keyPath, value) {
-            const t = parse(type, keyPath)
-            $this.try(() => $this.expect(value).to.be(t), `${makeKeyPath(keyPath)} should match {should} but receive {receive}`)
+            check(type, keyPath, value)
             return value
           },
         })
+        return proxy
       }
       else if (isArray(target)) {
-        return createProxy(target, {
+        const proxy = createProxy(target, {
           set(keyPath, value) {
-            const [index, ...key] = keyPath
-            const current = clone(target[index])
-            const next = assign(current, key, value)
-            const items = Array.from(target, (item, i) => i === index ? next : item)
-            $this.try(() => $this.expect(items).to.be(type), `${makeKeyPath(keyPath)} should match {should} but receive {receive}`)
+            check(type, keyPath, value)
             return value
           },
           push(keyPath, items) {
@@ -196,6 +202,7 @@ export class Ty {
             $this.try(() => $this.expect([value]).to.be(type), `fill value should match {should} but receive {receive}`)
           },
         })
+        return proxy
       }
       // isConstructor should must come before isFunction
       else if (isConstructor(target, 2)) {
