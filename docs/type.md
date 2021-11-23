@@ -88,6 +88,27 @@ const StrictSomeType = SomeDict.Strict;
 SomeDict.toBeStrict(true)
 ```
 
+### Loose/loose/toBeLosose
+
+Like `Strict` and `strict` usage, `Loose` `loose` allow you to skip the properties of an object which are required by Dict but not existing in the object (as ifexist).
+
+```js
+import { Dict } from 'tyshemo'
+
+const SomeType = new Dict({
+  name: String,
+  age: 10,
+}).toBeLoose()
+
+const o = { name: 'tomy' }
+SomeType.assert(o) // ok, event without age
+
+o.age = null
+SomeType.assert(o) // error
+```
+
+Notice, if the type is in strict mode, loose mode will be forcely closed.
+
 ## Dict
 
 Like in python, `Dict` is an object with key-value structure. `Dict` is the most used type in your projects.

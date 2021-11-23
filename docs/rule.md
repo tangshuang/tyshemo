@@ -238,7 +238,7 @@ const SomeType = new Dict({
 })
 ```
 
-### nullable
+### nullable/nub
 
 ```
 nullable(:any)
@@ -252,7 +252,7 @@ const SomeType = dict({
 })
 ```
 
-### nonable
+### nonable/nob
 
 ```
 nonable(:any)
