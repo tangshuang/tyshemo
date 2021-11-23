@@ -12,9 +12,10 @@ import Meta from './meta.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
-    const { $entries, ...opts } = options
+    const { $entries, $create, ...opts } = options
     super(opts)
     define(this, '$entries', () => $entries)
+    define(this, '$create', () => $create)
   }
 }
 
@@ -93,9 +94,15 @@ export class Factory {
 
         parent.off('init', register)
       }
+
       // when setup transport, the parent is not built ready,
       // we should must wait it ready to collect deps
-      parent.on('init', register)
+      if (!parent.$ready) {
+        parent.on('init', register)
+      }
+      else {
+        register()
+      }
     }
 
     if (isList) {
@@ -112,7 +119,7 @@ export class Factory {
         })
         return nexts
       }
-      const gen = (parent, items, key) => {
+      const gen = (items, key, parent) => {
         const nexts = filter(items)
         const values = nexts.map((next) => {
           const model = Entries.some(One => isInstanceOf(next, One)) ? next.setParent([parent, key])
@@ -130,7 +137,7 @@ export class Factory {
         default: entity.default(function(key) {
           const items = isFunction(_default) ? _default.call(this, key) : _default
           const values = isArray(items) ? items : []
-          return gen(this, values, key)
+          return gen(values, key, this)
         }),
         type: entity.type(Entries),
         validators: entity.validators([
@@ -140,20 +147,21 @@ export class Factory {
           ..._validators,
         ]),
         create: entity.create(function(value, key) {
-          return gen(this, isArray(value) ? value : [], key)
+          return gen(isArray(value) ? value : [], key, this)
         }),
         save: entity.save((ms, key) => ({ [key]: ms.map(m => m.toJSON()) })),
         map: entity.map(ms => ms.map(m => m.toData())),
         setter: entity.setter(function(value, key) {
-          return gen(this, isArray(value) ? value : [], key)
+          return gen(isArray(value) ? value : [], key, this)
         }),
         $entries: Entries,
+        $create: gen,
       }
       this.meta = new FactoryMeta(options)
     }
     else {
       const Model = entity.entry(Entries)
-      const gen = function(parent, value, key) {
+      const gen = function(value, key, parent) {
         const model = isInstanceOf(value, Model) ? value.setParent([parent, key])
           : isObject(value) ? new Model(value, [key], parent)
           : new Model({}, [key], parent)
@@ -165,7 +173,7 @@ export class Factory {
         ...attrs,
         default: entity.default(function(key) {
           const value = isFunction(_default) ? _default.call(this, key) : _default
-          return gen(this, value, key)
+          return gen(value, key, this)
         }),
         type: entity.type(Model),
         validators: entity.validators([
@@ -175,14 +183,15 @@ export class Factory {
           ..._validators,
         ]),
         create: entity.create(function(value, key) {
-          return gen(this, value, key)
+          return gen(value, key, this)
         }),
         save: entity.save((m, key) => ({ [key]: m.toJSON() })),
         map: entity.map(m => m.toData()),
         setter: entity.setter(function(value, key) {
-          return gen(this, value, key)
+          return gen(value, key, this)
         }),
         $entries: Entries,
+        $create: gen,
       }
       this.meta = new FactoryMeta(options)
     }

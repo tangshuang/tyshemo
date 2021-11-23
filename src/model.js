@@ -246,7 +246,7 @@ export class Model {
 
           const [key] = keyPath
           const meta = $this.$schema[key]
-          const { $entries } = meta
+          const { $entries, $create } = meta
 
           const nexts = args.filter((item) => {
             if ($entries.some(One => isInstanceOf(item, One))) {
@@ -257,14 +257,13 @@ export class Model {
             }
             return false
           })
-          const [Entry] = $entries
-          const values = nexts.map((next) => {
-            const model = $entries.some(One => isInstanceOf(next, One)) ? next.setParent([$this, key])
-              : isObject(next) ? new Entry(next, [$this, key])
-              : new Entry({}, [$this, key])
-            return model
-          })
-          return values
+          try {
+            const values = $create(nexts, key, $this)
+            return values
+          }
+          catch (e) {
+            console.error(e)
+          }
         }
         traps.push = inserter
         traps.unshift = inserter
@@ -364,6 +363,7 @@ export class Model {
     define(this, '$store', store)
 
     this.init(data)
+    this.emit('init')
 
     /**
      * support async onInit
@@ -666,8 +666,6 @@ export class Model {
 
       this.onChange(root)
     }, true)
-
-    this.emit('init')
   }
 
   _initData(data) {

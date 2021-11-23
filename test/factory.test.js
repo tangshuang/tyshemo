@@ -1,4 +1,3 @@
-import { Factory } from '../src/factory.js'
 import { Model } from '../src/model.js'
 import { meta, state } from '../src/decorators.js'
 
@@ -11,7 +10,7 @@ describe('Factory', () => {
 
     class Parent extends Model {
       @state()
-      is_ok = false
+      is_ok = true
 
       @meta()
       count = 0
@@ -24,11 +23,23 @@ describe('Factory', () => {
       children = [{}]
     }
 
+    /**
+     * when initialize, sync to child
+     */
     const ins = new Parent()
-    expect(ins.is_ok).toBe(false)
+    expect(ins.is_ok).toBe(true)
+    expect(ins.children[0].is_ok).toBe(true)
+
+    /**
+     * when change parent, sync to child
+     */
+    ins.is_ok = false
     expect(ins.children[0].is_ok).toBe(false)
 
-    ins.is_ok = true
-    expect(ins.children[0].is_ok).toBe(true)
+    /**
+     * when add new child, sync parent to child
+     */
+    ins.children.push({})
+    expect(ins.children[1].is_ok).toBe(false)
   })
 })
