@@ -222,7 +222,7 @@ export class Store {
       this._refine(key)
     }
 
-    return (store, on) => {
+    const bind = (store, on) => {
       const descriptor = this._descriptors[key]
       if (!descriptor) {
         return bind
@@ -235,7 +235,11 @@ export class Store {
         on,
         fn,
       })
+
+      return bind
     }
+
+    return bind
   }
 
   /**

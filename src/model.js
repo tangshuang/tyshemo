@@ -623,14 +623,6 @@ export class Model {
       return output
     })
 
-    // invoke `init` attribute
-    keys.forEach((key) => {
-      const meta = this.$schema[key]
-      if (meta.init) {
-        meta.init.call(this, key)
-      }
-    })
-
     // init data
     this._initData(data)
 
@@ -673,6 +665,14 @@ export class Model {
 
       this.onChange(root)
     }, true)
+
+    // invoke `init` attribute
+    keys.forEach((key) => {
+      const meta = this.$schema[key]
+      if (meta.init) {
+        meta.init.call(this, key)
+      }
+    })
   }
 
   _initData(data) {

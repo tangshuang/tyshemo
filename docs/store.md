@@ -189,7 +189,7 @@ If you want to update the descriptor, you just need to invoke `define` again to 
 
 In some cases, you may need to work store with other reactive objects.
 
-## bind(key)(store, key)
+### bind(key)(store, key)
 
 When a property is dependent on another store, you can use `bind` method to bind them together.
 
@@ -206,7 +206,7 @@ When we designed to like ()()? Because we can bind a key with serval stores more
 store.bind('key')(store2, 'age')(store2, 'height')(store3, 'any')
 ```
 
-## observe(target, subscribe, unsubscribe)
+### observe(target, subscribe, unsubscribe)
 
 In some cases, you may want to bind current store with other reactive objects which are not stores, you can use observe to implement.
 

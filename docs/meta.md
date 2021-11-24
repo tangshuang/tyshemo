@@ -132,6 +132,9 @@ const attrs = {
   // when this field's value changed, the `watch` function will be invoke
   watch({ value }) {},
 
+  // invoke when the model initailized
+  init() {},
+
   // optional, return an object to be attached to model
   state() {
     return {
