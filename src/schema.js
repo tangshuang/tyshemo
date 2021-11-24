@@ -887,12 +887,13 @@ export class Schema {
   }
 
   /**
-   * generate required fields automaticly by given data
+   * generate required fields automaticly by given data,
+   * like parse, but only use the given properties to generate thin data and patch less properties
    * @param {*} json
    * @param {*} context
    * @returns
    */
-  parsePatch(json, context) {
+  discover(json, context) {
     const output = {}
 
     const deps = []
@@ -908,12 +909,23 @@ export class Schema {
       const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
       const hasCreate = isFunction(create)
 
+      /**
+       * because the given json may generate outside with unknow data,
+       * for example:
+       *
+       * const { name, age } = data
+       * some.patch({ name, age }) // here name and age properties are existing, but may be undefined
+       *
+       * so we use isUndefined to check whether the property is existing,
+       * if the property is undefined, we treat it as not existing
+       */
+
       // certain asset key required
-      if (asset && !inObject(dataKey, json)) {
+      if (asset && isUndefined(json[dataKey])) {
         return
       }
       // without create (means will not consume other properties) and key
-      else if (!hasCreate && !inObject(dataKey, json)) {
+      else if (!hasCreate && isUndefined(json[dataKey])) {
         return
       }
 
@@ -936,7 +948,7 @@ export class Schema {
 
         // if the given json is not fit for current create required,
         // it means this field should not generate
-        if (!deps.length || !deps.some(dep => inObject(dep, json))) {
+        if (!deps.length || !deps.some(dep => isUndefined(json[dep]))) {
           return
         }
 

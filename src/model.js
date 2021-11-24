@@ -1399,7 +1399,7 @@ export class Model {
       }
     })
 
-    const output = this.$schema.parsePatch(entry, this)
+    const output = this.$schema.discover(entry, this)
 
     this.patch(output)
 
