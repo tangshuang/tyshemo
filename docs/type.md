@@ -182,6 +182,50 @@ function some(...args) {
 }
 ```
 
+## Mapping
+
+`Mapping` is to describe an object whose key-value should keep in certain structure.
+
+```js
+const SomeMapping = new Mapping({
+  key: Numeric, // type of key
+  value: Number, // type of value
+})
+
+SomeMapping.assert({
+  2001: 1,
+  2002: 4,
+})
+```
+
+## Shape
+
+`Shape` is to describe objects or instances which should keep the same as given shape.
+
+```js
+class Person {
+  name = 'tom'
+  age = 10
+}
+```
+
+Here we define a class, and then we initialize it:
+
+```js
+const person = new Person()
+```
+
+Now `person` is an instance whose type is `Person`, if we do not know the realy type, we may just want to know whether the instance has some properties, we need Shape to check.
+
+```js
+const SomeType = new Shape({
+  name: String,
+  age: Number,
+})
+
+SomeType.assert(person) // ok
+```
+
 ## Enum
 
 `Enum` is to describe data which can only be one of given value/types.
@@ -211,22 +255,6 @@ const SomePercent = new Range({
 
 SomePercent.assert(79)
 SomePercent.assert(101)
-```
-
-## Mapping
-
-`Mapping` is to describe an object whose key-value should keep in certain structure.
-
-```js
-const SomeMapping = new Mapping({
-  key: Numeric, // type of key
-  value: Number, // type of value
-})
-
-SomeMapping.assert({
-  2001: 1,
-  2002: 4,
-})
 ```
 
 ## SelfRef

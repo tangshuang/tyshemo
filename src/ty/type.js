@@ -8,6 +8,7 @@ import {
   isUndefined,
   isString,
   decideby,
+  hasOwnKey,
 } from 'ts-fns'
 
 import Prototype from './prototype.js'
@@ -133,7 +134,7 @@ export class Type {
           const key = patternKeys[i]
 
           // skip in loose mode when has no property
-          if (!this.isStrict && this.isLoose && !Object.prototype.hasOwnProperty.call(data, key)) {
+          if (!this.isStrict && this.isLoose && !hasOwnKey(data, key)) {
             continue
           }
 

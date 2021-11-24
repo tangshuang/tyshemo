@@ -23,6 +23,7 @@ import {
   mixin,
   createArray,
   makeKeyPath,
+  hasOwnKey,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -168,6 +169,12 @@ export class Model {
     let schema = this.schema(Schema)
     // support schema instance or object
     if (!isInstanceOf(schema, _Schema)) {
+      schema = map(schema, (meta) => {
+        if (isObject(meta) && hasOwnKey(meta, 'default')) {
+          return new Meta(meta)
+        }
+        return meta
+      })
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
@@ -757,6 +764,43 @@ export class Model {
   }
 
   /**
+   * only change data of this, without `create` and parse, without dispatch, reset `changed`
+   * notice: only properties those which in this will be changed
+   * @param {*} data
+   * @returns
+   */
+  patch(data) {
+    if (!this.$store.editable) {
+      return this
+    }
+
+    const silent = this.$store.silent
+
+    this.$store.silent = true
+
+    // reset changed, make sure changed=false after recompute
+    this.collect(() => {
+      const keys = Object.keys(data)
+      keys.forEach((key) => {
+        if (!inObject(key, this)) {
+          return
+        }
+
+        const value = data[key]
+        this[key] = value
+
+        if (this.$views[key]) {
+          this.$views[key].changed = false
+        }
+      })
+    }, true)
+
+    this.$store.silent = silent
+
+    return this
+  }
+
+  /**
    * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
    * notice that, properties which are in original model be not in schema may be removed.
    * @param {*} data
@@ -1304,6 +1348,7 @@ export class Model {
     this.emit('parse', entry)
     const data = this.$schema.parse(entry, this)
     const next = { ...entry, ...data }
+
     this.restore(next, keysPatchToThis)
 
     // ask children to recompute computed properties
@@ -1335,32 +1380,33 @@ export class Model {
   }
 
   /**
-   * update model by passing data, which will use schema `create` attribute to generate value
+   * update model by passing data, which will use schema `create` attribute to generate value, without dispatch, reset `changed`
    * @param {*} data
-   * @param {string[]} onlyKeys the keys outside of this array will not be set, if not set, all keys will be used
+   * @param {string[]} onlyKeys the keys outside of this array will not be used, if not set, all keys will be used
    */
   fromJSONPatch(data, onlyKeys) {
-    const output = {}
+    const entry = {}
+
+    // prepare for sub models
+    this.$children = []
 
     each(data, (value, key) => {
-      if (onlyKeys && !inArray(key, onlyKeys)) {
-        return
+      if (onlyKeys && inArray(key, onlyKeys)) {
+        entry[key] = value
       }
-      const coming = this.$schema.$parse(key, value, data, this)
-      output[key] = coming
+      else if (!onlyKeys) {
+        entry[key] = value
+      }
     })
 
-    this.update(output)
+    const output = this.$schema.parsePatch(entry, this)
 
-    // reset changed, make sure changed=false after recompute
-    this.collect(() => {
-      const keys = Object.keys(output)
-      keys.forEach((key) => {
-        if (this.$views[key]) {
-          this.$views[key].changed = false
-        }
-      })
-    }, true)
+    this.patch(output)
+
+    // ask children to recompute computed properties
+    this.$children.forEach(child => child.onRegress())
+    // we do not need $children
+    delete this.$children
 
     return this
   }

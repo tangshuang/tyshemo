@@ -887,6 +887,73 @@ export class Schema {
   }
 
   /**
+   * generate required fields automaticly by given data
+   * @param {*} json
+   * @param {*} context
+   * @returns
+   */
+  parsePatch(json, context) {
+    const output = {}
+
+    const deps = []
+    const proxy = new Proxy(json, {
+      get(_, key) {
+        deps.push(key)
+        return json[key]
+      },
+    })
+
+    each(this, (meta, key) => {
+      const { asset, catch: handle, create, force } = meta
+      const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
+      const hasCreate = isFunction(create)
+
+      // certain asset key required
+      if (asset && !inObject(dataKey, json)) {
+        return
+      }
+      // without create (means will not consume other properties) and key
+      else if (!hasCreate && !inObject(dataKey, json)) {
+        return
+      }
+
+      const value = proxy[dataKey]
+      const defaultValue = this.getDefault(key, context)
+
+      let coming = isUndefined(value) ? defaultValue : value
+
+      if (hasCreate) {
+        deps.length = 0 // clear deps at first
+
+        coming = this._trydo(
+          () => create.call(context, coming, key, proxy),
+          (error) => isFunction(handle) && handle.call(context, error, key) || coming,
+          {
+            key,
+            attr: 'create',
+          },
+        )
+
+        // if the given json is not fit for current create required,
+        // it means this field should not generate
+        if (!deps.length || !deps.some(dep => inObject(dep, json))) {
+          return
+        }
+
+        deps.length = 0 // clear deps
+      }
+
+      if (isUndefined(coming) || (force && this.check(key, coming, context))) {
+        coming = defaultValue
+      }
+
+      output[key] = coming
+    })
+
+    return output
+  }
+
+  /**
    * export to get output data
    * @param {*} data
    * @param {*} context

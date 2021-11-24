@@ -1139,4 +1139,91 @@ describe('Model', () => {
     expect(count).toBe(2)
   })
 
+  test('patch', () => {
+    class Some extends Model {
+      schema() {
+        return {
+          name: {
+            default: '',
+            type: String,
+          },
+          age: {
+            default: 0,
+            type: Number,
+          },
+        }
+      }
+    }
+
+    const some = new Some()
+    expect(some.name).toBe('')
+    expect(some.age).toBe(0)
+
+    let count = 0
+    some.watch('*', () => count ++)
+
+    some.patch({
+      name: 'lucy',
+      age: 10,
+    })
+
+    expect(some.name).toBe('lucy')
+    expect(some.age).toBe(10)
+    expect(count).toBe(0)
+  })
+
+  test('fromJSONPatch', () => {
+    class Some extends Model {
+      schema() {
+        return {
+          name: {
+            default: '',
+            type: String,
+            create(value, key, data) {
+              return data.user_name
+            },
+          },
+          age: {
+            default: 0,
+            type: Number,
+          },
+        }
+      }
+    }
+
+    const some = new Some()
+    expect(some.name).toBe('')
+    expect(some.age).toBe(0)
+
+    let count = 0
+    some.watch('*', () => count ++)
+
+    some.fromJSONPatch({
+      user_name: 'lucy',
+      age: 10,
+    })
+
+    expect(some.name).toBe('lucy')
+    expect(some.age).toBe(10)
+    expect(count).toBe(0)
+
+    some.fromJSONPatch({
+      user_name: 'lily',
+      age: 15,
+    }, ['age']) // only age is used
+
+    expect(some.name).toBe('lucy')
+    expect(some.age).toBe(15) // only age changed
+    expect(count).toBe(0)
+
+    some.fromJSONPatch({
+      name: 'tomy',
+    })
+
+    // without any change
+    expect(some.name).toBe('lucy')
+    expect(some.age).toBe(15) // only age changed
+    expect(count).toBe(0)
+  })
+
 })

@@ -511,14 +511,14 @@ model.fromJSON({
 
 `fromJSON` need you to pass all fields, however, sometimes you do not have all fields' data, at this time, you want to update model by less fields, you can use `fromJSONPath`.
 
-It use `update` to update model, so will trigger watchers and path to this as possible.
+*It will not trigger watchers.*
 
 ```
 fromJSONPatch(data: object, onlyKeys: string[]): this
 ```
 
 - data: object which contains fields you want to update
-- onlyKeys: only this fields will be updated
+- onlyKeys: only this keys will be used as input data
 
 It will use `create` attribute to generate data.
 
@@ -602,6 +602,24 @@ To unlock:
 
 ```js
 model.unlock()
+```
+
+**patch**
+
+Unlike `restore`, `patch` will not rebuild all properties, it will only patch given propeties. For example:
+
+```js
+class Some extends Model {
+  schema() {
+    return {
+      name: {
+        default: '',
+        type: String,
+      },
+      age: {},
+    }
+  }
+}
 ```
 
 ## Editor
