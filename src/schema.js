@@ -948,7 +948,7 @@ export class Schema {
 
         // if the given json is not fit for current create required,
         // it means this field should not generate
-        if (!deps.length || !deps.some(dep => isUndefined(json[dep]))) {
+        if (!deps.length || !deps.some(dep => !isUndefined(json[dep]))) {
           return
         }
 
