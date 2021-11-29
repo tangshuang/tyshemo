@@ -60,10 +60,13 @@ export class Meta {
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (key === 'extend') {
+      if (key === 'extend' || key === 'constructor') {
         return
       }
-      useAttr(key, descriptor, prototype)
+      if (inObject(key, this)) {
+        return
+      }
+      useAttr(key, descriptor, this)
     }, true)
   }
 
