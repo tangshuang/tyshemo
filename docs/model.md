@@ -588,21 +588,6 @@ So that each time we create a model instance or invoke `restore` method, name wi
 
 Invoke after restored, before computed properties built.
 
-### Lock
-
-In some cases, you want to lock the model, so that any editing will have no effects.
-
-```js
-model.lock()
-```
-
-Then, updating and restoring will not work.
-
-To unlock:
-
-```js
-model.unlock()
-```
 
 **patch**
 
@@ -620,6 +605,22 @@ class Some extends Model {
     }
   }
 }
+```
+
+### Lock
+
+In some cases, you want to lock the model, so that any editing will have no effects.
+
+```js
+model.lock()
+```
+
+Then, updating and restoring will not work.
+
+To unlock:
+
+```js
+model.unlock()
 ```
 
 ## Editor
