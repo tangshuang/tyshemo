@@ -242,6 +242,40 @@ class Some extends Model {
 
 In this code block, `$views.$state` will be `{ isFund, isPaid }`.
 
+**use**
+
+A method to use an view by keyPath.
+
+```js
+const view = model.use('field1')
+```
+
+It supports second parameter to give you chance to return what you want:
+
+```js
+const required = model.use('field1', (view) => view.required)
+```
+
+**reflect**
+
+When you are writing a Meta, you may not know which field to operate, you can use `reflect` to find out the right field:
+
+```js
+class SomeField extends Meta {
+  static required() {
+    const view = this.reflect(SomeField) // here, we do not know the field name of SomeField Meta, so we use reflect to find out the view of this field
+    const { readonly } = view
+    ...
+  }
+}
+```
+
+It supports second parameter to give you chance to return what you want:
+
+```js
+const required = this.reflect(SomeField, (key, view) => view.required)
+```
+
 ### Nested Model System
 
 Your model may contains submodels, in submodels, you will have:
@@ -607,6 +641,14 @@ class Some extends Model {
 }
 ```
 
+**reset**
+
+`reset` help you to reset the value back to default value.
+
+```js
+model.reset('some')
+```
+
 ### Lock
 
 In some cases, you want to lock the model, so that any editing will have no effects.
@@ -657,13 +699,13 @@ function onClick() {
 
 By this, it will create a mirror which contains the information about this tag.
 
-### reset(tag)
+### rollback(tag)
 
-After a while, if you want to cancel the change, just invoke `reset` to recover.
+After a while, if you want to cancel the change, just invoke `rollback` to recover.
 
 ```js
 function onCancel() {
-  model.reset('edit')
+  model.rollback('edit')
 }
 ```
 
@@ -700,7 +742,7 @@ Notice, commits will not be cleared.
 ```js
 model.clear()
 mode.undo() // has no effect
-model.reset('edit') // works
+model.rollback('edit') // works
 ```
 
 ### submit()
@@ -730,20 +772,6 @@ The only difference is that, submit should recive a instance of Some.
 ```js
 const some = new Some()
 editor.submit(some)
-```
-
-## reflect()
-
-When you are writing a Meta, you may not know which field to operate, you can use `reflect` to find out the right field:
-
-```js
-class SomeField extends Meta {
-  static required() {
-    const view = this.reflect(SomeField) // here, we do not know the field name of SomeField Meta, so we use reflect to find out the view of this field
-    const { readonly } = view
-    ...
-  }
-}
 ```
 
 ## AsyncGetter

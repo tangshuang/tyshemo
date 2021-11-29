@@ -108,7 +108,7 @@ export function edit(Constructor) {
       return this
     }
 
-    reset(tag = '$origin') {
+    rollback(tag = '$origin') {
       if (!this.$store.editable) {
         return
       }

@@ -764,6 +764,20 @@ export class Model {
   }
 
   /**
+   * reset property value to be default value
+   * @param {*} key
+   * @returns
+   */
+  reset(key) {
+    this.collect(() => {
+      const value = this.$schema.getDefault(key, this)
+      this.set(key, value, true)
+      this.use(key, (view) => view.changed = false)
+    }, true)
+    return this
+  }
+
+  /**
    * only change data of this, without `create` and parse, without dispatch, reset `changed`
    * notice: only properties those which in this will be changed
    * @param {*} data
@@ -1076,18 +1090,49 @@ export class Model {
   /**
    * get a view of field by its keyPath
    * @param {*} keyPath
+   * @param {function} fn when keyPath find a view, invoke callback with the view and return as `fn` result
    */
-  use(keyPath) {
+  use(keyPath, fn) {
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.pop()
 
     if (!chain.length) {
-      return this.$views[key]
+      const view = this.$views[key]
+      return isFunction(fn) ? fn.call(this, view) : view
     }
 
     const target = parse(this, chain)
     if (isInstanceOf(target, Model)) {
-      return target.$views[key]
+      const view = target.$views[key]
+      return isFunction(fn) ? fn.call(this, view) : view
+    }
+  }
+
+  /**
+   * use a meta definition to find out view
+   * @param {Meta} Meta
+   * @param {function} [fn] key => any
+   * @returns {view}
+   * @example
+   * class Some extends Meta {
+   *   ...
+   * }
+   * class Dog extends Meta {
+   *   drop() {
+   *     const some = this.reflect(Some) || {} // undefined if Some not used
+   *     return some.value
+   *   }
+   * }
+   */
+   reflect(Meta, fn) {
+    const keys = Object.keys(this.$schema)
+    for (let i = 0, len = keys.length; i < len; i ++) {
+      const key = keys[i]
+      const meta = this.$schema[key]
+      if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
+        const view = this.$views[key]
+        return isFunction(fn) ? fn.call(this, key, view) : view
+      }
     }
   }
 
@@ -1142,12 +1187,6 @@ export class Model {
       }
     })
 
-    return this
-  }
-
-  reset(key) {
-    const value = this.$schema.getDefault(key, this)
-    this.set(key, value, true)
     return this
   }
 
@@ -1653,33 +1692,6 @@ export class Model {
   }
 
   onEdit() {}
-
-  /**
-   * use a meta definition to find out view
-   * @param {Meta} Meta
-   * @param {function} [fn] key => any
-   * @returns {view}
-   * @example
-   * class Some extends Meta {
-   *   ...
-   * }
-   * class Dog extends Meta {
-   *   drop() {
-   *     const some = this.reflect(Some) || {} // undefined if Some not used
-   *     return some.value
-   *   }
-   * }
-   */
-  reflect(Meta, fn) {
-    const keys = Object.keys(this.$schema)
-    for (let i = 0, len = keys.length; i < len; i ++) {
-      const key = keys[i]
-      const meta = this.$schema[key]
-      if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
-        return isFunction(fn) ? fn.call(this, key) : this.$views[key]
-      }
-    }
-  }
 
   /**
    * remember a value when using for getter in meta
