@@ -56,6 +56,15 @@ export class Meta {
     each(attrs, (descriptor, key) => {
       useAttr(key, descriptor, attrs)
     }, true)
+
+    const Constructor = getConstructorOf(this)
+    const { prototype } = Constructor
+    each(prototype, (descriptor, key) => {
+      if (key === 'extend') {
+        return
+      }
+      useAttr(key, descriptor, prototype)
+    }, true)
   }
 
   extend(attrs) {

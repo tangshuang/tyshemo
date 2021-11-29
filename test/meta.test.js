@@ -105,4 +105,29 @@ describe('Meta', () => {
     })
     expect(good.use('discount').will_cost).toBe(12)
   })
+
+  test('without static', () => {
+    class Price extends Meta {
+      default = 0
+      type = Numeric
+      force = true
+    }
+    class Discount extends Meta {
+      default = 0
+      will_cost() {
+        return this.reflect(Price).value
+      }
+      type = Numeric
+    }
+
+    class Good extends Model {
+      static price = Price
+      static discount = Discount
+    }
+
+    const good = new Good({
+      price: 12,
+    })
+    expect(good.use('discount').will_cost).toBe(12)
+  })
 })
