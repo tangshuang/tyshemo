@@ -428,9 +428,7 @@ export class Model {
       // default attributes which will be used by Model/Schema, can not be reset by userself
       const attrs = this.$$attrs
       // define a view
-      const view = {
-        changed: false, // whether the field has changed
-      }
+      const view = {}
       // use defineProperties to define view properties
       const viewDef = {}
 
@@ -531,6 +529,8 @@ export class Model {
 
       // unwritable mandatory view properties
       const getData = () => this._getData(key)
+      let changed = false // whether the field has changed
+
       Object.assign(viewDef, {
         key: {
           get: () => key,
@@ -576,6 +576,18 @@ export class Model {
           },
           enumerable: true,
         },
+        changed: {
+          get: () => changed,
+          set: (status) => {
+            // make sure the computed field value sync to data
+            if (status && meta.compute) {
+              this.$store.set(key, view.value, true)
+            }
+
+            changed = !!status
+          },
+          enumerable: true,
+        }
       })
 
       Object.defineProperties(view, viewDef)
@@ -605,7 +617,7 @@ export class Model {
     // create changed, so that it's easy to find out whether the data has changed
     define(this.$views, '$changed', {
       get: () => this.collect(() => keys.some((key) => this.$views[key].changed), true),
-      set: (status) => this.collect(() => keys.forEach(key => this.$views[key].changed = !!status), true),
+      set: (status) => this.collect(() => keys.forEach(key => this.$views[key].changed = status), true),
     })
 
     // create $state, so that it's easy to read state from $views
@@ -1317,7 +1329,7 @@ export class Model {
         })
       }
 
-      // // subscribe new watchers
+      // subscribe new watchers
       if (deps.length) {
         const fn = () => {
           const prev = res
@@ -1330,6 +1342,9 @@ export class Model {
         })
         this.$$deps[key] = { deps, fn }
       }
+
+      // make sure the computed field value sync to data
+      this.$store.set(key, res, true)
 
       return res
     }

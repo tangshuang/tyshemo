@@ -1226,4 +1226,35 @@ describe('Model', () => {
     expect(count).toBe(0)
   })
 
+  test('bugfix: compute value turn to empty after $views.$changed = true', () => {
+    class Some extends Model {
+      schema() {
+        return {
+          a: {
+            default: 0,
+          },
+          b: {
+            default: '',
+            compute() {
+              return this.a ? 'yes' : 'no'
+            },
+          },
+        }
+      }
+    }
+
+    const some = new Some()
+    expect(some.b).toBe('no')
+
+    some.a = 1
+    expect(some.b).toBe('yes')
+
+    expect(some.$views.a.changed).toBe(true)
+    expect(some.$views.b.changed).toBe(false)
+
+    some.$views.$changed = true
+    expect(some.$views.b.changed).toBe(true)
+    expect(some.$views.b.value).toBe('yes') // here is the bug occurs, bug: value turn to be empty ''
+  })
+
 })
