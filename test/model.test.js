@@ -1257,4 +1257,60 @@ describe('Model', () => {
     expect(some.$views.b.value).toBe('yes') // here is the bug occurs, bug: value turn to be empty ''
   })
 
+  test('meta.activate', () => {
+    class Age extends Meta {
+      default = 0
+    }
+    class Height extends Meta {
+      default = 0
+      activate() {
+        return this.age * 15
+      }
+    }
+    class Weight extends Meta {
+      default = 100
+      activate() {
+        return this.age > 10 ? this.height - 50 : this.age * 20
+      }
+    }
+
+    class Some extends Model {
+      static age = Age
+      static height = Height
+      static weight = Weight
+    }
+
+    const some = new Some()
+
+    let count = 0
+    some.watch('*', () => count ++)
+
+    expect(some.height).toBe(0)
+    expect(some.weight).toBe(0)
+
+    some.age ++
+    expect(some.height).toBe(15)
+    expect(count).toBe(3) // age, height, weight has been changed
+
+    expect(some.weight).toBe(20)
+
+    some.age = 11
+    expect(some.height).toBe(165)
+    expect(some.weight).toBe(115)
+    expect(count).toBe(6) // age, height, weight has been changed
+
+    some.height = 155 // change activatable field
+    expect(some.weight).toBe(105)
+    expect(count).toBe(8) // only height, weight has been changed
+
+    some.age = 6
+    expect(some.weight).toBe(120)
+    expect(some.height).toBe(90)
+
+    count = 0
+    some.height = 100
+    expect(some.weight).toBe(120) // unchanged, because age < 10, height's changing has no effect
+    expect(count).toBe(1) // only height changed trigger
+  })
+
 })

@@ -36,6 +36,7 @@ import { Factory, FactoryMeta } from './factory.js'
 const DEFAULT_ATTRIBUTES = {
   default: null,
   compute: null,
+  activate: null,
   type: null,
   message: null,
   force: null,
@@ -421,6 +422,7 @@ export class Model {
 
     // views
     const views = {}
+    const reactivators = []
 
     keys.forEach((key) => {
       // patch attributes from meta
@@ -431,6 +433,10 @@ export class Model {
       const view = {}
       // use defineProperties to define view properties
       const viewDef = {}
+
+      if (meta.activate) {
+        reactivators.push({ key, activate: meta.activate })
+      }
 
       each(attrs, (fallback, attr) => {
         if (isNull(fallback)) {
@@ -638,6 +644,31 @@ export class Model {
     // init data
     this._initData(data)
 
+    // make meta.activate work
+    const createActivation = (key, activate) => {
+      const createWatcher = (dep) => {
+        const watcher = () => {
+          this.unwatch(dep, watcher)
+          const value = createActivation(key, activate)
+          this.set(key, value)
+        }
+        return watcher
+      }
+      const value = this.collect(() => activate.call(this), (deps) => {
+        deps.forEach((dep) => {
+          const watcher = createWatcher(dep)
+          this.watch(dep, watcher, true)
+        })
+      })
+      return value
+    }
+    const registerActivator = (activator) => {
+      const { key, activate } = activator
+      const value = createActivation(key, activate)
+      this.reset(key, value)
+    }
+    reactivators.forEach(registerActivator)
+
     // register a listener
     this.watch('*', (e) => {
       const { key, compute } = e
@@ -780,9 +811,8 @@ export class Model {
    * @param {*} key
    * @returns
    */
-  reset(key) {
+  reset(key, value = this.$schema.getDefault(key, this)) {
     this.collect(() => {
-      const value = this.$schema.getDefault(key, this)
       this.set(key, value, true)
       this.use(key, (view) => view.changed = false)
     }, true)
@@ -984,7 +1014,7 @@ export class Model {
    */
   collect(collector, inverse) {
     if (isFunction(collector)) {
-      if (inverse) { // if true, do not collect deps, and return normal value of collector fn
+      if (inverse === true) { // if true, do not collect deps, and return normal value of collector fn
         if (this.$collection) {
           this.$collection.enable = false
         }
@@ -992,6 +1022,15 @@ export class Model {
         if (this.$collection) {
           this.$collection.enable = true
         }
+        return res
+      }
+
+      // if function, return value of collector, and exec inverse with deps
+      if (isFunction(inverse)) {
+        this.collect()
+        const res = collector()
+        const deps = this.collect(true)
+        inverse(deps)
         return res
       }
 

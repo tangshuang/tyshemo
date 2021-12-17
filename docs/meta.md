@@ -59,6 +59,16 @@ const attrs = {
     return a + '' + b
   },
 
+  // optional, calculate value when init and the dependencies change,
+  // for example, when the model is initialized, the default value '' will be overrided by `activate`
+  // later, 'a' changes and the value will be overrided by `activate`
+  // make sure what will happen when you use activate, you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change
+  activate() {
+    const a = this.a
+    const b = this.b
+    return a + '' + b
+  },
+
   // optional, when passed, `set` action will return prev value if not pass type checking
   // notice: `default` and result of `compute` should match type,
   // can be rule, i.e. equal(String)
@@ -303,3 +313,11 @@ class PoodB extends PoodA {}
 ```
 
 `PoodB` will have all atrributes in chain `PoodB`->`PoodA`->`Pood`.
+
+## Formatting Control
+
+`drop` `map` `flat` `to` `disabled` affect the result of `toData`.
+
+## Value Control
+
+`default` `compute` `activate` `getter` `setter` affect the field value.
