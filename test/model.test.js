@@ -1309,7 +1309,7 @@ describe('Model', () => {
 
     count = 0
     some.height = 100
-    expect(some.weight).toBe(120) // unchanged, because age < 10, height's changing has no effect
+    expect(some.weight).toBe(120) // unchanged, because age < 10, height's changing  has no effect
     expect(count).toBe(1) // only height changed trigger
   })
 
