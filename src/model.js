@@ -24,6 +24,7 @@ import {
   createArray,
   makeKeyPath,
   hasOwnKey,
+  isEqual,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -688,6 +689,21 @@ export class Model {
       if (def.watch) {
         def.watch.call(this, e, key)
       }
+
+      const fields = Object.keys(this.$schema)
+      fields.forEach((field) => {
+        if (root === field) {
+          return
+        }
+
+        const meta = this.$schema[field]
+        const fn = meta.follow
+        if (!fn) {
+          return
+        }
+
+        fn.call(this, makeKeyPath(key))
+      })
 
       // check $parent
       this._ensure(root)

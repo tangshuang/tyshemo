@@ -140,7 +140,10 @@ const attrs = {
   empty: Function,
 
   // when this field's value changed, the `watch` function will be invoke
-  watch({ value }) {},
+  watch({ value }, key) {},
+  // when **other** fields changed, follow function will be triggered
+  // current field changing will NOT be triggered (use watch instead)
+  follow(key:string) {},
 
   // invoke when the model initailized
   init() {},

@@ -1313,4 +1313,28 @@ describe('Model', () => {
     expect(count).toBe(1) // only height changed trigger
   })
 
+  test('Meta.listen', () => {
+    const changed = []
+
+    class Age extends Meta {
+      default = 0
+      odd = false
+    }
+    class Height extends Meta {
+      default = 0
+      follow(key) {
+        changed.push(key)
+      }
+    }
+
+    class Some extends Model {
+      static age = Age
+      static height = Height
+    }
+
+    const some = new Some()
+
+    some.age = 10
+    expect(changed).toEqual(['age'])
+  })
 })

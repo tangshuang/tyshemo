@@ -526,8 +526,7 @@ export class Store {
     items.push(...anys)
 
     items.forEach((item) => {
-      const target = item.key
-      item.fn.call(item.context || this.state, keyPath, ...args)
+      item.fn.call(item.context || this.state, key, ...args)
     })
 
     return true
