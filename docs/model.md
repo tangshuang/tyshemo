@@ -779,7 +779,7 @@ editor.submit(some)
 ```js
 import { AsyncGetter } from 'tyshemo'
 
-AsyncGetter(defaultValue:Any, AsyncGetter:Function, deps?:string[])
+AsyncGetter(defaultValue:Any, AsyncGetter:Function, deps?:(string|Meta)[])
 ```
 
 In some cases, you need to fetch data from backend async to change some property, `AsyncGetter` helps you to implement.
