@@ -449,6 +449,7 @@ export class Model {
         }
       })
 
+      const asyncReactors = {}
       each(meta, (descriptor, attr) => {
         if (inArray(attr[0], ['$', '_'])) {
           return
@@ -468,10 +469,10 @@ export class Model {
           }
         }
         else if (isAsyncRef(value)) {
-          const { current, attach } = value
+          const { current, attach, deps } = value
           let attrValue = current
           // async set attr value
-          attach(key, attr).then((next) => {
+          const get = () => attach.call(this, key, attr).then((next) => {
             if (next === attrValue) {
               return
             }
@@ -479,6 +480,18 @@ export class Model {
             attrValue = next
             this.$store.forceDispatch(`!${key}.${attr}`, next, prev)
           })
+          get()
+          if (isArray(deps)) {
+            deps.map((dep) => {
+              if (isInstanceOf(dep, Meta) || isInheritedOf(dep, Meta)) {
+                return this.reflect(dep).key
+              }
+              return dep
+            }).forEach((dep) => {
+              asyncReactors[dep] = asyncReactors[dep] || []
+              asyncReactors[dep].push(get)
+            })
+          }
           viewDef[attr] = {
             get: () => {
               if (this.$collection && this.$collection.enable && this.$collection.views) {
@@ -533,6 +546,15 @@ export class Model {
           }
         }
       }, true)
+      Object.keys(asyncReactors).forEach((key) => {
+        this.watch(key, ({ prev, next }) => {
+          if (prev === next) {
+            return
+          }
+          const fns = asyncReactors[key]
+          fns.forEach((fn) => fn())
+        }, true)
+      })
 
       // unwritable mandatory view properties
       const getData = () => this._getData(key)
@@ -905,6 +927,7 @@ export class Model {
     }
 
     // patch state
+    const asyncReactors = {}
     each(state, (descriptor, key) => {
       if (descriptor.get || descriptor.set) {
         define(params, key, descriptor)
@@ -926,25 +949,17 @@ export class Model {
       })
     }, true)
 
-    // those on schema
+    // those on schema but not in data
     each(schema, (_, key) => {
-      if (inObject(key, data)) {
-        const value = data[key]
-        params[key] = value
-        ensure(value, key)
-        return
-      }
+      const push = (value) => {
+        if (!isAsyncRef(value)) {
+          params[key] = value
+          ensure(value, key)
+          return
+        }
 
-      // notice here, we call this in default(), we can get passed state properties
-      const value = schema.getDefault(key, this)
-
-      // default can be an AsyncGetter, so that we can set default value asyncly
-      if (isAsyncRef(value)) {
-        const { current, attach } = value
-        params[key] = current
-        ensure(current, key)
-
-        attach(key, 'default').then((next) => {
+        const { attach, deps, current } = value
+        const get = () => attach(key, 'default').then((next) => {
           if (this[key] === next) {
             return
           }
@@ -953,11 +968,42 @@ export class Model {
           }
           this[key] = next // will trigger watcher
         })
+
+        params[key] = current
+        ensure(current, key)
+        get()
+
+        if (isArray(deps)) {
+          deps.map((dep) => {
+            if (isInstanceOf(dep, Meta) || isInheritedOf(dep, Meta)) {
+              return this.reflect(dep).key
+            }
+            return dep
+          }).forEach((dep) => {
+            asyncReactors[dep] = asyncReactors[dep] || []
+            asyncReactors[dep].push(get)
+          })
+        }
       }
-      else {
-        params[key] = value
-        ensure(value, key)
+
+      if (inObject(key, data)) {
+        const value = data[key]
+        push(value)
+        return
       }
+
+      // notice here, we call this in default(), we can get passed state properties
+      const value = schema.getDefault(key, this)
+      push(value)
+    })
+    Object.keys(asyncReactors).forEach((key) => {
+      this.watch(key, ({ prev, next }) => {
+        if (prev === next) {
+          return
+        }
+        const fns = asyncReactors[key]
+        fns.forEach((fn) => fn())
+      }, true)
     })
 
     // delete the outdate properties

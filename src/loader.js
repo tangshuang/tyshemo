@@ -111,23 +111,22 @@ export class Loader {
       }
     }
 
-    const parseAsyncGetter = (value) => {
-      if (isString(value)) {
-        if (/:fetch\(.*?\)/.test(value)) {
-          const [_all, before, _matched, matched, after] = value.match(/(.*?):fetch\((.*?)\)(.*?)/)
-          const defaultValue = tryGetRealValue(before)
-          return createAsyncRef(defaultValue, () => {
-            return loader.fetch(matched).then((data) => {
-              if (data && typeof data === 'object' && after && after[0] === '.') {
-                const keyPath = after.substr(1)
-                return parse(data, keyPath)
-              }
-              else {
-                return data
-              }
-            })
+    const parseAsyncGetter = (value, scope) => {
+      if (isString(value) && /:fetch\(.*?\)/.test(value)) {
+        const [_all, _deps, deps, before, matched, after] = value.match(/(\$\((\w+)\):)?(.*?):fetch\((.*?)\)(.*?)/)
+        const defaultValue = tryGetRealValue(before)
+        return createAsyncRef(defaultValue, () => {
+          const url = scope.parse(matched)
+          return loader.fetch(url).then((data) => {
+            if (data && typeof data === 'object' && after && after[0] === '.') {
+              const keyPath = after.substr(1)
+              return parse(data, keyPath)
+            }
+            else {
+              return data
+            }
           })
-        }
+        }, deps ? deps.split(',') : null)
       }
       return value
     }
@@ -171,7 +170,7 @@ export class Loader {
 
         if (isInjected) {
           return new Promise((resolve, reject) => {
-            const [_all, before, _matched, _url, after] = isInjected ? exp.match(/(.*\W)(await fetch\((.*?)\))(.*)/) : []
+            const [_all, before, _url, after] = isInjected ? exp.match(/(.*\W)?await fetch\((.*?)\)(.*)/) : []
             const url = createFn(scope, _url, params)(...args)
             loader.fetch(url).then((data) => {
               const subScope = scope.$new({ __await__: data })
@@ -195,13 +194,13 @@ export class Loader {
 
       const isInline = isInlineExp(value)
       if (!params && !isInline) {
-        return parseAsyncGetter(value)
+        return parseAsyncGetter(value, scope)
       }
 
       const line = isInline ? getInlineExp(value) : value
       const exp = getFinalExp(line)
 
-      const getter = parseAsyncGetter(exp)
+      const getter = parseAsyncGetter(exp, scope)
       if (getter !== exp) {
         return getter
       }
@@ -240,7 +239,7 @@ export class Loader {
       state() {
         const stat = {}
         each(state, (value, key) => {
-          stat[key] = parseAsyncGetter(value)
+          stat[key] = parseAsyncGetter(value, globalScope.$new(this))
         })
         return stat
       }

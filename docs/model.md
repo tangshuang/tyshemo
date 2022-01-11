@@ -779,7 +779,7 @@ editor.submit(some)
 ```js
 import { AsyncGetter } from 'tyshemo'
 
-AsyncGetter(defaultValue:Any, AsyncGetter:Function)
+AsyncGetter(defaultValue:Any, AsyncGetter:Function, deps?:string[])
 ```
 
 In some cases, you need to fetch data from backend async to change some property, `AsyncGetter` helps you to implement.
@@ -795,7 +795,7 @@ class BookPrice extends Meta {
       const { range } = data
       return range // range will be used finally
     })
-  })
+  }, ['id']) // when this.id chaged, range will be set new value
 }
 ```
 

@@ -27,6 +27,7 @@
   "devDependencies": {
     "@babel/core": "^7.14.6",
     "@babel/plugin-proposal-decorators": "^7.14.5",
+    "@babel/plugin-transform-runtime": "^7.16.8",
     "@babel/preset-env": "^7.14.7",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.9.0",
@@ -41,6 +42,6 @@
   },
   "dependencies": {
     "scopex": "^4.3.2",
-    "ts-fns": "^10.6.2"
+    "ts-fns": "^10.7.1"
   }
 }

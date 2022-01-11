@@ -107,4 +107,37 @@ describe('Loader', () => {
     expect(some.$views.height.isNeeded).toBe(true)
     expect(some.child.$views.ghost.required).toBe(true)
   })
+
+  test(':fetch', async () => {
+    const loader = new Loader()
+    const sleep = (i) => new Promise((r) => setTimeout(r, i))
+    loader.fetch = async ({ type, data }) => {
+      await sleep(100)
+      if (type === 'options') {
+        return [1, 2, 3]
+      }
+      else if (type === 'items') {
+        return data.map(i => i + 1)
+      }
+    }
+    const Some = loader.parse({
+      "schema": {
+        "options": {
+          "default": "{ []:fetch({ type: 'options' }) }",
+          "watch(e)": "{ debug(e.value) }"
+        },
+        "items": {
+          "default": "{ $(options): []:fetch({ type: 'items', data: options }) }",
+        },
+      },
+    })
+
+    const some = new Some()
+    expect(some.options).toEqual([])
+    expect(some.items).toEqual([])
+    await sleep(300)
+    expect(some.options).toEqual([1, 2, 3])
+    await sleep(300)
+    expect(some.items).toEqual([2, 3, 4])
+  })
 })

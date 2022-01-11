@@ -72,29 +72,37 @@ export function patchObj(source, input) {
   })
 }
 
-export function createAsyncRef(defaultValue, getter) {
+export function createAsyncRef(defaultValue, getter, deps) {
   const ref = {
     current: defaultValue,
     deferer: null,
     getter,
+    deps,
     $$type: 'asyncRef',
     attach(...args) {
       if (ref.deferer) {
         return ref.deferer
       }
 
-      ref.deferer = Promise.resolve().then(() => getter.call(this, ...args)).then((next) => {
-        ref.current = next
-        return next
+      const deferer = Promise.resolve()
+        .then(() => getter.call(this, ...args))
+        .then((next) => {
+          ref.current = next
+          return next
+        })
+      ref.deferer = deferer
+      // use it in one microtask
+      Promise.resolve().then(() => {
+        ref.deferer = null
       })
-      return ref.deferer
+      return deferer
     },
   }
   return ref
 }
 
 export function isAsyncRef(ref) {
-  return isObject(ref) && ref.$$type === 'asyncRef' && isEqual(Object.keys(ref), ['$$type', 'current'])
+  return isObject(ref) && ref.$$type === 'asyncRef'
 }
 
 export function createMemoRef(getter, compare, depend) {
@@ -109,7 +117,7 @@ export function createMemoRef(getter, compare, depend) {
 
 export function isMemoRef(ref) {
   const keys = Object.keys(ref)
-  return isObject(ref) && ref.$$type === 'memoRef' && !['getter', 'compare', 'depend'].some(item => !keys.includes(item))
+  return isObject(ref) && ref.$$type === 'memoRef'
 }
 
 

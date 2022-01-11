@@ -158,6 +158,10 @@ You should override `Loader.fetch` method to provide fetch operator.
 }
 ```
 
+```
+await fetch(url).prop
+```
+
 When tyshemo loader saw the word `await fetch`, it will treate this function as an async function. (only works in functions.)
 
 Notice, the syntax is `await fetch(...).property`, give `.property` directly after `await fetch(...)`
@@ -175,7 +179,12 @@ This is for `AsyncGetter`, only works for Meta.Attribute and state:
     },
   },
   "state": {
-    "someGlobalOptions": "[]:fetch('....')"
+    "someGlobalOptions": "$(book):[]:fetch('....')"
   }
 }
+```
+
+```
+default_value:fetch(url).prop
+$(dep1,dep2):default_value:fetch(url).prop -> $(...): to give deps
 ```
