@@ -7,7 +7,7 @@
     "postversion": "git add . && git commit -m \"update version to $npm_package_version\"",
     "prepublishOnly": "npm run test && npm run build",
     "build": "node gulpfile.js && webpack",
-    "test": "jest",
+    "test": "cross-env NODE_ENV=test jest",
     "dev": "webpack-dev-server --config ./examples/webpack-dev-server.js",
     "doc": "node docserver.js"
   },
@@ -32,6 +32,7 @@
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.6",
+    "cross-env": "^7.0.3",
     "gulp": "^4.0.1",
     "gulp-babel": "^8.0.0",
     "jest": "^25.5.4",
