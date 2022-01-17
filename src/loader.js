@@ -13,6 +13,9 @@ import {
   isInstanceOf,
   isEmpty,
   parse,
+  inObject,
+  uniqueArray,
+  decideby,
 } from 'ts-fns'
 
 export class Loader {
@@ -115,6 +118,21 @@ export class Loader {
       if (isString(value) && /:fetch\(.*?\)/.test(value)) {
         const [_all, _deps, deps, before, matched, after] = value.match(/(\$\((\w+)\):)?(.*?):fetch\((.*?)\)(.*?)/)
         const defaultValue = tryGetRealValue(before)
+        const reactors = decideby(() => {
+          if (deps) {
+            return deps.split(',')
+          }
+
+          // find deps automaticly
+          const mayBeDeps = uniqueArray([...(value.replace(/['"].*?['"]/g, ' ').matchAll(/\W(\w+(\.\w+)*?)\W?/g) || [])].map(item => {
+            const str = item[1] || ''
+            const [field] = str.split('.')
+            return field
+          }).filter((item) => {
+            return inObject(item, schema)
+          }))
+          return mayBeDeps.length ? mayBeDeps : null
+        })
         return createAsyncRef(defaultValue, () => {
           const url = scope.parse(matched)
           return loader.fetch(url).then((data) => {
@@ -126,7 +144,7 @@ export class Loader {
               return data
             }
           })
-        }, deps ? deps.split(',') : null)
+        }, reactors)
       }
       return value
     }

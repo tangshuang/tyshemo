@@ -127,7 +127,8 @@ describe('Loader', () => {
           "watch(e)": "{ debug(e.value) }"
         },
         "items": {
-          "default": "{ $(options): []:fetch({ type: 'items', data: options }) }",
+          // "default": "{ $(options): []:fetch({ type: 'items', data: options }) }",
+          "default": "{ []:fetch({ type: 'items', data: options }) }",
         },
       },
     })
