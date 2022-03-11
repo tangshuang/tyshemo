@@ -898,9 +898,9 @@ export class Model {
    * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
    * notice that, properties which are in original model be not in schema may be removed.
    * @param {*} data
-   * @param {string[]} keysPatchToThis keys those not in schema but path to this
+   * @param {string[]} keysAddToThis keys those not in schema but path to this
    */
-  restore(data, keysPatchToThis = []) {
+  restore(data, keysAddToThis = []) {
     if (!this.$store.editable) {
       return this
     }
@@ -1032,8 +1032,9 @@ export class Model {
         this[key] = value
       }
     })
-    // patch keys to this, i.e. this.fromJSON(data, ['polices']) => this.polices
-    keysPatchToThis.forEach((key) => {
+
+    // patch keys to this, these keys are not on this, i.e. this.fromJSON(data, ['policies']) => this.policies (this.policies is not existing before)
+    keysAddToThis.forEach((key) => {
       if (!inObject(key, this)) {
         this[key] = json[key]
       }
@@ -1477,7 +1478,7 @@ export class Model {
    * use schema `create` option to generate and restore data
    * @param {*} json
    */
-  fromJSON(json, keysPatchToThis) {
+  fromJSON(json, keysAddToThis) {
     if (!this.$store.editable) {
       return this
     }
@@ -1485,6 +1486,7 @@ export class Model {
     // prepare for sub models
     this.$children = []
 
+    // !!! required, although state will be patch twice, it is required to be set at the first
     // patch state into this, so that we can get passed state in default()
     // dont be worried about reactive, the properties will be override by restore()
     const state = this._initState()
@@ -1504,7 +1506,7 @@ export class Model {
     const data = this.$schema.parse(entry, this)
     const next = { ...entry, ...data }
 
-    this.restore(next, keysPatchToThis)
+    this.restore(next, keysAddToThis)
 
     // ask children to recompute computed properties
     this.$children.forEach(child => child.onRegress())

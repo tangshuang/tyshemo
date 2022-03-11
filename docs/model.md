@@ -520,11 +520,11 @@ Read JSON from backend, and recover the model.
 **fromJSON**
 
 ```
-fromJSON(json: object, keysPatchToThis: string[]): this
+fromJSON(json: object, keysAddToThis: string[]): this
 ```
 
 - json: JSON data contains fields
-- keysPatchToThis: if you want a property of `json` which is not in fields to be patched to this, you should use `keysPatchToThis` to tell model
+- keysAddToThis: add new keys which is not in model but in in `json` into model
 
 It will use attributes:
 
@@ -635,10 +635,22 @@ class Some extends Model {
         default: '',
         type: String,
       },
-      age: {},
+      age: {
+        default: 0,
+      },
     }
   }
 }
+
+const some = new Some({
+  name: 'tini',
+  age: 10,
+})
+some.patch({
+  name: 'tina',
+})
+
+// some.age not changed, still is 10
 ```
 
 **reset**
