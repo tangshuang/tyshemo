@@ -63,23 +63,10 @@ const DEFAULT_ATTRIBUTES = {
   deps: null,
 }
 
-/**
- * class SomeModel extends Model {
- *   static some = {
- *     type: String,
- *     default: '',
- *   }
- * }
- *
- * @keywords: $schema, $store, $views, init,
- *            get, set, del, update, define,
- *            watch, unwatch, validate, restore,
- *            fromJSON, toJSON, toParams, toFormData,
- *            onInit, onParse, onExport,
- */
 export class Model {
-  constructor(data = {}, [parent, key] = []) {
+  constructor(data = {}, options = {}) {
     const $this = this
+    const { parent, key } = options
 
     /**
      * create schema

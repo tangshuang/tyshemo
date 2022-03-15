@@ -123,8 +123,8 @@ export class Factory {
         const nexts = filter(items)
         const values = nexts.map((next) => {
           const model = Entries.some(One => isInstanceOf(next, One)) ? next.setParent([parent, key])
-            : isObject(next) ? new Model(next, [parent, key])
-            : new Model({}, [parent, key])
+            : isObject(next) ? new Model(next, { parent, key })
+            : new Model({}, { parent, key })
           const child = entity.instance(model, parent)
           setupTransport(child, parent, key)
           return child
@@ -163,8 +163,8 @@ export class Factory {
       const Model = entity.entry(Entries)
       const gen = function(value, key, parent) {
         const model = isInstanceOf(value, Model) ? value.setParent([parent, key])
-          : isObject(value) ? new Model(value, [key], parent)
-          : new Model({}, [key], parent)
+          : isObject(value) ? new Model(value, { key, parent })
+          : new Model({}, { key, parent })
         const child = entity.instance(model, parent)
         setupTransport(child, parent, key)
         return child
