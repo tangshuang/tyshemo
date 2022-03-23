@@ -24,6 +24,7 @@ class Sex extends Meta {
 }
 
 class PersonModel extends Model {
+  // notice here, in typescript, name is conflict with clss original static property, so we provide a way to avoid this situation, you should use `$_name` instead, not only `name` but also any property
   static name = Name
   static age = Age
   static sex = Sex
