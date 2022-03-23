@@ -1337,4 +1337,17 @@ describe('Model', () => {
     some.age = 10
     expect(changed).toEqual(['age'])
   })
+
+  test('conflict static property $_name', () => {
+    class NameField extends Meta {
+      static default = 'dog'
+    }
+
+    class DogModel extends Model {
+      static $_name = NameField
+    }
+
+    const dog = new DogModel()
+    expect(dog.name).toBe('dog')
+  })
 })
