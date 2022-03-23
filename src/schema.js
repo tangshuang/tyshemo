@@ -430,7 +430,7 @@ export class Schema {
     const { catch: handle, validators = [] } = meta
 
     const validate = (validator, index, dontTry) => {
-      const { determine, validate, message } = validator
+      const { determine, validate, message, name } = validator
 
       if (isBoolean(determine) && !determine) {
         return
@@ -496,6 +496,7 @@ export class Schema {
         key,
         value,
         at: index,
+        validator: name,
         message: msg,
       }
       return error
@@ -621,7 +622,7 @@ export class Schema {
     }
 
     const validate = (dontTry, validator, index) => {
-      const { determine, validate, message } = validator
+      const { determine, validate, message, name } = validator
 
       if (isBoolean(determine) && !determine) {
         return Promise.resolve()
@@ -685,6 +686,7 @@ export class Schema {
           key,
           value,
           at: index,
+          validator: name,
           message,
         }
         return error

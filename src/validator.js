@@ -7,7 +7,6 @@ import {
   isFunction,
   isInstanceOf,
   isBoolean,
-  isUndefined,
   isNaN,
   numerify,
 } from 'ts-fns'
@@ -28,6 +27,7 @@ export class Validator {
   static url = url
   static date = date
   static match = match
+  static len = len
   static maxLen = maxLen
   static minLen = minLen
   static allOf = allOf
@@ -37,6 +37,7 @@ export default Validator
 
 function required(message, emptyFn) {
   return new Validator({
+    name: 'required',
     determine(_, key) {
       if (this && this.$views && this.$views[key]) {
         return this.$views[key].required
@@ -58,12 +59,16 @@ function required(message, emptyFn) {
   })
 }
 
+function len(len, message) {
+  return match(value => isString(value) && value.length === len, message, 'len')
+}
+
 function maxLen(len, message) {
-  return match(value => isString(value) && value.length <= len, message)
+  return match(value => isString(value) && value.length <= len, message, 'maxLen')
 }
 
 function minLen(len, message) {
-  return match(value => isString(value) && value.length >= len, message)
+  return match(value => isString(value) && value.length >= len, message, 'minLen')
 }
 
 function integer(len, message) {
@@ -80,7 +85,7 @@ function integer(len, message) {
 
     return true
   }
-  return match(validate, message)
+  return match(validate, message, 'integer')
 }
 
 function decimal(len, message) {
@@ -97,31 +102,32 @@ function decimal(len, message) {
 
     return true
   }
-  return match(validate, message)
+  return match(validate, message, 'decimal')
 }
 
 function max(num, message) {
-  return match(value => (isNumber(value) || isNumeric(value)) && +value <= num, message)
+  return match(value => (isNumber(value) || isNumeric(value)) && +value <= num, message, 'max')
 }
 
 function min(num, message) {
-  return match(value => (isNumber(value) || isNumeric(value)) && +value >= num, message)
+  return match(value => (isNumber(value) || isNumeric(value)) && +value >= num, message, 'min')
 }
 
 function email(message) {
-  return match(/^[A-Za-z0-9]+[A-Za-z0-9\._]*[A-Za-z0-9]+@[A-Za-z0-9]+[A-Za-z0-9\.\-]*[A-Za-z0-9]+\.[A-Za-z]{2,8}$/, message)
+  return match(/^[A-Za-z0-9]+[A-Za-z0-9\._]*[A-Za-z0-9]+@[A-Za-z0-9]+[A-Za-z0-9\.\-]*[A-Za-z0-9]+\.[A-Za-z]{2,8}$/, message, 'email')
 }
 
 function url(message) {
-  return match(/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/, message)
+  return match(/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/, message, 'url')
 }
 
 function date(message) {
-  return match(/^[1-2][0-9]{3}\-[0-1][0-9]\-[0-3][0-9]/, message)
+  return match(/^[1-2][0-9]{3}\-[0-1][0-9]\-[0-3][0-9]/, message, 'date')
 }
 
-function match(validator, message) {
+function match(validator, message, name) {
   return new Validator({
+    name,
     validate(value) {
       if (isInstanceOf(validator, RegExp)) {
         return typeof value === 'string' && validator.test(value)
@@ -159,6 +165,7 @@ function match(validator, message) {
 
 function allOf(validators, message) {
   return new Validator({
+    name: 'allOf',
     validate(value) {
       for (const i = 0, len = validators.length; i < len; i ++) {
         const validate = validators[i]
@@ -175,6 +182,7 @@ function allOf(validators, message) {
 
 function anyOf(validators, message) {
   return new Validator({
+    name: 'anyOf',
     validate(value) {
       for (const i = 0, len = validators.length; i < len; i ++) {
         let validate = validators[i]
