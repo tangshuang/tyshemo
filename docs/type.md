@@ -2,7 +2,7 @@
 
 Type is to describe data's storage structure and compute characteristic.
 
-We have 6 types in tyshemo, they are `Dict` `List` `Tuple` `Enum` `Range` `Mapping`. And they are all extended from `Type` which is the basic class.
+We have 6 types in tyshemo, they are `Dict` `List` `Tupl` `Enum` `Range` `Mapping`. And they are all extended from `Type` which is the basic class.
 
 ## Type
 
@@ -164,17 +164,17 @@ If there are several types in the `List` parameter list, it means the items of t
 const SomeList = new List([SomeDict, Some2Dict])
 ```
 
-## Tuple
+## Tupl
 
-`Tuple` is to describe array whose items are limited by certain types.
+`Tupl` is to describe array whose items are limited by certain types.
 
 ```js
-const SomeTupe = new Tuple([String, Number])
+const SomeTupe = new Tupl([String, Number])
 ```
 
 It means an array should must have only two items, the first should be string, and the second should be number.
 
-When we want to check the parameters of a function, `Tuple` is the best choice.
+When we want to check the parameters of a function, `Tupl` is the best choice.
 
 ```js
 function some(...args) {

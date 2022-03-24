@@ -8,14 +8,14 @@ import Type from './type.js'
 import Rule from './rule.js'
 import TyError from './ty-error.js'
 
-export class Tuple extends Type {
+export class Tupl extends Type {
   constructor(pattern) {
     if (!isArray(pattern)) {
-      throw new Error('[Tuple]: pattern should be an array.')
+      throw new Error('[Tupl]: pattern should be an array.')
     }
 
     super(pattern)
-    this.name = 'Tuple'
+    this.name = 'Tupl'
   }
 
   _decide(value) {
@@ -89,8 +89,11 @@ export class Tuple extends Type {
 }
 
 export function tuple(pattern) {
-  const type = new Tuple(pattern)
+  const type = new Tupl(pattern)
   return type
 }
 
-export default Tuple
+export {
+  Tupl as Tuple,
+  Tupl as default,
+}

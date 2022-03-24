@@ -9,9 +9,9 @@ In tyshemo, there are 7 kinds of Error:
 
 - exception: type not match
 - unexcepted: should not match, but matched
-- dirty: length greater than given in Tuple
+- dirty: length greater than given in Tupl
 - overflow: in strict, some given properties are not defined in type
-- missing: lose properties or Tuple items
+- missing: lose properties or Tupl items
 - illegal: type of `key` not match in Mapping
 - notin: type is not given in Enum
 

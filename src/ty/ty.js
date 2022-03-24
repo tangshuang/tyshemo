@@ -11,7 +11,7 @@ import {
 } from 'ts-fns'
 
 import { createType } from './rules.js'
-import { Tuple } from './tuple.js'
+import { Tupl } from './tuple.js'
 import { onlySupportLegacy } from '../shared/utils.js'
 
 export class Ty {
@@ -205,14 +205,14 @@ export class Ty {
       else if (isConstructor(target, 2)) {
         return class extends target {
           constructor(...args) {
-            const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
+            const tupl = isInstanceOf(type, Tupl) ? type : new Tupl(type)
             $this.try(() => $this.expect(args).to.be(tupl), `${target.name} constructor parameters should match {should} but receive {receive}`)
             return super(...args)
           }
         }
       }
       else if (isFunction(target)) {
-        const tupl = isInstanceOf(type, Tuple) ? type : new Tuple(type)
+        const tupl = isInstanceOf(type, Tupl) ? type : new Tupl(type)
         return function(...args) {
           $this.try(() => $this.expect(args).to.be(tupl), `${title} parameters {keyPath} should match {should} but receive {receive}`)
           const result = target.apply(this, args)

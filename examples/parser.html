@@ -3,7 +3,7 @@
 <script type="module">
 import Dict from './dict.js'
 import List from './list.js'
-import Tuple from './tuple.js'
+import Tupl from './tuple.js'
 import Enum from './enum.js'
 import Range from './range.js'
 
@@ -16,7 +16,7 @@ const book = new Dict({
   name: String8,
   price: Float,
 })
-const parents = new Tuple([String, String])
+const parents = new Tupl([String, String])
 const sex = new Enum(['F', 'M'])
 const height = new Range({ min: 120, max: 200, maxBound: false, minBound: true })
 const dict = new Dict({

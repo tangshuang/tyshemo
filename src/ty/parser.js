@@ -41,7 +41,7 @@ import {
 import { Type } from './type.js'
 import { Dict } from './dict.js'
 import { List } from './list.js'
-import { Tuple, tuple } from './tuple.js'
+import { Tupl, tuple } from './tuple.js'
 import { Enum, enumerate } from './enum.js'
 import { Range } from './range.js'
 import { Mapping } from './mapping.js'
@@ -144,7 +144,7 @@ export class Parser {
             item = item.substr(1, item.length - 2)
             const texts = item.split(':@:')
             const prototypes = texts.map(item => parse(item))
-            return new Tuple(prototypes)
+            return new Tupl(prototypes)
           }
           // list [a|b]
           else if (item.charAt(0) === '[' && item.substr(-1) === ']') {
@@ -441,7 +441,7 @@ export class Parser {
       if (isInstanceOf(value, Dict)) {
         sign = build(value.pattern)
       }
-      else if (isInstanceOf(value, Tuple)) {
+      else if (isInstanceOf(value, Tupl)) {
         const { pattern } = value
         const items = pattern.map(build)
         if (ruleStyle) {

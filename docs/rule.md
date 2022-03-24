@@ -2,19 +2,19 @@
 
 Rule is to describe the logic type of a property.
 
-In tyshemo, you should use rule in `Dict` and `Tuple` to control properties' logic type.
+In tyshemo, you should use rule in `Dict` and `Tupl` to control properties' logic type.
 
 ## Usage
 
 ```js
-import { ifexist } from 'tyshemo'
+import { ifexist, Dict, Tupl } from 'tyshemo'
 
 const SomeDict = new Dict({
   // use `ifexist` rule on a dict property
   some: ifexist(String),
 })
 
-const SomeTuple = new Tuple([
+const SomeTuple = new Tupl([
   Number,
   // use `ifexist` rule on the last items of tuple
   ifexist(String),
@@ -269,13 +269,13 @@ const SomeType = dict({
 ### lambda
 
 ```
-lambda(:Tuple|array, :Type)
+lambda(:Tupl|array, :Type)
 ```
 
 The property should be a function with given parameters type and return type.
 
 ```js
-const SomeTuple = new Tuple([Number, Number])
+const SomeTuple = new Tupl([Number, Number])
 const SomeType = new Dict({
   do: lambda(SomeTuple, Number),
 })

@@ -63,7 +63,7 @@ The grammar is very easy:
   - `["string"]` the same as `string[]`
   - `["string", "number"]` the same as `"[string|number]"`
 - Enum: `"string|number"`, use a `|` to split type string
-- Tuple: `"(string,number)"`, use `()` to wrap up. Notice, there should no space after `,`, the words should follow by follow.
+- Tupl: `"(string,number)"`, use `()` to wrap up. Notice, there should no space after `,`, the words should follow by follow.
 - Dict: `{...}`, just use a sub-object to stand for dict.
 - Mapping: `"{numeric:string}"`, use `{}` to wrap up, words before `:` is the type of key, after `:` is  the type of value.
 - Range:
@@ -269,7 +269,7 @@ When you initailize a Parser, you can pass a types mapping object into Parser.
 ```js
 // create my own types
 const types = {
-  some: new Tuple([String, Number]),
+  some: new Tupl([String, Number]),
 }
 
 // pass it as initialize parameter

@@ -10,7 +10,7 @@ import {
 
 import Type from './type.js'
 import Rule from './rule.js'
-import Tuple from './tuple.js'
+import Tupl from './tuple.js'
 import TyError from './ty-error.js'
 
 import Dict from './dict.js'
@@ -353,13 +353,13 @@ export function nonable(pattern) {
 
 /**
  * Wether the value is a function
- * @param {Tuple} InputType
+ * @param {Tupl} InputType
  * @param {Any} OutputType
  */
 export function lambda(_InputType, _OutputType) {
-  const InputType =  isArray(_InputType) ? new Tuple(_InputType) : _InputType
-  if (!isInstanceOf(InputType, Tuple)) {
-    throw new Error('lambda InputType should be a Tuple')
+  const InputType =  isArray(_InputType) ? new Tupl(_InputType) : _InputType
+  if (!isInstanceOf(InputType, Tupl)) {
+    throw new Error('lambda InputType should be a Tupl')
   }
   const OutputType = !isInstanceOf(_OutputType, Type) ? createType(_OutputType) : _OutputType
   const rule = new Rule({

@@ -125,7 +125,7 @@ function date(message) {
   return match(/^[1-2][0-9]{3}\-[0-1][0-9]\-[0-3][0-9]/, message, 'date')
 }
 
-function match(validator, message, name) {
+function match(validator, message, name = 'match') {
   return new Validator({
     name,
     validate(value) {

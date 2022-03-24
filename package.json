@@ -3,6 +3,7 @@
   "version": "11.24.0",
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
+  "types": "index.d.ts",
   "scripts": {
     "postversion": "git add . && git commit -m \"update version to $npm_package_version\"",
     "prepublishOnly": "npm run test && npm run build",

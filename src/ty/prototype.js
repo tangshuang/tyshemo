@@ -50,10 +50,10 @@ Prototype.unregister = (...args) => {
     }
   }
 }
-Prototype.find = proto => prototypes.find(item => item.proto === proto)
+const find = proto => prototypes.find(item => item.proto === proto)
 Prototype.is = (proto) => ({
   // Prototype.is(Number).existing()
-  existing: () => isNaN(proto) || isInstanceOf(proto, RegExp) || !!Prototype.find(proto) || isInstanceOf(proto, Prototype) || isConstructor(proto) || isInheritedOf(proto, Prototype),
+  existing: () => isNaN(proto) || isInstanceOf(proto, RegExp) || !!find(proto) || isInstanceOf(proto, Prototype) || isConstructor(proto) || isInheritedOf(proto, Prototype),
 
   // Prototype.is(Number).typeof(10)
   typeof: (value) => {
@@ -65,7 +65,7 @@ Prototype.is = (proto) => ({
       return new proto().validate(value)
     }
 
-    const item = Prototype.find(proto)
+    const item = find(proto)
     if (item) {
       return item.validate(value)
     }

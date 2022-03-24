@@ -36,7 +36,7 @@ Rule ---------+        |                                          |
 In this document, you will read:
 
 - Core concepts: Prototype, Rule, Type, Meta, Schema, Store, Model
-- Core APIs: Dict, List, Tuple, Ty...
+- Core APIs: Dict, List, Tupl, Ty...
 - TyError: custom error message
 - Parser: use json to describe data type system
 - Mocker: create mock data by defined type

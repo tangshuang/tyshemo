@@ -36,7 +36,7 @@ import {
 import { Type } from './type.js'
 import { Dict } from './dict.js'
 import { List } from './list.js'
-import { Tuple } from './tuple.js'
+import { Tupl } from './tuple.js'
 import { Enum } from './enum.js'
 import { Range } from './range.js'
 import { Mapping } from './mapping.js'
@@ -106,7 +106,7 @@ export class Mocker {
         }
 
         const { pattern } = target
-        if (isInstanceOf(target, Dict) || isInstanceOf(target, Tuple)) {
+        if (isInstanceOf(target, Dict) || isInstanceOf(target, Tupl)) {
           return makeObj(pattern, path)
         }
         else if (isInstanceOf(target, List)) {
