@@ -494,13 +494,8 @@ export declare class Model implements AnyObj {
   constructor(data: AnyObj, parent: [Model, string]);
 
   $views: {
-    $changed: boolean,
-    readonly $errors: any[],
-    readonly $state: AnyObj,
-  } & {
-    readonly [key: string]: View,
+    [field: string]: AnyObj;
   };
-
   $root: this | null;
   $parent: this | null;
   $keyPath: string[];
@@ -522,7 +517,7 @@ export declare class Model implements AnyObj {
   setParent(parent: [Model, string]): this;
   setAttr(key: string): (attr: string, value: any) => void;
 
-  watch(key: string, fn: IWatchFn): this;
+  watch(key: string, fn: IWatchFn, deep: boolean): this;
   unwatch(key: string, fn: IWatchFn): this;
 
   fromJSON(data: AnyObj, keysPatchToThis: string[]): this;
