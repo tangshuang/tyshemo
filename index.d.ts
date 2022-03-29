@@ -756,11 +756,11 @@ export declare class Factory {
 }
 
 export declare interface meta {
-  (entry: Obj, options: Obj, methods: Obj): PropertyDecorator;
+  (entry: typeof Meta | Meta | Model | Model[], options: Obj, methods: Obj, legacy?: boolean): PropertyDecorator;
 }
 
 export declare interface state {
-  (): PropertyDecorator;
+  (legacy?: boolean): PropertyDecorator;
 }
 
 export declare interface type {

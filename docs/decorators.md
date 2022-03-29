@@ -41,6 +41,22 @@ class SomeModel extends Model {
 ```
 
 ```js
+@meta(entry: Meta | MetaOptions | Model | [Model], options: MetaOptions, methods: FactoryMethodsOptions, legacy?: boolean)
+```
+
+- entry: the given meta attributes information
+- options & methods: passed into Factory.getMeta(Some, options, methods)
+- legacy: if true, fit for babel; if false or not pass, fit for typescript
+
+
+```js
+@state(legacy?: boolean)
+```
+
+- legacy: if true, fit for babel; if false or not pass, fit for typescript
+
+
+```js
 class Person {
   @type(String)
   name = ''
