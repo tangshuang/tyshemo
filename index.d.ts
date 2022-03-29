@@ -386,7 +386,7 @@ interface IWatchFn {
 }
 
 export declare class Store {
-  constructor(params: Obj);
+  constructor(params?: Obj);
 
   init(params: Obj): void;
 
@@ -428,7 +428,7 @@ export declare class Validator {
   break?: boolean;
   async?: boolean;
 
-  constructor(options: ValidatorOptions);
+  constructor(options?: ValidatorOptions);
 
   static readonly required: (message: string, emptyFn?: Function) => Validator;
   static readonly maxLen: (len: number, message: string) => Validator;
@@ -447,7 +447,7 @@ export declare class Validator {
 }
 
 export declare class Meta {
-  constructor(options: typeof Meta & Obj);
+  constructor(options?: typeof Meta & Obj);
 
   /**
    * field default value, used by `reset` `formJSON` and so on
@@ -626,7 +626,7 @@ type View = IView & Obj
 type ModelClass = new () => Model;
 
 export declare class Model implements Obj {
-  constructor(data: Obj, parent?: [Model, string | string[]]);
+  constructor(data?: Obj, parent?: [Model, string | string[]]);
 
   $views: {
     [field: string]: View;
