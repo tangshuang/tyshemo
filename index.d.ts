@@ -197,7 +197,7 @@ export declare class Mapping extends Type {
 export declare function mapping(options: { key: any, value: any }): Mapping;
 
 export declare class SelfRef {
-  constructor(fn: (self: this) => any);
+  constructor(fn: (self: SelfRef) => any);
 }
 
 export declare function selfref(fn: (self: SelfRef) => any): SelfRef;
@@ -245,8 +245,10 @@ export declare function shouldnotmatch(pattern: any, message: IMessage): Rule;
 export declare function ifexist(pattern: any): Rule;
 
 export declare function ifnotmatch(pattern: any, callback: (data: Obj, key: string) => any): Rule;
+export declare function ifnotmatch(pattern: any, callback: any): Rule;
 
 export declare function ifmatch(pattern: any, callback: (data: Obj, key: string) => any): Rule;
+export declare function ifmatch(pattern: any, callback: any): Rule;
 
 export declare function shouldexist(determine: (data: Obj) => boolean, pattern: any): Rule;
 
@@ -428,7 +430,7 @@ export declare class Validator {
 
   constructor(options: ValidatorOptions);
 
-  static readonly required: (message: string, emptyFn: Function) => Validator;
+  static readonly required: (message: string, emptyFn?: Function) => Validator;
   static readonly maxLen: (len: number, message: string) => Validator;
   static readonly minLen: (len: number, message: string) => Validator;
   static readonly len: (len: number, message: string) => Validator;
@@ -444,52 +446,182 @@ export declare class Validator {
   static readonly anyOf: (validators: (Function & ThisType<Model>)[], message: string) => Validator;
 }
 
-interface MetaOptions {
-  default: any;
-  compute?: () => any;
-  type?: any;
-  message?: string;
-  force?: boolean;
-  validators?: (Validator | ValidatorOptions)[];
-  create?: (value: any, key: string, data: Obj) => any;
-  save?: (value: any, key: string, data: Obj) => Obj | any;
-  asset?: string;
-  drop?: (value: any, key: string, data: Obj) => boolean;
-  map?: (value: any, key: string, data: Obj) => any;
-  flat?: (value: any, key: string, data: Obj) => Obj;
-  to?: string;
-  setter?: (value: any, key: string) => any;
-  getter?: (value: any, key: string) => any;
-  formatter?: (value: any, key: string) => any;
-  readonly?: boolean | ((value: any, key: string) => boolean);
-  disabled?: boolean | ((value: any, key: string) => boolean);
-  hidden?: boolean | ((value: any, key: string) => boolean);
-  required?: boolean | ((value: any, key: string) => boolean);
-  empty: (value: any, key: string) => boolean;
-  watch: (e: { value: any }) => void;
-  state: () => Obj;
-  deps: () => { [key: string]: Meta };
-  catch: (error: Error) => void;
-  [key: string]: any;
-}
 export declare class Meta {
-  constructor(options: MetaOptions);
+  constructor(options: typeof Meta & { [key: string]: any });
+
+  /**
+   * field default value, used by `reset` `formJSON` and so on
+   */
+  static default: any;
+  /**
+   * field is a computed field, value will be computed until be changed by `set`
+   */
+  static compute?: () => any;
+  /**
+   * calculate value when init and the dependencies change,
+   * different from `compute`, it will rewrite value when inside dependencies change,
+   * you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change
+   */
+  static activate?: () => any;
+  /**
+   * field value type
+   */
+  static type?: any;
+  /**
+   * error message when set a value not match `type`
+   */
+  static message?: string;
+  /**
+   * force set `default` when value not match `type`
+   */
+  static force?: boolean;
+  /**
+   * validators used by `validate` or `validateAsync`
+   */
+  static validators?: (Validator | ValidatorOptions)[];
+  /**
+   * create field value used by `formJSON`
+   */
+  static create?: (value: any, key: string, data: Obj) => any;
+  /**
+   * export field value used by `toJSON`
+   */
+  static save?: (value: any, key: string, data: Obj) => Obj | any;
+  /**
+   * if without `create` and `save`, asset will used as field read proof
+   */
+  static asset?: string;
+  /**
+   * whether drop this field when `toData()`
+   */
+  static drop?: (value: any, key: string, data: Obj) => boolean;
+  /**
+   * transfer the field value when `toData()`
+   */
+  static map?: (value: any, key: string, data: Obj) => any;
+  /**
+   * flat another data to output data of `toData()`
+   */
+  static flat?: (value: any, key: string, data: Obj) => Obj;
+  /**
+   * transfer field name to `to` when `toData`
+   */
+  static to?: string;
+  /**
+   * transfer given value when `set`
+   */
+  static setter?: (value: any, key: string) => any;
+  /**
+   * transfer output value when `get`
+   */
+  static getter?: (value: any, key: string) => any;
+  /**
+   * format field value when use `view.text`
+   */
+  static formatter?: (value: any, key: string) => any;
+  /**
+   * whether the field is readonly, `set` will not work
+   */
+  static readonly?: boolean | ((value: any, key: string) => boolean);
+  /**
+   * whether the field is useless, `drop` will be set true, validators will not work
+   */
+  static disabled?: boolean | ((value: any, key: string) => boolean);
+  /**
+   * whether hide the field, without any effect on model, just a UI helper
+   */
+  static hidden?: boolean | ((value: any, key: string) => boolean);
+  /**
+   * whether the field is required, should be used together with Validator.required in `vlaidators`
+   */
+  static required?: boolean | ((value: any, key: string) => boolean);
+  /**
+   * determine the field is empty, used with `required`
+   */
+  static empty?: (value: any, key: string) => boolean;
+  /**
+   * provide state
+   */
+  static state?: () => Obj;
+  /**
+   * provide deps
+   */
+  static deps?: () => { [key: string]: Meta | (new () => Meta) };
+  /**
+   * provide information about deps, it means this field should must work with this metas
+   */
+  static needs?: () => Array<Meta | (new () => Meta)>;
+  /**
+   * invoked when Model initialized
+   */
+  static init?: () => void;
+  /**
+   * invoked when field value changed
+   */
+  static watch?: (e: { value: any }) => void;
+  /**
+   * when **other** fields changed, follow function will be triggered,
+   * current field changing will NOT be triggered (use watch instead)
+   */
+  static follow?: (key: string) => void;
+  /**
+   * invoked errors occur when field change
+   */
+  static catch?: (error: Error) => void;
 }
 
-interface View {
+interface IView {
+  /**
+   * field name
+   */
   key: string;
+  /**
+   * field value, transfered by `getter`
+   */
   value: any;
+  /**
+   * field original value, stored inside a Store
+   */
   data: any;
+  /**
+   * field text formatted by `formatter`
+   */
   text: string;
+  /**
+   * state refer to current field
+   */
   state: Obj;
+  /**
+   * field absolute keyPath
+   */
   absKeyPath: string[];
+  /**
+   * errors by validators
+   */
   errors: any[];
+  /**
+   * is empty? by `empty`
+   */
   empty: boolean;
+  /**
+   * is readonly? by `readonly`
+   */
   readonly: boolean;
+  /**
+   * is disabled? by `disabled`
+   */
   disabled: boolean;
+  /**
+   * is hidden? by `hidden`
+   */
   hidden: boolean;
+  /**
+   * is required? by `required`
+   */
   required: boolean;
 }
+
+type View = IView & { [key: string]: any }
 
 type ModelClass = new () => Model;
 
@@ -497,7 +629,7 @@ export declare class Model implements Obj {
   constructor(data: Obj, parent?: [Model, string | string[]]);
 
   $views: {
-    [field: string]: Obj;
+    [field: string]: View;
   };
   $root: this | null;
   $parent: this | null;
@@ -543,9 +675,9 @@ export declare class Model implements Obj {
   reflect(Meta: Meta): View;
   reflect<T>(Meta: Meta, getter: (key: string) => T): T;
   memo<T, U>(
-    getter: (() => T) & ThisType<this>,
-    compare: ((prev: U) => boolean) & ThisType<this>,
-    depend?: ((value: T) => U) & ThisType<this>,
+    getter: (() => T) & ThisType<Model>,
+    compare: ((prev: U) => boolean) & ThisType<Model>,
+    depend?: ((value: T) => U) & ThisType<Model>,
   ): any;
 
   onInit(): void;
