@@ -145,7 +145,7 @@ export declare class Type {
 
 export declare class Dict extends Type {
   constructor(pattern: Obj);
-  extend(fields: { [key: stirng]: any }): Dict;
+  extend(fields: Obj): Dict;
   extract(fields: { [key: string]: boolean }): Dict;
 }
 
@@ -447,7 +447,7 @@ export declare class Validator {
 }
 
 export declare class Meta {
-  constructor(options: typeof Meta & { [key: string]: any });
+  constructor(options: typeof Meta & Obj);
 
   /**
    * field default value, used by `reset` `formJSON` and so on
@@ -621,7 +621,7 @@ interface IView {
   required: boolean;
 }
 
-type View = IView & { [key: string]: any }
+type View = IView & Obj
 
 type ModelClass = new () => Model;
 
@@ -697,7 +697,7 @@ export declare class Model implements Obj {
   static toEdit: new () => EditorModel;
 }
 
-class EditorModel extends Model {
+declare class EditorModel extends Model {
   /**
    * create a mirror
    * @param tag
@@ -727,18 +727,16 @@ class EditorModel extends Model {
 }
 
 export declare function AsyncGetter(defaultValue: any, getter: Function): {
-  $$type: 'asyncRef',
-  [key: string]: any;
-};
+  $$type: 'asyncRef';
+} & Obj;
 
 export declare function MemoGetter<T, U>(
-  getter: (() => T) & ThisType<this>,
-  compare: ((prev: U) => boolean) & ThisType<this>,
-  depend?: ((value: T) => U) & ThisType<this>,
+  getter: (() => T) & ThisType<Model>,
+  compare: ((prev: U) => boolean) & ThisType<Model>,
+  depend?: ((value: T) => U) & ThisType<Model>,
 ): {
-  $$type: 'memoRef',
-  [key: string]: any;
-};
+  $$type: 'memoRef'
+} & Obj;
 
 export declare class Factory {
   entry(entries: ModelClass): ModelClass;
