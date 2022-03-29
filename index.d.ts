@@ -450,13 +450,13 @@ interface MetaOptions {
   type?: any;
   message?: string;
   force?: boolean;
-  validators?: ValidatorOptions[];
-  create?: (value: any, key: string, data: AnyObj) => any;
-  save?: (value: any, key: string, data: AnyObj) => AnyObj | any;
+  validators?: (Validator | ValidatorOptions)[];
+  create?: (value: any, key: string, data: Obj) => any;
+  save?: (value: any, key: string, data: Obj) => Obj | any;
   asset?: string;
-  drop?: (value: any, key: string, data: AnyObj) => boolean;
-  map?: (value: any, key: string, data: AnyObj) => any;
-  flat?: (value: any, key: string, data: AnyObj) => AnyObj;
+  drop?: (value: any, key: string, data: Obj) => boolean;
+  map?: (value: any, key: string, data: Obj) => any;
+  flat?: (value: any, key: string, data: Obj) => Obj;
   to?: string;
   setter?: (value: any, key: string) => any;
   getter?: (value: any, key: string) => any;
@@ -467,7 +467,7 @@ interface MetaOptions {
   required?: boolean | ((value: any, key: string) => boolean);
   empty: (value: any, key: string) => boolean;
   watch: (e: { value: any }) => void;
-  state: () => AnyObj;
+  state: () => Obj;
   deps: () => { [key: string]: Meta };
   catch: (error: Error) => void;
   [key: string]: any;
@@ -481,7 +481,7 @@ interface View {
   value: any;
   data: any;
   text: string;
-  state: AnyObj;
+  state: Obj;
   absKeyPath: string[];
   errors: any[];
   empty: boolean;
@@ -490,27 +490,32 @@ interface View {
   hidden: boolean;
   required: boolean;
 }
-export declare class Model implements AnyObj {
-  constructor(data: AnyObj, parent: [Model, string]);
+
+type ModelClass = new () => Model;
+
+export declare class Model implements Obj {
+  constructor(data: Obj, parent?: [Model, string | string[]]);
 
   $views: {
-    [field: string]: AnyObj;
+    [field: string]: Obj;
   };
   $root: this | null;
   $parent: this | null;
   $keyPath: string[];
   $absKeyPath: string[];
 
-  schema(Schema?: any): AnyObj;
-  state(): AnyObj;
-  attrs(): AnyObj;
+  schema(Schema?: any): Obj;
+  state(): Obj;
+  attrs(): Obj;
 
-  restore(data: AnyObj, keysPatchToThis: string[]): this;
+  restore(data: Obj, keysAddToThis?: string[]): this;
   get(keyPath: string | string[]): any;
   use(keyPath: string | string[]): View;
-  set(keyPath: string | string[], next: any, force: boolean): this;
-  update(data: AnyObj): this;
+  use<T>(keyPath: string | string[], getter: (view: View) => T): T;
+  set(keyPath: string | string[], next: any, force?: boolean): this;
+  update(data: Obj): this;
   reset(key: string): this;
+  patch(data: Obj): this;
   define(key: string, value: Function | any): any;
   lock(): void;
   unlock(): void;
@@ -520,22 +525,23 @@ export declare class Model implements AnyObj {
   watch(key: string, fn: IWatchFn, deep: boolean): this;
   unwatch(key: string, fn: IWatchFn): this;
 
-  fromJSON(data: AnyObj, keysPatchToThis: string[]): this;
-  fromJSONPatch(data: AnyObj, onlyKeys: string[]): this;
-  toJSON(): AnyObj;
-  toData(): AnyObj;
-  toParams(determine: (value: any) => boolean): AnyObj;
+  fromJSON(data: Obj, keysAddToThis?: string[]): this;
+  fromJSONPatch(data: Obj, onlyKeys: string[]): this;
+  toJSON(): Obj;
+  toData(): Obj;
+  toParams(determine: (value: any) => boolean): Obj;
   toFormData(determine: (value: any) => boolean): FormData;
-  validate(key: string): Error[] | any[];
-  validateAsync(key: string): Promise<Error[] | any[]>;
+  validate(key: string | string[]): Error[] | any[];
+  validateAsync(key: string | string): Promise<Error[] | any[]>;
 
   on(hook: string, fn: Function): this;
   off(hook: string, fn: Function): this;
   emit(hook: string, ...args: any[]): void;
 
-  toEdit(next: AnyObj): this;
+  toEdit(next: Obj): this;
 
-  reflect<T>(Meta: Meta, fn?: (key: string) => T): View | T;
+  reflect(Meta: Meta): View;
+  reflect<T>(Meta: Meta, getter: (key: string) => T): T;
   memo<T, U>(
     getter: (() => T) & ThisType<this>,
     compare: ((prev: U) => boolean) & ThisType<this>,
@@ -543,20 +549,49 @@ export declare class Model implements AnyObj {
   ): any;
 
   onInit(): void;
-  onSwitch(params: AnyObj): AnyObj;
-  onParse(data: AnyObj): AnyObj;
-  onRecord(data: AnyObj): AnyObj;
-  onExport(data: AnyObj): AnyObj;
+  onSwitch(params: Obj): Obj;
+  onParse(data: Obj): Obj;
+  onRecord(data: Obj): Obj;
+  onExport(data: Obj): Obj;
   onCheck(): void;
   onError(): void;
   onEnsure(): void;
   onRestore(): void;
   onRegress(): void;
   onChange(key: string): void;
-  onEdit(): void;
+  onEdit(): EditorModel;
 
-  static extend(next: AnyObj): NautilModel;
-  static toEdit: NautilModel;
+  static extend(next: Obj): ModelClass;
+  static toEdit: new () => EditorModel;
+}
+
+class EditorModel extends Model {
+  /**
+   * create a mirror
+   * @param tag
+   */
+  commit(tag: string): void;
+  /**
+   * rollback to the given named mirror
+   * @param tag
+   */
+  rollback(tag: string): void;
+  /**
+   * cancel the previous change
+   */
+  undo(): void;
+  /**
+   * redo the previous undo
+   */
+  redo(): void;
+  /**
+   * clear all change records
+   */
+  clear(): void;
+  /**
+   * submit changes to original model instance
+   */
+  submit(): void;
 }
 
 export declare function AsyncGetter(defaultValue: any, getter: Function): {
@@ -574,9 +609,9 @@ export declare function MemoGetter<T, U>(
 };
 
 export declare class Factory {
-  entry(entries: NautilModel): NautilModel;
-  entry(entries: NautilModel[]): NautilModel[];
-  instance(model: NautilModel, ctx: NautilModel): NautilModel;
+  entry(entries: ModelClass): ModelClass;
+  entry(entries: ModelClass[]): ModelClass[];
+  instance(model: ModelClass, ctx: ModelClass): ModelClass;
   default(fn: Function): Function;
   type(type: any): any;
   validators(validators: Validator[]): Validator[];
@@ -586,8 +621,8 @@ export declare class Factory {
   setter(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
   getMeta(): Meta;
 
-  static useAttrs(Model: NautilModel, attrs: [string, string, Function][]): NautilModel;
-  static getMeta(entries: NautilModel | NautilModel[]): Meta;
+  static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
+  static getMeta(entries: ModelClass | ModelClass[]): Meta;
 }
 
 export declare interface meta {
