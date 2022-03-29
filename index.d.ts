@@ -413,24 +413,18 @@ export declare class Store {
   forceDispatch(keyPath: string | (string | symbol)[], ...args: any[]): boolean;
 }
 
-interface ValidatorOptions {
+interface ValidatorOptions<T extends Model> {
   name?: string;
-  determine?: boolean | ((value: any) => boolean);
-  validate: (value: any, key: string) => boolean | Error;
+  determine?: boolean | (this: T, (value: any) => boolean);
+  validate: (this: T, value: any, key: string) => boolean | Error;
   message: string;
   break?: boolean;
   async?: boolean;
 }
-export declare class Validator {
-  name?: string;
-  validate: (value: any, key: string) => boolean | Error;
-  message: string;
-  break?: boolean;
-  async?: boolean;
+export declare class Validator<T extends Model> {
+  constructor(options: ValidatorOptions<T>);
 
-  constructor(options?: ValidatorOptions);
-
-  static readonly required: (message: string, emptyFn?: Function) => Validator;
+  static readonly required: <T extends Model>(message: string, emptyFn?: (this: T, value: any) => boolean) => Validator;
   static readonly maxLen: (len: number, message: string) => Validator;
   static readonly minLen: (len: number, message: string) => Validator;
   static readonly len: (len: number, message: string) => Validator;
@@ -441,9 +435,9 @@ export declare class Validator {
   static readonly email: (message: string) => Validator;
   static readonly url: (message: string) => Validator;
   static readonly date: (message: string) => Validator;
-  static readonly match: (validator: RegExp | string | number | boolean | Function | any, message: string, name?: string) => Validator;
-  static readonly allOf: (validators: (Function & ThisType<Model>)[], message: string) => Validator;
-  static readonly anyOf: (validators: (Function & ThisType<Model>)[], message: string) => Validator;
+  static readonly match: <T extends Model>(validator: RegExp | string | number | boolean | ((this: T, value: any) => boolean) | any, message: string, name?: string) => Validator;
+  static readonly allOf: (validators: Validator[], message: string) => Validator;
+  static readonly anyOf: (validators: Validator[], message: string) => Validator;
 }
 
 export declare class Meta {
