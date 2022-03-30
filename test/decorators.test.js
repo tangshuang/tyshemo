@@ -2,21 +2,28 @@ import { meta, state } from '../src/decorators.js'
 import { Model } from '../src/model.js'
 
 class SomeModel extends Model {
-  @meta()
-  name = ''
-
-  @meta()
-  age = 10
+  @meta({
+    default: '',
+  })
+  name;
 
   @meta({
+    default: 10,
+  })
+  age;
+
+  @meta({
+    default: 30,
     compute() {
       return this.age * 30
     },
   })
-  height = 30
+  height;
 
-  @state()
-  weight = 40
+  @state({
+    value: 40,
+  })
+  weight;
 }
 
 describe('Decorators', () => {

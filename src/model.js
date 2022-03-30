@@ -24,7 +24,6 @@ import {
   createArray,
   makeKeyPath,
   hasOwnKey,
-  isEqual,
 } from 'ts-fns'
 
 import _Schema from './schema.js'
@@ -61,6 +60,12 @@ const DEFAULT_ATTRIBUTES = {
   catch: null,
   state: null,
   deps: null,
+}
+
+export class State {
+  constructor(options) {
+    Object.assign(this, options)
+  }
 }
 
 export class Model {
@@ -384,7 +389,24 @@ export class Model {
   }
 
   state() {
-    return {}
+    const properties = ofChain(this, Model)
+    const state = {}
+    each(properties, (item, key) => {
+      if (item && isInstanceOf(item, State)) {
+        const { value, get, set } = item
+        if (get || set) {
+          Object.defineProperty(state, key, {
+            get,
+            set,
+            enumerable: true,
+          })
+        }
+        else {
+          state[key] = value
+        }
+      }
+    })
+    return state
   }
 
   attrs() {

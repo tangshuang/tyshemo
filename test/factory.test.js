@@ -4,23 +4,35 @@ import { meta, state } from '../src/decorators.js'
 describe('Factory', () => {
   test('transport', () => {
     class Child extends Model {
-      @state()
-      is_ok = false
+      @state({
+        value: false,
+      })
+      is_ok;
     }
 
     class Parent extends Model {
-      @state()
-      is_ok = true
-
-      @meta()
-      count = 0
-
-      @meta([Child], null, {
-        transport(child, parent) {
-          child.is_ok = parent.is_ok
-        },
+      @state({
+        value: true,
       })
-      children = [{}]
+      is_ok;
+
+      @meta({
+        default: 0,
+      })
+      count;
+
+      @meta(
+        [Child],
+        {
+          default: [{}],
+        },
+        {
+          transport(child, parent) {
+            child.is_ok = parent.is_ok
+          },
+        },
+      )
+      children;
     }
 
     /**

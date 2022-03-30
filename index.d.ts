@@ -440,8 +440,9 @@ export declare class Validator<T extends Model = Model> {
   static readonly anyOf: (validators: Validator[], message: string) => Validator;
 }
 
+type Attrs = (typeof Meta) & Obj;
 export declare class Meta implements Obj {
-  constructor(options?: typeof Meta & Obj);
+  constructor(options?: Attrs);
 
   /**
    * field default value, used by `reset` `formJSON` and so on
@@ -741,14 +742,17 @@ export declare class Factory {
   save(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
   map(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
   setter(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
+  transport(child: Model, parent: Model): void;
   getMeta(): Meta;
 
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
   static getMeta(entries: ModelClass | ModelClass[], options?: Obj, methods?: Obj): Meta;
 }
 
-export declare function meta(entry: typeof Meta | Meta | Model | Model[], options?: Obj, methods?: Obj): PropertyDecorator;
+export declare function meta(entry: Attrs | (new () => Meta) | ModelClass | ModelClass[], options?: Attrs, methods?: Factory): PropertyDecorator;
 
-export declare function state(): PropertyDecorator;
+export declare function state(options: { value: any } | { get: () => any, set: (v: any) => void }): PropertyDecorator;
 
 export declare function type(type: any): PropertyDecorator;
+
+export declare function enhance(source: any): PropertyDecorator;

@@ -252,7 +252,7 @@ export class Factory {
     const Constructor = this
     const entity = new Constructor(entries, options)
     Object.assign(entity, methods)
-    return entity.meta
+    return entity.getMeta()
   }
 }
 export default Factory

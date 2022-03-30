@@ -1,145 +1,105 @@
 import { Meta } from './meta.js'
-import { isInheritedOf, isInstanceOf, isObject, isArray, clone } from 'ts-fns'
-import { Model } from './model.js'
+import { isInheritedOf, isInstanceOf, isObject, isArray, clone, isUndefined, fixNum } from 'ts-fns'
+import { Model, State } from './model.js'
 import { Factory } from './factory.js'
 import Ty from './ty/ty.js'
+import { onlySupportLegacy } from './shared/utils.js'
 
-export function meta(entry, options, methods) {
-  return (protos, prop, descriptor) => {
-    const isTs = protos && protos[Symbol.toStringTag] === 'Descriptor'
-    if (!isTs) {
-      const { initializer } = descriptor
+const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
+  onlySupportLegacy(protos)
 
-      if (isInheritedOf(entry, Meta) || isInstanceOf(entry, Meta)) {
-        const schema = protos.schema()
-        schema[prop] = entry
-        protos.schema = () => schema
-      }
-      else if (isInheritedOf(entry, Model) || (isArray(entry) && !entry.some(item => !isInheritedOf(item, Model)))) {
-        const attrs = {
-          default: initializer,
-          ...(options || {}),
-        }
-        const meta = Factory.getMeta(entry, attrs, methods)
-        const schema = protos.schema()
-        schema[prop] = meta
-        protos.schema = () => schema
-      }
-      else {
-        const attrs = {
-          default: initializer,
-        }
+  // only works for Model
+  if (force && !(protos instanceof Model)) {
+    throw new Error(`TySheMo: @${name} only works on class which extends Model.`)
+  }
 
-        if (entry && isObject(entry)) { // may be null
-          Object.assign(attrs, entry)
-        }
+  if (!key) {
+    throw new Error(`TySheMo: @${name} only works on a class property.`)
+  }
 
-        const schema = protos.schema()
-        schema[prop] = new Meta(attrs)
-        protos.schema = () => schema
-      }
-
-      // return an empty object to not redefine the property
-      return {}
+  /**
+   * should must decorate properties which has no value
+   * class Some extends Model {
+   *    @state({ value }) a; // without initializer
+   * }
+   */
+  if (descriptor) {
+    const oop = () => {
+      throw new Error(`TySheMo: @${name} only works on a class property which has no initializer.`)
     }
-    // typescript
+    if ('initializer' in descriptor) {
+      if (descriptor.initializer) {
+        console.log(key, descriptor.initializer())
+        oop()
+      }
+    }
     else {
-      if (descriptor) {
-        throw new Error(`[TySheMo]: @meta only works for a Model class property.`)
-      }
-
-      protos.__metas = protos.__metas || []
-      protos.__metas.push({
-        key,
-        entry,
-        options,
-        methods,
-      })
-
-      protos.schema = protos.schema || function() {
-        const metas = protos.__metas
-        const schema = {}
-        metas.forEach(({ key, entry, options, methods }) => {
-          const defaultValue = this[key]
-
-          if (isInheritedOf(entry, Meta) || isInstanceOf(entry, Meta)) {
-            schema[key] = entry
-          }
-          else if (isInheritedOf(entry, Model) || (isArray(entry) && !entry.some(item => !isInheritedOf(item, Model)))) {
-            const attrs = {
-              default: clone(defaultValue),
-              ...(options || {}),
-            }
-            const meta = Factory.getMeta(entry, attrs, methods)
-            schema[key] = meta
-          }
-          else {
-            const attrs = {
-              default: clone(defaultValue),
-            }
-
-            if (entry && isObject(entry)) { // may be null
-              Object.assign(attrs, entry)
-            }
-
-            schema[prop] = new Meta(attrs)
-          }
-        })
-        // remove the helper property
-        delete protos.__metas
-        return schema
-      }
+      oop()
     }
+  }
+  // if without descriptor -> in typescript
+
+  fn(protos, key)
+
+  // as previous determine, only babel legacy will work here
+  // make this property hidden in initialize
+  // without a undefined property on the instance
+  if (descriptor) {
+    return { writable: true, configurable: true };
   }
 }
 
-export function state() {
-  return (protos, prop, descriptor) => {
-    const isTs = protos && protos[Symbol.toStringTag] === 'Descriptor'
-    if (!isTs) {
-      const { initializer, ...others } = descriptor
-      const state = protos.state()
-      const desc = {
-        ...others,
-        configurable: true,
-      }
-      if (initializer) {
-        desc.value = initializer()
-        desc.writable = true
-      }
-      Object.defineProperty(state, prop, desc)
-      protos.state = () => state
+const define = (target, key, value) => {
+  Object.defineProperty(target, key, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  })
+}
 
-      return desc
+export function meta(entry, options, methods) {
+  return createDecorator('meta', (protos, key) => {
+    const CurrentModel = protos.constructor
+
+    if (isInheritedOf(entry, Meta) || isInstanceOf(entry, Meta)) {
+      define(CurrentModel, key, entry)
     }
-    // typescript
+    else if (isInheritedOf(entry, Model) || (isArray(entry) && !entry.some(item => !isInheritedOf(item, Model)))) {
+      const meta = Factory.getMeta(entry, options, methods)
+      define(CurrentModel, key, meta)
+    }
     else {
-      if (descriptor) {
-        throw new Error(`[TySheMo]: @state only works for a Model class property.`)
-      }
-
-      protos.__states = protos.__states || []
-      protos.__states.push({ key, attrs })
-
-      protos.state = protos.state || function() {
-        const states = protos.__states
-        const state = {}
-        states.forEach(({ key, attrs }) => {
-          if (attrs) {
-            Object.defineProperty(state, key, attrs)
-          }
-          else {
-            state[key] = this[key]
-          }
-        })
-        // remove the helper property
-        delete protos.__states
-        return state
+      if (isObject(entry)) {
+        const meta = new Meta(entry)
+        define(CurrentModel, key, meta)
       }
     }
-  }
+  }, true)
+}
+
+export function state(options) {
+  return createDecorator('state', (protos, key) => {
+    if (!('value' in options) && !options.get && !options.set) {
+      throw new Error(`TySheMo: @state params should not contain either value or get/set.`)
+    }
+    if ('value' in options && (options.get || options.set)) {
+      throw new Error(`TySheMo: @state params should not contain value and get/set together.`)
+    }
+
+    const CurrentModel = protos.constructor
+    const state = new State(options)
+    define(CurrentModel, key, state)
+  }, true)
 }
 
 export function type(...args) {
   return Ty.decorate.with(...args)
+}
+
+export function enhance(source) {
+  return createDecorator('enhance', (protos, key) => {
+    const CurrentModel = protos.constructor
+    define(CurrentModel, key, source)
+  })
 }
