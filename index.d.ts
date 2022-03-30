@@ -415,7 +415,7 @@ export declare class Store {
 
 interface ValidatorOptions<T extends Model> {
   name?: string;
-  determine?: boolean | (this: T, (value: any) => boolean);
+  determine?: boolean | ((this: T, value: any) => boolean);
   validate: (this: T, value: any, key: string) => boolean | Error;
   message: string;
   break?: boolean;
@@ -440,7 +440,7 @@ export declare class Validator<T extends Model> {
   static readonly anyOf: (validators: Validator[], message: string) => Validator;
 }
 
-export declare class Meta {
+export declare class Meta implements Obj {
   constructor(options?: typeof Meta & Obj);
 
   /**
@@ -564,7 +564,7 @@ export declare class Meta {
   static catch?: (error: Error) => void;
 }
 
-interface IView {
+interface View extends Obj {
   /**
    * field name
    */
@@ -614,8 +614,6 @@ interface IView {
    */
   required: boolean;
 }
-
-type View = IView & Obj
 
 type ModelClass = new () => Model;
 
@@ -669,9 +667,9 @@ export declare class Model implements Obj {
   reflect(Meta: Meta): View;
   reflect<T>(Meta: Meta, getter: (key: string) => T): T;
   memo<T, U>(
-    getter: (() => T) & ThisType<Model>,
-    compare: ((prev: U) => boolean) & ThisType<Model>,
-    depend?: ((value: T) => U) & ThisType<Model>,
+    getter: (this: this) => T,
+    compare: (this: this, prev: U) => boolean,
+    depend?: (this: this, value: T) => U,
   ): any;
 
   onInit(): void;
@@ -725,9 +723,9 @@ export declare function AsyncGetter(defaultValue: any, getter: Function): {
 } & Obj;
 
 export declare function MemoGetter<T, U>(
-  getter: (() => T) & ThisType<Model>,
-  compare: ((prev: U) => boolean) & ThisType<Model>,
-  depend?: ((value: T) => U) & ThisType<Model>,
+  getter: (this: Model) => T,
+  compare: (this: Model, prev: U) => boolean,
+  depend?: (this: Model, value: T) => U,
 ): {
   $$type: 'memoRef'
 } & Obj;
