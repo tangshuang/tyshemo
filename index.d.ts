@@ -747,7 +747,7 @@ export declare class Factory {
   static getMeta(entries: ModelClass | ModelClass[], options?: Obj, methods?: Obj): Meta;
 }
 
-export declare function meta(entry: typeof Meta | Meta | Model | Model[], options: Obj, methods: Obj): PropertyDecorator;
+export declare function meta(entry: typeof Meta | Meta | Model | Model[], options?: Obj, methods?: Obj): PropertyDecorator;
 
 export declare function state(): PropertyDecorator;
 
