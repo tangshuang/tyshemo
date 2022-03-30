@@ -413,7 +413,7 @@ export declare class Store {
   forceDispatch(keyPath: string | (string | symbol)[], ...args: any[]): boolean;
 }
 
-interface ValidatorOptions<T extends Model> {
+interface ValidatorOptions<T extends Model = Model> {
   name?: string;
   determine?: boolean | ((this: T, value: any) => boolean);
   validate: (this: T, value: any, key: string) => boolean | Error;
@@ -421,7 +421,7 @@ interface ValidatorOptions<T extends Model> {
   break?: boolean;
   async?: boolean;
 }
-export declare class Validator<T extends Model> {
+export declare class Validator<T extends Model = Model> {
   constructor(options: ValidatorOptions<T>);
 
   static readonly required: <T extends Model>(message: string, emptyFn?: (this: T, value: any) => boolean) => Validator;
@@ -744,11 +744,11 @@ export declare class Factory {
   getMeta(): Meta;
 
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
-  static getMeta(entries: ModelClass | ModelClass[]): Meta;
+  static getMeta(entries: ModelClass | ModelClass[], options?: Obj, methods?: Obj): Meta;
 }
 
-export declare function meta(entry: typeof Meta | Meta | Model | Model[], options: Obj, methods: Obj, legacy?: boolean): PropertyDecorator;
+export declare function meta(entry: typeof Meta | Meta | Model | Model[], options: Obj, methods: Obj): PropertyDecorator;
 
-export declare function state(legacy?: boolean): PropertyDecorator;
+export declare function state(): PropertyDecorator;
 
 export declare function type(type: any): PropertyDecorator;
