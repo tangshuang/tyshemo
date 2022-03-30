@@ -6,8 +6,8 @@ import Ty from './ty/ty.js'
 
 export function meta(entry, options, methods) {
   return (protos, prop, descriptor) => {
-    const isLegacy = protos && protos[Symbol.toStringTag] === 'Descriptor'
-    if (isLegacy) {
+    const isTs = protos && protos[Symbol.toStringTag] === 'Descriptor'
+    if (!isTs) {
       const { initializer } = descriptor
 
       if (isInheritedOf(entry, Meta) || isInstanceOf(entry, Meta)) {
@@ -95,8 +95,8 @@ export function meta(entry, options, methods) {
 
 export function state() {
   return (protos, prop, descriptor) => {
-    const isLegacy = protos && protos[Symbol.toStringTag] === 'Descriptor'
-    if (isLegacy) {
+    const isTs = protos && protos[Symbol.toStringTag] === 'Descriptor'
+    if (!isTs) {
       const { initializer, ...others } = descriptor
       const state = protos.state()
       const desc = {
@@ -114,7 +114,7 @@ export function state() {
     }
     // typescript
     else {
-      if (attrs && typeof attrs.value === 'function') {
+      if (descriptor) {
         throw new Error(`[TySheMo]: @state only works for a Model class property.`)
       }
 
