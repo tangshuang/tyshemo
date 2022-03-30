@@ -747,14 +747,8 @@ export declare class Factory {
   static getMeta(entries: ModelClass | ModelClass[]): Meta;
 }
 
-export declare interface meta {
-  (entry: typeof Meta | Meta | Model | Model[], options: Obj, methods: Obj, legacy?: boolean): PropertyDecorator;
-}
+export declare function meta(entry: typeof Meta | Meta | Model | Model[], options: Obj, methods: Obj, legacy?: boolean): PropertyDecorator;
 
-export declare interface state {
-  (legacy?: boolean): PropertyDecorator;
-}
+export declare function state(legacy?: boolean): PropertyDecorator;
 
-export declare interface type {
-  (type: any): PropertyDecorator;
-}
+export declare function type(type: any): PropertyDecorator;
