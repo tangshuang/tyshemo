@@ -636,7 +636,7 @@ export declare class Model implements Obj {
   restore(data: Obj, keysAddToThis?: string[]): this;
   get(keyPath: string | string[]): any;
   use(keyPath: string | string[]): View;
-  use<T>(keyPath: string | string[], getter: (view: View) => T): T;
+  use<T>(keyPath: string | string[], getter?: (view: View) => T): T;
   set(keyPath: string | string[], next: any, force?: boolean): this;
   update(data: Obj): this;
   reset(key: string): this;
@@ -647,26 +647,27 @@ export declare class Model implements Obj {
   setParent(parent: [Model, string]): this;
   setAttr(key: string): (attr: string, value: any) => void;
 
-  watch(key: string, fn: IWatchFn, deep: boolean): this;
+  watch(key: string, fn: IWatchFn, deep?: boolean): this;
   unwatch(key: string, fn: IWatchFn): this;
 
   fromJSON(data: Obj, keysAddToThis?: string[]): this;
-  fromJSONPatch(data: Obj, onlyKeys: string[]): this;
+  fromJSONPatch(data: Obj, onlyKeys?: string[]): this;
   toJSON(): Obj;
   toData(): Obj;
-  toParams(determine: (value: any) => boolean): Obj;
-  toFormData(determine: (value: any) => boolean): FormData;
-  validate(key: string | string[]): Error[] | any[];
-  validateAsync(key: string | string): Promise<Error[] | any[]>;
+  toParams(determine?: (value: any) => boolean): Obj;
+  toFormData(determine?: (value: any) => boolean): FormData;
+  validate(key?: string | string[]): Error[] | any[];
+  validateAsync(key?: string | string): Promise<Error[] | any[]>;
 
   on(hook: string, fn: Function): this;
   off(hook: string, fn: Function): this;
   emit(hook: string, ...args: any[]): void;
 
-  toEdit(next: Obj): this;
+  toEdit(next?: Obj): this;
 
   reflect(Meta: Meta): View;
   reflect<T>(Meta: Meta, getter: (key: string) => T): T;
+
   memo<T, U>(
     getter: (this: this) => T,
     compare: (this: this, prev: U) => boolean,
