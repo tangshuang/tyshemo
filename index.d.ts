@@ -593,7 +593,7 @@ interface View extends Obj {
   /**
    * errors by validators
    */
-  errors: any[];
+  errors: Error[] | any[];
   /**
    * is empty? by `empty`
    */
@@ -623,6 +623,10 @@ export declare class Model implements Obj {
 
   $views: {
     [field: string]: View;
+  } & {
+    $changed: boolean;
+    $state: Obj,
+    $errors: Error[] | any[];
   };
   $root: this | null;
   $parent: this | null;

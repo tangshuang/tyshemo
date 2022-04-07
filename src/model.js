@@ -867,6 +867,7 @@ export class Model {
       this.set(key, value, true)
       this.use(key, (view) => view.changed = false)
     }, true)
+    this.emit('reset')
     return this
   }
 
@@ -903,6 +904,8 @@ export class Model {
     }, true)
 
     this.$store.silent = silent
+
+    this.emit('patch')
 
     return this
   }
@@ -1314,6 +1317,8 @@ export class Model {
       }
     })
 
+    this.emit('update')
+
     return this
   }
 
@@ -1344,6 +1349,9 @@ export class Model {
     Object.defineProperty(this, key, def)
 
     const coming = isFunction(value) ? this.$store.define(key, value) : this.$store.set(key, value)
+
+    this.emit('define', key, value)
+
     return coming
   }
 
@@ -1377,16 +1385,21 @@ export class Model {
 
     if (isArray(key)) {
       const errors = []
+      const silent = this.$store.silent
+      this.$store.silent = true
       key.forEach((key) => {
         const errs = this.validate(key)
         errors.push(...errs)
       })
+      this.$store.silent = silent
+      this.emit('validate', '*', errors)
       return makeMsg(errors)
     }
 
     this._check(key, true)
     const value = this._getData(key)
     const errors = this.$schema.validate(key, value, this)
+    this.emit('validate', key, errors)
     return makeMsg(errors)
   }
 
@@ -1407,15 +1420,21 @@ export class Model {
     }
 
     if (isArray(key)) {
-      return Promise.all(key.map(key => this.validateAsync(key))).then((groups) => {
+      const silent = this.$store.silent
+      this.$store.silent = true
+      const errors = Promise.all(key.map(key => this.validateAsync(key))).then((groups) => {
         const errors = flatArray(groups.filter(group => !!group))
+        this.emit('validate', errors)
         return makeMsg(errors)
       })
+      this.$store.silent = silent
+      return errors
     }
 
     this._check(key, true)
     const value = this._getData(key)
     const errors =  this.$schema.validateAsync(key, value, this)
+    this.emit('validate', key, errors)
     return makeMsg(errors)
   }
 
@@ -1529,6 +1548,8 @@ export class Model {
     // reset changed, make sure changed=false after recompute
     this.$views.$changed = false
 
+    this.emit('fromJSON')
+
     return this
   }
 
@@ -1578,6 +1599,8 @@ export class Model {
     // we do not need $children
     delete this.$children
 
+    this.emit('fromJSONPatch')
+
     return this
   }
 
@@ -1620,6 +1643,9 @@ export class Model {
   }
 
   emit(hook, ...args) {
+    if (this.$store.silent) {
+      return
+    }
     this.$hooks.forEach((item) => {
       if (hook !== item.hook) {
         return
@@ -1655,10 +1681,12 @@ export class Model {
 
   lock() {
     this.$store.editable = true
+    this.emit('lock')
   }
 
   unlock() {
     this.$store.editable = false
+    this.emit('unlock')
   }
 
   setParent([parent, key]) {
