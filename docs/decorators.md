@@ -76,7 +76,28 @@ class A extends Model {
   @enhance(SomeMeta)
   some // -> notice, without value
 }
+
+console.log(A.some) // -> SomeMeta
 ```
+
+## @layoff()
+
+```js
+declare function layoff(): PropertyDecorator;
+```
+
+Invalidate properties which have no initializer.
+
+```js
+class S {
+  @layout()
+  some: string;
+}
+
+console.log(new S()) // -> without `some` own property
+```
+
+This always useful when you use typescript to declare a class property and do not want it to generate a property when using `@babel/plugin-proposal-class-properties` (in which will generate a property assigned `void 0` without initializer following standard proposal).
 
 ## @type()
 

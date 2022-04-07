@@ -38,7 +38,9 @@ const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
   }
   // if without descriptor -> in typescript
 
-  fn(protos, key)
+  if (fn) {
+    fn(protos, key)
+  }
 
   // as previous determine, only babel legacy will work here
   // this make this non-value-given property use the value from super class
@@ -56,16 +58,14 @@ const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
    * class B {
    *   constructor() {
    *     super()
-   *     id = this.id // -> here ensure id is using initialized value which is from super()
+   *     // without id assigned void
    *   }
    * }
    */
   if (descriptor) {
     return {
-      enumerable: descriptor.enumerable,
       writable: true,
       configurable: true,
-      initializer() { return this[key] },
     };
   }
 }
@@ -118,9 +118,27 @@ export function type(...args) {
   return Ty.decorate.with(...args)
 }
 
+/**
+ * Move the given property to the Class static property
+ * @param {*} source
+ * @returns
+ */
 export function enhance(source) {
   return createDecorator('enhance', (protos, key) => {
     const CurrentModel = protos.constructor
     define(CurrentModel, key, source)
   })
+}
+
+/**
+ * invalidate properties which have no initializer
+ * @returns
+ * @example
+ * class A {
+ *   @layoff()
+ *   some: string;
+ * }
+ */
+export function layoff() {
+  return createDecorator('layoff')
 }
