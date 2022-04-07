@@ -622,7 +622,11 @@ export class Model {
               this.$store.set(key, view.value, true)
             }
 
+            const prev = changed
             changed = !!status
+            if (prev !== changed) {
+              this.$store.forceDispatch(`!${key}.changed`, changed, prev)
+            }
           },
           enumerable: true,
         }
