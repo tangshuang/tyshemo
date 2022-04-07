@@ -1,5 +1,5 @@
 import { Meta } from './meta.js'
-import { isInheritedOf, isInstanceOf, isObject, isArray, clone, isUndefined, fixNum } from 'ts-fns'
+import { isInheritedOf, isInstanceOf, isObject, isArray } from 'ts-fns'
 import { Model, State } from './model.js'
 import { Factory } from './factory.js'
 import Ty from './ty/ty.js'
@@ -29,7 +29,6 @@ const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
     }
     if ('initializer' in descriptor) {
       if (descriptor.initializer) {
-        console.log(key, descriptor.initializer())
         oop()
       }
     }
@@ -42,10 +41,32 @@ const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
   fn(protos, key)
 
   // as previous determine, only babel legacy will work here
-  // make this property hidden in initialize
-  // without a undefined property on the instance
+  // this make this non-value-given property use the value from super class
+  /**
+   * class A {
+   *   id = 1;
+   * }
+   *
+   * class B {
+   *   id;
+   * }
+   *
+   * =>
+   *
+   * class B {
+   *   constructor() {
+   *     super()
+   *     id = this.id // -> here ensure id is using initialized value which is from super()
+   *   }
+   * }
+   */
   if (descriptor) {
-    return { writable: true, configurable: true };
+    return {
+      enumerable: descriptor.enumerable,
+      writable: true,
+      configurable: true,
+      initializer() { return this[key] },
+    };
   }
 }
 

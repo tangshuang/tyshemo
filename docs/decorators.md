@@ -31,7 +31,7 @@ class SomeController extends Controller {
 }
 ```
 
-> Notice: we are following `@babel/plugin-proposal-decorators@^7.14.5` decorators rules and should open `legacy` (stage 1) options.
+> Notice: we are following `proposal-decorators` **legacy** (stage 1).
 
 ```js
 const babelConfig = {
@@ -70,6 +70,13 @@ declare function enhance(source: any): PropertyDecorator;
 ```
 
 Patch any to current class.
+
+```js
+class A extends Model {
+  @enhance(SomeMeta)
+  some // -> notice, without value
+}
+```
 
 ## @type()
 
