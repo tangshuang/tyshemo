@@ -882,24 +882,27 @@ export class Model {
       return this
     }
 
-    this.$store._quietRun(() => {
-      // reset changed, make sure changed=false after recompute
-      this.collect(() => {
-        const keys = Object.keys(data)
-        keys.forEach((key) => {
-          if (!inObject(key, this)) {
-            return
-          }
+    const silent = this.$store.silent
+    this.$store.silent = true
 
-          const value = data[key]
-          this[key] = value
+    // reset changed, make sure changed=false after recompute
+    this.collect(() => {
+      const keys = Object.keys(data)
+      keys.forEach((key) => {
+        if (!inObject(key, this)) {
+          return
+        }
 
-          if (this.$views[key]) {
-            this.$views[key].changed = false
-          }
-        })
-      }, true)
-    })
+        const value = data[key]
+        this[key] = value
+
+        if (this.$views[key]) {
+          this.$views[key].changed = false
+        }
+      })
+    }, true)
+
+    this.$store.silent = silent
 
     this.emit('patch')
 
