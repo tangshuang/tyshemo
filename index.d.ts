@@ -757,3 +757,5 @@ export declare function state(options: { value: any } | { get: () => any, set: (
 export declare function type(type: any): PropertyDecorator;
 
 export declare function enhance(source: any): PropertyDecorator;
+
+export declare function layoff(): PropertyDecorator;
