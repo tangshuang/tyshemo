@@ -51,7 +51,8 @@ export function tryGet(get, use) {
   }
 }
 
-export function makeMsg(errors) {
+export function makeMsg(errs) {
+  const errors = errs.filter(item => item)
   if (errors.length) {
     errors.message = errors[0].message
   }

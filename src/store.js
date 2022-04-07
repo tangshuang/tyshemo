@@ -157,13 +157,10 @@ export class Store {
   }
 
   set(keyPath, value, silent) {
-    const prevSilent = this.silent
     if (silent) {
-      this.silent = true
-    }
-    assign(this.state, keyPath, value)
-    if (silent) {
-      this.silent = prevSilent
+      this._quietRun(() => {
+        assign(this.state, keyPath, value)
+      })
     }
     return value
   }
@@ -532,6 +529,13 @@ export class Store {
     return true
   }
 
+  _quietRun(fn) {
+    const silent = this.silent
+    this.silent = true
+    const res = fn()
+    this.silent = silent
+    return res
+  }
 }
 
 export default Store

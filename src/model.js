@@ -882,28 +882,24 @@ export class Model {
       return this
     }
 
-    const silent = this.$store.silent
+    this.$store._quietRun(() => {
+      // reset changed, make sure changed=false after recompute
+      this.collect(() => {
+        const keys = Object.keys(data)
+        keys.forEach((key) => {
+          if (!inObject(key, this)) {
+            return
+          }
 
-    this.$store.silent = true
+          const value = data[key]
+          this[key] = value
 
-    // reset changed, make sure changed=false after recompute
-    this.collect(() => {
-      const keys = Object.keys(data)
-      keys.forEach((key) => {
-        if (!inObject(key, this)) {
-          return
-        }
-
-        const value = data[key]
-        this[key] = value
-
-        if (this.$views[key]) {
-          this.$views[key].changed = false
-        }
-      })
-    }, true)
-
-    this.$store.silent = silent
+          if (this.$views[key]) {
+            this.$views[key].changed = false
+          }
+        })
+      }, true)
+    })
 
     this.emit('patch')
 
@@ -1366,76 +1362,59 @@ export class Model {
   }
 
   validate(key) {
+    const errs = this.onCheck(key) || []
+    this.emit('check', key, errs)
+
+    const validate = (key, emit) => {
+      this._check(key, true)
+      const value = this._getData(key)
+      const outs = this.$schema.validate(key, value, this)
+      const errors = [...errs, ...outs]
+      if (emit) {
+        this.emit('validate', [key], errors)
+      }
+      return makeMsg(errors)
+    }
+
     // validate all properties once together
-    if (!key) {
-      const errors = []
-
-      const errs = this.onCheck() || []
-      this.emit('check', errs)
-      errors.push(...errs)
-
-      const keys = Object.keys(this.$schema)
-      keys.forEach((key) => {
-        const errs = this.validate(key)
-        errors.push(...errs)
-      })
-
+    if (!key || isArray(key)) {
+      const keys = !key ? Object.keys(this.$schema) : key
+      const groups = keys.map((key) => validate(key))
+      const errors = [...errs, ...flatArray(groups)]
+      this.emit('validate', keys, errors)
       return makeMsg(errors)
     }
 
-    if (isArray(key)) {
-      const errors = []
-      const silent = this.$store.silent
-      this.$store.silent = true
-      key.forEach((key) => {
-        const errs = this.validate(key)
-        errors.push(...errs)
-      })
-      this.$store.silent = silent
-      this.emit('validate', '*', errors)
-      return makeMsg(errors)
-    }
-
-    this._check(key, true)
-    const value = this._getData(key)
-    const errors = this.$schema.validate(key, value, this)
-    this.emit('validate', key, errors)
-    return makeMsg(errors)
+    return validate(key, true)
   }
 
   validateAsync(key) {
+    const errs = this.onCheck() || []
+    this.emit('check', errs)
+
+    const validate = (key, emit) => {
+      this._check(key, true)
+      const value = this._getData(key)
+      return this.$schema.validateAsync(key, value, this).then((outs) => {
+        const errors = [...errs, ...outs]
+        if (emit) {
+          this.emit('validate', [key], errors)
+        }
+        return makeMsg(errors)
+      })
+    }
+
     // validate all properties once together
-    if (!key) {
-      const errors = []
-
-      const errs = this.onCheck() || []
-      this.emit('check', errs)
-      errors.push(...errs)
-
-      const keys = Object.keys(this.$schema)
-      return this.validateAsync(keys).then((errs) => {
-        errors.push(...errs)
+    if (!key || isArray(key)) {
+      const keys = !key ? Object.keys(this.$schema) : key
+      return Promise.all(keys.map(key => validate(key))).then((groups) => {
+        const errors = [...errs, ...flatArray(groups)]
+        this.emit('validate', keys, errors)
         return makeMsg(errors)
       })
     }
 
-    if (isArray(key)) {
-      const silent = this.$store.silent
-      this.$store.silent = true
-      const errors = Promise.all(key.map(key => this.validateAsync(key))).then((groups) => {
-        const errors = flatArray(groups.filter(group => !!group))
-        this.emit('validate', errors)
-        return makeMsg(errors)
-      })
-      this.$store.silent = silent
-      return errors
-    }
-
-    this._check(key, true)
-    const value = this._getData(key)
-    const errors =  this.$schema.validateAsync(key, value, this)
-    this.emit('validate', key, errors)
-    return makeMsg(errors)
+    return validate(key, true)
   }
 
   _getData(key) {
@@ -1643,9 +1622,6 @@ export class Model {
   }
 
   emit(hook, ...args) {
-    if (this.$store.silent) {
-      return
-    }
     this.$hooks.forEach((item) => {
       if (hook !== item.hook) {
         return
