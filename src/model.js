@@ -1531,6 +1531,7 @@ export class Model {
     this.$views.$changed = false
 
     this.emit('fromJSON')
+    this.emit('recover')
 
     return this
   }
@@ -1582,6 +1583,7 @@ export class Model {
     delete this.$children
 
     this.emit('fromJSONPatch')
+    this.emit('recover')
 
     return this
   }
