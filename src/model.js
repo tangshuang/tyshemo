@@ -73,6 +73,12 @@ export class Model {
     const $this = this
     const { parent, key } = options
 
+    define(this, '$hooks', [])
+    define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this._takeAttrs() })
+    define(this, '$$state', this._takeState())
+    define(this, '$$deps', {})
+    define(this, '$$memories', [])
+
     /**
      * create schema
      */
@@ -160,7 +166,7 @@ export class Model {
       }
     }
     // create schema
-    let schema = this.schema(Schema)
+    let schema = this._takeSchema(Schema)
     // support schema instance or object
     if (!isInstanceOf(schema, _Schema)) {
       schema = map(schema, (meta) => {
@@ -172,11 +178,6 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
-    define(this, '$hooks', [])
-    define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this.attrs() })
-    define(this, '$$state', this.state())
-    define(this, '$$deps', {})
-    define(this, '$$memories', [])
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {
@@ -383,14 +384,19 @@ export class Model {
     define(this, '$ready', Promise.resolve(this.onInit()))
   }
 
-  schema() {
+  _takeSchema() {
+    const Constructor = getConstructorOf(this)
+    const schema = Constructor.prototype.schema ? Constructor.prototype.schema.call(this) : {}
     // create schema by model's static properties
-    return ofChain(this, Model)
+    const chain = ofChain(this, Model)
+    Object.assign(chain, schema)
+    return chain
   }
 
-  state() {
+  _takeState() {
     const properties = ofChain(this, Model)
-    const state = {}
+    const Constructor = getConstructorOf(this)
+    const state = Constructor.prototype.state ? Constructor.prototype.state.call(this) : {}
     each(properties, (item, key) => {
       if (item && isInstanceOf(item, State)) {
         const { value, get, set } = item
@@ -409,8 +415,10 @@ export class Model {
     return state
   }
 
-  attrs() {
-    return {}
+  _takeAttrs() {
+    const Constructor = getConstructorOf(this)
+    const attrs = Constructor.prototype.attrs ? Constructor.prototype.attrs.call(this) : {}
+    return attrs
   }
 
   init(data = {}) {

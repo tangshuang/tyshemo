@@ -254,18 +254,18 @@ export class Loader {
     }
 
     class LoadedModel extends Model {
-      state() {
+      _takeState() {
         const stat = {}
         each(state, (value, key) => {
           stat[key] = parseAsyncGetter(value, globalScope.$new(this))
         })
         return stat
       }
-      attrs() {
-        const originalAttrs = super.attrs()
+      _takeAttrs() {
+        const originalAttrs = super._takeAttrs()
         return { ...originalAttrs, ...attrs }
       }
-      schema() {
+      _takeSchema() {
         const scope = globalScope.$new(this)
         const metas = {}
         const submodels = {}
