@@ -731,13 +731,25 @@ export class Model {
           return
         }
 
-        const meta = this.$schema[field]
-        const fn = meta.follow
-        if (!fn) {
-          return
+        const meta = this.$schema[key]
+        const { follow, needs, deps } = this.$schema[field]
+        if (follow) {
+          follow.call(this, makeKeyPath(key))
         }
 
-        fn.call(this, makeKeyPath(key))
+        if (needs) {
+          const needMetas = needs();
+          if (needMetas.some(item => item === meta || isInstanceOf(meta, item))) {
+            this.$store.forceDispatch(`!${field}`, `needs ${key}`)
+          }
+        }
+
+        if (deps) {
+          const depMap = deps()
+          if (depMap[key]) {
+            this.$store.forceDispatch(`!${field}`, `depends on ${key}`)
+          }
+        }
       })
 
       // check $parent

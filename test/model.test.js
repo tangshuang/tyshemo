@@ -1350,4 +1350,61 @@ describe('Model', () => {
     const dog = new DogModel()
     expect(dog.name).toBe('dog')
   })
+
+  test('trigger by needs', () => {
+    class NameField extends Meta {
+      static default = 'tomi'
+    }
+
+    class AgeField extends Meta {
+      static default = 0
+      static needs() {
+        return [NameField]
+      }
+    }
+
+    class SomeModel extends Model {
+      static $_name = NameField
+      static age = AgeField
+    }
+
+    let count = 0
+    const some = new SomeModel()
+    some.watch('!age', () => {
+      count ++
+    })
+
+    some.name = 'tom'
+
+    expect(count).toBe(1)
+  })
+
+  test('trigger by deps', () => {
+    class NameField extends Meta {
+      static default = 'tomi'
+    }
+
+    class AgeField extends Meta {
+      static default = 0
+      static deps() {
+        return {
+          name: NameField
+        }
+      }
+    }
+
+    class SomeModel extends Model {
+      static age = AgeField
+    }
+
+    let count = 0
+    const some = new SomeModel()
+    some.watch('!age', () => {
+      count ++
+    })
+
+    some.name = 'tom'
+
+    expect(count).toBe(1)
+  })
 })
