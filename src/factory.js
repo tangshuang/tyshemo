@@ -248,11 +248,22 @@ export class Factory {
     return NewModel
   }
 
-  static getMeta(entries, options, methods = {}) {
+  static getMeta(entries, attrs, hooks = {}) {
     const Constructor = this
-    const entity = new Constructor(entries, options)
-    Object.assign(entity, methods)
+    const entity = new Constructor(entries, attrs)
+    Object.assign(entity, hooks)
     return entity.getMeta()
   }
 }
 export default Factory
+
+export function createMeta(...args) {
+  const [entries] = args
+  if (isArray(entries) && !entries.some(entry => !isInheritedOf(entry, Model))) {
+    return Factory.getMeta(...args)
+  }
+  if (isInheritedOf(entries, Model)) {
+    return Factory.getMeta(...args)
+  }
+  return new Meta(attrs)
+}

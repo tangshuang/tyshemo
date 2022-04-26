@@ -565,6 +565,10 @@ export declare class Meta implements Obj {
   static catch?: (error: Error) => void;
 }
 
+declare function createMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: Obj & ThisType<Factory>): Meta;
+declare function createMeta<T = Model>(attrs: Obj & ThisType<T>): Meta;
+export { createMeta }
+
 interface View extends Obj {
   /**
    * field name
@@ -751,7 +755,7 @@ export declare class Factory {
   getMeta(): Meta;
 
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
-  static getMeta(entries: ModelClass | ModelClass[], options?: Obj, methods?: Obj): Meta;
+  static getMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: Obj & ThisType<Factory>): Meta;
 }
 
 export declare function meta(entry: Attrs | (new () => Meta) | ModelClass | ModelClass[], options?: Attrs, methods?: Factory): PropertyDecorator;
