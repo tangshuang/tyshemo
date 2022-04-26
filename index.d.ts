@@ -440,7 +440,7 @@ export declare class Validator<T extends Model = Model> {
   static readonly anyOf: (validators: Validator[], message: string) => Validator;
 }
 
-type Attrs<T, M extends Model, U extends Obj, I> = {
+type Attrs<T, M extends Model, U extends Obj, I = T> = {
   /**
    * field default value, used by `reset` `formJSON` and so on
    */
@@ -562,12 +562,12 @@ type Attrs<T, M extends Model, U extends Obj, I> = {
    catch?(this: M, error: Error): void;
 } & Obj & ThisType<M>;
 
-export declare class Meta<T, M extends Model, U extends Obj, I> extends Attrs<T, M, U, I> {
+export declare class Meta<T, M extends Model, U extends Obj, I = T> extends Attrs<T, M, U, I> {
   constructor(options?: Attrs);
 }
 
-declare function createMeta<T, M extends Model, U extends Obj, I>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
-declare function createMeta<T, M extends Model, U extends Obj, I>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: Obj & ThisType<Factory>): Meta<T, M, U, I>;
+declare function createMeta<T, M extends Model, U extends Obj, I = T>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
+declare function createMeta<T, M extends Model, U extends Obj, I = T>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: Obj & ThisType<Factory>): Meta<T, M, U, I>;
 export { createMeta }
 
 interface View<T, I = T> extends Obj {
@@ -674,7 +674,7 @@ export declare class Model implements Obj {
 
   toEdit(next?: Obj): this;
 
-  reflect<T, M extends Model, U extends Obj, I>(Meta: Meta<T, M, U, I>): View<T, I extends unknown ? T : I>;
+  reflect<T, M extends Model, U extends Obj, I = T>(Meta: Meta<T, M, U, I>): View<T, I>;
   reflect<T>(Meta: Meta, getter: (key: string) => T): T;
 
   memo<T, U>(
