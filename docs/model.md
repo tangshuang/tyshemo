@@ -257,7 +257,11 @@ It supports second parameter to give you chance to return what you want:
 const required = model.use('field1', (view) => view.required)
 ```
 
+Notice: `model.use` is an alias of `model.reflect`.
+
 **reflect**
+
+*Use `use` instead.*
 
 When you are writing a Meta, you may not know which field to operate, you can use `reflect` to find out the right field:
 

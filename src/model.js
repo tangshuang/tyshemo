@@ -1242,6 +1242,19 @@ export class Model {
    * @param {function} fn when keyPath find a view, invoke callback with the view and return as `fn` result
    */
   use(keyPath, fn) {
+    if (keyPath && (isInstanceOf(keyPath, Meta) || isInheritedOf(keyPath, Meta))) {
+      const keys = Object.keys(this.$schema)
+      for (let i = 0, len = keys.length; i < len; i ++) {
+        const key = keys[i]
+        const meta = this.$schema[key]
+        if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
+          const view = this.$views[key]
+          return isFunction(fn) ? fn.call(this, key, view) : view
+        }
+      }
+      return
+    }
+
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.pop()
 
@@ -1273,16 +1286,8 @@ export class Model {
    *   }
    * }
    */
-   reflect(Meta, fn) {
-    const keys = Object.keys(this.$schema)
-    for (let i = 0, len = keys.length; i < len; i ++) {
-      const key = keys[i]
-      const meta = this.$schema[key]
-      if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
-        const view = this.$views[key]
-        return isFunction(fn) ? fn.call(this, key, view) : view
-      }
-    }
+  reflect(Meta, fn) {
+    return this.use(Meta, fn)
   }
 
   /**

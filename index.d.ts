@@ -644,7 +644,6 @@ export declare class Model implements Obj {
 
   restore(data: Obj, keysAddToThis?: string[]): this;
   get(keyPath: string | string[]): any;
-  use(keyPath: string | string[]): View;
   use<T>(keyPath: string | string[], getter?: (view: View) => T): T;
   set(keyPath: string | string[], next: any, force?: boolean): this;
   update(data: Obj): this;
@@ -674,6 +673,8 @@ export declare class Model implements Obj {
 
   toEdit(next?: Obj): this;
 
+  use(keyPath: string | string[]): View;
+  use<T, M extends Model, U extends Obj, I = T>(Meta: Meta<T, M, U, I>): View<T, I>;
   reflect<T, M extends Model, U extends Obj, I = T>(Meta: Meta<T, M, U, I>): View<T, I>;
   reflect<T>(Meta: Meta, getter: (key: string) => T): T;
 
