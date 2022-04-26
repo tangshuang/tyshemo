@@ -37,7 +37,7 @@ And we have some prototypes:
 - Finity
 - Zero
 - Natural
-- Numeric: number string, read more under the following
+- Numeric: number or string, read more under the following
 - String8: string max-length 8
 - String16
 - String32
@@ -54,6 +54,20 @@ These prototypes can be import from the package:
 import { Int, Any } from 'tyshemo'
 ```
 
+All numeric prototypes (Int, Float, Negative, Positive, Zero, Natural, Numeric) has `Number` and `String` sub prototype. For example:
+
+```js
+import { Int, Numeric } from 'tyshemo'
+
+Int.Number.assert(1)
+Int.String.assert('1')
+
+Numeric.assert(1)
+Numeric.assert('1')
+Numeric.Number.assert(1)
+Numeric.String.assert('1')
+```
+
 ## Usage of prototypes
 
 Use a prototype as the end node of definition. For example:
@@ -67,6 +81,8 @@ const some = new Dict({
   body: Null,
 })
 ```
+
+Here, `String` and `Int` `Null` has the same level meaning.
 
 ## Custom Prototype
 

@@ -2,11 +2,11 @@
 
 Type is to describe data's storage structure and compute characteristic.
 
-We have 6 types in tyshemo, they are `Dict` `List` `Tupl` `Enum` `Range` `Mapping`. And they are all extended from `Type` which is the basic class.
+We have bulitin types in tyshemo, they are `Dict` `List` `Tupl` `Enum` `Range` `Mapping` `Shape` `SelfRef`. And they are all extended from `Type` which is the basic class.
 
 ## Type
 
-As the basic class, `Type` is container which is based on prototype.
+As the basic class, `Type` is container to check data.
 
 ```js
 const SomeType = new Type(String)
@@ -101,7 +101,7 @@ const SomeType = new Dict({
 }).toBeLoose()
 
 const o = { name: 'tomy' }
-SomeType.assert(o) // ok, event without age
+SomeType.assert(o) // ok, even without age
 
 o.age = null
 SomeType.assert(o) // error
@@ -146,6 +146,15 @@ const Some3Dict = Some2Dict.extract([
   'name',
   'height',
 ])
+```
+
+Or use a object mapping to pick:
+
+```js
+const Some3Dict = Some2Dict.extract({
+  name: true,
+  height: true,
+})
 ```
 
 ## List
@@ -254,7 +263,7 @@ const SomePercent = new Range({
 })
 
 SomePercent.assert(79)
-SomePercent.assert(101)
+SomePercent.assert(101) // error
 ```
 
 ## SelfRef
@@ -283,12 +292,12 @@ const SomeType = new SelfRef((SomeType) => {
 
 In this code block, `SomeType` points to `SomeType`. It will work as you want.
 
-## short import
+## Short Import
 
 To use more conveniently， you can import these types from tyshemo with functions:
 
 ```js
-import { dict, list, tuple, enumerate, range, mapping, selfref } from 'tyshemo'
+import { dict, list, tuple, enumerate, range, mapping, shape, selfref } from 'tyshemo'
 
 const SomeDict = dict({
   name: String,

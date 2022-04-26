@@ -152,13 +152,16 @@ When condition returns true, use the second parameter as type, or returns false,
 ### lazy/async
 
 ```
-lazy(async function:Function<:Type>)
+lazy(:() => Promise<T> | T): Rule<T>
 ```
+
+You should pass a function which return the type finally.
+Can return a Promise which resolve the final type.
 
 Fetch type by a Promise.
 
 ```js
-const fetchType = fetch('/api/types?xxxx').then(res => res.json()).then((data) => {
+const fetchType = () => fetch('/api/types?xxxx').then(res => res.json()).then((data) => {
   if (data.type === 'string') {
     return String
   }

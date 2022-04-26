@@ -88,7 +88,7 @@ export class Tupl extends Type {
   }
 }
 
-export function tuple(pattern) {
+export function tupl(pattern) {
   const type = new Tupl(pattern)
   return type
 }
@@ -96,4 +96,5 @@ export function tuple(pattern) {
 export {
   Tupl as Tuple,
   Tupl as default,
+  tupl as tuple,
 }

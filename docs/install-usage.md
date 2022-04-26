@@ -73,11 +73,7 @@ You can look into [unpkg](https://unpkg.com/browse/tyshemo@latest/) to find out 
   - `ty.js` only contains tyshemo's type system (without Parser and Mocker).
   - `store.js` only contains tyshemo's store library.
   - `tyshemo.js` contains all exports.
-  - `tyshemo.umd.js` contains all exports and should use together with [ts-fns](https://unpkg.com/ts-fns@5.1.4/dist/ts-fns.min.js) which is exported as UMD module.
 
 ```html
-<script src="https://unpkg.com/ts-fns/dist/ts-fns.min.js"></script>
-<script src="https://unpkg.com/tyshemo/dist/tyshemo.umd.min.js"></script>
+<script src="https://unpkg.com/tyshemo/dist/tyshemo.min.js"></script>
 ```
-
-When you use some other library which is dependent on [ts-fns](https://github.com/tangshuang/ts-fns), you can do like previous.
