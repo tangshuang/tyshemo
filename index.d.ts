@@ -440,136 +440,137 @@ export declare class Validator<T extends Model = Model> {
   static readonly anyOf: (validators: Validator[], message: string) => Validator;
 }
 
-type Attrs = (typeof Meta) & Obj;
-export declare class Meta implements Obj {
-  constructor(options?: Attrs);
-
+type Attrs<T, M extends Model, U extends Obj, I> = {
   /**
    * field default value, used by `reset` `formJSON` and so on
    */
-  static default: any;
-  /**
-   * field is a computed field, value will be computed until be changed by `set`
-   */
-  static compute?: () => any;
-  /**
-   * calculate value when init and the dependencies change,
-   * different from `compute`, it will rewrite value when inside dependencies change,
-   * you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change
-   */
-  static activate?: () => any;
-  /**
-   * field value type
-   */
-  static type?: any;
-  /**
-   * error message when set a value not match `type`
-   */
-  static message?: string;
-  /**
-   * force set `default` when value not match `type`
-   */
-  static force?: boolean;
-  /**
-   * validators used by `validate` or `validateAsync`
-   */
-  static validators?: (Validator | ValidatorOptions)[];
-  /**
-   * create field value used by `formJSON`
-   */
-  static create?: (value: any, key: string, data: Obj) => any;
-  /**
-   * export field value used by `toJSON`
-   */
-  static save?: (value: any, key: string, data: Obj) => Obj | any;
-  /**
-   * if without `create` and `save`, asset will used as field read proof
-   */
-  static asset?: string;
-  /**
-   * whether drop this field when `toData()`
-   */
-  static drop?: (value: any, key: string, data: Obj) => boolean;
-  /**
-   * transfer the field value when `toData()`
-   */
-  static map?: (value: any, key: string, data: Obj) => any;
-  /**
-   * flat another data to output data of `toData()`
-   */
-  static flat?: (value: any, key: string, data: Obj) => Obj;
-  /**
-   * transfer field name to `to` when `toData`
-   */
-  static to?: string;
-  /**
-   * transfer given value when `set`
-   */
-  static setter?: (value: any, key: string) => any;
-  /**
-   * transfer output value when `get`
-   */
-  static getter?: (value: any, key: string) => any;
-  /**
-   * format field value when use `view.text`
-   */
-  static formatter?: (value: any, key: string) => any;
-  /**
-   * whether the field is readonly, `set` will not work
-   */
-  static readonly?: boolean | ((value: any, key: string) => boolean);
-  /**
-   * whether the field is useless, `drop` will be set true, validators will not work
-   */
-  static disabled?: boolean | ((value: any, key: string) => boolean);
-  /**
-   * whether hide the field, without any effect on model, just a UI helper
-   */
-  static hidden?: boolean | ((value: any, key: string) => boolean);
-  /**
-   * whether the field is required, should be used together with Validator.required in `vlaidators`
-   */
-  static required?: boolean | ((value: any, key: string) => boolean);
-  /**
-   * determine the field is empty, used with `required`
-   */
-  static empty?: (value: any, key: string) => boolean;
-  /**
-   * provide state
-   */
-  static state?: () => Obj;
-  /**
-   * provide deps
-   */
-  static deps?: () => { [key: string]: Meta | (new () => Meta) };
-  /**
-   * provide information about deps, it means this field should must work with this metas
-   */
-  static needs?: () => Array<Meta | (new () => Meta)>;
-  /**
-   * invoked when Model initialized
-   */
-  static init?: () => void;
-  /**
-   * invoked when field value changed
-   */
-  static watch?: (e: { value: any }) => void;
-  /**
-   * when **other** fields changed, follow function will be triggered,
-   * current field changing will NOT be triggered (use watch instead)
-   */
-  static follow?: (key: string) => void;
-  /**
-   * invoked errors occur when field change
-   */
-  static catch?: (error: Error) => void;
+   default: T;
+   /**
+    * field is a computed field, value will be computed until be changed by `set`
+    */
+   compute?(this: M): T;
+   /**
+    * calculate value when init and the dependencies change,
+    * different from `compute`, it will rewrite value when inside dependencies change,
+    * you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change
+    */
+   activate?(this: M): T;
+   /**
+    * field value type
+    */
+   type?: any;
+   /**
+    * error message when set a value not match `type`
+    */
+   message?: string;
+   /**
+    * force set `default` when value not match `type`
+    */
+   force?: boolean;
+   /**
+    * validators used by `validate` or `validateAsync`
+    */
+   validators?: (Validator | ValidatorOptions)[];
+   /**
+    * create field value used by `formJSON`
+    */
+   create?(this: M, value: any, key: string, data: U): T;
+   /**
+    * export field value used by `toJSON`
+    */
+   save?(this: M, value: T, key: string, data: U): Obj | any;
+   /**
+    * if without `create` and `save`, asset will used as field read proof
+    */
+   asset?: string;
+   /**
+    * whether drop this field when `toData()`
+    */
+   drop?(this: M, value: T, key: string, data: T): boolean;
+   /**
+    * transfer the field value when `toData()`
+    */
+   map?(this: M, value: T, key: string, data: U): any;
+   /**
+    * flat another data to output data of `toData()`
+    */
+   flat?(this: M, value: T, key: string, data: U): Obj;
+   /**
+    * transfer field name to `to` when `toData`
+    */
+   to?: string;
+   /**
+    * transfer given value when `set`
+    */
+   setter?(this: M, value: I, key: string): T;
+   /**
+    * transfer output value when `get`
+    */
+   getter?(this: M, value: T, key: string): I;
+   /**
+    * format field value when use `view.text`
+    */
+   formatter?(this: M, value: T, key: string): string;
+   /**
+    * whether the field is readonly, `set` will not work
+    */
+   readonly?: boolean | ((this: M, value: T, key: string) => boolean);
+   /**
+    * whether the field is useless, `drop` will be set true, validators will not work
+    */
+   disabled?: boolean | ((this: M, value: T, key: string) => boolean);
+   /**
+    * whether hide the field, without any effect on model, just a UI helper
+    */
+   hidden?: boolean | ((this: M, value: T, key: string) => boolean);
+   /**
+    * whether the field is required, should be used together with Validator.required in `vlaidators`
+    */
+   required?: boolean | ((this: M, value: T, key: string) => boolean);
+   /**
+    * determine the field is empty, used with `required`
+    */
+   empty?(this: M, value: T, key: string): boolean;
+   /**
+    * provide state
+    */
+   state?(): Obj;
+   /**
+    * provide deps
+    */
+   deps?(): { [key: string]: Meta | (new () => Meta) };
+   /**
+    * provide information about deps, it means this field should must work with this metas
+    */
+   needs?(): Array<Meta | (new () => Meta)>;
+   /**
+    * invoked when Model initialized
+    */
+   init?(this: M): void;
+   /**
+    * invoked when field value changed
+    */
+   watch?(this: M, e: { value: T }): void;
+   /**
+    * when **other** fields changed, follow function will be triggered,
+    * current field changing will NOT be triggered (use watch instead)
+    */
+   follow?(this: M, key: string): void;
+   /**
+    * invoked errors occur when field change
+    */
+   catch?(this: M, error: Error): void;
+} & Obj & ThisType<M>;
+
+export declare class Meta<T, M extends Model, U extends Obj, I> extends Attrs<T, M, U, I> {
+  constructor(options?: Attrs);
 }
 
-declare function createMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: Obj & ThisType<Factory>): Meta;
-declare function createMeta<T = Model>(attrs: Obj & ThisType<T>): Meta;
+declare function createMeta<T, M extends Model, U extends Obj, I>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
+declare function createMeta<T, M extends Model, U extends Obj, I>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: Obj & ThisType<Factory>): Meta<T, M, U, I>;
 export { createMeta }
 
-interface View extends Obj {
+interface View<T, I = T> extends Obj {
   /**
    * field name
    */
@@ -577,11 +578,11 @@ interface View extends Obj {
   /**
    * field value, transfered by `getter`
    */
-  value: any;
+  value: I;
   /**
    * field original value, stored inside a Store
    */
-  data: any;
+  data: T;
   /**
    * field text formatted by `formatter`
    */
@@ -673,7 +674,7 @@ export declare class Model implements Obj {
 
   toEdit(next?: Obj): this;
 
-  reflect(Meta: Meta): View;
+  reflect<T, M extends Model, U extends Obj, I>(Meta: Meta<T, M, U, I>): View<T, I extends unknown ? T : I>;
   reflect<T>(Meta: Meta, getter: (key: string) => T): T;
 
   memo<T, U>(
