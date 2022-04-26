@@ -562,15 +562,15 @@ type Attrs<T, M extends Model, U extends Obj, I = T> = {
    catch?(this: M, error: Error): void;
 } & Obj & ThisType<M>;
 
-export declare class Meta<T, M extends Model, U extends Obj, I = T> extends Attrs<T, M, U, I> {
-  constructor(options?: Attrs);
+export declare class Meta<T = any, M extends Model = Model, U extends Obj = Obj, I = T> {
+  constructor(options?: Attrs<T, M, U, I>);
 }
 
 declare function createMeta<T, M extends Model, U extends Obj, I = T>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
-declare function createMeta<T, M extends Model, U extends Obj, I = T>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: Obj & ThisType<Factory>): Meta<T, M, U, I>;
+declare function createMeta<T, M extends Model, U extends Obj, I = T>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): Meta<T, M, U, I>;
 export { createMeta }
 
-interface View<T, I = T> extends Obj {
+type View<T, I = T> = {
   /**
    * field name
    */
@@ -619,7 +619,7 @@ interface View<T, I = T> extends Obj {
    * is required? by `required`
    */
   required: boolean;
-}
+} & Obj;
 
 type ModelClass = new () => Model;
 
@@ -741,7 +741,7 @@ export declare function MemoGetter<T, U>(
   $$type: 'memoRef'
 } & Obj;
 
-export declare class Factory {
+class FactoryHooks {
   entry(entries: ModelClass): ModelClass;
   entry(entries: ModelClass[]): ModelClass[];
   instance(model: ModelClass, ctx: ModelClass): ModelClass;
@@ -753,15 +753,20 @@ export declare class Factory {
   map(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
   setter(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
   transport(child: Model, parent: Model): void;
+}
+
+export declare class Factory extends FactoryHooks {
   getMeta(): Meta;
 
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
-  static getMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: Obj & ThisType<Factory>): Meta;
+  static getMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: FactoryHooks): Meta;
 }
 
-export declare function meta(entry: Attrs | (new () => Meta) | ModelClass | ModelClass[], options?: Attrs, methods?: Factory): PropertyDecorator;
+declare function meta<T, M, U, I>(entries: Attrs<T, M, U, I> | Meta<T, M, U, I>): PropertyDecorator;
+declare function meta<T, M, U, I>(entries: (new () => Meta) | ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): PropertyDecorator;
+export { meta }
 
-export declare function state(options: { value: any } | { get: () => any, set: (v: any) => void }): PropertyDecorator;
+export declare function state<T>(options: { value: T } | { get: () => T, set: (v: T) => void }): PropertyDecorator;
 
 export declare function type(type: any): PropertyDecorator;
 
