@@ -28,8 +28,9 @@ class AnyModel extends Model {
 
 You can override the methods for meta generators by hooks functions, they are:
 
-- entry(Model)
+- entry(Entries, data) // choose which Model to use
 - instance(childModel, parentModel) // do when a new child model initialize
+- adapt(Entries, data) // determine the given data whether adapt to the give Model, if false, the data will be dropped
 - transport(childModel, parentModel) // do when parent model change, transport parent's properties value to child, never use condition sentence inside transport function
 - default(fn)
 - type(type)
@@ -40,6 +41,23 @@ You can override the methods for meta generators by hooks functions, they are:
 - setter(fn)
 
 `fn` is a function for original generator.
+
+```js
+const SomeMeta = Factory.getMeta([Model1, Model2], null, {
+  entry([Model1, Model2], data) {
+    if (data.type === 'a') {
+      return Model1
+    }
+    return Model2
+  }
+  adapt([Model1, Model2], data) {
+    if (data.type === 'a') {
+      return data instanceof Model1
+    }
+    return data instanceof Model2
+  }
+})
+```
 
 ## API
 
