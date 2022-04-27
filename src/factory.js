@@ -122,7 +122,7 @@ export class Factory {
       const gen = (items, key, parent) => {
         const nexts = filter(items)
         const values = nexts.map((next) => {
-          const ChoosedModel = this.entry(Entries, next, key, parent)
+          const ChoosedModel = entity.entry(Entries, next, key, parent)
           const model = this.adapt(Entries, next) ? next.setParent([parent, key])
             : isObject(next) ? new ChoosedModel(next, { parent, key })
             : new ChoosedModel({}, { parent, key })
@@ -163,8 +163,8 @@ export class Factory {
     else {
       const Entry = entity.entry(Entries)
       const gen = function(value, key, parent) {
-        const ChoosedModel = this.entry(Entries, value, key, parent)
-        const model = this.adapt(Entries, vlaue) ? value.setParent([parent, key])
+        const ChoosedModel = entity.entry(Entries, value, key, parent)
+        const model = entity.adapt(Entries, value) ? value.setParent([parent, key])
           : isObject(value) ? new ChoosedModel(value, { key, parent })
           : new ChoosedModel({}, { key, parent })
         const child = entity.instance(model, parent)
