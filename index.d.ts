@@ -564,12 +564,6 @@ type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
   constructor(options?: Attrs<T, I, M, U>);
-
-  value: I;
-  model: M;
-  originalValue: T;
-  data: U;
-  attrs: Attrs<T, I, M, U>;
 }
 
 /**
@@ -579,7 +573,12 @@ export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj
  * ReflectMeta<SomeMeta, 'data'> extends object
  * ReflectMeta<SomeMeta, 'default'> extends string, from attrs
  */
-export declare type ReflectMeta<A extends Meta, key = 'value'> = key extends ('value' | 'model' | 'originalValue' | 'data') ? A[key] : A['attrs'][key];
+export declare type ReflectMeta<A extends Meta, key = 'value'> = A extends Meta<infer T, infer I, infer M, infer U> ? ({
+  value: I;
+  originalValue: T;
+  model: M;
+  data: U;
+})[key] : unknown;
 
 /**
  * crete a meta.
