@@ -9,6 +9,7 @@ import {
   define,
 } from 'ts-fns'
 import Meta from './meta.js'
+import Model from './model.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
@@ -106,10 +107,9 @@ export class Factory {
     }
 
     if (isList) {
-      const Model = entity.entry(Entries[0])
       const filter = (items) => {
         const nexts = items.filter((item) => {
-          if (Entries.some(One => isInstanceOf(item, One))) {
+          if (this.adapt(Entries, item)) {
             return true
           }
           if (isObject(item)) {
@@ -122,9 +122,10 @@ export class Factory {
       const gen = (items, key, parent) => {
         const nexts = filter(items)
         const values = nexts.map((next) => {
-          const model = Entries.some(One => isInstanceOf(next, One)) ? next.setParent([parent, key])
-            : isObject(next) ? new Model(next, { parent, key })
-            : new Model({}, { parent, key })
+          const ChoosedModel = this.entry(Entries, next, key, parent)
+          const model = this.adapt(Entries, next) ? next.setParent([parent, key])
+            : isObject(next) ? new ChoosedModel(next, { parent, key })
+            : new ChoosedModel({}, { parent, key })
           const child = entity.instance(model, parent)
           setupTransport(child, parent, key)
           return child
@@ -160,11 +161,12 @@ export class Factory {
       this.meta = new FactoryMeta(options)
     }
     else {
-      const Model = entity.entry(Entries)
+      const Entry = entity.entry(Entries)
       const gen = function(value, key, parent) {
-        const model = isInstanceOf(value, Model) ? value.setParent([parent, key])
-          : isObject(value) ? new Model(value, { key, parent })
-          : new Model({}, { key, parent })
+        const ChoosedModel = this.entry(Entries, value, key, parent)
+        const model = this.adapt(Entries, vlaue) ? value.setParent([parent, key])
+          : isObject(value) ? new ChoosedModel(value, { key, parent })
+          : new ChoosedModel({}, { key, parent })
         const child = entity.instance(model, parent)
         setupTransport(child, parent, key)
         return child
@@ -175,7 +177,7 @@ export class Factory {
           const value = isFunction(_default) ? _default.call(this, key) : _default
           return gen(value, key, this)
         }),
-        type: entity.type(Model),
+        type: entity.type(Entry),
         validators: entity.validators([
           {
             validate: m => m.validate(),
@@ -197,11 +199,33 @@ export class Factory {
     }
   }
 
-  entry(Model) {
-    return Model
+  /**
+   * choose which Model to use when
+   * @param {*} Entries
+   * @param {*} data
+   * @param {*} key
+   * @param {*} parent
+   * @returns
+   */
+  entry(Entries, data, key, parent) {
+    return isArray(Entries) ? Entries[0] : Entries
   }
+  /**
+   * modify or change Model instance
+   * @param {*} model
+   * @returns
+   */
   instance(model) {
     return model
+  }
+  /**
+   * detect whether a data is adapt to Entries
+   * @param {*} Entries
+   * @param {*} data
+   * @returns {boolean}
+   */
+  adapt(Entries, data) {
+    return isArray(Entries) ? Entries.some(Entry => isInstanceOf(data, Entry)) : isInstanceOf(data, Entries)
   }
 
   default(fn) {
