@@ -41,18 +41,18 @@ export class Dict extends Type {
     return tyerr.error()
   }
 
-  extend(fields = {}) {
+  extend(props = {}) {
     const current = this.pattern
-    const next = { ...current, ...fields }
+    const next = { ...current, ...props }
     const Constructor = getConstructorOf(this)
     const type = new Constructor(next)
     return type
   }
-  extract(fields = {}) {
+  extract(props = {}) {
     const current = this.pattern
     const next = {}
-    const isArr = isArray(fields)
-    each(fields, (value, key) => {
+    const isArr = isArray(props)
+    each(props, (value, key) => {
       if (isArr && inObject(value, current)) {
         next[value] = current[value]
       }

@@ -889,7 +889,7 @@ export class Schema {
   }
 
   /**
-   * generate required fields automaticly by given data,
+   * generate required props automaticly by given data,
    * like parse, but only use the given properties to generate thin data and patch less properties
    * @param {*} json
    * @param {*} context
