@@ -440,7 +440,7 @@ export declare class Validator<T extends Model = Model> {
   static readonly anyOf: (validators: Validator[], message: string) => Validator;
 }
 
-type Attrs<T = any, M extends Model = Model, U extends Obj = Obj, I = T> = {
+type Attrs<T = any, M extends Model = Model, I = T, U extends Obj = Obj> = {
   /**
    * field default value, used by `reset` `formJSON` and so on
    */
@@ -486,7 +486,7 @@ type Attrs<T = any, M extends Model = Model, U extends Obj = Obj, I = T> = {
    /**
     * whether drop this field when `toData()`
     */
-   drop?(this: M, value: T, key: string, data: T): boolean;
+   drop?(this: M, value: T, key: string, data: U): boolean;
    /**
     * transfer the field value when `toData()`
     */
@@ -550,7 +550,7 @@ type Attrs<T = any, M extends Model = Model, U extends Obj = Obj, I = T> = {
    /**
     * invoked when field value changed
     */
-   watch?(this: M, e: { value: T }): void;
+   watch?(this: M, e: { value: T } & Obj): void;
    /**
     * when **other** fields changed, follow function will be triggered,
     * current field changing will NOT be triggered (use watch instead)
@@ -562,12 +562,20 @@ type Attrs<T = any, M extends Model = Model, U extends Obj = Obj, I = T> = {
    catch?(this: M, error: Error): void;
 } & Obj & ThisType<M>;
 
-export declare class Meta<T = any, M extends Model = Model, U extends Obj = Obj, I = T> {
+export declare class Meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj> {
   constructor(options?: Attrs<T, M, U, I>);
 }
 
-declare function createMeta<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
-declare function createMeta<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): Meta<T, M, U, I>;
+/**
+ * crete a meta.
+ * T: the value type
+ * M: the attached Model
+ * I: the type of output of getter and input of setter
+ * U: the type of whole data node
+ * @param attrs
+ */
+declare function createMeta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
+declare function createMeta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): Meta<T, M, U, I>;
 export { createMeta }
 
 type View<T = any, I = T> = {
@@ -674,17 +682,17 @@ export declare class Model implements Obj {
 
   use(keyPath: string | string[]): View;
   use<T>(keyPath: string | string[], getter: (view: View) => T): T;
-  use<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(Meta: Meta<T, M, U, I>): View<T, I>;
-  use<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(Meta: Meta<T, M, U, I>, getter: (view: View<T, I>) => P): P;
+  use<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>): View<T, I>;
+  use<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>, getter: (view: View<T, I>) => P): P;
 
   /**
    * @deprecated use this.use instead
    */
-  reflect<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(Meta: Meta<T, M, U, I>): View<T, I>;
+  reflect<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>): View<T, I>;
   /**
    * @deprecated use this.use instead
    */
-  reflect<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(Meta: Meta<T, M, U, I>, getter: (view: View<T, I>) => P): P;
+  reflect<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>, getter: (view: View<T, I>) => P): P;
 
   memo<T, U>(
     getter: (this: this) => T,
@@ -771,8 +779,8 @@ export declare class Factory extends FactoryHooks {
   static getMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: FactoryHooks): Meta;
 }
 
-declare function meta<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(entries: Attrs<T, M, U, I> | Meta<T, M, U, I>): PropertyDecorator;
-declare function meta<T = any, M extends Model = Model, U extends Obj = Obj, I = T>(entries: (new () => Meta) | ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): PropertyDecorator;
+declare function meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: Attrs<T, M, U, I> | Meta<T, M, U, I>): PropertyDecorator;
+declare function meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: (new () => Meta) | ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): PropertyDecorator;
 export { meta }
 
 export declare function state<T>(options: { value: T } | { get: () => T, set: (v: T) => void }): PropertyDecorator;
