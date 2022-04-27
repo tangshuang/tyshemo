@@ -289,5 +289,5 @@ export function createMeta(...args) {
   if (isInheritedOf(entries, Model)) {
     return Factory.getMeta(...args)
   }
-  return new Meta(attrs)
+  return new Meta(entries)
 }
