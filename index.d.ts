@@ -563,7 +563,7 @@ type Attrs<T = any, M extends Model = Model, I = T, U extends Obj = Obj> = {
 } & Obj & ThisType<M>;
 
 export declare class Meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj> {
-  constructor(options?: Attrs<T, M, U, I>);
+  constructor(options?: Attrs<T, M, I, U>);
 }
 
 /**
@@ -574,8 +574,8 @@ export declare class Meta<T = any, M extends Model = Model, I = T, U extends Obj
  * U: the type of whole data node
  * @param attrs
  */
-declare function createMeta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(attrs: Attrs<T, M, U, I>): Meta<T, M, U, I>;
-declare function createMeta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): Meta<T, M, U, I>;
+declare function createMeta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(attrs: Attrs<T, M, I, U>): Meta<T, M, I, U>;
+declare function createMeta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, M, I, U>, hooks?: FactoryHooks): Meta<T, M, I, U>;
 export { createMeta }
 
 type View<T = any, I = T> = {
@@ -682,17 +682,17 @@ export declare class Model implements Obj {
 
   use(keyPath: string | string[]): View;
   use<T>(keyPath: string | string[], getter: (view: View) => T): T;
-  use<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>): View<T, I>;
-  use<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>, getter: (view: View<T, I>) => P): P;
+  use<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, I, U>): View<T, I>;
+  use<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, I, U>, getter: (view: View<T, I>) => P): P;
 
   /**
    * @deprecated use this.use instead
    */
-  reflect<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>): View<T, I>;
+  reflect<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, I, U>): View<T, I>;
   /**
    * @deprecated use this.use instead
    */
-  reflect<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, U, I>, getter: (view: View<T, I>) => P): P;
+  reflect<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(Meta: Meta<T, M, I, U>, getter: (view: View<T, I>) => P): P;
 
   memo<T, U>(
     getter: (this: this) => T,
@@ -758,7 +758,7 @@ export declare function MemoGetter<T, U>(
   $$type: 'memoRef'
 } & Obj;
 
-class FactoryHooks {
+interface FactoryHooks {
   entry(entries: ModelClass): ModelClass;
   entry(entries: ModelClass[]): ModelClass[];
   instance(model: ModelClass, ctx: ModelClass): ModelClass;
@@ -772,15 +772,15 @@ class FactoryHooks {
   transport(child: Model, parent: Model): void;
 }
 
-export declare class Factory extends FactoryHooks {
-  getMeta(): Meta;
+export declare class Factory {
+  getMeta<T = Model | Model[], M = Model>(): Meta<T, M>;
 
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
-  static getMeta<T = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<T>, hooks?: FactoryHooks): Meta;
+  static getMeta<T = Model | Model[], M = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, M>;
 }
 
-declare function meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: Attrs<T, M, U, I> | Meta<T, M, U, I>): PropertyDecorator;
-declare function meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: (new () => Meta) | ModelClass | ModelClass[], attrs?: Attrs<T, M, U, I>, hooks?: FactoryHooks): PropertyDecorator;
+declare function meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: Attrs<T, M, I, U> | Meta<T, M, I, U>): PropertyDecorator;
+declare function meta<T = any, M extends Model = Model, I = T, U extends Obj = Obj>(entries: (new () => Meta) | ModelClass | ModelClass[], attrs?: Attrs<T, M, I, U>, hooks?: FactoryHooks): PropertyDecorator;
 export { meta }
 
 export declare function state<T>(options: { value: T } | { get: () => T, set: (v: T) => void }): PropertyDecorator;
