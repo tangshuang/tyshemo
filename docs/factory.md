@@ -81,7 +81,7 @@ const NewModel = Factory.useAttrs(OriginalModel, [
 ])
 ```
 
-**static getMeta(entries)**
+**static getMeta(entries, attrs?, hooks?)**
 
 Convert a Model or a list of Models to be a meta.
 

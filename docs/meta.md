@@ -328,3 +328,17 @@ class PoodB extends PoodA {}
 **compute** will make this field's value to be computed value, you will get computed result as the value each time. If you depend the field on any other fields, the other fields' changing will trigger this field's watchers. Computed field will lose computability till the value is changed manually. After you manually change the value, the field will not be a computed field any more.
 
 **activate** will make this field's value change when the depndencies change. It is not computed value, you can change the value manually, however, when one of the dependencies changes this field will be reset by `activate`. So the value you manually set is not stable, it will be changed by dependencies.
+
+## createMeta()
+
+To create a meta, you can use `createMeta`.
+
+```
+function createMeta(attrs)
+
+// use Factory.getMeta to generate
+function createMeta(Model, attrs, hooks)
+function createMeta(Model[], attrs, hooks)
+```
+
+In typescript, you can get better typing feedback.
