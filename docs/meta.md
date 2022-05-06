@@ -342,3 +342,36 @@ function createMeta(Model[], attrs, hooks)
 ```
 
 In typescript, you can get better typing feedback.
+
+## createMetaGroup()
+
+To create several metas, in case you want to referer metas to each other in a group.
+
+```
+declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: Meta[]) => T): T;
+```
+
+- count: the count of metas in the group
+- create: function to return metas in an array
+
+```js
+const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup(3, (NameMeta, AgeMeta, HeightMeta) => [
+  createMeta({
+    default: 'tom',
+    total() {
+      return this.use(NameMeta).value.length + this.use(AgeMeta).value + this.use(HeightMeta).value
+    },
+  }),
+  createMeta({
+    default: 10,
+    fit() {
+      return this.use(NameMeta).value.length / this.use(HeightMeta).value
+    },
+  }),
+  createMeta({
+    default: 80,
+  }),
+])
+```
+
+In the previous code, we use NameMeta, AgeMeta, HeightMeta in each meta, however, if we use createMeta directly we may get error about referer to variable which is not declared before we use it. As used createMetaGroup, we can use Meta before it created.

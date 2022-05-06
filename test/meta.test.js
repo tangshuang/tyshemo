@@ -2,6 +2,7 @@ import Model from '../src/model.js'
 import Meta from '../src/meta.js'
 import { formatDate, createDate } from 'ts-fns'
 import { Numeric } from '../src/ty/index.js'
+import { createMetaGroup, createMeta } from '../src/factory.js'
 
 describe('Meta', () => {
   test('extend', () => {
@@ -129,5 +130,36 @@ describe('Meta', () => {
       price: 12,
     })
     expect(good.use('discount').will_cost).toBe(12)
+  })
+
+  test('createMetaGroup', () => {
+    const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup(3, (NameMeta, AgeMeta, HeightMeta) => [
+      createMeta({
+        default: 'tom',
+        total() {
+          return this.use(NameMeta).value.length + this.use(AgeMeta).value + this.use(HeightMeta).value
+        },
+      }),
+      createMeta({
+        default: 10,
+      }),
+      createMeta({
+        default: 80,
+      }),
+    ])
+
+    class SomeModel extends Model {
+      static $_name = NameMeta
+      static age = AgeMeta
+      static height = HeightMeta
+    }
+
+    const some = new SomeModel()
+
+    expect(some.name).toBe('tom')
+    expect(some.age).toBe(10)
+    expect(some.height).toBe(80)
+
+    expect(some.use('name').total).toBe(93)
   })
 })

@@ -597,7 +597,10 @@ export declare type ReflectMeta<A extends Meta, key = 'value'> = A extends Meta<
  */
 declare function createMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): Meta<T, I, M, U>;
 declare function createMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, I, M, U>, hooks?: FactoryHooks): Meta<T, I, M, U>;
-export { createMeta }
+
+declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: Meta[]) => T): T;
+
+export { createMeta, createMetaGroup }
 
 type View<T = any, I = T> = {
   /**

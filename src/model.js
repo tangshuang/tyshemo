@@ -1247,7 +1247,7 @@ export class Model {
       for (let i = 0, len = keys.length; i < len; i ++) {
         const key = keys[i]
         const meta = this.$schema[key]
-        if (meta === Meta || (isConstructor(Meta) && isInstanceOf(meta, Meta))) {
+        if (meta === keyPath || (isInheritedOf(keyPath, Meta) && isInstanceOf(meta, keyPath))) {
           const view = this.$views[key]
           return isFunction(fn) ? fn.call(this, key, view) : view
         }
