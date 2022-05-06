@@ -569,8 +569,8 @@ type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
   constructor(options?: Attrs<T, I, M, U>);
 
-  extend<D = T, V = I, O = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>;
-  static extend<D = T, V = I, O = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): MetaClass<D, V, O, B>;
+  extend<D extends T = T, V extends I = I, O = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>;
+  static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>;
 }
 
 /**
