@@ -12,51 +12,49 @@ import {
 import Validator from './validator.js'
 import { ofChain } from './shared/utils.js'
 
+const createValidators = (items) => {
+  return items.map(v =>
+    isInstanceOf(v, Validator) ? v
+    : isInheritedOf(v, Validator) ? new v()
+    : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
+    : null
+  ).filter(v => !!v)
+}
+
+function useAttr(meta, key, descriptor, context) {
+  const { value, get, set } = descriptor
+
+  if (key === 'validators') {
+    const items = value ? value : get ? get.call(context) : null
+    meta.validators = isArray(items) ? createValidators(items) : []
+    return
+  }
+
+  if (get || set) {
+    define(meta, key, {
+      get,
+      set,
+      enumerable: true,
+      configurable: true,
+    })
+  }
+  else {
+    meta[key] = value
+  }
+}
+
 export class Meta {
   constructor(attrs = {}) {
-    const createValidators = (items) => {
-      return items.map(v =>
-        isInstanceOf(v, Validator) ? v
-        : isInheritedOf(v, Validator) ? new v()
-        : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
-        : null
-      ).filter(v => !!v)
-    }
-    const useAttr = (key, descriptor, context) => {
-      const { value, get, set } = descriptor
-
-      if (key === 'validators') {
-        const items = value ? value : get ? get.call(context) : null
-        this.validators = isArray(items) ? createValidators(items) : []
-        return
-      }
-
-      if (get || set) {
-        define(this, key, {
-          get,
-          set,
-          enumerable: true,
-          configurable: true,
-        })
-      }
-      else {
-        this[key] = value
-      }
-    }
-
+    // from inherit chain
     const properties = ofChain(this, Meta)
-
     each(properties, (descriptor, key) => {
       if (inObject(key, attrs, true)) {
         return
       }
-      useAttr(key, descriptor, properties)
+      useAttr(this, key, descriptor, properties)
     }, true)
 
-    each(attrs, (descriptor, key) => {
-      useAttr(key, descriptor, attrs)
-    }, true)
-
+    // from prototype
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
@@ -66,13 +64,22 @@ export class Meta {
       if (inObject(key, this)) {
         return
       }
-      useAttr(key, descriptor, this)
+      useAttr(this, key, descriptor, this)
+    }, true)
+
+    // from attrs
+    each(attrs, (descriptor, key) => {
+      useAttr(this, key, descriptor, attrs)
     }, true)
   }
 
   extend(attrs) {
     const Constructor = getConstructorOf(this)
-    return new Constructor(attrs)
+    const meta = new Constructor(this)
+    each(attrs, (descriptor, key) => {
+      useAttr(meta, key, descriptor, attrs)
+    }, true)
+    return meta
   }
 
   static extend(attrs) {

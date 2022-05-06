@@ -254,6 +254,12 @@ export class Factory {
     return this.meta
   }
 
+  /**
+   * @deprecated
+   * @param {*} Model
+   * @param {*} attrs
+   * @returns
+   */
   static useAttrs(Model, attrs) {
     class NewModel extends Model {}
     attrs.forEach(([field, attr, fn]) => {

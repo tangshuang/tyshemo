@@ -564,6 +564,9 @@ type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
   constructor(options?: Attrs<T, I, M, U>);
+
+  extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): Meta<T, I, M, U>;
+  static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): new () => Meta<T, I, M, U>;
 }
 
 /**
@@ -789,7 +792,13 @@ interface FactoryHooks {
 export declare class Factory {
   getMeta<T = Model | Model[], M = Model>(): Meta<T, M>;
 
+  /**
+   * @deprecated
+   * @param Model
+   * @param attrs
+   */
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
+
   static getMeta<T = Model | Model[], M = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, M>;
 }
 
