@@ -1793,6 +1793,11 @@ export class Model {
     })
   }
 
+  /**
+   * @deprecated
+   * @param {*} next
+   * @returns
+   */
   static extend(next) {
     const Constructor = inherit(this)
     if (isObject(next)) {
