@@ -62,6 +62,13 @@ const DEFAULT_ATTRIBUTES = {
   deps: null,
 }
 
+const isMatchMeta = (give, need) => {
+  return give === need || (
+    isInheritedOf(need, Meta)
+    && (isInstanceOf(give, need) || isInheritedOf(give, need))
+  )
+}
+
 export class State {
   constructor(options) {
     Object.assign(this, options)
@@ -143,7 +150,7 @@ export class Model {
             let flag = false
             for (let j = 0, leng = gives.length; j < leng; j ++) {
               const give = gives[j]
-              if (give === need || isInstanceOf(give, need) || isInheritedOf(give, need)) {
+              if (isMatchMeta(give, need)) {
                 flag = true
                 break
               }
@@ -747,7 +754,7 @@ export class Model {
 
         if (needs) {
           const needMetas = needs();
-          if (needMetas.some(item => item === meta || isInstanceOf(meta, item))) {
+          if (needMetas.some(item => isMatchMeta(meta, item))) {
             this.$store.forceDispatch(`!${field}`, `needs ${key}`)
           }
         }
