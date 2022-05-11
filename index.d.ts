@@ -657,6 +657,15 @@ type View<T = any, I = T> = {
   required: boolean;
 } & Obj;
 
+// https://lifesaver.codes/answer/type-manipulations-union-to-tuple-13298
+// https://note.xiexuefeng.cc/post/ts-union-to-tuple/
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+type IsUnion<T> = [T] extends [UnionToIntersection<T>] ? false : true;
+type UnionToOvlds<U> = UnionToIntersection<U extends any ? (f: U) => void : never>;
+type PopUnion<U> = UnionToOvlds<U> extends ((a: infer A) => void) ? (A extends boolean ? boolean extends U ? boolean : A : A) : never;
+type GetUnionLast<Unoin> = IsUnion<Unoin> extends true ? PopUnion<Unoin> : Unoin;
+
+// https://www.tangshuang.net/8487.html
 type GetUnionKeys<Unoin> = Unoin extends any
   ? {
       [key in keyof Unoin]: key;
@@ -666,19 +675,19 @@ type GetUnionKeys<Unoin> = Unoin extends any
     ? K
     : never
   : never;
-
 type UnionToInterByKeys<Union, Keys extends string | number | symbol> = {
-  [key in Keys]: Union extends any
-    ? {
-        [k in keyof Union]: k extends key ? Union[k] : never;
-      } extends {
-        [k in keyof Union]: infer P;
-      }
-      ? P
+  [key in Keys]: GetUnionLast<
+    Union extends any
+      ? {
+          [k in keyof Union]: k extends key ? Union[k] : never;
+        } extends {
+          [k in keyof Union]: infer P;
+        }
+        ? P
+        : never
       : never
-    : never;
+  >;
 };
-
 type UnionToInter<Unoin> = UnionToInterByKeys<Unoin, GetUnionKeys<Unoin>>;
 
 export declare class Model implements Obj {

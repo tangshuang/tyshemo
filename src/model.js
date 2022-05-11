@@ -1834,6 +1834,19 @@ export class Model {
     return Editor
   }
 
+  static mixin(...Models) {
+    const Constructor = this
+    class Mixin extends Constructor {
+      static [Symbol.hasInstance](target) {
+        return Models.some((Model) => target instanceof Model)
+      }
+    }
+    Models.forEach((Model) => {
+      mixin(Mixin, Model)
+    })
+    return Mixin
+  }
+
   toEdit(next) {
     const $this = this
     const Constructor = getConstructorOf(this)
