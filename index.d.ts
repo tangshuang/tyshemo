@@ -161,12 +161,16 @@ export declare class Tupl extends Type {
   constructor(pattern: any[]);
 }
 
-export declare function tuple(pattern: any[]): Tupl;
+export declare function tupl(pattern: any[]): Tupl;
 
 /**
  * @deprecated use Tupl instead
  */
 export declare type Tuple = Tupl;
+/**
+ * @deprecated use tupl instead
+ */
+export declare type tuple = typeof tupl;
 
 export declare class Enum extends Type {
   constructor(pattern: any[]);

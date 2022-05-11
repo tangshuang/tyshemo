@@ -31,6 +31,9 @@ export {
    */
   Tupl as Tuple,
   tupl,
+  /**
+   * @deprecated
+   */
   tupl as tuple,
 } from './tuple.js'
 export { Enum, enumerate } from './enum.js'

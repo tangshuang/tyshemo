@@ -41,7 +41,7 @@ import {
 import { Type } from './type.js'
 import { Dict } from './dict.js'
 import { List } from './list.js'
-import { Tupl, tuple } from './tuple.js'
+import { Tupl, tupl } from './tuple.js'
 import { Enum, enumerate } from './enum.js'
 import { Range } from './range.js'
 import { Mapping } from './mapping.js'
@@ -315,7 +315,7 @@ export class Parser {
         const customRules = {
           ...RULES,
           '|': enumerate,
-          '*': tuple,
+          '*': tupl,
         }
 
         each(target, (value, key) => {
