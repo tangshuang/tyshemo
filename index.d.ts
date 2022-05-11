@@ -657,6 +657,30 @@ type View<T = any, I = T> = {
   required: boolean;
 } & Obj;
 
+type GetUnionKeys<Unoin> = Unoin extends any
+  ? {
+      [key in keyof Unoin]: key;
+    } extends {
+      [key in keyof Unoin]: infer K;
+    }
+    ? K
+    : never
+  : never;
+
+type UnionToInterByKeys<Union, Keys extends string | number | symbol> = {
+  [key in Keys]: Union extends any
+    ? {
+        [k in keyof Union]: k extends key ? Union[k] : never;
+      } extends {
+        [k in keyof Union]: infer P;
+      }
+      ? P
+      : never
+    : never;
+};
+
+type UnionToInter<Unoin> = UnionToInterByKeys<Unoin, GetUnionKeys<Unoin>>;
+
 export declare class Model implements Obj {
   constructor(data?: Obj, parent?: [Model, string | string[]]);
 
@@ -745,6 +769,7 @@ export declare class Model implements Obj {
    */
   static extend(next: Obj): ModelClass;
   static toEdit: new () => EditorModel;
+  static mixin<T extends (new () => Model)[]>(...Models: T): UnionToInter<InstanceType<T[number]>>;
 }
 
 declare class EditorModel extends Model {

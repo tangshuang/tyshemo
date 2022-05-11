@@ -7,6 +7,7 @@ import {
   isInstanceOf,
   isFunction,
   define,
+  mixin,
 } from 'ts-fns'
 import { Meta } from './meta.js'
 import { Model } from './model.js'
@@ -283,6 +284,19 @@ export class Factory {
     const entity = new Constructor(entries, attrs)
     Object.assign(entity, hooks)
     return entity.getMeta()
+  }
+
+  static mixin(...Models) {
+    const Constructor = this
+    class Mixin extends Constructor {
+      static [Symbol.hasInstance](target) {
+        return Models.some((Model) => target instanceof Model);
+      }
+    }
+    Models.forEach((Model) => {
+      mixin(Mixin, Model);
+    });
+    return Mixin;
   }
 }
 
