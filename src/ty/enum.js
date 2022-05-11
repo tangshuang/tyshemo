@@ -3,8 +3,8 @@ import {
   isInstanceOf,
 } from 'ts-fns'
 
-import Type from './type.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { TyError } from './ty-error.js'
 
 export class Enum extends Type {
   constructor(...patterns) {
@@ -74,5 +74,3 @@ export function enumerate(...patterns) {
   const type = new Enum(...patterns)
   return type
 }
-
-export default Enum

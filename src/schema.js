@@ -18,7 +18,7 @@ import {
 } from 'ts-fns'
 
 import { Ty, Rule } from './ty/index.js'
-import Meta from './meta.js'
+import { Meta } from './meta.js'
 import { patchObj } from './shared/utils.js'
 
 export class Schema {
@@ -1120,4 +1120,3 @@ export class Schema {
     disabled: `{key} can not be set new value because of disabled.`,
   }
 }
-export default Schema

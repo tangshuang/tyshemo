@@ -16,7 +16,7 @@ import {
   isNaN,
 } from 'ts-fns'
 
-import Ty from './ty.js'
+import { Ty } from './ty.js'
 
 import {
   Null,
@@ -726,4 +726,3 @@ export class Parser {
     regexp: RegExp,
   }
 }
-export default Parser

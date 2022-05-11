@@ -11,9 +11,9 @@ import {
   hasOwnKey,
 } from 'ts-fns'
 
-import Prototype from './prototype.js'
-import Rule from './rule.js'
-import TyError from './ty-error.js'
+import { Prototype } from './prototype.js'
+import { Rule } from './rule.js'
+import { TyError } from './ty-error.js'
 
 export class Type {
 
@@ -351,5 +351,3 @@ export class Type {
   }
 
 }
-
-export default Type

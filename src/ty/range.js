@@ -4,8 +4,8 @@ import {
   isNumber,
 } from 'ts-fns'
 
-import Type from './type.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { TyError } from './ty-error.js'
 
 export class Range extends Type {
   constructor(pattern) {
@@ -47,8 +47,6 @@ export class Range extends Type {
     return tyerr.error()
   }
 }
-
-export default Range
 
 export function range(pattern) {
   const type = new Range(pattern)

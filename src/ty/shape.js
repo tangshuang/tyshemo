@@ -2,8 +2,8 @@ import {
   isArray,
 } from 'ts-fns'
 
-import Type from './type.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { TyError } from './ty-error.js'
 
 export class Shape extends Type {
   constructor(pattern) {
@@ -35,5 +35,3 @@ export function shape(pattern) {
   const type = new Shape(pattern)
   return type
 }
-
-export default Shape

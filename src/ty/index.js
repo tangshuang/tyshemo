@@ -1,4 +1,4 @@
-import Ty from './ty.js'
+import { Ty } from './ty.js'
 
 export { Prototype } from './prototype.js'
 export {
@@ -24,7 +24,15 @@ export {
 export { Type } from './type.js'
 export { Dict, dict } from './dict.js'
 export { List, list } from './list.js'
-export { Tupl, Tuple, tupl, tuple } from './tuple.js'
+export {
+  Tupl,
+  /**
+   * @deprecated
+   */
+  Tupl as Tuple,
+  tupl,
+  tupl as tuple,
+} from './tuple.js'
 export { Enum, enumerate } from './enum.js'
 export { Range, range } from './range.js'
 export { Mapping, mapping } from './mapping.js'
@@ -57,7 +65,6 @@ export {
 export { TyError } from './ty-error.js'
 
 export { Ty }
-export default Ty
 
 export { Parser } from './parser.js'
 export { Mocker } from './mocker.js'

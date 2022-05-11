@@ -7,8 +7,8 @@ import {
   isArray,
 } from 'ts-fns'
 
-import Type from './type.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { TyError } from './ty-error.js'
 
 export class Dict extends Type {
   constructor(pattern) {
@@ -70,5 +70,3 @@ export function dict(pattern) {
   const type = new Dict(pattern)
   return type
 }
-
-export default Dict

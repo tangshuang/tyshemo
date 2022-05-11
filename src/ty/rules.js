@@ -8,13 +8,13 @@ import {
   isNone,
 } from 'ts-fns'
 
-import Type from './type.js'
-import Rule from './rule.js'
-import Tupl from './tuple.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { Rule } from './rule.js'
+import { Tupl } from './tuple.js'
+import { TyError } from './ty-error.js'
 
-import Dict from './dict.js'
-import List from './list.js'
+import { Dict } from './dict.js'
+import { List } from './list.js'
 import { Any } from './prototypes.js'
 
 export function createType(type, strict, loose) {

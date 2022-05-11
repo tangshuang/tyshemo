@@ -1,9 +1,9 @@
-import Parser from './ty/parser.js'
-import Model from './model.js'
+import { Parser } from './ty/parser.js'
+import { Model } from './model.js'
 import { createAsyncRef } from './shared/utils.js'
 import { ScopeX, createScope } from 'scopex'
-import Validator from './validator.js'
-import Factory from './factory.js'
+import { Validator } from './validator.js'
+import { Factory } from './factory.js'
 import {
   each,
   isString,
@@ -459,4 +459,3 @@ export class Loader {
     return new Constructor().load(url)
   }
 }
-export default Loader

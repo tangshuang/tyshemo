@@ -161,8 +161,6 @@ export class TyError extends TypeError {
   static messagePrefix = ''
 }
 
-export default TyError
-
 // ====================
 
 function createSpace(count = 0) {

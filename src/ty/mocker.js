@@ -353,4 +353,3 @@ function create(target, path, loaders) {
 
   return target
 }
-export default Mocker

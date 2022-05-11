@@ -1,5 +1,5 @@
 import { isFunction, getConstructorOf } from 'ts-fns'
-import Type from './type.js'
+import { Type } from './type.js'
 import { createType } from './rules.js'
 
 export class SelfRef extends Type {
@@ -45,5 +45,3 @@ export function selfref(fn) {
   const type = new SelfRef(fn)
   return type.init()
 }
-
-export default SelfRef

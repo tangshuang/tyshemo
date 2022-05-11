@@ -1,5 +1,5 @@
-import Meta from '../src/meta.js'
-import Schema from '../src/schema.js'
+import { Meta } from '../src/meta.js'
+import { Schema } from '../src/schema.js'
 import { ifexist } from '../src/ty/index.js'
 import { isString, isEmpty } from 'ts-fns'
 

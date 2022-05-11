@@ -6,7 +6,7 @@ import {
   isNull,
 } from 'ts-fns'
 
-import Type from './type.js'
+import { Type } from './type.js'
 
 export class Rule {
   /**
@@ -173,5 +173,3 @@ export class Rule {
     return this.name
   }
 }
-
-export default Rule

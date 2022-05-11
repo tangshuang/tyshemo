@@ -7,7 +7,7 @@ import {
   isNone,
 } from 'ts-fns'
 
-import Prototype from './prototype.js'
+import { Prototype } from './prototype.js'
 
 export class Null extends Prototype {
   name = 'Null'

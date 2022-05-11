@@ -1,12 +1,11 @@
-import Type from './type.js'
-import Ty from './ty.js'
-
 import {
   isObject,
   each,
 } from 'ts-fns'
 
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { Ty } from './ty.js'
+import { TyError } from './ty-error.js'
 import { Any } from './prototypes.js'
 
 export class Mapping extends Type {
@@ -50,5 +49,3 @@ export function mapping(pattern) {
   const type = new Mapping(pattern)
   return type
 }
-
-export default Mapping

@@ -2,7 +2,7 @@ import { Meta } from './meta.js'
 import { isInheritedOf, isInstanceOf, isObject, isArray } from 'ts-fns'
 import { Model, State } from './model.js'
 import { Factory } from './factory.js'
-import Ty from './ty/ty.js'
+import { Ty } from './ty/ty.js'
 import { onlySupportLegacy } from './shared/utils.js'
 
 const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
@@ -135,10 +135,10 @@ export function enhance(source) {
  * @returns
  * @example
  * class A {
- *   @layoff()
+ *   @eject()
  *   some: string;
  * }
  */
-export function layoff() {
-  return createDecorator('layoff')
+export function eject() {
+  return createDecorator('eject')
 }

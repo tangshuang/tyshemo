@@ -1,6 +1,6 @@
-import Model from '../src/model.js'
-import Meta from '../src/meta.js'
-import Factory from '../src/factory.js'
+import { Model } from '../src/model.js'
+import { Meta } from '../src/meta.js'
+import { Factory } from '../src/factory.js'
 
 describe('Model', () => {
   class PersonModel extends Model {

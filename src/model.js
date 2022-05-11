@@ -26,11 +26,11 @@ import {
   hasOwnKey,
 } from 'ts-fns'
 
-import _Schema from './schema.js'
-import _Store from './store.js'
+import { Schema as _Schema} from './schema.js'
+import { Store as _Store} from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
-import Meta from './meta.js'
+import { Meta } from './meta.js'
 import { Factory, FactoryMeta } from './factory.js'
 
 const DEFAULT_ATTRIBUTES = {
@@ -1921,5 +1921,3 @@ export class Model {
     return value
   }
 }
-
-export default Model

@@ -8,8 +8,8 @@ import {
   isFunction,
   define,
 } from 'ts-fns'
-import Meta from './meta.js'
-import Model from './model.js'
+import { Meta } from './meta.js'
+import { Model } from './model.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
@@ -285,7 +285,6 @@ export class Factory {
     return entity.getMeta()
   }
 }
-export default Factory
 
 export function createMeta(...args) {
   const [entries] = args

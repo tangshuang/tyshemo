@@ -1,4 +1,4 @@
-import Loader from '../src/loader.js'
+import { Loader } from '../src/loader.js'
 import json from './model.json'
 
 describe('Loader', () => {

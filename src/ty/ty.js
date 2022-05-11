@@ -6,8 +6,6 @@ import {
   createProxy,
   isInstanceOf,
   assign,
-  parse,
-  keyin,
 } from 'ts-fns'
 
 import { createType } from './rules.js'
@@ -308,5 +306,3 @@ Ty.track = ty.track.bind(ty)
 Ty.is = ty.is.bind(ty)
 Ty.create = createType
 Object.defineProperty(Ty, 'decorate', { get: () => ty.decorate })
-
-export default Ty

@@ -9,7 +9,7 @@ import {
   each,
   isEmpty,
 } from 'ts-fns'
-import Validator from './validator.js'
+import { Validator } from './validator.js'
 import { ofChain } from './shared/utils.js'
 
 const createValidators = (items) => {
@@ -87,4 +87,3 @@ export class Meta {
     return Constructor
   }
 }
-export default Meta

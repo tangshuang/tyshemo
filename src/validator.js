@@ -33,7 +33,6 @@ export class Validator {
   static allOf = allOf
   static anyOf = anyOf
 }
-export default Validator
 
 function required(message, emptyFn) {
   return new Validator({

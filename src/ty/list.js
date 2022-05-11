@@ -3,8 +3,8 @@ import {
   isEmpty,
 } from 'ts-fns'
 
-import Type from './type.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { TyError } from './ty-error.js'
 
 export class List extends Type {
   constructor(pattern) {
@@ -42,5 +42,3 @@ export function list(pattern) {
   const type = new List(pattern)
   return type
 }
-
-export default List

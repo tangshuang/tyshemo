@@ -4,9 +4,9 @@ import {
   inObject,
 } from 'ts-fns'
 
-import Type from './type.js'
-import Rule from './rule.js'
-import TyError from './ty-error.js'
+import { Type } from './type.js'
+import { Rule } from './rule.js'
+import { TyError } from './ty-error.js'
 
 export class Tupl extends Type {
   constructor(pattern) {
@@ -91,10 +91,4 @@ export class Tupl extends Type {
 export function tupl(pattern) {
   const type = new Tupl(pattern)
   return type
-}
-
-export {
-  Tupl as Tuple,
-  Tupl as default,
-  tupl as tuple,
 }

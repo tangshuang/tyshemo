@@ -23,8 +23,6 @@ export class Prototype {
   }
 }
 
-export default Prototype
-
 const prototypes = []
 Prototype.register = (proto, validate) => {
   const item = prototypes.find(item => item.proto === proto)

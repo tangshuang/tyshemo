@@ -1,5 +1,5 @@
-import Model from '../src/model.js'
-import Meta from '../src/meta.js'
+import { Model } from '../src/model.js'
+import { Meta } from '../src/meta.js'
 import { formatDate, createDate } from 'ts-fns'
 import { Numeric } from '../src/ty/index.js'
 import { createMetaGroup, createMeta } from '../src/factory.js'

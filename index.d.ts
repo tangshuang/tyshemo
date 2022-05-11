@@ -821,4 +821,8 @@ export declare function type(type: any): PropertyDecorator;
 
 export declare function enhance(source: any): PropertyDecorator;
 
+/**
+ * @deprecated use eject instead
+ */
 export declare function layoff(): PropertyDecorator;
+export declare function eject(): PropertyDecorator;

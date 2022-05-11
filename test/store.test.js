@@ -1,6 +1,6 @@
 import { Store } from '../src/store.js'
 import { Model } from '../src/model.js'
-import Meta from '../src/meta.js'
+import { Meta } from '../src/meta.js'
 
 describe('Store', () => {
   const createData = () => ({
