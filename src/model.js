@@ -1848,8 +1848,15 @@ export class Model {
     }
 
     const hooks = {}
+    const warnBeforeOverride = (key) => {
+      console.warn(`[TySheMo]: ${key} in Model prototype will override existing when mixin.`)
+    }
+
     Models.forEach((Model) => {
       each(Model, (descriptor, key) => {
+        if (!isUndefined(Mixin[key]) && !force) {
+          warnBeforeOverride(key)
+        }
         define(Mixin, key, descriptor)
       }, true)
 
@@ -1869,9 +1876,8 @@ export class Model {
           return
         }
 
-        if (Mixin.prototype[key] !== undefined && !force) {
-          const model = JSON.stringify(Object.assign({}, Model))
-          console.warn(`[TySheMo]: ${key} in Model ${model} prototype will override existing when mixin.`)
+        if (!isUndefined(Mixin.prototype[key]) && !force) {
+          warnBeforeOverride(key)
         }
         define(Mixin.prototype, key, descriptor)
       }, true)
