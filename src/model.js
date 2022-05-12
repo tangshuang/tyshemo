@@ -1835,14 +1835,53 @@ export class Model {
   }
 
   static mixin(...Models) {
+    let force = false
+    if (Models[0] === true) {
+      force = Models.shift()
+    }
+
     const Constructor = this
     class Mixin extends Constructor {
       static [Symbol.hasInstance](target) {
         return Models.some((Model) => target instanceof Model)
       }
     }
+
+    const hooks = {}
     Models.forEach((Model) => {
-      mixin(Mixin, Model)
+      each(Model, (descriptor, key) => {
+        define(Mixin, key, descriptor)
+      }, true)
+
+      each(Model.prototype, (descriptor, key) => {
+        if (key === 'constructor') {
+          return
+        }
+        // only this hooks do not return any value
+        if (['onInit', 'onCheck', 'onError', 'onRestore', 'onRegress', 'onChange', 'onEdit'].includes(key)) {
+          hooks[key] = hooks[key] || []
+          hooks[key].push(descriptor.value)
+          return
+        }
+        // these hooks return values, so did not override
+        if (['onSwitch', 'onParse', 'onRecord', 'onExport'].includes(key) && !force) {
+          console.warn(`[TySheMo]: ${key} will not be mixined.`)
+          return
+        }
+
+        if (Mixin.prototype[key] !== undefined && !force) {
+          const model = JSON.stringify(Object.assign({}, Model))
+          console.warn(`[TySheMo]: ${key} in Model ${model} prototype will override existing when mixin.`)
+        }
+        define(Mixin.prototype, key, descriptor)
+      }, true)
+    })
+    each(hooks, (fns, key) => {
+      Mixin.prototype[key] = function(...args) {
+        fns.forEach((fn) => {
+          fn.call(this, ...args)
+        })
+      }
     })
     return Mixin
   }

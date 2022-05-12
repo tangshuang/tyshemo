@@ -779,6 +779,7 @@ export declare class Model implements Obj {
   static extend(next: Obj): ModelClass;
   static toEdit: new () => EditorModel;
   static mixin<T extends (new () => Model)[]>(...Models: T): UnionToInter<InstanceType<T[number]>>;
+  static mixin<T extends (new () => Model)[]>(force: boolean, ...Models: T): UnionToInter<InstanceType<T[number]>>;
 }
 
 declare class EditorModel extends Model {
