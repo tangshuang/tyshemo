@@ -278,10 +278,23 @@ export class Factory {
     return NewModel
   }
 
-  static getMeta(entries, attrs, hooks = {}) {
+  static getMeta(Entries, attrs, hooks = {}) {
     const Constructor = this
-    const entity = new Constructor(entries, attrs)
+    const entity = new Constructor(Entries, attrs)
     Object.assign(entity, hooks)
+    return entity.getMeta()
+  }
+
+  static selectMeta(Entries, choose, attrs, hooks = {}) {
+    const TempModel = Model.mixin(...Entries)
+    const Constructor = this
+    const entity = new Constructor(TempModel, attrs)
+    Object.assign(entity, {
+      ...hooks,
+      entry(Entries, data, key, parent) {
+        return choose(Entries, data, key, parent)
+      },
+    })
     return entity.getMeta()
   }
 }

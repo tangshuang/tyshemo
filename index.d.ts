@@ -433,6 +433,7 @@ export declare class Validator<T extends Model = Model> {
   static readonly minLen: (message: string, len?: number) => Validator;
   static readonly max: (message: string, len?: number) => Validator;
   static readonly min: (message: string, len?: number) => Validator;
+
   static readonly integer: (len: number, message: string) => Validator;
   static readonly decimal: (len: number, message: string) => Validator;
   static readonly email: (message: string) => Validator;
@@ -447,7 +448,7 @@ export declare class Validator<T extends Model = Model> {
 type ModelClass = new () => Model;
 type MetaClass<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = new () => Meta<T, I, M, U>;
 
-type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
+export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
   /**
    * field default value, used by `reset` `formJSON` and so on
    */
@@ -823,21 +824,22 @@ export declare function MemoGetter<T, U>(
 } & Obj;
 
 interface FactoryHooks {
-  entry(entries: ModelClass): ModelClass;
-  entry(entries: ModelClass[]): ModelClass[];
-  instance(model: ModelClass, ctx: ModelClass): ModelClass;
-  default(fn: Function): Function;
-  type(type: any): any;
-  validators(validators: Validator[]): Validator[];
-  create(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
-  save(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
-  map(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
-  setter(fn: (value: any, key: string) => any | any[]): (value: any, key: string) => any | any[];
-  transport(child: Model, parent: Model): void;
+  entry?(entries?: ModelClass): ModelClass;
+  entry?(entries?: ModelClass[], data?: any, key?: string, parent?: Model): ModelClass[];
+  instance?(model?: Model, parent?: Model): Model;
+  default?(fn?: Function): Function;
+  type?(type?: any): any;
+  validators?(validators?: Validator[]): Validator[];
+  create?(fn?: (value?: any, key?: string, data?: any) => any | any[]): (value?: any, key?: string) => any | any[];
+  save?(fn?: (value?: any, key?: string, data?: any) => any | any[]): (value?: any, key?: string) => any | any[];
+  map?(fn?: (value?: any, key?: string) => any | any[]): (value?: any, key?: string) => any | any[];
+  setter?(fn?: (value?: any, key?: string) => any | any[]): (value?: any, key?: string) => any | any[];
+  transport?(child?: Model, parent?: Model): void;
 }
 
+interface Factory extends FactoryHooks {}
 export declare class Factory {
-  getMeta<T = Model | Model[], M = Model>(): Meta<T, M>;
+  getMeta<T = Model | Model[], M = Model>(): Meta<T, T, M>;
 
   /**
    * @deprecated
@@ -846,7 +848,9 @@ export declare class Factory {
    */
   static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass;
 
-  static getMeta<T = Model | Model[], M = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, M>;
+  static getMeta<T = Model | Model[], M = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, T, M>;
+
+  static selectMeta<T = Model | Model[], M = Model, P extends ModelClass[] = ModelClass[]>(entries: P, select: (entries?: P, data?: object, key?: string, parent?: Model) => P[number], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, T, M>;
 }
 
 declare function meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(entries: Attrs<T, I, M, U> | Meta<T, I, M, U> | MetaClass<T, I, M, U>): PropertyDecorator;

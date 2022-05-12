@@ -88,3 +88,18 @@ Convert a Model or a list of Models to be a meta.
 ```js
 const SomeMeta = Factory.getMeta(SomeModel)
 ```
+
+**static selectMeta(entries, choose, attrs?)**
+
+Generate a meta by choosing from given entries.
+
+```js
+const SomeMeta = Factory.selectMeta([AModel, BModel, CModel], ([AModel, BModel, CModel], data, key, parentModel) => {
+  if (data.type === 'a') {
+    return AModel
+  }
+  ...
+})
+```
+
+The `choose` function will override `entry` hook to help you to choose which Model to use.
