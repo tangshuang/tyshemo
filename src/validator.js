@@ -19,17 +19,17 @@ export class Validator {
   }
 
   static required = required
-  static integer = integer
-  static decimal = decimal
+  static maxLen = maxLen
+  static minLen = minLen
   static max = max
   static min = min
+
+  static integer = integer
+  static decimal = decimal
   static email = email
   static url = url
   static date = date
   static match = match
-  static len = len
-  static maxLen = maxLen
-  static minLen = minLen
   static allOf = allOf
   static anyOf = anyOf
 }
@@ -38,7 +38,7 @@ function required(message, emptyFn) {
   return new Validator({
     name: 'required',
     determine(_, key) {
-      if (this && this.$views && this.$views[key]) {
+      if (this?.$views?.[key]) {
         return this.$views[key].required
       }
       return true
@@ -48,7 +48,7 @@ function required(message, emptyFn) {
       if (emptyFn) {
         return !emptyFn(value)
       }
-      if (this && this.$views && this.$views[key]) {
+      if (this?.$views?.[key]) {
         return !this.$views[key].empty
       }
       return !isEmpty(value)
@@ -58,16 +58,108 @@ function required(message, emptyFn) {
   })
 }
 
-function len(len, message) {
-  return match(value => isString(value) && value.length === len, message, 'len')
+function maxLen(message, len) {
+  return new Validator({
+    name: 'maxLen',
+    determine(_, key) {
+      if (isNumber(len)) {
+        return true
+      }
+      if (isNumber(this?.$views?.[key]?.maxLen)) {
+        return true
+      }
+      return false
+    },
+    validate(value, key) {
+      if (!isString(value)) {
+        return false
+      }
+
+      const attr = this?.$views?.[key]?.maxLen
+      const maxNum = isNumber(len) ? len : isNumber(attr) ? attr : NaN
+      return value.length <= maxNum
+    },
+    message,
+    break: true,
+  })
 }
 
-function maxLen(len, message) {
-  return match(value => isString(value) && value.length <= len, message, 'maxLen')
+function minLen(message, len) {
+  return new Validator({
+    name: 'minLen',
+    determine(_, key) {
+      if (isNumber(len)) {
+        return true
+      }
+      if (isNumber(this?.$views?.[key]?.minLen)) {
+        return true
+      }
+      return false
+    },
+    validate(value, key) {
+      if (!isString(value)) {
+        return false
+      }
+
+      const attr = this?.$views?.[key]?.maxLen
+      const minNum = isNumber(len) ? len : isNumber(attr) ? attr : NaN
+      return value.length >= minNum
+    },
+    message,
+    break: true,
+  })
 }
 
-function minLen(len, message) {
-  return match(value => isString(value) && value.length >= len, message, 'minLen')
+function max(message, num) {
+  return new Validator({
+    name: 'max',
+    determine(_, key) {
+      if (isNumber(num)) {
+        return true
+      }
+      if (isNumber(this?.$views?.[key]?.max)) {
+        return true
+      }
+      return false
+    },
+    validate(value, key) {
+      if (isNumber(value) || isNumeric(value)) {
+        const v = +value
+        const attr = this?.$views?.[key]?.max
+        const n = isNumber(num) ? num : isNumber(attr) ? attr : NaN
+        return v <= n
+      }
+      return false
+    },
+    message,
+    break: true,
+  })
+}
+
+function min(message, num) {
+  return new Validator({
+    name: 'min',
+    determine(_, key) {
+      if (isNumber(num)) {
+        return true
+      }
+      if (isNumber(this?.$views?.[key]?.min)) {
+        return true
+      }
+      return false
+    },
+    validate(value, key) {
+      if (isNumber(value) || isNumeric(value)) {
+        const v = +value
+        const attr = this?.$views?.[key]?.min
+        const n = isNumber(num) ? num : isNumber(attr) ? attr : NaN
+        return v >= n
+      }
+      return false
+    },
+    message,
+    break: true,
+  })
 }
 
 function integer(len, message) {
@@ -102,14 +194,6 @@ function decimal(len, message) {
     return true
   }
   return match(validate, message, 'decimal')
-}
-
-function max(num, message) {
-  return match(value => (isNumber(value) || isNumeric(value)) && +value <= num, message, 'max')
-}
-
-function min(num, message) {
-  return match(value => (isNumber(value) || isNumeric(value)) && +value >= num, message, 'min')
 }
 
 function email(message) {

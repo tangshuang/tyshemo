@@ -429,13 +429,12 @@ export declare class Validator<T extends Model = Model> {
   constructor(options: ValidatorOptions<T>);
 
   static readonly required: <T extends Model>(message: string, emptyFn?: (this: T, value: any) => boolean) => Validator;
-  static readonly maxLen: (len: number, message: string) => Validator;
-  static readonly minLen: (len: number, message: string) => Validator;
-  static readonly len: (len: number, message: string) => Validator;
+  static readonly maxLen: (message: string, len?: number) => Validator;
+  static readonly minLen: (message: string, len?: number) => Validator;
+  static readonly max: (message: string, len?: number) => Validator;
+  static readonly min: (message: string, len?: number) => Validator;
   static readonly integer: (len: number, message: string) => Validator;
   static readonly decimal: (len: number, message: string) => Validator;
-  static readonly max: (num: number, message: string) => Validator;
-  static readonly min: (num: number, message: string) => Validator;
   static readonly email: (message: string) => Validator;
   static readonly url: (message: string) => Validator;
   static readonly date: (message: string) => Validator;
