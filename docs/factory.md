@@ -89,7 +89,7 @@ Convert a Model or a list of Models to be a meta.
 const SomeMeta = Factory.createMeta(SomeModel)
 ```
 
-**static selectMeta(entries, choose, attrs?)**
+**static selectMeta(entries, select, attrs?)**
 
 Generate a meta by choosing from given entries.
 
@@ -100,6 +100,30 @@ const SomeMeta = Factory.selectMeta([AModel, BModel, CModel], ([AModel, BModel, 
   }
   ...
 })
+
+
+class SomeModel extends Model {
+  static some = SomeMeta
+  // static some = AModel | BModel | CModel
+}
 ```
 
-The `choose` function will override `entry` hook to help you to choose which Model to use.
+The `select` function will override `entry` hook to help you to choose which Model to use.
+
+To create a meta which refer to an array of given Models, you should give the list in an array, i.e.
+
+```js
+const SomeMeta = Factory.selectMeta([[AModel, BModel, CModel]], ([AModel, BModel, CModel], data, key, parentModel) => {
+  if (data.type === 'a') {
+    return AModel
+  }
+  ...
+})
+
+class SomeModel extends Model {
+  static some = SomeMeta
+  // static some = [AModel, BModel, CModel]
+}
+```
+
+Notice here, we pass `[[AModel, BModel, CModel]]`, two level array. However, you receive one level array in `select` function.

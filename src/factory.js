@@ -278,9 +278,9 @@ export class Factory {
     return NewModel
   }
 
-  static createMeta(Entries, attrs, hooks = {}) {
+  static createMeta(entries, attrs, hooks = {}) {
     const Constructor = this
-    const entity = new Constructor(Entries, attrs)
+    const entity = new Constructor(entries, attrs)
     Object.assign(entity, hooks)
     return entity.getMeta()
   }
@@ -288,21 +288,28 @@ export class Factory {
   /**
    * @deprecated
    */
-  static getMeta(Entries, attrs, hooks = {}) {
-    return this.createMeta(Entries, attrs, hooks)
+  static getMeta(entries, attrs, hooks = {}) {
+    return this.createMeta(entries, attrs, hooks)
   }
 
-  static selectMeta(Entries, choose, attrs, hooks = {}) {
-    const TempModel = Model.mixin(...Entries)
-    const Constructor = this
-    const entity = new Constructor(TempModel, attrs)
-    Object.assign(entity, {
+  /**
+   * create a meta by given entries
+   * @param {ModelClass[] | ModelClass[][]} entries
+   * @param {ModelClass[] => Model} choose
+   * @param {object} [attrs]
+   * @param {object} [hooks]
+   * @returns {Meta}
+   */
+  static selectMeta(entries, choose, attrs, hooks = {}) {
+    const isList = isArray(entries[0])
+    const items = isList ? entries[0] : entries
+    const TempModel = Model.mixin(...items)
+    return this.createMeta(isList ? [TempModel] : TempModel, attrs, {
       ...hooks,
-      entry(Entries, data, key, parent) {
-        return choose(Entries, data, key, parent)
+      entry(items, data, key, parent) {
+        return choose(items, data, key, parent)
       },
     })
-    return entity.getMeta()
   }
 }
 
