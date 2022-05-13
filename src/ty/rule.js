@@ -4,6 +4,7 @@ import {
   isInstanceOf,
   isString,
   isNull,
+  getConstructorOf,
 } from 'ts-fns'
 
 import { Type } from './type.js'
@@ -57,14 +58,14 @@ export class Rule {
     if (isInstanceOf(pattern, Rule)) {
       const rule = this.isStrict && !pattern.isStrict ? pattern.strict
         : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
-        : pattern
+          : pattern
       const err = rule.catch(data, key)
       error = makeError(err)
     }
     else if (isInstanceOf(pattern, Type)) {
       const type = this.isStrict && !pattern.isStrict ? pattern.strict
         : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
-        : pattern
+          : pattern
       const err = type.catch(data[key])
       error = makeError(err)
     }
@@ -129,7 +130,7 @@ export class Rule {
   }
 
   clone() {
-    const Constructor = getConstructor(this)
+    const Constructor = getConstructorOf(this)
     const ins = new Constructor(this.options)
     return ins
   }

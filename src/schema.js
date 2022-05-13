@@ -36,7 +36,7 @@ export class Schema {
         // only metas will be used
         const value = isInstanceOf(meta, Meta) ? meta
           : isInheritedOf(meta, Meta) ? new meta()
-          : null
+            : null
 
         if (!value) {
           return
@@ -475,7 +475,7 @@ export class Schema {
       let msg = isString(message) ? message
         // if validate return an error, use error message as
         : isInstanceOf(res, Error) ? res.message
-        : ''
+          : ''
 
       if (isFunction(message)) {
         msg = this._trydo(
@@ -696,7 +696,7 @@ export class Schema {
         let msg = isString(message) ? message
           // if validate return an error, use error message as
           : isInstanceOf(res, Error) ? res.message
-          : ''
+            : ''
 
         if (isFunction(message)) {
           return say(res).then((o) => {
@@ -1045,7 +1045,7 @@ export class Schema {
     each(this, (meta, key) => {
       const { save, catch: handle, asset } = meta
       const value = data[key]
-      const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
+      const dataKey = asset ? (isFunction(asset) ? asset(data, key) : asset) : key
 
       if (isFunction(save)) {
         const res = this._trydo(

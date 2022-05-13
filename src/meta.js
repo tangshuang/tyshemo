@@ -15,9 +15,9 @@ import { ofChain } from './shared/utils.js'
 const createValidators = (items) => {
   return items.map(v =>
     isInstanceOf(v, Validator) ? v
-    : isInheritedOf(v, Validator) ? new v()
-    : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
-    : null
+      : isInheritedOf(v, Validator) ? new v()
+        : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
+          : null
   ).filter(v => !!v)
 }
 
@@ -84,6 +84,11 @@ export class Meta {
 
   static extend(attrs) {
     const Constructor = inherit(this, null, attrs)
+    return Constructor
+  }
+
+  static create(attrs) {
+    const Constructor = inherit(Meta, null, attrs)
     return Constructor
   }
 }

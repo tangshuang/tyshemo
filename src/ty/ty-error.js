@@ -304,7 +304,7 @@ function makeValueString(value, sensitive = false, breakline = true, space = 2) 
     }
   }
 
-  return make(value, sensitive, breakline, space = 2)
+  return make(value, sensitive, breakline, space)
 }
 
 function makeErrorReceive(value, breakline = true, space = 0, sensitive = false) {

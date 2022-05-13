@@ -185,12 +185,12 @@ export class Ty {
             }
             $this.try(() => $this.expect(items).to.be(type), `push items {keyPath} should match {should} but receive {receive}`)
           },
-          splice(keyPath, [start, end, ...items]) {
+          splice(keyPath, [_start, _end, ...items]) {
             if (!keyPath.length && items.length) {
               $this.try(() => $this.expect(items).to.be(type), `splice insert items {keyPath} should match {should} but receive {receive}`)
             }
           },
-          fill(keyPath, [value, start, end]) {
+          fill(keyPath, [value, _start, _end]) {
             if (keyPath.length) {
               return
             }
@@ -205,7 +205,7 @@ export class Ty {
           constructor(...args) {
             const tupl = isInstanceOf(type, Tupl) ? type : new Tupl(type)
             $this.try(() => $this.expect(args).to.be(tupl), `${target.name} constructor parameters should match {should} but receive {receive}`)
-            return super(...args)
+            super(...args)
           }
         }
       }
@@ -262,7 +262,7 @@ export class Ty {
                 $this.try(() => $this.expect(v).to.be(type), `${target.name}.${prop} should be {should} but receive {receive}`)
                 value = v
               },
-              get: () => value
+              get: () => value,
             }
           }
           // normal property
@@ -275,7 +275,7 @@ export class Ty {
                 $this.try(() => $this.expect(v).to.be(type), `${target.name}.${prop} should be {should} but receive {receive}`)
                 value = v
               },
-              get: () => value
+              get: () => value,
             }
           }
           else {

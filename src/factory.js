@@ -125,7 +125,7 @@ export class Factory {
           const ChoosedModel = entity.entry(Entries, next, key, parent)
           const model = this.adapt(Entries, next) ? next.setParent([parent, key])
             : isObject(next) ? new ChoosedModel(next, { parent, key })
-            : new ChoosedModel({}, { parent, key })
+              : new ChoosedModel({}, { parent, key })
           const child = entity.instance(model, parent)
           setupTransport(child, parent, key)
           return child
@@ -166,7 +166,7 @@ export class Factory {
         const ChoosedModel = entity.entry(Entries, value, key, parent)
         const model = entity.adapt(Entries, value) ? value.setParent([parent, key])
           : isObject(value) ? new ChoosedModel(value, { key, parent })
-          : new ChoosedModel({}, { key, parent })
+            : new ChoosedModel({}, { key, parent })
         const child = entity.instance(model, parent)
         setupTransport(child, parent, key)
         return child
@@ -207,7 +207,7 @@ export class Factory {
    * @param {*} parent
    * @returns
    */
-  entry(Entries, data, key, parent) {
+  entry(Entries, _data, _key, _parent) {
     return isArray(Entries) ? Entries[0] : Entries
   }
   /**
@@ -278,11 +278,18 @@ export class Factory {
     return NewModel
   }
 
-  static getMeta(Entries, attrs, hooks = {}) {
+  static createMeta(Entries, attrs, hooks = {}) {
     const Constructor = this
     const entity = new Constructor(Entries, attrs)
     Object.assign(entity, hooks)
     return entity.getMeta()
+  }
+
+  /**
+   * @deprecated
+   */
+  static getMeta(Entries, attrs, hooks = {}) {
+    return this.createMeta(Entries, attrs, hooks)
   }
 
   static selectMeta(Entries, choose, attrs, hooks = {}) {
@@ -302,10 +309,10 @@ export class Factory {
 export function createMeta(...args) {
   const [entries] = args
   if (isArray(entries) && !entries.some(entry => !isInheritedOf(entry, Model))) {
-    return Factory.getMeta(...args)
+    return Factory.createMeta(...args)
   }
   if (isInheritedOf(entries, Model)) {
-    return Factory.getMeta(...args)
+    return Factory.createMeta(...args)
   }
   return new Meta(entries)
 }
@@ -343,7 +350,7 @@ export function createMeta(...args) {
  * })
  */
 export function createMetaGroup(count, create) {
-  const metas = [];
+  const metas = []
   for (let i = 0; i < count; i ++) {
     metas.push(class extends Meta {})
   }

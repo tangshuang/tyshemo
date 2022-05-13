@@ -66,7 +66,7 @@ const createDecorator = (name, fn, force) => (protos, key, descriptor) => {
     return {
       writable: true,
       configurable: true,
-    };
+    }
   }
 }
 
@@ -87,7 +87,7 @@ export function meta(entry, options, methods) {
       define(CurrentModel, key, entry)
     }
     else if (isInheritedOf(entry, Model) || (isArray(entry) && !entry.some(item => !isInheritedOf(item, Model)))) {
-      const meta = Factory.getMeta(entry, options, methods)
+      const meta = Factory.createMeta(entry, options, methods)
       define(CurrentModel, key, meta)
     }
     else {

@@ -6,7 +6,6 @@ import {
   isConstructor,
   isArray,
   isObject,
-  isEqual,
   isString,
   makeKeyChain,
   isNumeric,
@@ -118,7 +117,6 @@ export function createMemoRef(getter, compare, depend) {
 }
 
 export function isMemoRef(ref) {
-  const keys = Object.keys(ref)
   return isObject(ref) && ref.$$type === 'memoRef'
 }
 

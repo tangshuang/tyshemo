@@ -367,7 +367,7 @@ export class Loader {
         each(submodels, (model, field) => {
           const attrs = factories[field] || metas[field] // -> new version support submodel field name directly
           if (attrs) {
-            metas[field] = Factory.getMeta(model, attrs)
+            metas[field] = Factory.createMeta(model, attrs)
           }
           else {
             metas[field] = model

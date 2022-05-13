@@ -20,7 +20,7 @@ class SomeFactory extends Factory {
 }
 
 class AnyModel extends Model {
-  static some = SomeFactory.getMeta(SomeModel)
+  static some = SomeFactory.createMeta(SomeModel)
 }
 ```
 
@@ -43,7 +43,7 @@ You can override the methods for meta generators by hooks functions, they are:
 `fn` is a function for original generator.
 
 ```js
-const SomeMeta = Factory.getMeta([Model1, Model2], null, {
+const SomeMeta = Factory.createMeta([Model1, Model2], null, {
   entry([Model1, Model2], data) {
     if (data.type === 'a') {
       return Model1
@@ -81,12 +81,12 @@ const NewModel = Factory.useAttrs(OriginalModel, [
 ])
 ```
 
-**static getMeta(entries, attrs?, hooks?)**
+**static createMeta(entries, attrs?, hooks?)**
 
 Convert a Model or a list of Models to be a meta.
 
 ```js
-const SomeMeta = Factory.getMeta(SomeModel)
+const SomeMeta = Factory.createMeta(SomeModel)
 ```
 
 **static selectMeta(entries, choose, attrs?)**

@@ -35,7 +35,7 @@ export class Type {
    * @param {*} pattern
    */
   validate(...args) {
-    const [value, pattern] = decideby(() => {
+    let [value, pattern] = decideby(() => {
       if (args.length === 1) {
         return [args[0], this.pattern]
       }
@@ -146,7 +146,7 @@ export class Type {
           if (isRule) {
             const rule = this.isStrict && !pattern.isStrict ? pattern.strict
               : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
-              : pattern
+                : pattern
             const error = rule.catch(data, key)
             if (!error) {
               continue

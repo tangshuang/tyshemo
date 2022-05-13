@@ -9,7 +9,6 @@ import {
   decideby,
   isUndefined,
   isNull,
-  isNone,
   map,
   isNumeric,
   createSafeExp,
@@ -164,8 +163,8 @@ export class Parser {
             return type ? new List([type]) : Array
           }
           // range 10<-20
-          else if (/^\-?\d+<?\->?\-?\d+$/.test(item)) {
-            const [_, minStr, maxStr] = item.match(/^(\-?\d+)<?\->?(\-?\d+)$/)
+          else if (/^-?\d+<?->?-?\d+$/.test(item)) {
+            const [_, minStr, maxStr] = item.match(/^(-?\d+)<?->?(-?\d+)$/)
             const min = +minStr
             const max = +maxStr
             const minBound = item.indexOf('<-') > 0
@@ -174,7 +173,7 @@ export class Parser {
           }
           // mapping {string:array}
           else if (/^\{\w+?:\w+?\}$/.test(item)) {
-            const [k, v] = item.split(/\{\:\}/).filter(item => !!item)
+            const [k, v] = item.split(/\{:\}/).filter(item => !!item)
             const kp = types[k] || k
             const vp = types[v] || v
             const t = new Mapping([kp, vp])

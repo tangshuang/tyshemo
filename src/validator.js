@@ -197,15 +197,15 @@ function decimal(len, message) {
 }
 
 function email(message) {
-  return match(/^[A-Za-z0-9]+[A-Za-z0-9\._]*[A-Za-z0-9]+@[A-Za-z0-9]+[A-Za-z0-9\.\-]*[A-Za-z0-9]+\.[A-Za-z]{2,8}$/, message, 'email')
+  return match(/^[A-Za-z0-9]+[A-Za-z0-9._]*[A-Za-z0-9]+@[A-Za-z0-9]+[A-Za-z0-9.-]*[A-Za-z0-9]+\.[A-Za-z]{2,8}$/, message, 'email')
 }
 
 function url(message) {
-  return match(/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/, message, 'url')
+  return match(/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?/, message, 'url')
 }
 
 function date(message) {
-  return match(/^[1-2][0-9]{3}\-[0-1][0-9]\-[0-3][0-9]/, message, 'date')
+  return match(/^[1-2][0-9]{3}-[0-1][0-9]-[0-3][0-9]/, message, 'date')
 }
 
 function match(validator, message, name = 'match') {
@@ -250,7 +250,7 @@ function allOf(validators, message) {
   return new Validator({
     name: 'allOf',
     validate(value) {
-      for (const i = 0, len = validators.length; i < len; i ++) {
+      for (let i = 0, len = validators.length; i < len; i ++) {
         const validate = validators[i]
         if (!validate.call(this, value)) {
           return false
@@ -267,7 +267,7 @@ function anyOf(validators, message) {
   return new Validator({
     name: 'anyOf',
     validate(value) {
-      for (const i = 0, len = validators.length; i < len; i ++) {
+      for (let i = 0, len = validators.length; i < len; i ++) {
         let validate = validators[i]
         if (validate.call(this, value)) {
           return true

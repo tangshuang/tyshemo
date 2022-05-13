@@ -14,7 +14,8 @@
     "build": "node gulpfile.js && webpack",
     "test": "cross-env NODE_ENV=test jest",
     "dev": "webpack-dev-server --config ./examples/webpack-dev-server.js",
-    "doc": "node docserver.js"
+    "doc": "node docserver.js",
+    "eslint": "eslint src --ext js,jsx"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
   "homepage": "https://github.com/tangshuang/tyshemo#readme",
   "devDependencies": {
     "@babel/core": "^7.14.6",
+    "@babel/eslint-parser": "^7.17.0",
     "@babel/plugin-proposal-decorators": "^7.14.5",
     "@babel/plugin-transform-runtime": "^7.16.8",
     "@babel/preset-env": "^7.14.7",
@@ -38,9 +40,13 @@
     "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.6",
     "cross-env": "^7.0.3",
+    "eslint": "^8.15.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.29.4",
     "gulp": "^4.0.1",
     "gulp-babel": "^8.0.0",
     "jest": "^28.1.0",
+    "prettier-eslint": "^14.0.2",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12",
     "webpack-deep-scope-plugin": "^1.6.2",

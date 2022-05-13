@@ -34,14 +34,14 @@ export class Tupl extends Type {
     else {
       for (let i = 0, len = patterns.length; i < len; i ++) {
         const value = items[i]
-        const pattern = patterns[i]
+        let pattern = patterns[i]
         const index = i
 
         const isRule = isInstanceOf(pattern, Rule)
         if (isRule) {
           const rule = this.isStrict && !pattern.isStrict ? pattern.strict
             : !this.isStrict && this.isLoose && !pattern.isStrict && pattern.isLoose ? pattern.loose
-            : pattern
+              : pattern
           const error = rule.catch(items, index)
           if (!error) {
             continue

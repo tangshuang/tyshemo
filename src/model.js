@@ -26,8 +26,8 @@ import {
   hasOwnKey,
 } from 'ts-fns'
 
-import { Schema as _Schema} from './schema.js'
-import { Store as _Store} from './store.js'
+import { Schema as _Schema } from './schema.js'
+import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import { Meta } from './meta.js'
@@ -128,7 +128,7 @@ export class Model {
            */
           if (isInheritedOf(def, Model)) {
             gives.push(def)
-            return Factory.getMeta(def)
+            return Factory.createMeta(def)
           }
 
           /**
@@ -138,7 +138,7 @@ export class Model {
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
             gives.push(...def)
-            return Factory.getMeta(def)
+            return Factory.createMeta(def)
           }
 
           return def
@@ -644,7 +644,7 @@ export class Model {
             }
           },
           enumerable: true,
-        }
+        },
       })
 
       Object.defineProperties(view, viewDef)
@@ -753,7 +753,7 @@ export class Model {
         }
 
         if (needs) {
-          const needMetas = needs();
+          const needMetas = needs()
           if (needMetas.some(item => isMatchMeta(meta, item))) {
             this.$store.forceDispatch(`!${field}`, `needs ${key}`)
           }
@@ -954,7 +954,7 @@ export class Model {
 
     const ensure = (value, key) => {
       if (isArray(value)) {
-        value.forEach((item, i) => ensure(item, key))
+        value.forEach((item) => ensure(item, key))
       }
       else if (isInstanceOf(value, Model)) {
         value.setParent([this, key])
@@ -1078,7 +1078,7 @@ export class Model {
     // patch keys to this, these keys are not on this, i.e. this.fromJSON(data, ['policies']) => this.policies (this.policies is not existing before)
     keysAddToThis.forEach((key) => {
       if (!inObject(key, this)) {
-        this[key] = json[key]
+        this[key] = data[key]
       }
     })
 
@@ -1233,7 +1233,7 @@ export class Model {
         timer,
         enable: true,
         views: collector && typeof collector === 'object' ? collector.views : false,
-        fields: collector && typeof collector === 'object' && 'fields' in collector ? collector.fields : true
+        fields: collector && typeof collector === 'object' && 'fields' in collector ? collector.fields : true,
       },
       writable: false,
       configurable: true,
@@ -1355,7 +1355,7 @@ export class Model {
 
   define(key, value) {
     if (!this.$store.editable) {
-      return parse(this, keyPath)
+      return parse(this, key)
     }
 
     if (this.$schema[key]) {
@@ -1690,7 +1690,7 @@ export class Model {
   onEnsure() {}
   onRestore() {}
   onRegress() {}
-  onChange(key) {}
+  onChange(_key) {}
 
   lock() {
     this.$store.editable = true
