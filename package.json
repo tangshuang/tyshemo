@@ -54,6 +54,6 @@
   },
   "dependencies": {
     "scopex": "^4.3.3",
-    "ts-fns": "^10.8.6"
+    "ts-fns": "^10.9.0"
   }
 }

@@ -123,14 +123,21 @@ export class Factory {
         const nexts = filter(items)
         const values = nexts.map((next) => {
           const ChoosedModel = entity.entry(Entries, next, key, parent)
+          if (!ChoosedModel) {
+            throw new Error('[TySheMo]: Factory.entry Model not found!')
+          }
           const model = this.adapt(Entries, next) ? next.setParent([parent, key])
             : isObject(next) ? new ChoosedModel(next, { parent, key })
               : new ChoosedModel({}, { parent, key })
+          if (!model) {
+            return
+          }
           const child = entity.instance(model, parent)
           setupTransport(child, parent, key)
           return child
         })
-        return values
+        const outs = values.filter(item => item)
+        return outs
       }
 
       const options = {
@@ -164,6 +171,9 @@ export class Factory {
       const Entry = entity.entry(Entries)
       const gen = function(value, key, parent) {
         const ChoosedModel = entity.entry(Entries, value, key, parent)
+        if (!ChoosedModel) {
+          throw new Error('[TySheMo]: Factory.entry Model not found!')
+        }
         const model = entity.adapt(Entries, value) ? value.setParent([parent, key])
           : isObject(value) ? new ChoosedModel(value, { key, parent })
             : new ChoosedModel({}, { key, parent })
@@ -295,19 +305,23 @@ export class Factory {
   /**
    * create a meta by given entries
    * @param {ModelClass[] | ModelClass[][]} entries
-   * @param {ModelClass[] => Model} choose
+   * @param {ModelClass[] => Model} select
    * @param {object} [attrs]
    * @param {object} [hooks]
    * @returns {Meta}
    */
-  static selectMeta(entries, choose, attrs, hooks = {}) {
+  static selectMeta(entries, select, attrs, hooks = {}) {
     const isList = isArray(entries[0])
     const items = isList ? entries[0] : entries
-    const TempModel = Model.mixin(...items)
-    return this.createMeta(isList ? [TempModel] : TempModel, attrs, {
+    class SharedModel extends Model {
+      static [Symbol.hasInstance](target) {
+        return items.some((Model) => target instanceof Model)
+      }
+    }
+    return this.createMeta(isList ? [SharedModel] : SharedModel, attrs, {
       ...hooks,
-      entry(items, data, key, parent) {
-        return choose(items, data, key, parent)
+      entry(_, data, key, parent) {
+        return select(items, data, key, parent)
       },
     })
   }
