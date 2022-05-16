@@ -156,7 +156,7 @@ describe('Model', () => {
         setter(value) {
           // ensure number
           return !isNaN(+value) ? +value : 0
-        }
+        },
       })
     }
     const person = new PersonModel()
@@ -310,7 +310,7 @@ describe('Model', () => {
         return {
           get weight() {
             return this.age * 5
-          }
+          },
         }
       }
     }
@@ -446,7 +446,7 @@ describe('Model', () => {
         },
         map(age) {
           return age + ''
-        }
+        },
       })
     }
 
@@ -591,7 +591,7 @@ describe('Model', () => {
         },
         map(age) {
           return age + ''
-        }
+        },
       })
     }
 
@@ -663,7 +663,7 @@ describe('Model', () => {
               return Promise.resolve('Any should bigger than 10.')
             },
             async: true,
-          }
+          },
         ],
       })
     }
@@ -1078,7 +1078,7 @@ describe('Model', () => {
       some: {
         name: 'tomy',
         age: 10,
-      }
+      },
     })
 
     some.fromJSON({
@@ -1090,7 +1090,7 @@ describe('Model', () => {
       some: {
         name: 'tim',
         age: 12,
-      }
+      },
     })
   })
 
@@ -1388,7 +1388,7 @@ describe('Model', () => {
       static default = 0
       static deps() {
         return {
-          name: NameField
+          name: NameField,
         }
       }
     }
@@ -1405,6 +1405,26 @@ describe('Model', () => {
 
     some.name = 'tom'
 
+    expect(count).toBe(1)
+  })
+
+  test('watch deep nested model list push', () => {
+    class ChildModel extends Model {
+      static some = new Meta({
+        default: '',
+      })
+    }
+
+    class ParentModel extends Model {
+      static children = [ChildModel]
+    }
+
+    const parent = new ParentModel()
+    let count = 0
+    parent.watch('*', () => count ++, true)
+    parent.children.push({ some: 'a' })
+
+    expect(parent.children[0] instanceof ChildModel).toBe(true)
     expect(count).toBe(1)
   })
 })
