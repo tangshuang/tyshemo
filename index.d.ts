@@ -636,7 +636,7 @@ declare function createMeta<T extends ModelClass = ModelClass, M extends Model =
  *   createMeta(...),
  * ])
  */
-declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: T) => T): T
+declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: Meta[]) => T): T
 
 export { createMeta, createMetaGroup }
 
