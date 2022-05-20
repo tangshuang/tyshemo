@@ -162,4 +162,24 @@ describe('Meta', () => {
 
     expect(some.use('name').total).toBe(93)
   })
+
+  test('meta.extend', () => {
+    const SomeMeta = new Meta({
+      default: '',
+    })
+
+    const SubMeta = SomeMeta.extend({
+      default: '1',
+    })
+
+    class Any extends Model {
+      static any = SubMeta
+    }
+
+    const it = new Any()
+
+    const any = it.use(SomeMeta)
+
+    expect(any?.value).toBe('1')
+  })
 })

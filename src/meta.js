@@ -76,6 +76,7 @@ export class Meta {
   extend(attrs) {
     const Constructor = getConstructorOf(this)
     const meta = new Constructor(this)
+    Object.setPrototypeOf(meta, this) // make it impossible to use meta
     each(attrs, (descriptor, key) => {
       useAttr(meta, key, descriptor, attrs)
     }, true)
