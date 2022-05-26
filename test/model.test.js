@@ -397,8 +397,8 @@ describe('Model', () => {
       })
     })
     const three = new Three()
-    expect(two.name).toBeUndefined()
-    expect(two.age).toBe(10)
+    expect(three.name).toBeUndefined()
+    expect(three.age).toBe(0)
   })
 
   test('extends class', () => {
@@ -748,7 +748,7 @@ describe('Model', () => {
         const attrs = super.attrs()
         return {
           ...attrs,
-          fn: (key) => key,
+          fn: (value, key) => key,
         }
       }
     }

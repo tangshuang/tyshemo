@@ -468,7 +468,7 @@ export class Model {
           return
         }
         viewDef[attr] = {
-          get: () => this.$schema.$decide(key, attr, this)(fallback),
+          get: () => this.$schema.$decide(attr, key, this.get(key), this)(fallback),
           enumerable: true,
         }
       })

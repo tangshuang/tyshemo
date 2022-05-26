@@ -153,12 +153,12 @@ export class Schema {
    * @param {*} attr
    * @param {*} context
    */
-  $decide(key, attr, context) {
+  $decide(attr, key, value, context) {
     return (fallback) => {
       const meta = this[key]
 
       const callback = () => {
-        return isFunction(fallback) ? fallback.call(context, key) : fallback
+        return isFunction(fallback) ? fallback.call(context, value, key) : fallback
       }
 
       if (!meta) {
@@ -182,7 +182,7 @@ export class Schema {
         const { determine } = node
         if (isFunction(determine)) {
           return this._trydo(
-            () => determine.call(context, key),
+            () => determine.call(context, value, key),
             (error) => isFunction(handle) && handle.call(context, error, key) || callback(),
             {
               key,
@@ -200,7 +200,7 @@ export class Schema {
        */
       if (isFunction(node)) {
         return this._trydo(
-          () => node.call(context, key),
+          () => node.call(context, value, key),
           (error) => isFunction(handle) && handle.call(context, error, key) || fallback,
           {
             key,
@@ -216,20 +216,20 @@ export class Schema {
     }
   }
 
-  required(key, context) {
-    return this.$decide(key, 'required', context)(false)
+  required(key, value, context) {
+    return this.$decide('required', key, value, context)(false)
   }
 
-  disabled(key, context) {
-    return this.$decide(key, 'disabled', context)(false)
+  disabled(key, value, context) {
+    return this.$decide('disabled', key, value, context)(false)
   }
 
-  readonly(key, context) {
-    return this.$decide(key, 'readonly', context)(false)
+  readonly(key, value, context) {
+    return this.$decide('readonly', key, value, context)(false)
   }
 
-  hidden(key, context) {
-    return this.$decide(key, 'hidden', context)(false)
+  hidden(key, value, context) {
+    return this.$decide('hidden', key, value, context)(false)
   }
 
   empty(key, value, context) {

@@ -18,6 +18,65 @@ import {
   decideby,
 } from 'ts-fns'
 
+const getFinalExp = (exp) => exp.trim()
+  .replace(/^\.\./g, '$views.') // -> { ..a.value }
+  .replace(/(\s)\.\./g, ' $views.') // -> { a + ..b.value }
+  .replace(/(.)\.\./g, '$1.$views.') // -> { $parent..b.value }
+
+export const parseKey = (str) => {
+  const matched = str.match(/([a-zA-Z0-9_$]+)(\((.*?)\))?/)
+  const [_, name, _p, _params] = matched
+  const params = isString(_params) ? _params.split(',').map(item => item.trim()).filter(item => !!item) : void 0
+  // params: undefined -> string key; [] -> function without params; [...] -> function with params
+  return [name, params]
+}
+
+export const isInlineExp = (str) => {
+  return str[0] === '{' && str[str.length - 1] === '}'
+}
+
+const getInlineExp = (str) => {
+  return str.substring(1, str.length - 1).trim()
+}
+
+export const getExp = (str) => {
+  const line = isInlineExp(str) ? getInlineExp(str) : str
+  const exp = getFinalExp(line)
+  return exp
+}
+
+export const tryGetRealValue = (exp) => {
+  try {
+    return JSON.parse(exp)
+  }
+  catch (e) {
+    const scope = new ScopeX({})
+    try {
+      return scope.parse(exp)
+    }
+    catch (e) {
+      return exp
+    }
+  }
+}
+
+export const createFn = (scope, exp, params) => (...args) => {
+  if (!params) {
+    const output = scope.parse(exp)
+    return output
+  }
+
+  const locals = {}
+  params.forEach((param, i) => {
+    const value = args[i]
+    locals[param] = value
+  })
+
+  const newScope = scope.$new(locals)
+  const output = newScope.parse(exp)
+  return output
+}
+
 export class Loader {
   constructor(options = {}) {
     const { global: globalVars = {}, filters: thisFilters = {} } = options
@@ -61,47 +120,6 @@ export class Loader {
     const { globalScope, typeParser } = this
 
     const { schema, state = {}, attrs = {}, methods = {} } = json
-
-    const getFinalExp = (exp) => exp.trim()
-      .replace(/^\.\./g, '$views.') // -> { ..a.value }
-      .replace(/(\s)\.\./g, ' $views.') // -> { a + ..b.value }
-      .replace(/(.)\.\./g, '$1.$views.') // -> { $parent..b.value }
-
-    const parseKey = (str) => {
-      const matched = str.match(/([a-zA-Z0-9_$]+)(\((.*?)\))?/)
-      const [_, name, _p, _params] = matched
-      const params = isString(_params) ? _params.split(',').map(item => item.trim()).filter(item => !!item) : void 0
-      return [name, params]
-    }
-
-    const isInlineExp = (str) => {
-      return str[0] === '{' && str[str.length - 1] === '}'
-    }
-
-    const getInlineExp = (str) => {
-      return str.substring(1, str.length - 1).trim()
-    }
-
-    const getExp = (str) => {
-      const line = isInlineExp(str) ? getInlineExp(str) : str
-      const exp = getFinalExp(line)
-      return exp
-    }
-
-    const tryGetRealValue = (exp) => {
-      try {
-        return JSON.parse(exp)
-      }
-      catch (e) {
-        const scope = new ScopeX({})
-        try {
-          return scope.parse(exp)
-        }
-        catch (e) {
-          return exp
-        }
-      }
-    }
 
     const tryGetInScope = (exp, scope = globalScope) => {
       try {
@@ -161,23 +179,6 @@ export class Loader {
         const sub = loader.parse(exp)
         return sub
       }
-    }
-
-    const createFn = (scope, exp, params) => (...args) => {
-      if (!params) {
-        const output = scope.parse(exp)
-        return output
-      }
-
-      const locals = {}
-      params.forEach((param, i) => {
-        const value = args[i]
-        locals[param] = value
-      })
-
-      const newScope = scope.$new(locals)
-      const output = newScope.parse(exp)
-      return output
     }
 
     const createComposeFn = (params, exp) => {

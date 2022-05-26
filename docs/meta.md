@@ -72,11 +72,11 @@ const attrs = {
   // optional, when passed, `set` action will return prev value if not pass type checking
   // notice: `default` and result of `compute` should match type,
   // can be rule, i.e. equal(String)
-  type: String,
+  type: string,
   // optional, string, message to return when type checking fail
   message: '',
   // optional, if true, when the given value does not pass type checking, the value will be replace with default value or previous value
-  force: Boolean,
+  force: boolean,
 
   // optional
   validators: [
@@ -102,7 +102,7 @@ const attrs = {
   //   save: value => value, // json.some = value
   // }
   // notice, if you want to return custom object in create or save, dont pass asset
-  asset: String,
+  asset: string,
 
   // optional, function, whether to not use this property when `toData`
   drop: (value, key, data) => Boolean,
@@ -111,7 +111,7 @@ const attrs = {
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
   flat: (value, key, data) => ({ [key]: newValue }),
   // optional, submit the key to be another name, for example: { to: 'table_1.field_1' } -> { 'table_1.field_1': value }
-  to: String,
+  to: string,
 
   // optional, function, format this property value when set
   setter: (value) => value,
@@ -122,22 +122,22 @@ const attrs = {
 
   // optional, function or boolean or string,
   // if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)
-  readonly: Boolean|Function,
+  readonly: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
   // when you invoke `export`, the `drop` will be set to be `true` automaticly, `flat` will not work too
-  disabled: Boolean|Function,
+  disabled: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
   // if `hidden` is true, it means you want to hide the field related ui component
-  hidden: Boolean|Function,
+  hidden: boolean | (value, key) => boolean,
 
   // optional, function or boolean or string.
   // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
   // `Empty` rule: null|undefined|''|NaN|[]|{}
-  required: Boolean|Function,
+  required: boolean | (value, key) => boolean,
   // optional, function to determine the value is empty
-  empty: Function,
+  empty: (value, key) => boolean,
 
   // when this field's value changed, the `watch` function will be invoke
   watch({ value }, key) {},
@@ -179,6 +179,7 @@ const attrs = {
   // notice, if it is a function, it will be used as a getter whose parameter is the key name and return value will be treated as the real value when called on view
   // i.e. some(key) { return 'real_value' } -> model.$views.field.some -> 'real_value'
   [attr]: any,
+  [attr]: (value, key) => any,
 }
 ```
 
@@ -375,3 +376,35 @@ const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup(3, (NameMeta, AgeMeta, H
 ```
 
 In the previous code, we use NameMeta, AgeMeta, HeightMeta in each meta, however, if we use createMeta directly we may get error about referer to variable which is not declared before we use it. As used createMetaGroup, we can use Meta before it created.
+
+## cretaeAsyncMeta
+
+```
+/**
+ * create an async meta, which can be overrided by asyncGetter return value
+ * @param attrs
+ * @param asyncGetter
+ */
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: (scope: any) => Obj): Meta<T, I, M, U>
+```
+
+Example:
+
+```js
+const SomeMeta = createAsyncMeta({
+  default: 1,
+}, () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        required: true,
+        // support some simple DSL
+        hidden: '{ a > 10 }',
+        'disabled(v)': '{ v < 10 }',
+      })
+    }, 10)
+  })
+})
+```
+
+Notice, `default, activate, init, state, compute, AsyncGetter` should not be overrided, they may work only once inside.

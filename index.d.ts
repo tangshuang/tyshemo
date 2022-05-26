@@ -638,7 +638,14 @@ declare function createMeta<T extends ModelClass = ModelClass, M extends Model =
  */
 declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: Meta[]) => T): T
 
-export { createMeta, createMetaGroup }
+/**
+ * create an async meta, which can be overrided by asyncGetter return value
+ * @param attrs
+ * @param asyncGetter
+ */
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: (scope: any) => Obj): Meta<T, I, M, U>
+
+export { createMeta, createMetaGroup, createAsyncMeta }
 
 /**
  * use type from built meta
