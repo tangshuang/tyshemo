@@ -9,6 +9,7 @@ import {
   isBoolean,
   isNaN,
   numerify,
+  getConstructorOf,
 } from 'ts-fns'
 import { ofChain } from './shared/utils.js'
 
@@ -16,6 +17,13 @@ export class Validator {
   constructor(attrs = {}) {
     const properties = ofChain(this, Validator)
     Object.assign(this, properties, attrs)
+  }
+
+  extend(attrs) {
+    const Constructor = getConstructorOf(this)
+    const validator = new Constructor(this)
+    Object.assign(validator, attrs)
+    return validator
   }
 
   static required = required

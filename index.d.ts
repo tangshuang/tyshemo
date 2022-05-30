@@ -430,6 +430,7 @@ interface ValidatorOptions<T extends Model = Model> {
 }
 export declare class Validator<T extends Model = Model> {
   constructor(options: ValidatorOptions<T>)
+  extend<M extends Model = T>(attrs: Obj): Validator<M>
 
   static readonly required: <T extends Model>(message: string, emptyFn?: (this: T, value: any) => boolean) => Validator
   static readonly maxLen: (message: string, len?: number) => Validator
