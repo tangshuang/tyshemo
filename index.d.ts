@@ -955,11 +955,7 @@ export declare class Factory {
    *   // same as: static some = A | B
    * }
    */
-<<<<<<< HEAD
-  static selectMeta<T extends ModelClass = ModelClass, M = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
-=======
-  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: object, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
->>>>>>> dev
+  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
 
   /**
    * create a meta by given Models
