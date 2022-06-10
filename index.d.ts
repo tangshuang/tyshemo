@@ -806,7 +806,7 @@ export declare class Model implements Obj {
   use(keyPath: string | string[]): View
   use<T>(keyPath: string | string[], getter: (view: View) => T): T
   use<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(Meta: Meta<T, I, M, U> | MetaClass<T, I, M, U>): View<T, I>
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P>(Meta: Meta<T, I, M, U> | MetaClass<T, I, M, U>, getter: (view: View<T, I>) => P): P
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any>(Meta: Meta<T, I, M, U> | MetaClass<T, I, M, U>, getter: (view: View<T, I>) => P): P
 
   /**
    * @deprecated use this.use instead
@@ -815,7 +815,7 @@ export declare class Model implements Obj {
   /**
    * @deprecated use this.use instead
    */
-  reflect<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P>(Meta: Meta<T, I, M, U>, getter: (view: View<T, I>) => P): P
+  reflect<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any>(Meta: Meta<T, I, M, U>, getter: (view: View<T, I>) => P): P
 
   memo<T, U>(
     getter: (this: this) => T,
@@ -903,7 +903,7 @@ interface FactoryHooks {
 
 interface Factory extends FactoryHooks {}
 export declare class Factory {
-  getMeta<T = Model | Model[], M = Model>(): Meta<T, T, M>
+  getMeta<T = Model | Model[], M extends Model = Model>(): Meta<T, T, M>
 
   /**
    * @deprecated
@@ -913,7 +913,7 @@ export declare class Factory {
   /**
    * @deprecated use Factory.createMeta instead
    */
-  static getMeta<T = ModelClass | ModelClass[], M = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, T, M>
+  static getMeta<T = ModelClass | ModelClass[], M extends Model = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, T, M>
 
   /**
    * create a meta by given Model
@@ -955,7 +955,11 @@ export declare class Factory {
    *   // same as: static some = A | B
    * }
    */
+<<<<<<< HEAD
   static selectMeta<T extends ModelClass = ModelClass, M = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
+=======
+  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: object, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
+>>>>>>> dev
 
   /**
    * create a meta by given Models
@@ -968,7 +972,7 @@ export declare class Factory {
    *   // same as: static some = [A, B]
    * }
    */
-  static selectMeta<T extends ModelClass = ModelClass, M = Model, U extends Obj = Obj>(entries: [T[]], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>[], InstanceType<T>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>[], InstanceType<T>[], M, U>
+  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: [T[]], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>[], InstanceType<T>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>[], InstanceType<T>[], M, U>
 }
 
 declare function meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(entries: Attrs<T, I, M, U> | Meta<T, I, M, U> | MetaClass<T, I, M, U>): PropertyDecorator

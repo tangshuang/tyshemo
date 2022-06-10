@@ -63,10 +63,26 @@ const DEFAULT_ATTRIBUTES = {
 }
 
 const isMatchMeta = (give, need) => {
-  return give === need || (
-    isInheritedOf(need, Meta)
-    && (isInstanceOf(give, need) || isInheritedOf(give, need))
-  )
+  if (give === need) {
+    return true
+  }
+
+  if (isInheritedOf(need, Meta) && (isInstanceOf(give, need) || isInheritedOf(give, need))) {
+    return true
+  }
+
+  // meta.extend
+  const walk = (meta) => {
+    const from = Object.getPrototypeOf(meta)
+    if (!from) {
+      return false
+    }
+    if (from === need) {
+      return true
+    }
+    return walk(from)
+  }
+  return walk(give)
 }
 
 export class State {
@@ -1254,13 +1270,7 @@ export class Model {
       for (let i = 0, len = keys.length; i < len; i ++) {
         const key = keys[i]
         const meta = this.$schema[key]
-        if (
-          meta === keyPath
-          // somemeta.extend(...)
-          || Object.getPrototypeOf(meta) === keyPath
-          // class SomeMeta extends Meta { ... }
-          || (isInheritedOf(keyPath, Meta) && isInstanceOf(meta, keyPath))
-        ) {
+        if (isMatchMeta(meta, keyPath)) {
           const view = this.$views[key]
           return isFunction(fn) ? fn.call(this, key, view) : view
         }
