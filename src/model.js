@@ -30,7 +30,7 @@ import { Schema as _Schema } from './schema.js'
 import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
-import { Meta } from './meta.js'
+import { Meta, extendMetaSymbol } from './meta.js'
 import { Factory, FactoryMeta } from './factory.js'
 
 const DEFAULT_ATTRIBUTES = {
@@ -63,10 +63,26 @@ const DEFAULT_ATTRIBUTES = {
 }
 
 const isMatchMeta = (give, need) => {
-  return give === need || (
-    isInheritedOf(need, Meta)
-    && (isInstanceOf(give, need) || isInheritedOf(give, need))
-  )
+  if (give === need) {
+    return true
+  }
+
+  if (isInheritedOf(need, Meta) && (isInstanceOf(give, need) || isInheritedOf(give, need))) {
+    return true
+  }
+
+  // meta.extend
+  const walk = (meta) => {
+    const from = meta[extendMetaSymbol]
+    if (!from) {
+      return false
+    }
+    if (from === need) {
+      return true
+    }
+    return walk(from)
+  }
+  return walk(give)
 }
 
 export class State {
@@ -1254,7 +1270,7 @@ export class Model {
       for (let i = 0, len = keys.length; i < len; i ++) {
         const key = keys[i]
         const meta = this.$schema[key]
-        if (meta === keyPath || (isInheritedOf(keyPath, Meta) && isInstanceOf(meta, keyPath))) {
+        if (isMatchMeta(meta, keyPath)) {
           const view = this.$views[key]
           return isFunction(fn) ? fn.call(this, key, view) : view
         }

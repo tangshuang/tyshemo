@@ -43,6 +43,8 @@ function useAttr(meta, key, descriptor, context) {
   }
 }
 
+export const extendMetaSymbol = Symbol()
+
 export class Meta {
   constructor(attrs = {}) {
     // from inherit chain
@@ -79,6 +81,7 @@ export class Meta {
     each(attrs, (descriptor, key) => {
       useAttr(meta, key, descriptor, attrs)
     }, true)
+    meta[extendMetaSymbol] = this
     return meta
   }
 
