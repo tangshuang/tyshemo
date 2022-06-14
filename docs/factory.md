@@ -127,3 +127,37 @@ class SomeModel extends Model {
 ```
 
 Notice here, we pass `[[AModel, BModel, CModel]]`, two level array. However, you receive one level array in `select` function.
+
+## chunk
+
+```js
+const someChunk = Factory.chunk({
+  data: async (id) => {
+    const res = await fetch('xxx' + id)
+    const data = await res.json()
+    return data
+  },
+  fromJSON: (data) => {
+    const { title, count } = data
+    return { title, count }
+  },
+  toJSON: (model) => {
+    const { title, count } = model
+    return { title, count }
+  },
+  toData: (model) => {
+    const { title, count } = model
+    return { title, count }
+  },
+})
+```
+
+```js
+await model.fromChunk(someChunk, 'id')
+
+const json = model.toJSON(someChunk)
+
+const data = model.toData(someChunk)
+```
+
+Why we need `chunk`? Because in some cases we do not sure the `create` and `save` is enough, a Model may have different data sources and need to generate by different ways. In these situations, we can create different chunks and use `model.fromChunk` `model.toJSON` `model.toData` to generate different kind of data.

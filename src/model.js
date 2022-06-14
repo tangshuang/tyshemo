@@ -31,7 +31,7 @@ import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import { Meta } from './meta.js'
-import { Factory, FactoryMeta } from './factory.js'
+import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 
 const DEFAULT_ATTRIBUTES = {
   default: null,
@@ -1536,6 +1536,16 @@ export class Model {
     return { ...state, ...computed }
   }
 
+  fromChunk(chunk, ...params) {
+    if (chunk && chunk instanceof FactoryChunk) {
+      return Promise.resolve(chunk.data(...params)).then((data) => {
+        const json = chunk.fromJSON ? chunk.fromJSON(data) : data
+        this.fromJSON(json)
+      })
+    }
+    return Promise.reject(new Error('chunk is not a FactoryChunk.'))
+  }
+
   /**
    * use schema `create` option to generate and restore data
    * @param {*} json
@@ -1584,8 +1594,15 @@ export class Model {
     return this
   }
 
-  toJSON() {
+  toJSON(chunk) {
     this._check()
+
+    if (chunk && isInstanceOf(chunk, FactoryChunk) && chunk.toJSON) {
+      const res = chunk.toJSON(this)
+      const result = this.onRecord(res) || res
+      this.emit('record', result)
+      return result
+    }
 
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.record(data, this)
@@ -1607,6 +1624,10 @@ export class Model {
    * @param {string[]} onlyKeys the keys outside of this array will not be used, if not set, all keys will be used
    */
   fromJSONPatch(data, onlyKeys) {
+    if (!this.$store.editable) {
+      return
+    }
+
     const entry = {}
 
     // prepare for sub models
@@ -1636,8 +1657,16 @@ export class Model {
     return this
   }
 
-  toData() {
+  toData(chunk) {
     this._check()
+
+    if (chunk && isInstanceOf(chunk, FactoryChunk) && chunk.toData) {
+      const res = chunk.toData(this)
+      const result = this.onExport(res) || res
+      this.emit('export', result)
+      return result
+    }
+
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.export(data, this)
     const result = this.onExport(output) || output

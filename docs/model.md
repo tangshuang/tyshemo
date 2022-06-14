@@ -586,6 +586,10 @@ class StudentModel extends Model {
 
 `onParse` is invoked before data comes into model, you chan do some transforming here.
 
+**fromChunk**
+
+Use `chunk` to generate data. It use `fromJSON` inside. Read more `Factory##chunk`.
+
 ### Restore
 
 Restore data into model, with out any parser or transform.

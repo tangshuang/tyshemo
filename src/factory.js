@@ -20,6 +20,12 @@ export class FactoryMeta extends Meta {
   }
 }
 
+export class FactoryChunk {
+  constructor(options) {
+    Object.assign(this, options)
+  }
+}
+
 export class Factory {
   // entries should be a Model constructor or an array of Model constructors
   constructor(entries, options) {
@@ -324,6 +330,19 @@ export class Factory {
         return select(items, data, key, parent)
       },
     })
+  }
+
+  /**
+   * create a chunk for model
+   * @param {*} options
+   * @param {function} options.data (...params) => Promise<data>
+   * @param {function} [options.fromJSON] (data) => JSON
+   * @param {function} [options.toJSON] (model: Model) => JSON
+   * @param {function} [options.toData] (model: Model) => data
+   * @returns
+   */
+  static chunk(options) {
+    return new FactoryChunk(options)
   }
 }
 
