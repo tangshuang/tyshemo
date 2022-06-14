@@ -795,7 +795,7 @@ export declare class Model implements Obj {
   toJSON<D extends Obj = Obj>(chunk: FactoryChunk<Model, D, any[]>): D
   toData(chunk?: FactoryChunk<Model, any, any[]>): Obj
   toParams(determine?: (value: any) => boolean): Obj
-  toFormData(determine?: (value: any) => boolean): FormData
+  toFormData(determine?: (value: any) => boolean): Obj
   validate(key?: string | string[]): Error[] | any[]
   validateAsync(key?: string | string): Promise<Error[] | any[]>
 
@@ -903,14 +903,13 @@ interface FactoryHooks {
   transport?(child?: Model, parent?: Model): void
 }
 
-interface Factory extends FactoryHooks {}
-
 interface FactoryChunk<M, D, U> {
   model: M
   data: D
   params: U
 }
 
+interface Factory extends FactoryHooks {}
 export declare class Factory {
   getMeta<T = Model | Model[], M extends Model = Model>(): Meta<T, T, M>
 
@@ -981,19 +980,23 @@ export declare class Factory {
 
   /**
    * create a chunk for model
-   * @param {*} options
-   * @param {function} options.data (...params) => Promise<data>
-   * @param {function} [options.fromJSON] (data) => JSON
-   * @param {function} [options.toJSON] (model: Model) => JSON
-   * @param {function} [options.toData] (model: Model) => data
+   * @param options
+   * @param options.data (...params) => Promise<data>
+   * @param options.fromJSON (data) => JSON
+   * @param options.toJSON (model: Model) => JSON
+   * @param options.toData (model: Model) => data
    * @returns
    */
-  static chunk<M extends Model = Model, D extends Obj = any, U extends any[] = any[]>(options: {
+  static chunk<M extends Model = Model, D extends Obj = Obj, U extends any[] = any[]>(options: {
     data: (...args: U) => D | Promise<D>
     fromJSON?: (data: D) => Partial<M>
-    toJSON?: (model: M) => D
+    toJSON?: (model: M) => Partial<D>
     toData?: (model: M) => Obj
   }): FactoryChunk<M, D, U>
+
+  static toParams(data: Obj, determine?: (value: any) => boolean): Obj
+
+  static toFormData(data: Obj, determine?: (value: any) => boolean): Obj
 }
 
 declare function meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(entries: Attrs<T, I, M, U> | Meta<T, I, M, U> | MetaClass<T, I, M, U>): PropertyDecorator

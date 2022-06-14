@@ -7,6 +7,8 @@ import {
   isInstanceOf,
   isFunction,
   define,
+  flat,
+  each,
 } from 'ts-fns'
 import { Meta } from './meta.js'
 import { Model } from './model.js'
@@ -343,6 +345,20 @@ export class Factory {
    */
   static chunk(options) {
     return new FactoryChunk(options)
+  }
+
+  static toParams(data, determine) {
+    const output = flat(data, determine)
+    return output
+  }
+
+  static toFormData(data, determine) {
+    const params = Factory.toParams(data, determine)
+    const formdata = new FormData()
+    each(params, (value, key) => {
+      formdata.append(key, value)
+    })
+    return formdata
   }
 }
 

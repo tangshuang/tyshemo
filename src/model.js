@@ -4,7 +4,6 @@ import {
   isArray,
   map,
   each,
-  flat,
   flatArray,
   define,
   makeKeyChain,
@@ -1676,16 +1675,13 @@ export class Model {
 
   toParams(determine) {
     const data = this.toData()
-    const output = flat(data, determine)
+    const output = Factory.toParams(data, determine)
     return output
   }
 
   toFormData(determine) {
-    const data = this.toParams(determine)
-    const formdata = new FormData()
-    each(data, (value, key) => {
-      formdata.append(key, value)
-    })
+    const data = this.toData()
+    const formdata = Factory.toFormData(data, determine)
     return formdata
   }
 
