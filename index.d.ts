@@ -579,6 +579,10 @@ export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj
 
   extend<D extends T = T, V extends I = I, O extends M = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>
 
+  getAttr(key: const): any
+
+  setAttr(key: string, value: any): void
+
   static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>
 
   static create<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>

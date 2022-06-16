@@ -58,7 +58,7 @@ export class Meta {
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (key === 'extend' || key === 'constructor') {
+      if (key === 'extend' || key === 'constructor' || key === 'getAttr' || key === 'setAttr') {
         return
       }
       if (inObject(key, this)) {
@@ -81,6 +81,14 @@ export class Meta {
       useAttr(meta, key, descriptor, attrs)
     }, true)
     return meta
+  }
+
+  getAttr(attr) {
+    return this[attr]
+  }
+
+  setAttr(attr, value) {
+    this[attr] = value
   }
 
   static extend(attrs) {
