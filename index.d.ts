@@ -993,7 +993,7 @@ export declare class Factory {
    */
   static chunk<M extends Model = Model, D extends Obj = Obj, U extends any[] = any[]>(options: {
     data: (...args: U) => D | Promise<D>
-    fromJSON?: (data: D) => Partial<M>
+    fromJSON?: (data: D) => Obj
     toJSON?: (model: M) => Partial<D>
     toData?: (model: M) => Obj
   }): FactoryChunk<M, D, U>
