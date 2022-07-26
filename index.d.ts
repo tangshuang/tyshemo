@@ -422,8 +422,8 @@ export declare class Store {
 
 interface ValidatorOptions<T extends Model = Model> {
   name?: string
-  determine?: boolean | ((this: T, value: any) => boolean)
-  validate: (this: T, value: any, key: string) => boolean | Error
+  determine?: boolean | ((this: T, value: any) => boolean | Promise<boolean>)
+  validate: (this: T, value: any, key: string) => boolean | Promise<boolean> | Error
   message: string
   break?: boolean
   async?: boolean
@@ -579,7 +579,7 @@ export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj
 
   extend<D extends T = T, V extends I = I, O extends M = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>
 
-  getAttr(key: const): any
+  getAttr(key: string): any
 
   setAttr(key: string, value: any): void
 
