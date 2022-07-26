@@ -613,6 +613,10 @@ export class Model {
           get: () => makeMsg(this.$schema.$validate(key, getData(), this)([])),
           enumerable: true,
         },
+        asyncErrors: {
+          get: () => this.$schema.$validateAsync(key, getData(), this)([]).then((errors) => makeMsg(errors)),
+          enumerable: true,
+        },
         empty: {
           get: () => this.$schema.empty(key, getData(), this),
           enumerable: true,
