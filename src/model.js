@@ -599,6 +599,17 @@ export class Model {
       const getData = () => this._getData(key)
       let changed = false // whether the field has changed
 
+      let cachedErrors = []
+      cachedErrors.initErrors = 1
+      const updateCachedErrors = (errors) => {
+        const prev = cachedErrors
+        cachedErrors = errors && errors.length ? makeMsg(errors) : []
+        this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
+      }
+      this.watch(key, () => {
+        this.$schema.$validateAsync(key, getData(), this)([]).then(updateCachedErrors)
+      }, true)
+
       Object.assign(viewDef, {
         key: {
           get: () => key,
@@ -610,11 +621,14 @@ export class Model {
           enumerable: true,
         },
         errors: {
-          get: () => makeMsg(this.$schema.$validate(key, getData(), this)([])),
-          enumerable: true,
-        },
-        asyncErrors: {
-          get: () => this.$schema.$validateAsync(key, getData(), this)([]).then((errors) => makeMsg(errors)),
+          get: () => {
+            if (cachedErrors.initErrors) {
+              cachedErrors = this.$schema.$validate(key, getData(), this)([])
+              return cachedErrors
+            }
+            return cachedErrors
+          },
+          set: updateCachedErrors,
           enumerable: true,
         },
         empty: {
@@ -1427,6 +1441,9 @@ export class Model {
       if (emit) {
         this.emit('validate', [key], errors)
       }
+      if (this.$schema[key]) {
+        this.use(key).errors = outs
+      }
       return makeMsg(errors)
     }
 
@@ -1453,6 +1470,9 @@ export class Model {
         const errors = [...errs, ...outs]
         if (emit) {
           this.emit('validate', [key], errors)
+        }
+        if (this.$schema[key]) {
+          this.use(key).errors = outs
         }
         return makeMsg(errors)
       })
