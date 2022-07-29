@@ -847,11 +847,11 @@ export class Schema {
 
     const defaultValue = this.getDefault(key, context)
 
-    let coming = isUndefined(value) ? defaultValue : value
+    let coming = defaultValue
 
-    if (isFunction(create)) {
+    if (!isUndefined(value) && isFunction(create)) {
       coming = this._trydo(
-        () => create.call(context, coming, key, data),
+        () => create.call(context, value, key, data),
         (error) => isFunction(handle) && handle.call(context, error, key) || coming,
         {
           key,
