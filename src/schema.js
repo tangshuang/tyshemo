@@ -17,6 +17,7 @@ import {
   isNone,
 } from 'ts-fns'
 
+import { FactoryMeta } from './factory.js'
 import { Ty, Rule } from './ty/index.js'
 import { Meta } from './meta.js'
 import { patchObj } from './shared/utils.js'
@@ -843,15 +844,17 @@ export class Schema {
       return value
     }
 
-    const { catch: handle, create, force } = meta
+    const { catch: handle, create, save, force } = meta
 
     const defaultValue = this.getDefault(key, context)
 
-    let coming = defaultValue
+    let coming = isUndefined(value) ? defaultValue : value
 
-    if (!isUndefined(value) && isFunction(create)) {
+    if (isFunction(create)) {
+      const fromData = isUndefined(value) ? (isFunction(save) ? save(defaultValue, key, data) : data) : data
+      const base = isUndefined(value) ? (isInstanceOf(meta, FactoryMeta) ? defaultValue : value) : value
       coming = this._trydo(
-        () => create.call(context, value, key, data),
+        () => create.call(context, base, key, fromData),
         (error) => isFunction(handle) && handle.call(context, error, key) || coming,
         {
           key,

@@ -1427,4 +1427,23 @@ describe('Model', () => {
     expect(parent.children[0] instanceof ChildModel).toBe(true)
     expect(count).toBe(1)
   })
+
+  test('bugfix: default and create conflict', () => {
+    class SomeModel extends Model {
+      static bugfix = new Meta({
+        default: {
+          id: '',
+        },
+        create(value, key, data) {
+          return { id: data.bugfix }
+        },
+        save(value) {
+          return { bugfix: value.id }
+        },
+      })
+    }
+
+    const some = new SomeModel()
+    expect(some.bugfix.id).toBe('')
+  })
 })
