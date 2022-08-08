@@ -774,28 +774,30 @@ export class Model {
       }
 
       const fields = Object.keys(this.$schema)
+      const keyPath = makeKeyPath(key)
       fields.forEach((field) => {
         if (root === field) {
           return
         }
 
-        const meta = this.$schema[key]
+        const meta = this.$schema[root]
         const { follow, needs, deps } = this.$schema[field]
+
         if (follow) {
-          follow.call(this, makeKeyPath(key))
+          follow.call(this, keyPath)
         }
 
         if (needs) {
           const needMetas = needs()
           if (needMetas.some(item => isMatchMeta(meta, item))) {
-            this.$store.forceDispatch(`!${field}`, `needs ${key}`)
+            this.$store.forceDispatch(`!${field}`, `needs ${keyPath}`)
           }
         }
 
         if (deps) {
           const depMap = deps()
-          if (depMap[key]) {
-            this.$store.forceDispatch(`!${field}`, `depends on ${key}`)
+          if (depMap[root]) {
+            this.$store.forceDispatch(`!${field}`, `depends on ${keyPath}`)
           }
         }
       })
