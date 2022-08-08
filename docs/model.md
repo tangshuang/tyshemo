@@ -784,7 +784,7 @@ The previous part tell about an editor from a model instance. This part give you
 ```js
 class Some extends Model {}
 
-const editor = new Some.toEdit()
+const editor = new Some.Edit()
 ```
 
 Here `editor` has all methods of `Editor` you have learn in the previous part.

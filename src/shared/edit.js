@@ -9,17 +9,21 @@ export function edit(Constructor) {
     init(data) {
       define(this, '$commits', {
         value: {},
+        configurable: true,
       })
       define(this, '$history', {
         value: [],
+        configurable: true,
       })
       define(this, '$cursor', {
         value: -1,
         writable: true,
+        configurable: true,
       })
       define(this, '$doing', {
         value: false,
         writable: true,
+        configurable: true,
       })
 
       // receive (clone) another model

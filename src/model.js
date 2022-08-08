@@ -1894,7 +1894,7 @@ export class Model {
     return Constructor
   }
 
-  static get toEdit() {
+  static get Edit() {
     const Editor = edit(this)
     return Editor
   }
@@ -1960,7 +1960,7 @@ export class Model {
   toEdit(next) {
     const $this = this
     const Constructor = getConstructorOf(this)
-    const _Editor = Constructor.toEdit.extend(next)
+    const _Editor = Constructor.Edit.extend(next)
     class Editor extends _Editor {
       init(data) {
         // set parent before restore
