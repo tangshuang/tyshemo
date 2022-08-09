@@ -1,6 +1,7 @@
 import { Model } from '../src/model.js'
 import { Meta } from '../src/meta.js'
 import { Factory } from '../src/factory.js'
+import { Validator } from '../src/validator.js'
 
 describe('Model', () => {
   class PersonModel extends Model {
@@ -1445,5 +1446,21 @@ describe('Model', () => {
 
     const some = new SomeModel()
     expect(some.bugfix.id).toBe('')
+  })
+
+  test('bugfix: validate with disabled', () => {
+    class SomeModel extends Model {
+      static bugfix = new Meta({
+        default: '',
+        required: true,
+        validators: [Validator.required('required')],
+        disabled: true,
+      })
+    }
+
+    const some = new SomeModel()
+    const errors = some.validate()
+
+    expect(errors.length).toBe(0)
   })
 })
