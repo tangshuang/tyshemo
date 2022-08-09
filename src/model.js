@@ -420,7 +420,8 @@ export class Model {
     const Constructor = getConstructorOf(this)
     const state = Constructor.prototype.state ? Constructor.prototype.state.call(this) : {}
     each(properties, (item, key) => {
-      if (item && isInstanceOf(item, State)) {
+      // this.state has higher priority
+      if (item && isInstanceOf(item, State) && !inObject(key, state)) {
         const { value, get, set } = item
         if (get || set) {
           Object.defineProperty(state, key, {
@@ -873,8 +874,6 @@ export class Model {
       }, true)
     }
 
-    combine(state)
-
     each(this.$schema, (meta) => {
       if (!meta.state) {
         return
@@ -885,6 +884,9 @@ export class Model {
         combine(metaState)
       }
     })
+
+    // this.state has higher priority
+    combine(state)
 
     return output
   }
@@ -905,8 +907,8 @@ export class Model {
     })
 
     const combinedState = {
-      ...basicState,
       ...metasState,
+      ...basicState,
     }
 
     const keys = Object.keys(combinedState)
