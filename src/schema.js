@@ -380,7 +380,7 @@ export class Schema {
       return next
     }
 
-    const disabled = this.disabled(key, context)
+    const disabled = this.disabled(key, prev, context)
     if (disabled) {
       const e = {
         key,
@@ -394,7 +394,7 @@ export class Schema {
       return prev
     }
 
-    const readonly = this.readonly(key, context)
+    const readonly = this.readonly(key, prev, context)
     if (readonly) {
       const e = {
         key,
@@ -552,12 +552,12 @@ export class Schema {
 
     return (...args) => {
       // ignore if disabled
-      if (this.disabled(key, context)) {
+      if (this.disabled(key, value, context)) {
         return []
       }
 
       // if user did not fill the value, and the field is not required, there is no need to get error
-      if (this.empty(key, value, context) && !this.required(key, context)) {
+      if (this.empty(key, value, context) && !this.required(key, value, context)) {
         return []
       }
 
@@ -793,12 +793,12 @@ export class Schema {
 
     return (...args) => {
       // ignore if disabled
-      if (this.disabled(key, context)) {
+      if (this.disabled(key, value, context)) {
         return Promise.resolve([])
       }
 
       // if user did not fill the value, and the field is not required, there is no need to get error
-      if (this.empty(key, value, context) && !this.required(key, context)) {
+      if (this.empty(key, value, context) && !this.required(key, value, context)) {
         return Promise.resolve([])
       }
 
@@ -983,7 +983,7 @@ export class Schema {
       const { drop, map, flat, catch: handle, to = key } = meta
       const value = data[key]
 
-      if (this.disabled(key, context)) {
+      if (this.disabled(key, value, context)) {
         return
       }
 

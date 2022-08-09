@@ -1836,7 +1836,7 @@ export class Model {
 
     keys.forEach((key) => {
       // dont check if disabled
-      if (this.$schema.disabled(key, this)) {
+      if (this.$schema.disabled(key, this._getData(key), this)) {
         return
       }
 
