@@ -544,6 +544,10 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
     */
    empty?(this: M, value: T, key: string): boolean
    /**
+    * whether to make the field deprecated, if ture, it will disabled & readonly & hidden
+    */
+   deprecated: boolean | ((this: M, value: T, key: string) => boolean)
+   /**
     * provide state
     */
    state?(): Obj
