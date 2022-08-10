@@ -127,17 +127,21 @@ const attrs = {
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
   // when you invoke `export`, the `drop` will be set to be `true` automaticly, `flat` will not work too
+  // when disabled, readonly will be forcely set `true`
   disabled: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
   // if `hidden` is true, it means you want to hide the field related ui component
   hidden: boolean | (value, key) => boolean,
-
   // optional, function or boolean or string.
   // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
   // `Empty` rule: null|undefined|''|NaN|[]|{}
   required: boolean | (value, key) => boolean,
   // optional, function to determine the value is empty
   empty: (value, key) => boolean,
+  // optional, function to determine wheather the field is deprecated
+  // when deprecated, disabled, readonly, hidden will be forcely set `true`
+  // it is like a higher priority toggler of `disabled, readonly, hidden`
+  deprecated: boolean | (value, key) => boolean,
 
   // when this field's value changed, the `watch` function will be invoke
   watch({ value }, key) {},

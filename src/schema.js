@@ -221,16 +221,32 @@ export class Schema {
     return this.$decide('required', key, value, context)(false)
   }
 
-  disabled(key, value, context) {
-    return this.$decide('disabled', key, value, context)(false)
-  }
-
   readonly(key, value, context) {
+    if (this.deprecated(key, value, context)) {
+      return true
+    }
+    if (this.disabled(key, value, context)) {
+      return true
+    }
     return this.$decide('readonly', key, value, context)(false)
   }
 
+  disabled(key, value, context) {
+    if (this.deprecated(key, value, context)) {
+      return true
+    }
+    return this.$decide('disabled', key, value, context)(false)
+  }
+
   hidden(key, value, context) {
+    if (this.deprecated(key, value, context)) {
+      return true
+    }
     return this.$decide('hidden', key, value, context)(false)
+  }
+
+  deprecated(key, value, context) {
+    return this.$decide('deprecated', key, value, context)(false)
   }
 
   empty(key, value, context) {
