@@ -2,7 +2,7 @@ import { Model } from '../src/model.js'
 import { Meta } from '../src/meta.js'
 import { formatDate, createDate } from 'ts-fns'
 import { Numeric } from '../src/ty/index.js'
-import { createMetaGroup, createMeta } from '../src/factory.js'
+import { createMetaGroup, createMeta, createAsyncMeta } from '../src/interface.js'
 
 describe('Meta', () => {
   test('extend', () => {
@@ -181,5 +181,27 @@ describe('Meta', () => {
     const any = it.use(SomeMeta)
 
     expect(any?.value).toBe('1')
+  })
+
+  test('createAsyncMeta', (done) => {
+    const AasyncMeta = createAsyncMeta({
+      default: '',
+    }, () => new Promise(r => setTimeout(() => {
+      r({
+        required: true,
+      })
+    }, 300)))
+
+    class SomeModel extends Model {
+      static a = AasyncMeta
+    }
+
+    const some = new SomeModel()
+    expect(some.$views.a.required).toBe(false)
+
+    setTimeout(() => {
+      expect(some.$views.a.required).toBe(true)
+      done()
+    }, 310)
   })
 })

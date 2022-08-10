@@ -31,6 +31,7 @@ import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.
 import { edit } from './shared/edit.js'
 import { Meta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
+import { AsyncMeta } from './interface.js'
 
 const DEFAULT_ATTRIBUTES = {
   default: null,
@@ -200,6 +201,12 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
+    // make AsyncMeta enable to notify back
+    each(this.$schema, (meta, key) => {
+      if (isInstanceOf(meta, AsyncMeta)) {
+        meta.onInitAsyncMeta(this, key, meta)
+      }
+    })
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {

@@ -72,6 +72,15 @@ export function createMetaGroup(count, create) {
   return output
 }
 
+export class AsyncMeta extends Meta {
+  constructor(...args) {
+    super(...args)
+    this.fetchAsyncAttrs()
+  }
+  fetchAsyncAttrs() {}
+  onInitAsyncMeta() {}
+}
+
 /**
  *
  * @param {*} defaultAttrs
@@ -119,19 +128,38 @@ export function createAsyncMeta(defaultAttrs, asyncGetter) {
     return attrs
   }
 
-  class AsyncMeta extends Meta {
-    constructor(...args) {
-      super(...args)
+  let waiters = []
+  let deferer = Promise.resolve(asyncGetter()).then((data) => {
+    const attrs = parseAttrs(data)
+    asyncAttrs = attrs
+    return attrs
+  })
+  const notify = () => {
+    waiters.forEach(({ model, key }) => {
+      model.$store.forceDispatch(`!${key}`, 'async meta')
+    })
+    waiters.length = 0
+  }
+
+  class ThisAsyncMeta extends AsyncMeta {
+    fetchAsyncAttrs() {
       if (!asyncAttrs) {
-        Promise.resolve(asyncGetter(scope)).then((data) => {
-          asyncAttrs = data
-          const attrs = parseAttrs(data)
+        deferer.then((attrs) => {
           Object.assign(this, attrs)
+          notify()
         })
+      }
+      else {
+        Object.assign(this, asyncAttrs)
+      }
+    }
+    onInitAsyncMeta(model, key) {
+      if (!asyncAttrs) {
+        waiters.push({ model, key })
       }
     }
   }
 
-  Object.assign(AsyncMeta, defaultAttrs)
-  return AsyncMeta
+  Object.assign(ThisAsyncMeta, defaultAttrs)
+  return ThisAsyncMeta
 }
