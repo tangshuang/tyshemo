@@ -731,11 +731,6 @@ type View<T = any, I = T> = {
    * is the field value changed
    */
   changed: boolean
-  /**
-   * is the field attributes affected by other fields' (always those in `needs, deps`) side effects
-   * it records the affected attributes (only `errors, changed` currently)
-   */
-  affected: string[]
 } & Obj
 
 // https://lifesaver.codes/answer/type-manipulations-union-to-tuple-13298
