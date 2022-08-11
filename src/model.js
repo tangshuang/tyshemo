@@ -472,6 +472,9 @@ export class Model {
     const views = {}
     const reactivators = []
 
+    // provide a possibility to check whether during validating
+    let isValidating = {}
+
     keys.forEach((key) => {
       // patch attributes from meta
       const meta = this.$schema[key]
@@ -617,6 +620,7 @@ export class Model {
         cachedErrors = errors && errors.length ? makeMsg(errors) : []
         this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
       }
+      isValidating[key] = cachedValidatingQueue
       this.watch(key, () => {
         clearTimeout(cachedDeferTimer)
         cachedDeferTimer = setTimeout(() => {
@@ -719,6 +723,12 @@ export class Model {
     })
 
     define(this, '$views', views)
+
+    define(this.$views, '$validating', () => {
+      const queues = Object.values(isValidating)
+      const deferers = flatArray(queues)
+      return Promise.all(deferers)
+    })
 
     // create errors, so that is's easy and quick to know the model's current status
     define(this.$views, '$errors', () => {

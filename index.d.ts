@@ -771,6 +771,10 @@ export declare class Model implements Obj {
     $changed: boolean
     $state: Obj,
     $errors: Error[] | any[]
+    /**
+     * if it is validating, you can use this to check
+     */
+    $validating: Promise<Error[] | any[]>
   }
   $schema: {
     [field: string]: Meta
