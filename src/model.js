@@ -23,7 +23,6 @@ import {
   createArray,
   makeKeyPath,
   hasOwnKey,
-  uniqueArray,
 } from 'ts-fns'
 
 import { Schema as _Schema } from './schema.js'
@@ -535,7 +534,7 @@ export class Model {
           if (isArray(deps)) {
             deps.map((dep) => {
               if (isInstanceOf(dep, Meta) || isInheritedOf(dep, Meta)) {
-                return this.reflect(dep).key
+                return this.use(dep).key
               }
               return dep
             }).forEach((dep) => {
@@ -829,6 +828,9 @@ export class Model {
           const needMetas = needs()
           if (needMetas.some(item => isMatchMeta(meta, item))) {
             this.$store.forceDispatch(`!${field}`, `needs ${keyPath}`)
+            // after dependencies changed, errors should be recompute
+            const triggerForErrors = watchValidators[field]
+            triggerForErrors()
           }
         }
 
@@ -836,6 +838,9 @@ export class Model {
           const depMap = deps()
           if (depMap[root]) {
             this.$store.forceDispatch(`!${field}`, `depends on ${keyPath}`)
+            // after dependencies changed, errors should be recompute
+            const triggerForErrors = watchValidators[field]
+            triggerForErrors()
           }
         }
       })
@@ -866,24 +871,6 @@ export class Model {
       if (meta.init) {
         meta.init.call(this, key)
       }
-      // watch for errors
-      // after dependencies changed, errors should be recompute
-      const watchForErrors = watchValidators[key]
-      const { deps, needs } = meta
-      const watchForKeys = []
-      if (deps) {
-        const depsKeys = Object.keys(deps())
-        watchForKeys.push(...depsKeys)
-      }
-      if (needs) {
-        const metas = needs()
-        const metasKeys = metas.map(meta => this.use(meta, view => view && view.key)).filter(Boolean)
-        watchForKeys.push(...metasKeys)
-      }
-      const finalWatchKeys = uniqueArray(watchForKeys)
-      finalWatchKeys.forEach((key) => {
-        this.watch(key, watchForErrors, true)
-      })
     })
   }
 
@@ -1110,7 +1097,7 @@ export class Model {
         if (isArray(deps)) {
           deps.map((dep) => {
             if (isInstanceOf(dep, Meta) || isInheritedOf(dep, Meta)) {
-              return this.reflect(dep).key
+              return this.use(dep).key
             }
             return dep
           }).forEach((dep) => {
