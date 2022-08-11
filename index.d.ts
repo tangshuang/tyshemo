@@ -772,6 +772,9 @@ export declare class Model implements Obj {
     $state: Obj,
     $errors: Error[] | any[]
   }
+  $schema: {
+    [field: string]: Meta
+  }
   $root: this | null
   $parent: this | null
   $keyPath: string[]
