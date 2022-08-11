@@ -119,12 +119,11 @@ export class Model {
             if (isFunction(def.needs)) {
               needs.push(...def.needs())
             }
+            gives.push(def)
+            // if it is Model, make make visible in gives
             if (isInstanceOf(def, FactoryMeta)) {
               const entries = def.$entries
               gives.push(...[].concat(entries))
-            }
-            else {
-              gives.push(def)
             }
             return def
           }
