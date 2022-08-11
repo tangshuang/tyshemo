@@ -138,10 +138,10 @@ const attrs = {
   required: boolean | (value, key) => boolean,
   // optional, function to determine the value is empty
   empty: (value, key) => boolean,
-  // optional, function to determine wheather the field is deprecated
-  // when deprecated, disabled, readonly, hidden will be forcely set `true`
+  // optional, function to determine wheather the field is forbidden
+  // when forbidden, disabled, readonly, hidden will be forcely set `true`
   // it is like a higher priority toggler of `disabled, readonly, hidden`
-  deprecated: boolean | (value, key) => boolean,
+  nugatory: boolean | (value, key) => boolean,
 
   // when this field's value changed, the `watch` function will be invoke
   watch({ value }, key) {},

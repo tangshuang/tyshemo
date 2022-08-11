@@ -222,7 +222,7 @@ export class Schema {
   }
 
   readonly(key, value, context) {
-    if (this.deprecated(key, value, context)) {
+    if (this.nugatory(key, value, context)) {
       return true
     }
     if (this.disabled(key, value, context)) {
@@ -232,21 +232,21 @@ export class Schema {
   }
 
   disabled(key, value, context) {
-    if (this.deprecated(key, value, context)) {
+    if (this.nugatory(key, value, context)) {
       return true
     }
     return this.$decide('disabled', key, value, context)(false)
   }
 
   hidden(key, value, context) {
-    if (this.deprecated(key, value, context)) {
+    if (this.nugatory(key, value, context)) {
       return true
     }
     return this.$decide('hidden', key, value, context)(false)
   }
 
-  deprecated(key, value, context) {
-    return this.$decide('deprecated', key, value, context)(false)
+  nugatory(key, value, context) {
+    return this.$decide('nugatory', key, value, context)(false)
   }
 
   empty(key, value, context) {
