@@ -609,13 +609,30 @@ export class Model {
 
       let cachedErrors = []
       cachedErrors.initErrors = 1
+      let cachedValidatingQueue = []
+      let cachedTimer = null
+      let cachedDeferTimer = null
       const updateCachedErrors = (errors) => {
         const prev = cachedErrors
         cachedErrors = errors && errors.length ? makeMsg(errors) : []
         this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
       }
       this.watch(key, () => {
-        this.$schema.$validateAsync(key, getData(), this)([]).then(updateCachedErrors)
+        clearTimeout(cachedDeferTimer)
+        cachedDeferTimer = setTimeout(() => {
+          const deferer = this.$schema.$validateAsync(key, getData(), this)([])
+          cachedValidatingQueue.push(deferer)
+        }, 10)
+        clearTimeout(cachedTimer)
+        cachedTimer = setTimeout(() => {
+          Promise.all(cachedValidatingQueue)
+            // make sure use the latest errors
+            .then(list => list.pop())
+            .then(updateCachedErrors)
+            .finally(() => {
+              cachedValidatingQueue.length = 0
+            })
+        }, 20)
       }, true)
 
       Object.assign(viewDef, {
