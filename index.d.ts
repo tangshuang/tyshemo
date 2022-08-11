@@ -558,7 +558,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    /**
     * provide information about deps, it means this field should must work with this metas
     */
-   needs?(): Array<Meta | MetaClass>
+   needs?(): Array<Meta | MetaClass | ModelClass>
    /**
     * invoked when Model initialized
     */
