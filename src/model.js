@@ -23,6 +23,7 @@ import {
   createArray,
   makeKeyPath,
   hasOwnKey,
+  uniqueArray,
 } from 'ts-fns'
 
 import { Schema as _Schema } from './schema.js'
@@ -473,6 +474,7 @@ export class Model {
 
     // provide a possibility to check whether during validating
     let isValidating = {}
+    let watchValidators = {}
 
     keys.forEach((key) => {
       // patch attributes from meta
@@ -620,7 +622,7 @@ export class Model {
         this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
       }
       isValidating[key] = cachedValidatingQueue
-      this.watch(key, () => {
+      const watchForErrors = () => {
         clearTimeout(cachedDeferTimer)
         cachedDeferTimer = setTimeout(() => {
           const deferer = this.$schema.$validateAsync(key, getData(), this)([])
@@ -636,7 +638,9 @@ export class Model {
               cachedValidatingQueue.length = 0
             })
         }, 20)
-      }, true)
+      }
+      this.watch(key, watchForErrors, true)
+      watchValidators[key] = watchForErrors // NOTICE: it will be used to watch after all fields initialized
 
       Object.assign(viewDef, {
         key: {
@@ -787,7 +791,7 @@ export class Model {
     }
     reactivators.forEach(registerActivator)
 
-    // register a listener
+    // register a global listener to watch all changes
     this.watch('*', (e) => {
       const { key, compute } = e
       const root = key[0]
@@ -856,12 +860,30 @@ export class Model {
       this.onChange(root)
     }, true)
 
-    // invoke `init` attribute
     keys.forEach((key) => {
       const meta = this.$schema[key]
+      // invoke `init` attribute
       if (meta.init) {
         meta.init.call(this, key)
       }
+      // watch for errors
+      // after dependencies changed, errors should be recompute
+      const watchForErrors = watchValidators[key]
+      const { deps, needs } = meta
+      const watchForKeys = []
+      if (deps) {
+        const depsKeys = Object.keys(deps())
+        watchForKeys.push(...depsKeys)
+      }
+      if (needs) {
+        const metas = needs()
+        const metasKeys = metas.map(meta => this.use(meta, view => view && view.key)).filter(Boolean)
+        watchForKeys.push(...metasKeys)
+      }
+      const finalWatchKeys = uniqueArray(watchForKeys)
+      finalWatchKeys.forEach((key) => {
+        this.watch(key, watchForErrors, true)
+      })
     })
   }
 
@@ -1326,7 +1348,7 @@ export class Model {
         const meta = this.$schema[key]
         if (isMatchMeta(meta, keyPath)) {
           const view = this.$views[key]
-          return isFunction(fn) ? fn.call(this, key, view) : view
+          return isFunction(fn) ? fn.call(this, view) : view
         }
       }
       return
