@@ -486,8 +486,6 @@ export class Model {
       // use defineProperties to define view properties
       const viewDef = {}
 
-      let affected = []
-
       if (meta.activate) {
         reactivators.push({ key, activate: meta.activate })
       }
@@ -532,7 +530,6 @@ export class Model {
             const prev = attrValue
             attrValue = next
             this.$store.forceDispatch(`!${key}.${attr}`, next, prev)
-            // affected.push(attr)
           })
           get()
           if (isArray(deps)) {
@@ -557,7 +554,6 @@ export class Model {
               const prev = attrValue
               attrValue = value
               this.$store.forceDispatch(`!${key}.${attr}`, value, prev)
-              // affected.push(attr)
             },
             enumerable: true,
             configurable: true,
@@ -595,7 +591,6 @@ export class Model {
               const prev = attrValue
               attrValue = value
               this.$store.forceDispatch(`!${key}.${attr}`, value, prev)
-              // affected.push(attr)
             },
             enumerable: true,
             configurable: true,
@@ -625,7 +620,6 @@ export class Model {
         const prev = cachedErrors
         cachedErrors = errors && errors.length ? makeMsg(errors) : []
         this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
-        affected.push('errors')
       }
       isValidating[key] = cachedValidatingQueue
       const watchForErrors = () => {
@@ -720,11 +714,6 @@ export class Model {
               this.$store.forceDispatch(`!${key}.changed`, changed, prev)
             }
           },
-          enumerable: true,
-        },
-        affected: {
-          get: () => affected,
-          set: (next) => affected = next,
           enumerable: true,
         },
       })
@@ -845,8 +834,6 @@ export class Model {
         if (needs) {
           const needMetas = needs()
           if (needMetas.some(item => isMatchMeta(meta, item))) {
-            const { affected } = this.$views[field]
-            affected.push('changed')
             this.$store.forceDispatch(`!${field}`, `needs ${keyPath}`)
             // after dependencies changed, errors should be recompute
             const triggerForErrors = watchValidators[field]
@@ -858,8 +845,6 @@ export class Model {
         if (deps) {
           const depMap = deps()
           if (depMap[root]) {
-            const { affected } = this.$views[field]
-            affected.push('changed')
             this.$store.forceDispatch(`!${field}`, `depends on ${keyPath}`)
             // after dependencies changed, errors should be recompute
             const triggerForErrors = watchValidators[field]
@@ -996,7 +981,6 @@ export class Model {
       this.set(key, value, true)
       this.use(key, (view) => {
         view.changed = false
-        view.affected = []
       })
     }, true)
     this.emit('reset')
@@ -1030,7 +1014,6 @@ export class Model {
 
         if (this.$views[key]) {
           this.$views[key].changed = false
-          this.$views[key].affected = []
         }
       })
     }, true)
@@ -1190,10 +1173,6 @@ export class Model {
 
     // reset changed
     this.$views.$changed = false
-    // reset affected
-    each(this.$views, (view) => {
-      view.affected = []
-    })
 
     this.onRestore()
     this.emit('restore')
@@ -1687,10 +1666,6 @@ export class Model {
 
     // reset changed, make sure changed=false after recompute
     this.$views.$changed = false
-    // reset affected
-    each(this.$views, (view) => {
-      view.affected = []
-    })
 
     this.emit('fromJSON')
     this.emit('recover')
