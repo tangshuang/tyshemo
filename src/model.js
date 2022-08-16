@@ -1348,7 +1348,7 @@ export class Model {
         const meta = this.$schema[key]
         if (isMatchMeta(meta, keyPath)) {
           const view = this.$views[key]
-          return isFunction(fn) ? fn.call(this, view) : view
+          return view && isFunction(fn) ? fn.call(this, view) : view
         }
       }
       return
@@ -1365,7 +1365,7 @@ export class Model {
     const target = parse(this, chain)
     if (isInstanceOf(target, Model)) {
       const view = target.$views[key]
-      return isFunction(fn) ? fn.call(this, view) : view
+      return view && isFunction(fn) ? fn.call(this, view) : view
     }
   }
 
@@ -1479,11 +1479,17 @@ export class Model {
   }
 
   watch(key, fn) {
+    if (isInstanceOf(key, Meta) || isInheritedOf(key, Meta)) {
+      key = this.use(key, view => view.key)
+    }
     this.$store.watch(key, fn, true, this)
     return this
   }
 
   unwatch(key, fn) {
+    if (isInstanceOf(key, Meta) || isInheritedOf(key, Meta)) {
+      key = this.use(key, view => view.key)
+    }
     this.$store.unwatch(key, fn)
     return this
   }
