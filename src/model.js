@@ -171,7 +171,8 @@ export class Model {
               }
             }
             if (!flag) {
-              throw new Error(`${need} is needed, but not given in Model.`)
+              console.error(need, `is needed, but not given in Model`, $this)
+              throw new Error('Dependence is not given, please check dependencies graph.')
             }
           }
         }
@@ -628,21 +629,27 @@ export class Model {
       }
       isValidating[key] = cachedValidatingQueue
       const watchForErrors = () => {
-        clearTimeout(cachedDeferTimer)
-        cachedDeferTimer = setTimeout(() => {
-          const deferer = this.$schema.$validateAsync(key, getData(), this)([])
-          cachedValidatingQueue.push(deferer)
-        }, 10)
-        clearTimeout(cachedTimer)
-        cachedTimer = setTimeout(() => {
-          Promise.all(cachedValidatingQueue)
-            // make sure use the latest errors
-            .then(list => list.pop())
-            .then(updateCachedErrors)
-            .finally(() => {
-              cachedValidatingQueue.length = 0
-            })
-        }, 20)
+        // check asyncly and dispatch
+        if (this.$schema[key].validators?.some(item => item.async)) {
+          clearTimeout(cachedDeferTimer)
+          cachedDeferTimer = setTimeout(() => {
+            const deferer = this.$schema.$validateAsync(key, getData(), this)([])
+            cachedValidatingQueue.push(deferer)
+          }, 7)
+          clearTimeout(cachedTimer)
+          cachedTimer = setTimeout(() => {
+            Promise.all(cachedValidatingQueue)
+              // make sure use the latest errors
+              .then(list => list.pop())
+              .then(updateCachedErrors)
+              .finally(() => {
+                cachedValidatingQueue.length = 0
+              })
+          }, 15)
+        }
+        // bugfix: fallback, to make UI stable without twinkling
+        const errors = this.$schema.$validate(key, getData(), this)([])
+        updateCachedErrors(errors)
       }
       this.watch(key, watchForErrors, true)
       watchValidators[key] = watchForErrors // NOTICE: it will be used to watch after all fields initialized
