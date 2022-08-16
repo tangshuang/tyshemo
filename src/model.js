@@ -616,10 +616,12 @@ export class Model {
       let cachedValidatingQueue = []
       let cachedTimer = null
       let cachedDeferTimer = null
-      const updateCachedErrors = (errors) => {
+      const updateCachedErrors = (errors, silent) => {
         const prev = cachedErrors
         cachedErrors = errors && errors.length ? makeMsg(errors) : []
-        this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
+        if (!silent) {
+          this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
+        }
       }
       isValidating[key] = cachedValidatingQueue
       const watchForErrors = () => {
@@ -643,7 +645,8 @@ export class Model {
         }
         // bugfix: fallback, to make UI stable without twinkling
         const errors = this.$schema.$validate(key, getData(), this)([])
-        updateCachedErrors(errors)
+        // when value change, notification will be send, so make it silent
+        updateCachedErrors(errors, true)
       }
       this.watch(key, watchForErrors, true)
       watchValidators[key] = watchForErrors // NOTICE: it will be used to watch after all fields initialized
