@@ -246,7 +246,7 @@ export class Schema {
   }
 
   available(key, value, context) {
-    return this.$decide('available', key, value, context)(false)
+    return this.$decide('available', key, value, context)(true)
   }
 
   empty(key, value, context) {
