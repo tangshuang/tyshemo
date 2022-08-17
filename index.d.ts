@@ -544,9 +544,9 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
     */
    empty?(this: M, value: T, key: string): boolean
    /**
-    * whether to make the field nugatory, if ture, it will disabled & readonly & hidden
+    * whether to make the field available, if false, disabled & drop & readonly & hidden will be forcely set `true`
     */
-    nugatory?: boolean | ((this: M, value: T, key: string) => boolean)
+   available?: boolean | ((this: M, value: T, key: string) => boolean)
    /**
     * provide state
     */
