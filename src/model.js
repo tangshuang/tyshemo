@@ -60,6 +60,7 @@ const DEFAULT_ATTRIBUTES = {
   catch: null,
   state: null,
   deps: null,
+  available: null,
 }
 
 const isMatchMeta = (give, need) => {
@@ -495,7 +496,13 @@ export class Model {
           return
         }
         viewDef[attr] = {
-          get: () => this.$schema.$decide(attr, key, this.get(key), this)(fallback),
+          get: () => {
+            // use schema prototype methods to determine, so that go though inside logic
+            if (typeof DEFAULT_ATTRIBUTES[attr] === 'boolean') {
+              return this.$schema[attr](key, this.get(key), this)
+            }
+            return this.$schema.$decide(attr, key, this.get(key), this)(fallback)
+          },
           enumerable: true,
         }
       })
