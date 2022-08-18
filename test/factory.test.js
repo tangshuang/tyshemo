@@ -4,7 +4,7 @@ import { Factory } from '../src/factory.js'
 import { isInstanceOf } from 'ts-fns'
 
 describe('Factory', () => {
-  test('transport', () => {
+  test('linkage', () => {
     class Child extends Model {
       @state({
         value: false,
@@ -29,7 +29,7 @@ describe('Factory', () => {
           default: [{}],
         },
         {
-          transport(child, parent) {
+          linkage(child, parent) {
             child.is_ok = parent.is_ok
           },
         },
