@@ -828,7 +828,7 @@ export class Model {
         }
 
         const meta = this.$schema[root]
-        const { follow, needs, deps } = this.$schema[field]
+        const { follow, needs, deps, state } = this.$schema[field]
 
         if (follow) {
           follow.call(this, keyPath)
@@ -837,21 +837,28 @@ export class Model {
         if (needs) {
           const needMetas = needs()
           if (needMetas.some(item => isMatchMeta(meta, item))) {
-            this.$store.forceDispatch(`!${field}`, `needs ${keyPath}`)
+            this.$store.forceDispatch(`!${field}`, `needs ${root}`)
             // after dependencies changed, errors should be recompute
             const triggerForErrors = watchValidators[field]
             triggerForErrors()
           }
         }
 
-
         if (deps) {
           const depMap = deps()
           if (depMap[root]) {
-            this.$store.forceDispatch(`!${field}`, `depends on ${keyPath}`)
+            this.$store.forceDispatch(`!${field}`, `depends on ${root}`)
             // after dependencies changed, errors should be recompute
             const triggerForErrors = watchValidators[field]
             triggerForErrors()
+          }
+        }
+
+        if (state) {
+          const stateObj = state()
+          const stateKeys = Object.keys(stateObj)
+          if (stateKeys.includes(root)) {
+            this.$store.forceDispatch(`!${field}`, `by state ${root}`)
           }
         }
       })
