@@ -912,6 +912,9 @@ interface FactoryHooks {
   entry?(entries?: ModelClass): ModelClass
   entry?(entries?: ModelClass[], data?: any, key?: string, parent?: Model): ModelClass[]
   instance?(model?: Model, parent?: Model): Model
+  adapt(entries?: ModelClass[], data?: any): boolean
+  transport?(child?: Model, parent?: Model, key?: string): void
+  linkage?(child?: Model, parent?: Model, key?: string): void
   default?(fn?: Function): Function
   type?(type?: any): any
   validators?(validators?: Validator[]): Validator[]
@@ -919,7 +922,6 @@ interface FactoryHooks {
   save?(fn?: (value?: any, key?: string, data?: any) => any | any[]): (value?: any, key?: string) => any | any[]
   map?(fn?: (value?: any, key?: string) => any | any[]): (value?: any, key?: string) => any | any[]
   setter?(fn?: (value?: any, key?: string) => any | any[]): (value?: any, key?: string) => any | any[]
-  transport?(child?: Model, parent?: Model): void
 }
 
 interface FactoryChunk<M, D, U> {
