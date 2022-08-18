@@ -58,18 +58,25 @@ export class Factory {
 
     const isList = isArray(Entries)
 
-    const setupTransport = (child, parent, key) => {
-      if (!entity.transport) {
+    const setupLinkage = (child, parent, key) => {
+      // do only once
+      if (entity.transport) {
+        entity.transport(child, parent, key)
+      }
+
+      // --------
+
+      if (!entity.linkage) {
         return
       }
 
       const register = () => {
         const deps = parent.collect(() => {
-          entity.transport(child, parent)
+          entity.linkage(child, parent)
         })
 
         const fn = () => {
-          entity.transport(child, parent)
+          entity.linkage(child, parent)
 
           // -------
           // check whether the child is in parent model, if not, remove watchers
@@ -141,7 +148,7 @@ export class Factory {
             return
           }
           const child = entity.instance(model, parent)
-          setupTransport(child, parent, key)
+          setupLinkage(child, parent, key)
           return child
         })
         const outs = values.filter(item => item)
@@ -186,7 +193,7 @@ export class Factory {
           : isObject(value) ? new ChoosedModel(value, { key, parent })
             : new ChoosedModel({}, { key, parent })
         const child = entity.instance(model, parent)
-        setupTransport(child, parent, key)
+        setupLinkage(child, parent, key)
         return child
       }
       const options = {
