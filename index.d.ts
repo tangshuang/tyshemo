@@ -912,7 +912,7 @@ interface FactoryHooks {
   entry?(entries?: ModelClass): ModelClass
   entry?(entries?: ModelClass[], data?: any, key?: string, parent?: Model): ModelClass[]
   instance?(model?: Model, parent?: Model): Model
-  adapt(entries?: ModelClass[], data?: any): boolean
+  adapt?(entries?: ModelClass[], data?: any): boolean
   transport?(child?: Model, parent?: Model, key?: string): void
   linkage?(child?: Model, parent?: Model, key?: string): void
   default?(fn?: Function): Function
