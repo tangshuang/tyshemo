@@ -996,20 +996,20 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, catch: handle, to = key } = meta
+      const { drop, map, flat, arrange = flat, catch: handle, to = key } = meta
       const value = data[key]
 
       if (this.disabled(key, value, context)) {
         return
       }
 
-      if (isFunction(flat)) {
+      if (isFunction(arrange)) {
         const res = this._trydo(
-          () => flat.call(context, value, key, data) || {},
+          () => arrange.call(context, value, key, data, output) || {},
           (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
-            attr: 'flat',
+            attr: 'arrange',
           },
         )
         patchObj(patch, res)

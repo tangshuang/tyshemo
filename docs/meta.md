@@ -91,7 +91,7 @@ const attrs = {
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
   save: (value, key, data) => {
-    // notice: the return value should MUST be an object, and will be patched to output object (like `flat` do), so that you can export a complext object
+    // notice: the return value should MUST be an object, and will be patched to output object (like `arrange` do), so that you can export a complext object
     return { [key]: newValue }
   },
   // optional, used by `fromJSON` and `toJSON` to read or save to property
@@ -109,7 +109,8 @@ const attrs = {
   // optional, function, to override the property value when `toData`, not work when `drop` is false
   map: (value, key, data) => newValue,
   // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
-  flat: (value, key, data) => ({ [key]: newValue }),
+  // `output` is the data to be exported, you can modify it directly
+  arrange: (value, key, data, output) => ({ [key]: newValue }),
   // optional, submit the key to be another name, for example: { to: 'table_1.field_1' } -> { 'table_1.field_1': value }
   to: string,
 
@@ -126,7 +127,7 @@ const attrs = {
   // optional, function or boolean or string,
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
-  // when you invoke `export`, the `drop` will be set to be `true` automaticly, `flat` will not work too
+  // when you invoke `export`, the `drop` will be set to be `true` automaticly, `arrange` will not work too
   // when disabled, readonly will be forcely set `true`
   disabled: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
@@ -324,7 +325,7 @@ class PoodB extends PoodA {}
 
 ## Formatting Control
 
-`drop` `map` `flat` `to` `disabled` affect the result of `toData`.
+`drop` `map` `arrange` `to` `disabled` affect the result of `toData`.
 
 ## Value Control
 

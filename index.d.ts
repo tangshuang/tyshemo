@@ -504,9 +504,15 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
     */
    map?(this: M, value: T, key: string, data: U): any
    /**
+    * @deprecated use `arrange` instead
     * flat another data to output data of `toData()`
     */
    flat?(this: M, value: T, key: string, data: U): Obj
+   /**
+    * arrange export data when `map` is not able to give the wanna data
+    * @param output the data to be exported by toData, you can change it directly
+    */
+   arrange?(this: M, value: T, key: string, data: U, output: Obj): Obj
    /**
     * transfer field name to `to` when `toData`
     */
