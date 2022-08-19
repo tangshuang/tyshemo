@@ -1012,7 +1012,9 @@ export class Schema {
             attr: 'arrange',
           },
         )
-        patchObj(patch, res)
+        if (res) {
+          patchObj(patch, res)
+        }
       }
 
       if (isBoolean(drop) && drop) {
