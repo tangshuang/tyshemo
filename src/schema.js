@@ -15,6 +15,7 @@ import {
   isInheritedOf,
   isEmpty,
   isNone,
+  assign,
 } from 'ts-fns'
 
 import { FactoryMeta } from './factory.js'
@@ -1044,10 +1045,10 @@ export class Schema {
             attr: 'map',
           },
         )
-        output[to] = res
+        assign(output, to, res)
       }
       else {
-        output[to] = value
+        assign(output, to, value)
       }
     })
 
