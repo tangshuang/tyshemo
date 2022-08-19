@@ -997,23 +997,23 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, arrange = flat, catch: handle, to = key } = meta
+      const { drop, map, flat, catch: handle, to = key } = meta
       const value = data[key]
 
       if (this.disabled(key, value, context)) {
         return
       }
 
-      if (isFunction(arrange)) {
+      if (isFunction(flat)) {
         const res = this._trydo(
-          () => arrange.call(context, value, key, data, output) || {},
+          () => flat.call(context, value, key, data, output),
           (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
-            attr: 'arrange',
+            attr: 'flat',
           },
         )
-        if (res) {
+        if (!isUndefined(res)) {
           patchObj(patch, res)
         }
       }
@@ -1038,14 +1038,17 @@ export class Schema {
 
       if (isFunction(map)) {
         const res = this._trydo(
-          () => map.call(context, value, key, data),
+          () => map.call(context, value, key, data, output),
           (error) => isFunction(handle) && handle.call(context, error, key) || value,
           {
             key,
             attr: 'map',
           },
         )
-        assign(output, to, res)
+        // can return nothing, and modify output inside
+        if (!isUndefined(res)) {
+          assign(output, to, res)
+        }
       }
       else {
         assign(output, to, value)
@@ -1071,7 +1074,7 @@ export class Schema {
 
       if (isFunction(save)) {
         const res = this._trydo(
-          () => save.call(context, value, key, data) || {},
+          () => save.call(context, value, key, data, output),
           (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
@@ -1079,19 +1082,21 @@ export class Schema {
           },
         )
 
-        // has asset but return an object which contains the asset key
-        if (asset && isObject(res) && inObject(dataKey, res)) {
-          patchObj(output, res)
-        }
-        else if (asset) {
-          patchObj(output, { [dataKey]: res })
-        }
-        else if (isObject(res)) {
-          patchObj(output, res)
-        }
-        // if res is not an object, use it as value directly
-        else {
-          patchObj(output, { [dataKey]: res })
+        if (!isUndefined(res)) {
+          // has asset but return an object which contains the asset key
+          if (asset && isObject(res) && inObject(dataKey, res)) {
+            patchObj(output, res)
+          }
+          else if (asset) {
+            patchObj(output, { [dataKey]: res })
+          }
+          else if (isObject(res)) {
+            patchObj(output, res)
+          }
+          // if res is not an object, use it as value directly
+          else {
+            patchObj(output, { [dataKey]: res })
+          }
         }
       }
       else {

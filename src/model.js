@@ -46,7 +46,6 @@ const DEFAULT_ATTRIBUTES = {
   drop: null,
   map: null,
   flat: null,
-  arrange: null,
   to: null,
   asset: null,
   getter: null,

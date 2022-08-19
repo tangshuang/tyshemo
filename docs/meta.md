@@ -90,8 +90,8 @@ const attrs = {
   create: (value, key, json) => !!json.on_market ? json.listing : json.pending,
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
-  save: (value, key, data) => {
-    // notice: the return value should MUST be an object, and will be patched to output object (like `arrange` do), so that you can export a complext object
+  save: (value, key, data, output) => {
+    // notice: the return value should MUST be an object, and will be patched to output object (like `flat` do), so that you can export a complext object
     return { [key]: newValue }
   },
   // optional, used by `fromJSON` and `toJSON` to read or save to property
@@ -106,12 +106,17 @@ const attrs = {
 
   // optional, function, whether to not use this property when `toData`
   drop: (value, key, data) => Boolean,
-  // optional, function, to override the property value when `toData`, not work when `drop` is false
-  map: (value, key, data) => newValue,
-  // optional, function, to assign this result to output data, don't forget to set `drop` to be true if you want to drop original property
+  // optional, function, to override the property value when `toData`,
+  // not work when `drop` is false
   // `output` is the data to be exported, you can modify it directly
-  arrange: (value, key, data, output) => ({ [key]: newValue }),
+  map: (value, key, data，output) => newValue | void,
+  // optional, function, to assign this result to output data,
+  // `drop` has no effect for `flat`
+  // don't forget to set `drop` to be true if you want to drop original property
+  // `output` is the data to be exported, you can modify it directly
+  flat: (value, key, data, output) => ({ [key]: newValue }) | void,
   // optional, submit the key to be another name, for example: { to: 'table_1.field_1' } -> { 'table_1.field_1': value }
+  // can use keyPath like 'parent.child'
   to: string,
 
   // optional, function, format this property value when set
@@ -127,7 +132,7 @@ const attrs = {
   // optional, function or boolean or string,
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
-  // when you invoke `export`, the `drop` will be set to be `true` automaticly, `arrange` will not work too
+  // when you invoke `export`, the `drop` will be set to be `true` automaticly, `flat` will not work too
   // when disabled, readonly will be forcely set `true`
   disabled: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
@@ -325,7 +330,7 @@ class PoodB extends PoodA {}
 
 ## Formatting Control
 
-`drop` `map` `arrange` `to` `disabled` affect the result of `toData`.
+`drop` `map` `flat` `to` `disabled` affect the result of `toData`.
 
 ## Value Control
 

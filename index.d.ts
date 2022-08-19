@@ -490,7 +490,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    /**
     * export field value used by `toJSON`
     */
-   save?(this: M, value: T, key: string, data: U): Obj | any
+   save?(this: M, value: T, key: string, data: U, output: Obj): Obj | any | void
    /**
     * if without `create` and `save`, asset will used as field read proof
     */
@@ -498,23 +498,20 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    /**
     * whether drop this field when `toData()`
     */
-   drop?(this: M, value: T, key: string, data: U): boolean
+   drop?: boolean | ((this: M, value: T, key: string, data: U) => boolean)
    /**
     * transfer the field value when `toData()`
+    * when `drop` is `false`, map will not work
     */
-   map?(this: M, value: T, key: string, data: U): any
+   map?(this: M, value: T, key: string, data: U, output: Obj): any | void
    /**
-    * @deprecated use `arrange` instead
     * flat another data to output data of `toData()`
+    * `drop` has no effect to flat
     */
-   flat?(this: M, value: T, key: string, data: U): Obj
-   /**
-    * arrange export data when `map` is not able to give the wanna data
-    * @param output the data to be exported by toData, you can change it directly
-    */
-   arrange?(this: M, value: T, key: string, data: U, output: Obj): Obj
+   flat?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
    /**
     * transfer field name to `to` when `toData`
+    * can use keyPath like 'some.any'
     */
    to?: string
    /**
