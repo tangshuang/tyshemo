@@ -303,10 +303,12 @@ export class Factory {
     return NewModel
   }
 
-  static createMeta(entries, attrs, hooks = {}) {
-    const Constructor = this
+  static createMeta(entries, attrs, hooks) {
+    class Constructor extends this {}
+    if (hooks) {
+      Object.assign(Constructor.prototype, hooks)
+    }
     const entity = new Constructor(entries, attrs)
-    Object.assign(entity, hooks)
     return entity.getMeta()
   }
 
