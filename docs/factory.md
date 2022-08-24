@@ -62,26 +62,6 @@ const SomeMeta = Factory.createMeta([Model1, Model2], null, {
 
 ## API
 
-**getMeta()**
-
-Get the instance's generated meta.
-
-**static useAttrs(Model, attrs)**
-
-Modify some attrs, i.e.
-
-```js
-const NewModel = Factory.useAttrs(OriginalModel, [
-  [
-    'name', // field of OriginalModel
-    'required', // attr name of 'name' meta
-    (attr, meta) => { // modifier, - attr: the value of attr; - meta: the meta self
-      return true
-    },
-  ],
-])
-```
-
 **static createMeta(entries, attrs?, hooks?)**
 
 Convert a Model or a list of Models to be a meta.
@@ -89,6 +69,8 @@ Convert a Model or a list of Models to be a meta.
 ```js
 const SomeMeta = Factory.createMeta(SomeModel)
 ```
+
+Here `attrs` does not support type|create|save|setter.
 
 **static selectMeta(entries, select, attrs?)**
 

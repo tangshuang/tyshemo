@@ -173,7 +173,7 @@ export class Factory {
           return gen(isArray(value) ? value : [], key, this)
         }),
         save: entity.save((ms, key) => ({ [key]: ms.map(m => m.toJSON()) })),
-        map: entity.map(ms => ms.map(m => m.toData())),
+        map: entity.map(_map || (ms => ms.map(m => m.toData()))),
         setter: entity.setter(function(value, key) {
           return gen(isArray(value) ? value : [], key, this)
         }),
@@ -213,7 +213,7 @@ export class Factory {
           return gen(value, key, this)
         }),
         save: entity.save((m, key) => ({ [key]: m.toJSON() })),
-        map: entity.map(m => m.toData()),
+        map: entity.map(_map || (m => m.toData())),
         setter: entity.setter(function(value, key) {
           return gen(value, key, this)
         }),
