@@ -70,8 +70,6 @@ Convert a Model or a list of Models to be a meta.
 const SomeMeta = Factory.createMeta(SomeModel)
 ```
 
-Here `attrs` does not support type|create|save|setter.
-
 **static selectMeta(entries, select, attrs?)**
 
 Generate a meta by choosing from given entries.
@@ -83,7 +81,6 @@ const SomeMeta = Factory.selectMeta([AModel, BModel, CModel], ([AModel, BModel, 
   }
   ...
 })
-
 
 class SomeModel extends Model {
   static some = SomeMeta

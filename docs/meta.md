@@ -91,6 +91,8 @@ const attrs = {
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
   save: (value, key, data, output) => {
+    // `data` is a bundle object which is from the model
+    // `output` is the final result, you can modify it directly and return nothing in `save`
     // notice: the return value should MUST be an object, and will be patched to output object (like `flat` do), so that you can export a complext object
     return { [key]: newValue }
   },
@@ -120,11 +122,11 @@ const attrs = {
   to: string,
 
   // optional, function, format this property value when set
-  setter: (value) => value,
+  setter: (value, key) => value,
   // optional, function, format this property value when get
-  getter: (value) => newValue,
+  getter: (value, key) => newValue,
   // optional, function, format this field to a text, you can read the text on `model.$views.field.text`
-  formatter: (value) => text,
+  formatter: (value, key) => text,
 
   // optional, function or boolean or string,
   // if `readonly` is true, you will not be able to change value by using `set` (however `assign` works)

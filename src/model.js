@@ -33,6 +33,8 @@ import { Meta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 import { AsyncMeta } from './interface.js'
 
+export const CustomMetaAttrsKey = Symbol()
+
 const DEFAULT_ATTRIBUTES = {
   default: null,
   compute: null,
@@ -95,6 +97,7 @@ export class State {
 export class Model {
   constructor(data = {}, options = {}) {
     const $this = this
+    const Constructor = getConstructorOf(this)
     const { parent, key } = options
 
     define(this, '$hooks', [])
@@ -111,12 +114,25 @@ export class Model {
         const needs = []
         const gives = []
 
+        const custom = Constructor[CustomMetaAttrsKey]
+
         const defs = map(metas, (def) => {
           if (!def) {
             return
           }
 
           if (isInstanceOf(def, Meta) || isInheritedOf(def, Meta)) {
+            // if passed custom meta attrs, use them
+            if (custom.length) {
+              for (let i = custom.length - 1; i >= 0; i --) {
+                const item = custom[i]
+                const { meta, attrs } = item
+                if (isMatchMeta(def, meta)) {
+                  return def.extend(attrs)
+                }
+              }
+            }
+
             if (isFunction(def.needs)) {
               needs.push(...def.needs())
             }
@@ -1776,14 +1792,14 @@ export class Model {
     return result
   }
 
-  toParams(determine) {
-    const data = this.toData()
+  toParams(chunk, determine) {
+    const data = this.toData(chunk)
     const output = Factory.toParams(data, determine)
     return output
   }
 
-  toFormData(determine) {
-    const data = this.toData()
+  toFormData(chunk, determine) {
+    const data = this.toData(chunk)
     const formdata = Factory.toFormData(data, determine)
     return formdata
   }
@@ -2122,4 +2138,6 @@ export class Model {
     memory.deps = depend ? depend.call(this, value) : null
     return value
   }
+
+  static [CustomMetaAttrsKey] = []
 }

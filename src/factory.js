@@ -1,6 +1,5 @@
 import {
   isObject,
-  isInheritedOf,
   isArray,
   map,
   flatArray,
@@ -11,7 +10,7 @@ import {
   each,
 } from 'ts-fns'
 import { Meta } from './meta.js'
-import { Model } from './model.js'
+import { Model, CustomMetaAttrsKey } from './model.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
@@ -209,13 +208,15 @@ export class Factory {
           },
           ..._validators,
         ]),
-        create: entity.create(function(value, key) {
-          return gen(value, key, this)
+        create: entity.create(function(value, key, json) {
+          const coming = _create ? _create.call(this, value, key, json) : value
+          return gen(coming, key, this)
         }),
-        save: entity.save((m, key) => ({ [key]: m.toJSON() })),
+        save: entity.save(_save || ((m, key) => ({ [key]: m.toJSON() }))),
         map: entity.map(_map || (m => m.toData())),
         setter: entity.setter(function(value, key) {
-          return gen(value, key, this)
+          const coming = _setter ? _setter.call(this, value, key) : value
+          return gen(coming, key, this)
         }),
         $entries: Entries,
         $create: gen,
@@ -280,27 +281,14 @@ export class Factory {
   }
 
   /**
-   * @deprecated
-   * @param {*} Model
-   * @param {*} attrs
-   * @returns
+   * use custom meta attrs, return a new model
+   * @param {Array<{ meta, attrs }>} modifiers
    */
-  static useAttrs(Model, attrs) {
-    class NewModel extends Model {}
-    attrs.forEach(([field, attr, fn]) => {
-      const meta = Model[field]
-      if (isInstanceOf(meta, Meta)) {
-        NewModel[field] = meta.extends({
-          [attr]: fn(meta[attr], meta),
-        })
-      }
-      else if (isInheritedOf(meta, Meta)) {
-        NewModel[field] = meta.extends({
-          [attr]: fn(meta[attr], meta),
-        })
-      }
-    })
-    return NewModel
+  static useAttrs(Model, modifiers) {
+    class InheritedModel extends Model {
+      static [CustomMetaAttrsKey] = modifiers
+    }
+    return InheritedModel
   }
 
   static createMeta(entries, attrs, hooks) {

@@ -816,8 +816,8 @@ export declare class Model implements Obj {
   toJSON(): Obj
   toJSON<D extends Obj = Obj>(chunk: FactoryChunk<Model, D, any[]>): D
   toData(chunk?: FactoryChunk<Model, any, any[]>): Obj
-  toParams(determine?: (value: any) => boolean): Obj
-  toFormData(determine?: (value: any) => boolean): Obj
+  toParams(chunk?: FactoryChunk<Model, any, any[]>, determine?: (value: any) => boolean): Obj
+  toFormData(chunk?: FactoryChunk<Model, any, any[]>, determine?: (value: any) => boolean): Obj
   validate(key?: string | string[]): Error[] | any[]
   validateAsync(key?: string | string): Promise<Error[] | any[]>
 
@@ -937,10 +937,7 @@ interface Factory extends FactoryHooks {}
 export declare class Factory {
   getMeta<T = Model | Model[], M extends Model = Model>(): Meta<T, T, M>
 
-  /**
-   * @deprecated
-   */
-  static useAttrs(Model: ModelClass, attrs: [string, string, Function][]): ModelClass
+  static useAttrs<T extends ModelClass = ModelClass>(Model: T, modifiers: ({ meta: Meta | (new (attrs: any) => Meta) })[]): T
 
   /**
    * @deprecated use Factory.createMeta instead
