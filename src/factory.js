@@ -1,8 +1,6 @@
 import {
   isObject,
   isArray,
-  map,
-  flatArray,
   isInstanceOf,
   isFunction,
   define,
@@ -162,12 +160,7 @@ export class Factory {
           return gen(values, key, this)
         }),
         type: entity.type(Entries),
-        validators: entity.validators([
-          {
-            validate: ms => flatArray(map(ms, m => m.validate())),
-          },
-          ..._validators,
-        ]),
+        validators: entity.validators(_validators),
         create: entity.create(function(value, key) {
           return gen(isArray(value) ? value : [], key, this)
         }),
@@ -202,12 +195,7 @@ export class Factory {
           return gen(value, key, this)
         }),
         type: entity.type(Entry),
-        validators: entity.validators([
-          {
-            validate: m => m.validate(),
-          },
-          ..._validators,
-        ]),
+        validators: entity.validators(_validators),
         create: entity.create(function(value, key, json) {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(coming, key, this)

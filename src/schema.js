@@ -514,7 +514,7 @@ export class Schema {
         key,
         value,
         at: index,
-        validator: name,
+        validator: name || validator,
         message: msg,
       }
       return error
@@ -704,7 +704,7 @@ export class Schema {
           key,
           value,
           at: index,
-          validator: name,
+          validator: name || validator,
           message,
         }
         return error

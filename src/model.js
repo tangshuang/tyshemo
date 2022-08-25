@@ -23,6 +23,7 @@ import {
   createArray,
   makeKeyPath,
   hasOwnKey,
+  decideby,
 } from 'ts-fns'
 
 import { Schema as _Schema } from './schema.js'
@@ -1531,7 +1532,25 @@ export class Model {
     const validate = (key, emit) => {
       this._check(key, true)
       const value = this._getData(key)
-      const outs = this.$schema.validate(key, value, this)
+      const outs = decideby(() => {
+        if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
+          const suberrs = value.map(model => model.validate())
+          const outs = flatArray(suberrs)
+          outs.forEach((item, i) => {
+            item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+          })
+          return outs
+        }
+        if (value && isInstanceOf(value, Model)) {
+          const outs = value.validate()
+          outs.forEach((item, i) => {
+            item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+          })
+          return outs
+        }
+        const outs = this.$schema.validate(key, value, this)
+        return outs
+      })
       const errors = [...errs, ...outs]
       if (emit) {
         this.emit('validate', [key], errors)
@@ -1561,7 +1580,28 @@ export class Model {
     const validate = (key, emit) => {
       this._check(key, true)
       const value = this._getData(key)
-      return this.$schema.validateAsync(key, value, this).then((outs) => {
+      const defer = decideby(() => {
+        if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
+          const subdefers = value.map(model => model.validateAsync())
+          return Promise.all(subdefers).then((suberrs) => {
+            const outs = flatArray(suberrs)
+            outs.forEach((item, i) => {
+              item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+            })
+            return outs
+          })
+        }
+        if (value && isInstanceOf(value, Model)) {
+          return value.validateAsync().then((outs) => {
+            outs.forEach((item, i) => {
+              item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+            })
+            return outs
+          })
+        }
+        return this.$schema.validateAsync(key, value, this)
+      })
+      return defer.then((outs) => {
         const errors = [...errs, ...outs]
         if (emit) {
           this.emit('validate', [key], errors)

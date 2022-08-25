@@ -1463,4 +1463,29 @@ describe('Model', () => {
 
     expect(errors.length).toBe(0)
   })
+
+  test('validate sub models', () => {
+    class ChildModel extends Model {
+      static one = new Meta({
+        default: 0,
+        validators: [
+          {
+            validate() {
+              return false
+            },
+            message: 'child error',
+          },
+        ],
+      })
+    }
+
+    class ParentModel extends Model {
+      static child = ChildModel
+    }
+
+    const parent = new ParentModel()
+    const errors = parent.validate()
+
+    expect(errors.length).toBe(1)
+  })
 })
