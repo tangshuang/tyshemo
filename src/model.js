@@ -491,8 +491,8 @@ export class Model {
     const reactivators = []
 
     // provide a possibility to check whether during validating
-    let isValidating = {}
-    let watchValidators = {}
+    let validatingQueues = {}
+    let cachedErrorsUpdators = {}
 
     keys.forEach((key) => {
       // patch attributes from meta
@@ -635,45 +635,45 @@ export class Model {
       const getData = () => this._getData(key)
       let changed = false // whether the field has changed
 
+      // delcare current key's validatingQueue
+      let validatingQueue = validatingQueues[key] = validatingQueue
       let cachedErrors = []
-      cachedErrors.initErrors = 1
-      let cachedValidatingQueue = []
+      let cachedErrorsInited = false
       let cachedTimer = null
       let cachedDeferTimer = null
-      const updateCachedErrors = (errors, silent) => {
+      const setCachedErrors = (errors, silent) => {
         const prev = cachedErrors
         cachedErrors = errors && errors.length ? makeMsg(errors) : []
         if (!silent) {
           this.$store.forceDispatch(`!${key}.errors`, cachedErrors, prev)
         }
       }
-      isValidating[key] = cachedValidatingQueue
-      const watchForErrors = () => {
+      const updateCachedErrors = () => {
         // check asyncly and dispatch
         if (this.$schema[key].validators?.some(item => item.async)) {
           clearTimeout(cachedDeferTimer)
           cachedDeferTimer = setTimeout(() => {
             const deferer = this.$schema.$validateAsync(key, getData(), this)([])
-            cachedValidatingQueue.push(deferer)
+            validatingQueue.push(deferer)
           }, 7)
           clearTimeout(cachedTimer)
           cachedTimer = setTimeout(() => {
-            Promise.all(cachedValidatingQueue)
+            Promise.all(validatingQueue)
               // make sure use the latest errors
               .then(list => list.pop())
-              .then(updateCachedErrors)
+              .then(setCachedErrors)
               .finally(() => {
-                cachedValidatingQueue.length = 0
+                validatingQueue.length = 0
               })
           }, 15)
         }
         // bugfix: fallback, to make UI stable without twinkling
         const errors = this.$schema.$validate(key, getData(), this)([])
         // when value change, notification will be send, so make it silent
-        updateCachedErrors(errors, true)
+        setCachedErrors(errors, true)
       }
-      this.watch(key, watchForErrors, true)
-      watchValidators[key] = watchForErrors // NOTICE: it will be used to watch after all fields initialized
+      this.watch(key, updateCachedErrors, true)
+      cachedErrorsUpdators[key] = updateCachedErrors // NOTICE: it will be used to watch after all fields initialized
 
       Object.assign(viewDef, {
         key: {
@@ -687,13 +687,14 @@ export class Model {
         },
         errors: {
           get: () => {
-            if (cachedErrors.initErrors) {
-              cachedErrors = this.$schema.$validate(key, getData(), this)([])
-              return cachedErrors
+            // before we read `view.errors`, cachedErrors is empty
+            // when first get errors, generate cachedErrors
+            if (!cachedErrorsInited) {
+              updateCachedErrors()
             }
             return cachedErrors
           },
-          set: updateCachedErrors,
+          set: setCachedErrors,
           enumerable: true,
         },
         empty: {
@@ -760,8 +761,8 @@ export class Model {
 
     define(this, '$views', views)
 
-    define(this.$views, '$validating', () => {
-      const queues = Object.values(isValidating)
+    define(this.$views, '$validatings', () => {
+      const queues = Object.values(validatingQueues)
       const deferers = flatArray(queues)
       return Promise.all(deferers)
     })
@@ -863,7 +864,7 @@ export class Model {
           if (needMetas.some(item => isMatchMeta(meta, item))) {
             this.$store.forceDispatch(`!${field}`, `needs ${root}`)
             // after dependencies changed, errors should be recompute
-            const triggerForErrors = watchValidators[field]
+            const triggerForErrors = cachedErrorsUpdators[field]
             triggerForErrors()
           }
         }
@@ -873,7 +874,7 @@ export class Model {
           if (depMap[root]) {
             this.$store.forceDispatch(`!${field}`, `depends on ${root}`)
             // after dependencies changed, errors should be recompute
-            const triggerForErrors = watchValidators[field]
+            const triggerForErrors = cachedErrorsUpdators[field]
             triggerForErrors()
           }
         }
