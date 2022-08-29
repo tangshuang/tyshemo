@@ -4,6 +4,19 @@
 
 interface Obj { [key: string]: any }
 
+/**
+ * 用于得到某个class的构造函数，例如：
+ * class Some {}
+ * Constructor<Some> -> Some类型的构造函数，也就是class Some本身
+ * 用处：
+ * class Some {
+ *  static fn<T>(this: Constructor<T>): void; // -> this: Constructor<T> 规定了该静态方法内的this类型，由于类型推导，此处的this被推导为Some本身
+ * }
+ */
+interface Constructor<T> {
+  new (...args: any[]): T
+}
+
 interface PrototypeOptions {
   name?: string
   validate: (value: any) => boolean
@@ -449,8 +462,8 @@ export declare class Validator<T extends Model = Model> {
 }
 
 
-type ModelClass = new () => Model
-type MetaClass<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = new () => Meta<T, I, M, U>
+type ModelClass = (new () => Model) & typeof Model
+type MetaClass<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = (new () => Meta<T, I, M, U>) & typeof Meta
 
 export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
   /**
@@ -781,7 +794,7 @@ export declare class Model implements Obj {
     /**
      * if it is validating, you can use this to check
      */
-    $validating: Promise<Error[] | any[]>
+    $validatings: Promise<Error[] | any[]>
   }
   $schema: {
     [field: string]: Meta
@@ -864,10 +877,10 @@ export declare class Model implements Obj {
    * @deprecated
    * @param next
    */
-  static extend(next: Obj): ModelClass
-  static toEdit: new () => EditorModel
-  static mixin<T extends (new () => Model)[]>(...Models: T): new () => UnionToInter<InstanceType<T[number]>>
-  static mixin<T extends (new () => Model)[]>(force: boolean, ...Models: T): new () => UnionToInter<InstanceType<T[number]>>
+  static extend<T>(this: Constructor<T>, next: Obj): Constructor<T> & typeof Model
+  static Edit: new () => EditorModel
+  static mixin<T extends ModelClass[]>(...Models: T): new () => UnionToInter<InstanceType<T[number]>>
+  static mixin<T extends ModelClass[]>(force: boolean, ...Models: T): new () => UnionToInter<InstanceType<T[number]>>
 }
 
 declare class EditorModel extends Model {
@@ -935,7 +948,10 @@ interface Factory extends FactoryHooks {}
 export declare class Factory {
   getMeta<T = Model | Model[], M extends Model = Model>(): Meta<T, T, M>
 
-  static useAttrs<T extends ModelClass = ModelClass>(Model: T, modifiers: ({ meta: Meta | (new (attrs: any) => Meta) })[]): T
+  static useAttrs<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(Model: T, modifiers: ({
+    meta: Meta | (new (attrs: any) => Meta),
+    attrs: Attrs<InstanceType<T>, InstanceType<T>, M, U>,
+  })[]): Constructor<T> & ModelClass
 
   /**
    * @deprecated use Factory.createMeta instead
