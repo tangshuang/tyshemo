@@ -636,7 +636,10 @@ export class Model {
       let changed = false // whether the field has changed
 
       // delcare current key's validatingQueue
-      let validatingQueue = validatingQueues[key] = validatingQueue
+      let validatingQueue = []
+      validatingQueues[key] = validatingQueue
+
+      // delcare cachedErrors
       let cachedErrors = []
       let cachedErrorsInited = false
       let cachedTimer = null
