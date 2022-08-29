@@ -868,7 +868,7 @@ export class Schema {
     let coming = isUndefined(value) ? defaultValue : value
 
     if (isFunction(create)) {
-      const fromData = isUndefined(value) ? (isFunction(save) ? save(defaultValue, key, data) : data) : data
+      const fromData = isUndefined(value) ? (isFunction(save) ? save.call(context, defaultValue, key, data) : data) : data
       const base = isUndefined(value) ? (isInstanceOf(meta, FactoryMeta) ? defaultValue : value) : value
       coming = this._trydo(
         () => create.call(context, base, key, fromData),

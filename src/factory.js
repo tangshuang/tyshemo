@@ -161,13 +161,15 @@ export class Factory {
         }),
         type: entity.type(Entries),
         validators: entity.validators(_validators),
-        create: entity.create(function(value, key) {
-          return gen(isArray(value) ? value : [], key, this)
+        create: entity.create(function(value, key, json) {
+          const coming = _create ? _create.call(this, value, key, json) : value
+          return gen(isArray(coming) ? coming : [], key, this)
         }),
-        save: entity.save((ms, key) => ({ [key]: ms.map(m => m.toJSON()) })),
+        save: entity.save(_save || ((ms, key) => ({ [key]: ms.map(m => m.toJSON()) }))),
         map: entity.map(_map || (ms => ms.map(m => m.toData()))),
         setter: entity.setter(function(value, key) {
-          return gen(isArray(value) ? value : [], key, this)
+          const coming = _setter ? _setter.call(this, value, key) : value
+          return gen(isArray(coming) ? coming : [], key, this)
         }),
         $entries: Entries,
         $create: gen,
