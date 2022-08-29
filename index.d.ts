@@ -899,9 +899,7 @@ declare class EditorModel extends Model {
   submit(): void
 }
 
-export declare function AsyncGetter(defaultValue: any, getter: Function): {
-  $$type: 'asyncRef'
-} & Obj
+export declare function AsyncGetter<T extends any>(defaultValue: T, getter: Function): T
 
 export declare function MemoGetter<T, U>(
   getter: (this: Model) => T,
