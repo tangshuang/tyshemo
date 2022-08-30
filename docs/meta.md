@@ -58,7 +58,6 @@ const attrs = {
     const b = this.b
     return a + '' + b
   },
-
   // optional, calculate value when init and the dependencies change,
   // for example, when the model is initialized, the default value '' will be overrided by `activate`
   // later, 'a' changes and the value will be overrided by `activate`
@@ -155,7 +154,7 @@ const attrs = {
   watch({ value }, key) {},
   // when **other** fields changed, follow function will be triggered
   // current field changing will NOT be triggered (use watch instead)
-  follow(key:string) {},
+  follow(targetKeyPath:string, key) {},
 
   // invoke when the model initailized
   init() {},

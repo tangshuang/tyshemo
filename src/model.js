@@ -859,7 +859,7 @@ export class Model {
         const { follow, needs, deps, state } = this.$schema[field]
 
         if (follow) {
-          follow.call(this, keyPath)
+          follow.call(this, keyPath, field)
         }
 
         if (needs) {

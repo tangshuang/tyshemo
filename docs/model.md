@@ -281,7 +281,7 @@ It supports second parameter to give you chance to return what you want:
 const required = this.reflect(SomeField, (key, view) => view.required)
 ```
 
-### Nested Model System
+### Nested Model
 
 Your model may contains submodels, in submodels, you will have:
 
@@ -372,7 +372,7 @@ Set value directly to the field view's value.
 model.$views.age.value = 40
 ```
 
-### watch/unwatch
+### Watch
 
 *Watch system is based on `Store`, read more [here](store.md).*
 
@@ -396,7 +396,7 @@ class MyModel extends Model {
 }
 ```
 
-### validate()
+### Validate
 
 ```js
 const errors = model.validate()
