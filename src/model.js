@@ -1641,19 +1641,19 @@ export class Model {
     }
     // if value is not changed, we will use computed value
     else if (meta && meta.compute) {
-      this.collect()
-      const res = tryGet(() => meta.compute.call(this), value)
-      const deps = this.collect(true)
-
-      // clear previous watchers
+      // clear all previous dependencies' watchers
       const depent = this.$$deps[key]
       if (depent && depent.deps && depent.deps.length) {
-        const away = depent.deps.filter(item => !deps.includes(item))
-        const { fn } = depent
-        away.forEach((key) => {
+        const { fn, deps } = depent
+        deps.forEach((key) => {
           this.unwatch(key, fn)
         })
       }
+
+      // find out new deps
+      this.collect()
+      const res = tryGet(() => meta.compute.call(this), value)
+      const deps = this.collect(true)
 
       // subscribe new watchers
       if (deps.length) {
