@@ -372,6 +372,24 @@ Set value directly to the field view's value.
 model.$views.age.value = 40
 ```
 
+**reset(key, value?)**
+
+`reset` help you to reset the value back to default value or given value.
+
+```js
+// some: number, setter: (v) => +v
+model.reset('some', '1')
+// model.some === 1
+```
+
+`reset` will reset the field view's `changed` to be false.
+
+```js
+model.$views.some.changed === false
+```
+
+Notice, it will trigger watchers.
+
 ### Watch
 
 *Watch system is based on `Store`, read more [here](store.md).*
@@ -660,14 +678,6 @@ some.patch({
 })
 
 // some.age not changed, still is 10
-```
-
-**reset**
-
-`reset` help you to reset the value back to default value.
-
-```js
-model.reset('some')
 ```
 
 ### Lock
