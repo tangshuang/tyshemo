@@ -204,4 +204,28 @@ describe('Meta', () => {
       done()
     }, 310)
   })
+
+  test('compute changed', () => {
+    class Some extends Model {
+      static weight = new Meta({
+        default: 10,
+      })
+      static height = new Meta({
+        default: 0,
+        compute() {
+          return this.weight + 2
+        },
+      })
+    }
+
+    const some = new Some()
+    expect(some.height).toBe(12)
+    some.weight ++
+    expect(some.height).toBe(13)
+
+    some.height = 1
+    expect(some.height).toBe(1)
+    some.weight ++
+    expect(some.height).toBe(1) // has been changed, will use manully value
+  })
 })

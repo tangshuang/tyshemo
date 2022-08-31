@@ -1455,6 +1455,9 @@ export class Model {
 
     const prev = this.$store.get(key)
     const value = force ? this.$schema.$set(key, next, this) : this.$schema.set(key, next, prev, this)
+    if (prev !== value && this.$views[key]) {
+      this.$views[key].changed = true
+    }
     const coming = this.$store.set(key, value)
 
     this.emit('set', keyPath, coming, prev)
