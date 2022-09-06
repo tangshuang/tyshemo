@@ -674,6 +674,7 @@ export class Model {
         const errors = this.$schema.$validate(key, getData(), this)([])
         // when value change, notification will be send, so make it silent
         setCachedErrors(errors, true)
+        cachedErrorsInited = true
       }
       this.watch(key, updateCachedErrors, true)
       cachedErrorsUpdators[key] = updateCachedErrors // NOTICE: it will be used to watch after all fields initialized
