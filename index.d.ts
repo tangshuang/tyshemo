@@ -820,8 +820,8 @@ export declare class Model implements Obj {
   setParent(parent: [Model, string]): this
   setAttr(key: string): (attr: string, value: any) => void
 
-  watch(key: string, fn: IWatchFn, deep?: boolean): this
-  unwatch(key: string, fn: IWatchFn): this
+  watch(key: string | Meta, fn: IWatchFn, deep?: boolean): this
+  unwatch(key: string | Meta, fn: IWatchFn): this
 
   fromChunk<U extends any[] = any[]>(chunk: FactoryChunk<Model, any, U>, ...args: U): Promise<void>
   fromJSON(data: Obj, keysAddToThis?: string[]): this
