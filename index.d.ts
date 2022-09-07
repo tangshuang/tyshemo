@@ -832,7 +832,7 @@ export declare class Model implements Obj {
   toParams(chunk?: FactoryChunk<Model, any, any[]>, determine?: (value: any) => boolean): Obj
   toFormData(chunk?: FactoryChunk<Model, any, any[]>, determine?: (value: any) => boolean): Obj
   validate(key?: string | string[]): Error[] | any[]
-  validateAsync(key?: string | string): Promise<Error[] | any[]>
+  validateAsync(key?: string | string[]): Promise<Error[] | any[]>
 
   on(hook: string, fn: Function): this
   off(hook: string, fn: Function): this
