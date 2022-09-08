@@ -1516,11 +1516,14 @@ export class Model {
     return coming
   }
 
-  watch(key, fn) {
+  watch(key, fn, deep) {
     if (isInstanceOf(key, Meta) || isInheritedOf(key, Meta)) {
       key = this.use(key, view => view.key)
     }
-    this.$store.watch(key, fn, true, this)
+    if (!key) {
+      return this
+    }
+    this.$store.watch(key, fn, deep, this)
     return this
   }
 
