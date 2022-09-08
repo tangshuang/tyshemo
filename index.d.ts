@@ -867,7 +867,7 @@ export declare class Model implements Obj {
   onParse(data: Obj): Obj
   onRecord(data: Obj): Obj
   onExport(data: Obj): Obj
-  onCheck(): void
+  onCheck(): { message: string, [key: string]: any }[]
   onError(): void
   onEnsure(): void
   onRestore(): void

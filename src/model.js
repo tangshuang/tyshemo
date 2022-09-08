@@ -1584,7 +1584,7 @@ export class Model {
   }
 
   validateAsync(key) {
-    const errs = this.onCheck() || []
+    const errs = this.onCheck(key) || []
     this.emit('check', errs)
 
     const validate = (key, emit) => {
