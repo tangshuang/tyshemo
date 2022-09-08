@@ -1923,12 +1923,21 @@ export class Model {
       get: () => {
         const field = parent[key]
         const res = parent.collect(() => {
-          const keyPath = isArray(field) ? [key, field.indexOf(this)] : [key]
-          // push false to the head to mean the model is not in real model sub system
-          if (field.indexOf(this) === -1) {
-            keyPath.unshift(false)
+          if (isArray(field)) {
+            const index = field.indexOf(this)
+            const keyPath = [key, index]
+            if (index === -1) {
+              keyPath.unshift(false)
+            }
+            return keyPath
           }
-          return keyPath
+          else {
+            const keyPath = [key]
+            if (field !== this) {
+              keyPath.unshift(false)
+            }
+            return keyPath
+          }
         }, true)
         return res
       },
