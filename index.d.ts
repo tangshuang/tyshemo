@@ -950,7 +950,7 @@ export declare class Factory {
 
   static useAttrs<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(Model: T, modifiers: ({
     meta: Meta | (new (attrs: any) => Meta),
-    attrs: Attrs<InstanceType<T>, InstanceType<T>, M, U>,
+    attrs: Partial<Attrs<InstanceType<T>, InstanceType<T>, M, U>>,
   })[]): Constructor<T> & ModelClass
 
   /**

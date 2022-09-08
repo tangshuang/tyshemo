@@ -2037,11 +2037,6 @@ export class Model {
     return Constructor
   }
 
-  static get Edit() {
-    const Editor = edit(this)
-    return Editor
-  }
-
   static mixin(...Models) {
     let force = false
     if (Models[0] === true) {
@@ -2100,10 +2095,15 @@ export class Model {
     return Mixin
   }
 
-  toEdit(next) {
+  static get Edit() {
+    const Editor = edit(this)
+    return Editor
+  }
+
+  toEdit(data = {}, attrs) {
     const $this = this
     const Constructor = getConstructorOf(this)
-    const _Editor = Constructor.Edit.extend(next)
+    const _Editor = attrs ? edit(Constructor).extend(attrs) : edit(Constructor)
     class Editor extends _Editor {
       init(data) {
         // set parent before restore
@@ -2128,7 +2128,7 @@ export class Model {
         return super.submit($this)
       }
     }
-    const editor = new Editor(this)
+    const editor = new Editor({ ...this.toJSON(), ...data })
     this.onEdit(editor)
     this.emit('edit', editor)
     return editor
