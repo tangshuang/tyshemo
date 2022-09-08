@@ -402,7 +402,7 @@ export class Model {
       dispatch(keyPath, e, force) {
         const notified = super.dispatch(keyPath, e, force)
         // propagation
-        if (notified && $this.$parent && $this.$keyPath) {
+        if (notified && $this.$parent && $this.$keyPath && $this.$keyPath[0] !== false) {
           $this.$parent.$store.dispatch([...$this.$keyPath, ...keyPath], e, true)
         }
         return notified
@@ -850,7 +850,6 @@ export class Model {
       }
 
       const fields = Object.keys(this.$schema)
-      const keyPath = makeKeyPath(key)
       fields.forEach((field) => {
         if (root === field) {
           return
@@ -860,7 +859,7 @@ export class Model {
         const { follow, needs, deps, state } = this.$schema[field]
 
         if (follow) {
-          follow.call(this, keyPath, field)
+          follow.call(this, root, field, { keyPath: key })
         }
 
         if (needs) {
@@ -1923,7 +1922,14 @@ export class Model {
     define(this, '$keyPath', {
       get: () => {
         const field = parent[key]
-        const res = parent.collect(() => isArray(field) ? [key, field.indexOf(this)] : [key], true)
+        const res = parent.collect(() => {
+          const keyPath = isArray(field) ? [key, field.indexOf(this)] : [key]
+          // push false to the head to mean the model is not in real model sub system
+          if (field.indexOf(this) === -1) {
+            keyPath.unshift(false)
+          }
+          return keyPath
+        }, true)
         return res
       },
       configurable: true,

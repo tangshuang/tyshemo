@@ -589,7 +589,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
     * @param targetKey the key of which field changes
     * @param key the key of current field
     */
-   follow?(this: M, targetKey: string, key: string): void
+   follow?(this: M, targetKey: string, key: string, context?: { keyPath: string[] }): void
    /**
     * invoked errors occur when field change
     */
