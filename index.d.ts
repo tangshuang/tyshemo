@@ -586,8 +586,10 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    /**
     * when **other** fields changed, follow function will be triggered,
     * current field changing will NOT be triggered (use watch instead)
+    * @param targetKey the key of which field changes
+    * @param key the key of current field
     */
-   follow?(this: M, key: string): void
+   follow?(this: M, targetKey: string, key: string): void
    /**
     * invoked errors occur when field change
     */
