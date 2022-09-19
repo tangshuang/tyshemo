@@ -677,6 +677,7 @@ export class Model {
         cachedErrorsInited = true
       }
       this.watch(key, updateCachedErrors, true)
+      this.on('validate', (keys) => keys.includes(key) && updateCachedErrors()) // recompute errors after invoke validate/validateAsync
       cachedErrorsUpdators[key] = updateCachedErrors // NOTICE: it will be used to watch after all fields initialized
 
       Object.assign(viewDef, {
@@ -1545,9 +1546,12 @@ export class Model {
       const outs = decideby(() => {
         if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
           const suberrs = value.map(model => model.validate())
-          const outs = flatArray(suberrs)
-          outs.forEach((item, i) => {
-            item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+          const outs = []
+          suberrs.forEach((errors, i) => {
+            errors.forEach((error) => {
+              error.key = makeKeyPath([...this.$absKeyPath, key, i, error.key])
+              outs.push(error)
+            })
           })
           return outs
         }
@@ -1564,9 +1568,6 @@ export class Model {
       const errors = [...errs, ...outs]
       if (emit) {
         this.emit('validate', [key], errors)
-      }
-      if (this.$schema[key]) {
-        this.use(key).errors = outs
       }
       return makeMsg(errors)
     }
@@ -1594,9 +1595,12 @@ export class Model {
         if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
           const subdefers = value.map(model => model.validateAsync())
           return Promise.all(subdefers).then((suberrs) => {
-            const outs = flatArray(suberrs)
-            outs.forEach((item, i) => {
-              item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+            const outs = []
+            suberrs.forEach((errors, i) => {
+              errors.forEach((error) => {
+                error.key = makeKeyPath([...this.$absKeyPath, key, i, error.key])
+                outs.push(error)
+              })
             })
             return outs
           })
@@ -1615,9 +1619,6 @@ export class Model {
         const errors = [...errs, ...outs]
         if (emit) {
           this.emit('validate', [key], errors)
-        }
-        if (this.$schema[key]) {
-          this.use(key).errors = outs
         }
         return makeMsg(errors)
       })
