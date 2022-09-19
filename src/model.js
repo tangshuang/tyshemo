@@ -1544,25 +1544,26 @@ export class Model {
       this._check(key, true)
       const value = this._getData(key)
       const outs = decideby(() => {
+        // check the given meta validators at first
+        const outs = this.$schema.validate(key, value, this)
         if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
           const suberrs = value.map(model => model.validate())
-          const outs = []
-          suberrs.forEach((errors, i) => {
-            errors.forEach((error) => {
-              error.key = makeKeyPath([...this.$absKeyPath, key, i, error.key])
-              outs.push(error)
+          suberrs.forEach((items, i) => {
+            items.forEach((item) => {
+              item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+              outs.push(item)
             })
           })
           return outs
         }
         if (value && isInstanceOf(value, Model)) {
-          const outs = value.validate()
-          outs.forEach((item, i) => {
-            item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+          const items = value.validate()
+          items.forEach((item) => {
+            item.key = makeKeyPath([...this.$absKeyPath, key, item.key])
+            outs.push(item)
           })
           return outs
         }
-        const outs = this.$schema.validate(key, value, this)
         return outs
       })
       const errors = [...errs, ...outs]
@@ -1592,28 +1593,32 @@ export class Model {
       this._check(key, true)
       const value = this._getData(key)
       const defer = decideby(() => {
-        if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
-          const subdefers = value.map(model => model.validateAsync())
-          return Promise.all(subdefers).then((suberrs) => {
-            const outs = []
-            suberrs.forEach((errors, i) => {
-              errors.forEach((error) => {
-                error.key = makeKeyPath([...this.$absKeyPath, key, i, error.key])
-                outs.push(error)
+        // check the given meta validators at first
+        return this.$schema.validateAsync(key, value, this).then((preouts) => {
+          const outs = [...preouts]
+          if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
+            const subdefers = value.map(model => model.validateAsync())
+            return Promise.all(subdefers).then((suberrs) => {
+              suberrs.forEach((items, i) => {
+                items.forEach((item) => {
+                  item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+                  outs.push(item)
+                })
               })
+              return outs
             })
-            return outs
-          })
-        }
-        if (value && isInstanceOf(value, Model)) {
-          return value.validateAsync().then((outs) => {
-            outs.forEach((item, i) => {
-              item.key = makeKeyPath([...this.$absKeyPath, key, i, item.key])
+          }
+          else if (value && isInstanceOf(value, Model)) {
+            return value.validateAsync().then((items) => {
+              items.forEach((item) => {
+                item.key = makeKeyPath([...this.$absKeyPath, key, item.key])
+                outs.push(item)
+              })
+              return outs
             })
-            return outs
-          })
-        }
-        return this.$schema.validateAsync(key, value, this)
+          }
+          return outs
+        })
       })
       return defer.then((outs) => {
         const errors = [...errs, ...outs]
