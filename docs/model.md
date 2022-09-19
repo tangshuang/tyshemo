@@ -481,7 +481,7 @@ After all, you want to get whole data for submit to your backend api, you should
 const data = model.toData()
 ```
 
-- toData: will be generated with `drop` `map` and `flat` attrs in schema. Read [here](schema.md) to learn more.
+- toData: will be generated with `drop` `map` and `mapAs` attrs in schema. Read [here](schema.md) to learn more.
 - toParams: will flat the output object of toData
 - toFormData: will create an instance of FormData with the output of toParams
 
@@ -489,7 +489,7 @@ Referer to attributes:
 
 - drop: if drop returns true, it means this field will not in `data`
 - map: convert field value to another value
-- flat: create new fields in final `data` with current field's value
+- mapAs: create new fields in final `data` with current field's value
 
 **onExport**
 
@@ -534,7 +534,8 @@ const jstr = JSON.stringify(model)
 
 toJSON use attributes:
 
-- save: like flat, generate json structure
+- save: save the property value as another value
+- saveAs: path new properties to the output saved data, generate json structure
 
 ### Recover
 

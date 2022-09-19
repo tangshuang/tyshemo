@@ -46,6 +46,7 @@ const DEFAULT_ATTRIBUTES = {
   validators: null,
   create: null,
   save: null,
+  saveAs: null,
   drop: null,
   map: null,
   flat: null,

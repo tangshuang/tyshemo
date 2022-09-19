@@ -84,41 +84,50 @@ const attrs = {
     ...
   ],
 
-  // optional, function, used by `fromJSON`.
-  // `json` is the first parameter of `fromJSON`
-  create: (value, key, json) => !!json.on_market ? json.listing : json.pending,
-  // optional, function, used by `toJSON`.
-  // use this to create an object which can be used by fromJSON to recover the model
-  save: (value, key, data, output) => {
-    // `data` is a bundle object which is from the model
-    // `output` is the final result, you can modify it directly and return nothing in `save`
-    // notice: the return value should MUST be an object, and will be patched to output object (like `flat` do), so that you can export a complext object
-    return { [key]: newValue }
-  },
-  // optional, used by `fromJSON` and `toJSON` to read or save to property
+  // optional, used by `fromJSON` and `toJSON` to create or save to property
   // ie. asset='some', tyshemo will read property from data.some, and patch save result as json.some
   // {
   //   asset: 'some',
   //   create: value => value, // value = data.some
   //   save: value => value, // json.some = value
   // }
-  // notice, if you want to return custom object in create or save, dont pass asset
   asset: string,
+  // optional, function, used by `fromJSON`.
+  create: (value, key, json) => {
+    // `json` is the first parameter of `fromJSON`
+    return !!json.on_market ? json.listing : json.pending
+  },
+  // optional, function, used by `toJSON`.
+  // use this to create an object which can be used by fromJSON to recover the model
+  save: (value, key, data, output) => {
+    // `data` is a bundle object which is from the model
+    // `output` is the final result, you can modify it directly and return nothing in `save`
+    return newValue
+  },
+  // optional, path some new properties to output data
+  saveAs: (value, key, data, output) => {
+    // notice: the return value should MUST be an object, and will be patched to output object (like `mapAs` do), so that you can export a complext object
+    return { 'any_other_keys': anyValue }
+  }
 
   // optional, function, whether to not use this property when `toData`
   drop: (value, key, data) => Boolean,
-  // optional, function, to override the property value when `toData`,
-  // not work when `drop` is false
-  // `output` is the data to be exported, you can modify it directly
-  map: (value, key, data，output) => newValue | void,
-  // optional, function, to assign this result to output data,
-  // `drop` has no effect for `flat`
-  // don't forget to set `drop` to be true if you want to drop original property
-  // `output` is the data to be exported, you can modify it directly
-  flat: (value, key, data, output) => ({ [key]: newValue }) | void,
   // optional, submit the key to be another name, for example: { to: 'table_1.field_1' } -> { 'table_1.field_1': value }
   // can use keyPath like 'parent.child'
   to: string,
+  // optional, function, to override the property value when `toData`,
+  // not work when `drop` is false
+  map: (value, key, data, output) => {
+    // `output` is the data to be exported, you can modify it directly
+    return newValue
+  },
+  // optional, function, to assign this result to output data,
+  // `drop` has no effect for `mapAs`
+  // don't forget to set `drop` to be true if you want to drop original property
+  mapAs: (value, key, data, output) => {
+    // `output` is the data to be exported, you can modify it directly
+    return { [key]: newValue }
+  },
 
   // optional, function, format this property value when set
   setter: (value, key) => value,
@@ -133,7 +142,7 @@ const attrs = {
   // optional, function or boolean or string,
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
-  // when you invoke `export`, the `drop` will be set to be `true` automaticly, `flat` will not work too
+  // when you invoke `export`, the `drop` will be set to be `true` automaticly, `mapAs` will not work too
   // when disabled, readonly will be forcely set `true`
   disabled: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
@@ -331,7 +340,7 @@ class PoodB extends PoodA {}
 
 ## Formatting Control
 
-`drop` `map` `flat` `to` `disabled` affect the result of `toData`.
+`drop` `map` `mapAs` `to` `disabled` affect the result of `toData`.
 
 ## Value Control
 

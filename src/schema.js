@@ -16,6 +16,7 @@ import {
   isEmpty,
   isNone,
   assign,
+  decideby,
 } from 'ts-fns'
 
 import { FactoryMeta } from './factory.js'
@@ -861,14 +862,32 @@ export class Schema {
       return value
     }
 
-    const { catch: handle, create, save, force } = meta
-
+    const { catch: handle, create, saveAs, save, asset, force } = meta
+    const dataKey = asset ? (isFunction(asset) ? asset(data, key) : asset) : key
     const defaultValue = this.getDefault(key, context)
 
     let coming = isUndefined(value) ? defaultValue : value
 
     if (isFunction(create)) {
-      const fromData = isUndefined(value) ? (isFunction(save) ? save.call(context, defaultValue, key, data) : data) : data
+      const fromData = decideby(() => {
+        if (!isUndefined(value)) {
+          return data
+        }
+        const fromJson = {
+          ...data,
+        }
+        if (isFunction(saveAs)) {
+          const res = saveAs.call(context, defaultValue, key, fromJson)
+          patchObj(fromJson, res)
+        }
+        if (isFunction(save)) {
+          fromJson[dataKey] = save.call(context, defaultValue, key, fromJson)
+        }
+        if (!inObject(dataKey, fromJson)) {
+          fromJson[dataKey] = defaultValue
+        }
+        return fromJson
+      })
       const base = isUndefined(value) ? (isInstanceOf(meta, FactoryMeta) ? defaultValue : value) : value
       coming = this._trydo(
         () => create.call(context, base, key, fromData),
@@ -997,20 +1016,20 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, catch: handle, to = key } = meta
+      const { drop, map, flat, mapAs = flat, catch: handle, to = key } = meta
       const value = data[key]
 
       if (this.disabled(key, value, context)) {
         return
       }
 
-      if (isFunction(flat)) {
+      if (isFunction(mapAs)) {
         const res = this._trydo(
-          () => flat.call(context, value, key, data, output),
+          () => mapAs.call(context, value, key, data, output),
           (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
-            attr: 'flat',
+            attr: 'mapAs',
           },
         )
         if (!isUndefined(res)) {
@@ -1068,38 +1087,38 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { save, catch: handle, asset } = meta
+      const { save, saveAs, catch: handle, asset } = meta
       const value = data[key]
       const dataKey = asset ? (isFunction(asset) ? asset(data, key) : asset) : key
 
+      if (isFunction(saveAs)) {
+        const res = this._trydo(
+          () => saveAs.call(context, value, key, data, output),
+          (error) => isFunction(handle) && handle.call(context, error, key) || {},
+          {
+            key,
+            attr: 'saveAs',
+          },
+        )
+
+        if (isObject(res)) {
+          patchObj(output, res)
+        }
+      }
+
       if (isFunction(save)) {
         const res = this._trydo(
-          () => save.call(context, value, key, data, output),
+          () => save.call(context, value, key, data),
           (error) => isFunction(handle) && handle.call(context, error, key) || {},
           {
             key,
             attr: 'save',
           },
         )
-
-        if (!isUndefined(res)) {
-          // has asset but return an object which contains the asset key
-          if (asset && isObject(res) && inObject(dataKey, res)) {
-            patchObj(output, res)
-          }
-          else if (asset) {
-            patchObj(output, { [dataKey]: res })
-          }
-          else if (isObject(res)) {
-            patchObj(output, res)
-          }
-          // if res is not an object, use it as value directly
-          else {
-            patchObj(output, { [dataKey]: res })
-          }
-        }
+        output[dataKey] = res
       }
-      else {
+
+      if (!inObject(dataKey, output)) {
         output[dataKey] = value
       }
     })

@@ -165,7 +165,7 @@ export class Factory {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(isArray(coming) ? coming : [], key, this)
         }),
-        save: entity.save(_save || ((ms, key) => ({ [key]: ms.map(m => m.toJSON()) }))),
+        save: entity.save(_save || ((ms) => ms.map(m => m.toJSON()))),
         map: entity.map(_map || (ms => ms.map(m => m.toData()))),
         setter: entity.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
@@ -202,7 +202,7 @@ export class Factory {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(coming, key, this)
         }),
-        save: entity.save(_save || ((m, key) => ({ [key]: m.toJSON() }))),
+        save: entity.save(_save || ((m) => m.toJSON())),
         map: entity.map(_map || (m => m.toData())),
         setter: entity.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value

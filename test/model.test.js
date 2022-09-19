@@ -1438,7 +1438,7 @@ describe('Model', () => {
         create(value, key, data) {
           return { id: data.bugfix }
         },
-        save(value) {
+        saveAs(value) {
           return { bugfix: value.id }
         },
       })
