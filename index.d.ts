@@ -518,6 +518,13 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
     */
    map?(this: M, value: T, key: string, data: U, output: Obj): any | void
    /**
+    * map another filed data to output data of `toData()`
+    * `drop` has no effect to map
+    */
+   mapAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
+   /**
+    * @deprecated
+    * @alias mapAs
     * flat another data to output data of `toData()`
     * `drop` has no effect to flat
     */

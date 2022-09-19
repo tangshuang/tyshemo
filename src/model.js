@@ -49,7 +49,7 @@ const DEFAULT_ATTRIBUTES = {
   saveAs: null,
   drop: null,
   map: null,
-  flat: null,
+  mapAs: null,
   to: null,
   asset: null,
   getter: null,

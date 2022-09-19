@@ -1016,7 +1016,11 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const { drop, map, flat, mapAs = flat, catch: handle, to = key } = meta
+      const {
+        drop, map,
+        // @deprecated
+        flat,
+        mapAs = flat, catch: handle, to = key } = meta
       const value = data[key]
 
       if (this.disabled(key, value, context)) {
