@@ -448,16 +448,16 @@ export class Model {
     each(properties, (item, key) => {
       // this.state has higher priority
       if (item && isInstanceOf(item, State) && !inObject(key, state)) {
-        const { value, get, set } = item
+        const { get, set } = item
         if (get || set) {
-          Object.defineProperty(state, key, {
-            get,
-            set,
+          define(state, key, {
+            get: get && get.bind(this),
+            set: set && set.bind(this),
             enumerable: true,
           })
         }
         else {
-          state[key] = value
+          state[key] = item.value
         }
       }
     })
@@ -535,7 +535,7 @@ export class Model {
           return
         }
 
-        const { value, get, set } = descriptor
+        const { get, set } = descriptor
         if (get || set) {
           viewDef[attr] = {
             get: get && get.bind(this),
@@ -544,7 +544,8 @@ export class Model {
             configurable: true,
           }
         }
-        else if (isAsyncRef(value)) {
+        else if (isAsyncRef(descriptor.value)) {
+          const { value } = descriptor
           const { current, attach, deps } = value
           let attrValue = current
           // async set attr value
@@ -584,7 +585,8 @@ export class Model {
             configurable: true,
           }
         }
-        else if (isMemoRef(value)) {
+        else if (isMemoRef(descriptor.value)) {
+          const { value } = descriptor
           const { getter, compare, depend } = value
           viewDef[attr] = {
             get: () => {
@@ -595,7 +597,8 @@ export class Model {
           }
         }
         // use as a getter
-        else if (isFunction(value)) {
+        else if (isFunction(descriptor.value)) {
+          const { value } = descriptor
           viewDef[attr] = {
             get: value.bind(this),
             enumerable: true,
@@ -604,6 +607,7 @@ export class Model {
         }
         // patch to view directly
         else {
+          const { value } = descriptor
           let attrValue = value
           viewDef[attr] = {
             get: () => {
@@ -933,8 +937,8 @@ export class Model {
     const state = this.$$state
     const combine = (state) => {
       each(state, (descriptor, key) => {
-        const { value } = descriptor
-        if (isAsyncRef(value)) {
+        if (inObject('value', descriptor) && isAsyncRef(descriptor.value)) {
+          const { value } = descriptor
           const { current, attach } = value
           output[key] = current
 
@@ -1100,10 +1104,13 @@ export class Model {
     // patch state
     const asyncReactors = {}
     each(state, (descriptor, key) => {
-      if (descriptor.get || descriptor.set) {
-        const get = descriptor.get?.bind(this)
-        const set = descriptor.set?.bind(this)
-        define(params, key, { get, set })
+      const { get, set } = descriptor
+      if (get || set) {
+        define(params, key, {
+          get: get && get.bind(this),
+          set: set && set.bind(this),
+          enumerable: true,
+        })
         // use data property if exist, use data property directly
         record(key)
       }
@@ -1738,6 +1745,8 @@ export class Model {
     // !!! required, although state will be patch twice, it is required to be set at the first
     // patch state into this, so that we can get passed state in default()
     // dont be worried about reactive, the properties will be override by restore()
+    // this make state getter may throw error when the Model inistalize at the first time because of non generated fields
+    // so developers should must ensure every situations
     const state = this._initState()
     const patches = map(state, (value, key) => {
       if (inObject(key, json)) {
