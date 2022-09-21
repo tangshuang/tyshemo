@@ -1396,7 +1396,7 @@ export class Model {
 
     if (!chain.length) {
       const view = this.$views[key]
-      return isFunction(fn) ? fn.call(this, view) : view
+      return view && isFunction(fn) ? fn.call(this, view) : view
     }
 
     const target = parse(this, chain)
