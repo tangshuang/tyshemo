@@ -1101,7 +1101,9 @@ export class Model {
     const asyncReactors = {}
     each(state, (descriptor, key) => {
       if (descriptor.get || descriptor.set) {
-        define(params, key, descriptor)
+        const get = descriptor.get?.bind(this)
+        const set = descriptor.set?.bind(this)
+        define(params, key, { get, set })
         // use data property if exist, use data property directly
         record(key)
       }
@@ -1783,6 +1785,7 @@ export class Model {
     const output = this.$schema.record(data, this)
 
     const state = this._combineState()
+
     const res = {
       ...state,
       ...output,
