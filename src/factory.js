@@ -132,12 +132,14 @@ export class Factory {
         return nexts
       }
       const gen = (items, key, parent) => {
+        const scene = parent.$$scene
         const nexts = filter(items)
         const values = nexts.map((next) => {
-          const ChoosedModel = entity.entry(Entries, next, key, parent)
-          if (!ChoosedModel) {
+          const FoundModel = entity.entry(Entries, next, key, parent)
+          if (!FoundModel) {
             throw new Error('[TySheMo]: Factory.entry Model not found!')
           }
+          const ChoosedModel = scene ? FoundModel.Scene(scene) : FoundModel
           const model = this.adapt(Entries, next) ? next.setParent([parent, key])
             : isObject(next) ? new ChoosedModel(next, { parent, key })
               : new ChoosedModel({}, { parent, key })
@@ -179,10 +181,12 @@ export class Factory {
     else {
       const Entry = entity.entry(Entries)
       const gen = function(value, key, parent) {
-        const ChoosedModel = entity.entry(Entries, value, key, parent)
-        if (!ChoosedModel) {
+        const scene = parent.$$scene
+        const FoundModel = entity.entry(Entries, value, key, parent)
+        if (!FoundModel) {
           throw new Error('[TySheMo]: Factory.entry Model not found!')
         }
+        const ChoosedModel = scene ? FoundModel.Scene(scene) : FoundModel
         const model = entity.adapt(Entries, value) ? value.setParent([parent, key])
           : isObject(value) ? new ChoosedModel(value, { key, parent })
             : new ChoosedModel({}, { key, parent })

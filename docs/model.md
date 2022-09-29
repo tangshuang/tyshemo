@@ -788,7 +788,7 @@ some.name === 'changed name'
 
 After you submit, the changes will be put into original model.
 
-## Static Editor
+## Editor
 
 The previous part tell about an editor from a model instance. This part give you a Model which contains all features combining normal Model and Editor.
 
@@ -805,6 +805,17 @@ The only difference is that, submit should recive a instance of Some.
 const some = new Some()
 editor.submit(some)
 ```
+
+## Scene
+
+To use a certain scene, call `Model#Scene` to get one.
+
+```js
+const SomeSceneModel = SomeModel.Scene.Some
+const some = new SomeSceneModel()
+```
+
+Then `some` will use scene attributes to generate fields.
 
 ## AsyncGetter
 

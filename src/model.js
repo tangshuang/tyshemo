@@ -102,11 +102,12 @@ export class Model {
       scene = Constructor[SceneCodeSymbol],
     } = options
 
-    define(this, '$hooks', [])
+    define(this, '$$hooks', [])
     define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this._takeAttrs() })
     define(this, '$$state', this._takeState())
     define(this, '$$deps', {})
     define(this, '$$memories', [])
+    define(this, '$$scene', { value: scene, configurable: true })
 
     /**
      * create schema
@@ -1867,21 +1868,21 @@ export class Model {
   }
 
   on(hook, fn) {
-    this.$hooks.push({ hook, fn })
+    this.$$hooks.push({ hook, fn })
     return this
   }
 
   off(hook, fn) {
-    this.$hooks.forEach((item, i) => {
+    this.$$hooks.forEach((item, i) => {
       if (hook === item.hook && (isUndefined(fn) || fn === item.fn)) {
-        this.$hooks.splice(i, 1)
+        this.$$hooks.splice(i, 1)
       }
     })
     return this
   }
 
   emit(hook, ...args) {
-    this.$hooks.forEach((item) => {
+    this.$$hooks.forEach((item) => {
       if (hook !== item.hook) {
         return
       }
@@ -2171,11 +2172,15 @@ export class Model {
     return value
   }
 
-  static Scene(sceneCode) {
+  static get Scene() {
     const Constructor = this
-    class SceneModel extends Constructor {
-      static [SceneCodeSymbol] = sceneCode
-    }
-    return SceneModel
+    return new Proxy({}, {
+      get(_, sceneCode) {
+        class SceneModel extends Constructor {
+          static [SceneCodeSymbol] = sceneCode
+        }
+        return SceneModel
+      },
+    })
   }
 }

@@ -371,12 +371,46 @@ class MyAsyncMeta extends AsyncMeta {
 
   fetchAsyncAttrs() {
     return Promise.resolve(Loader.parseAttrs({
+      // `default, activate` is not supported
       'disabled(v)': '{ v > 10 }',
       'drop(v)': '{ !v }',
     }))
   }
 }
 ```
+
+## SceneMeta
+
+```js
+import { SceneMeta, Model } from 'tyshemo'
+
+class MySceneMeta extends SceneMeta {
+  static default = 1
+  static type = Number
+
+  defineScenes() {
+    return {
+      Scene1: {
+        default: 3,
+        required: true,
+      },
+      Scene2: {
+        default: 5,
+        asset: 'me',
+      },
+    }
+  }
+}
+
+class SomeModel extends Model {
+  static my = MySceneMeta
+}
+
+const scene1Model = new SomeModel.Scene.Scene1()
+scene1Model.my === 3
+```
+
+In this pattern, you can define different scenes, and then use `Model#Scene` to choose a scene to generate.
 
 ## Formatting Control
 

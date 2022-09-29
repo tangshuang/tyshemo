@@ -135,19 +135,21 @@ export class SceneMeta extends Meta {
   _switchScene(sceneCode) {
     const scenes = this.defineScenes()
     const scene = scenes[sceneCode]
-    const update = (attrs) => {
-      Object.assign(this, this[SceneMetaSymbol].default)
+    const { code, keep, default: defaultAttrs, notifiers } = this[SceneMetaSymbol]
+    const update = (attrs, emit) => {
+      Object.assign(this, defaultAttrs)
       Object.assign(this, attrs)
-      Object.assign(this, this[SceneMetaSymbol].keep)
-      this[SceneMetaSymbol].notifiers.forEach(({ model, key }) => {
-        model.$store.forceDispatch(`!${key}`, 'scene meta')
-      })
-      this[SceneMetaSymbol].notifiers.length = 0
+      Object.assign(this, keep)
+      if (emit) {
+        notifiers.forEach(({ model, key }) => {
+          model.$store.forceDispatch(`!${key}`, 'scene meta')
+        })
+        notifiers.length = 0
+      }
     }
     if (scene) {
       // delete prev scene attrs at first
-      const prevSceneCode = this[SceneMetaSymbol]
-      const prevScene = scenes[prevSceneCode]
+      const prevScene = scenes[code]
       if (prevScene) {
         const keys = Object.keys(prevScene)
         keys.forEach((key) => {
@@ -155,12 +157,12 @@ export class SceneMeta extends Meta {
         })
       }
 
-      this[SceneMetaSymbol] = sceneCode
+      this[SceneMetaSymbol].code = sceneCode
       if (typeof scene === 'function') {
         const res = scene()
         if (res instanceof Promise) {
           res.then((data) => {
-            update(data)
+            update(data, true)
           })
         }
         else {

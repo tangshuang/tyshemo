@@ -610,6 +610,16 @@ export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj
   static create<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>
 }
 
+export declare class AsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
+  fetchAsyncAttrs(): Promise<Omit<Attrs<T, I, M, U>, 'default'>>
+}
+
+export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
+  defineScenes(): {
+    [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+  }
+}
+
 /**
  * crete a meta by given attributes
  * T: the value type
@@ -670,9 +680,18 @@ declare function createMetaGroup<T extends Meta[]>(count: number, create: (...ar
  * @param attrs
  * @param asyncGetter
  */
-declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Obj>): Meta<T, I, M, U>
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Omit<Attrs<T, I, M, U>, 'default'>>): Meta<T, I, M, U>
 
-export { createMeta, createMetaGroup, createAsyncMeta }
+/**
+ * create a scene meta, which can be switch to certain scene by Model#Scene(sceneCode)
+ * @param attrs
+ * @param mapping
+ */
+declare function createSceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, mapping: {
+  [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+}): Meta<T, I, M, U>
+
+export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta }
 
 /**
  * use type from built meta
@@ -874,12 +893,11 @@ export declare class Model implements Obj {
   onChange(key: string): void
   onEdit(): EditorModel
 
-  /**
-   * @deprecated
-   * @param next
-   */
-  static extend<T>(this: Constructor<T>, next: Obj): Constructor<T> & typeof Model
-  static Edit: new () => EditorModel
+  static get Edit<T>(this: Constructor<T>): Constructor<T> & EditorModel
+  static get Scene<T>(this: Constructor<T>): {
+    [sceneCode: string]: Constructor<T> & typeof Model
+  }
+
   static mixin<T extends ModelClass[]>(...Models: T): new () => UnionToInter<InstanceType<T[number]>>
   static mixin<T extends ModelClass[]>(force: boolean, ...Models: T): new () => UnionToInter<InstanceType<T[number]>>
 }
