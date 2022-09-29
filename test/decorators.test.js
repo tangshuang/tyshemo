@@ -4,26 +4,22 @@ import { Model } from '../src/model.js'
 class SomeModel extends Model {
   @meta({
     default: '',
-  })
-  name;
+  }) name
 
   @meta({
     default: 10,
-  })
-  age;
+  }) age
 
   @meta({
     default: 30,
     compute() {
       return this.age * 30
     },
-  })
-  height;
+  }) height
 
   @state({
     value: 40,
-  })
-  weight;
+  }) weight
 }
 
 describe('Decorators', () => {

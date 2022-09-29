@@ -1,13 +1,10 @@
 import {
   isInheritedOf,
   isArray,
-  each,
 } from 'ts-fns'
-import { Meta } from './meta.js'
+import { Meta, AsyncMeta } from './meta.js'
 import { Model } from './model.js'
 import { Factory } from './factory.js'
-import { createScope } from 'scopex'
-import { parseKey, isInlineExp, getExp, createFn, tryGetRealValue } from './loader.js'
 
 export function createMeta(...args) {
   const [entries] = args
@@ -72,15 +69,6 @@ export function createMetaGroup(count, create) {
   return output
 }
 
-export class AsyncMeta extends Meta {
-  constructor(...args) {
-    super(...args)
-    this.fetchAsyncAttrs()
-  }
-  fetchAsyncAttrs() {}
-  onInitAsyncMeta() {}
-}
-
 /**
  *
  * @param {*} defaultAttrs
@@ -88,78 +76,13 @@ export class AsyncMeta extends Meta {
  * @returns
  */
 export function createAsyncMeta(defaultAttrs, asyncGetter) {
-  let asyncAttrs = null
-
-  const scope = createScope({})
-  const parseAttrs = (data) => {
-    const attrs = {}
-    each(data, (value, key) => {
-      const [name, params] = parseKey(key)
-      const isStr = typeof value === 'string'
-
-      if (params) {
-        const getter = function(...args) {
-          if (!isStr) {
-            return value
-          }
-          const exp = getExp(value)
-          const localScope = scope.$new(this)
-          const fn = createFn(localScope, exp, params)
-          return fn(...args)
-        }
-        attrs[name] = getter
-      }
-      else if (isInlineExp(value)) {
-        const getter = function(...args) {
-          if (!isStr) {
-            return value
-          }
-          const exp = getExp(value)
-          const localScope = scope.$new(this)
-          const fn = createFn(localScope, exp, [])
-          return fn(...args)
-        }
-        attrs[name] = getter
-      }
-      else {
-        attrs[name] = isStr ? tryGetRealValue(value) : value
-      }
-    })
-    return attrs
-  }
-
-  let waiters = []
-  let deferer = Promise.resolve(asyncGetter()).then((data) => {
-    const attrs = parseAttrs(data)
-    asyncAttrs = attrs
-    return attrs
-  })
-  const notify = () => {
-    waiters.forEach(({ model, key }) => {
-      model.$store.forceDispatch(`!${key}`, 'async meta')
-    })
-    waiters.length = 0
-  }
-
   class ThisAsyncMeta extends AsyncMeta {
     fetchAsyncAttrs() {
-      if (!asyncAttrs) {
-        deferer.then((attrs) => {
-          Object.assign(this, attrs)
-          notify()
-        })
-      }
-      else {
-        Object.assign(this, asyncAttrs)
-      }
-    }
-    onInitAsyncMeta(model, key) {
-      if (!asyncAttrs) {
-        waiters.push({ model, key })
-      }
+      return asyncGetter().then((data) => ({
+        ...data,
+      }))
     }
   }
-
   Object.assign(ThisAsyncMeta, defaultAttrs)
-  return ThisAsyncMeta
+  return new ThisAsyncMeta()
 }

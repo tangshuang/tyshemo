@@ -5,7 +5,6 @@ import {
   isInheritedOf,
   inObject,
   isArray,
-  define,
   each,
   isEmpty,
 } from 'ts-fns'
@@ -21,26 +20,19 @@ const createValidators = (items) => {
   ).filter(v => !!v)
 }
 
-function useAttr(meta, key, descriptor, context) {
-  const { value, get, set } = descriptor
-
+function useAttr(meta, key, descriptor) {
+  const { value } = descriptor
   if (key === 'validators') {
-    const items = value ? value : get ? get.call(context) : null
-    meta.validators = isArray(items) ? createValidators(items) : []
+    meta.validators = isArray(value) ? createValidators(value) : []
     return
   }
+  meta[key] = value
+}
 
-  if (get || set) {
-    define(meta, key, {
-      get,
-      set,
-      enumerable: true,
-      configurable: true,
-    })
-  }
-  else {
-    meta[key] = value
-  }
+function useAttrs(meta, attrs) {
+  each(attrs, (descriptor, key) => {
+    useAttr(meta, key, descriptor)
+  }, true)
 }
 
 export class Meta {
@@ -51,44 +43,32 @@ export class Meta {
       if (inObject(key, attrs, true)) {
         return
       }
-      useAttr(this, key, descriptor, properties)
+      useAttr(this, key, descriptor)
     }, true)
 
     // from prototype
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (key === 'extend' || key === 'constructor' || key === 'getAttr' || key === 'setAttr') {
+      if (['constructor', 'extend', 'fetchAsyncAttrs'].includes(key)) {
         return
       }
       if (inObject(key, this)) {
         return
       }
-      useAttr(this, key, descriptor, this)
+      useAttr(this, key, descriptor)
     }, true)
 
     // from attrs
-    each(attrs, (descriptor, key) => {
-      useAttr(this, key, descriptor, attrs)
-    }, true)
+    useAttrs(this, attrs)
   }
 
   extend(attrs) {
     const Constructor = getConstructorOf(this)
     const meta = new Constructor(this)
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
-    each(attrs, (descriptor, key) => {
-      useAttr(meta, key, descriptor, attrs)
-    }, true)
+    useAttrs(meta, attrs)
     return meta
-  }
-
-  getAttr(attr) {
-    return this[attr]
-  }
-
-  setAttr(attr, value) {
-    this[attr] = value
   }
 
   static extend(attrs) {
@@ -99,5 +79,51 @@ export class Meta {
   static create(attrs) {
     const Constructor = inherit(Meta, null, attrs)
     return Constructor
+  }
+}
+
+const AsyncMetaReadyKey = Symbol()
+export class AsyncMeta extends Meta {
+  constructor(attrs = {}) {
+    super()
+    const Constructor = getConstructorOf(this)
+    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaReadyKey)?.value
+    if (!ready) {
+      ready = Constructor[AsyncMetaReadyKey] = {
+        attrs: null,
+        notifiers: [],
+      }
+    }
+    if (!ready.attrs) {
+      this.fetchAsyncAttrs().then((data) => {
+        useAttrs(this, data)
+        useAttrs(this, attrs)
+        ready.attrs = data
+        ready.notifiers.forEach(({ model, key }) => {
+          model.$store.forceDispatch(`!${key}`, 'async meta')
+        })
+        ready.notifiers.length = 0
+      })
+    }
+    else {
+      useAttrs(this, ready.attrs)
+      useAttrs(this, attrs)
+    }
+  }
+  fetchAsyncAttrs() {
+    return Promise.resolve({})
+  }
+  _awaitMeta(model, key) {
+    const Constructor = getConstructorOf(this)
+    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaReadyKey)?.value
+    if (!ready) {
+      ready = Constructor[AsyncMetaReadyKey] = {
+        attrs: null,
+        notifiers: [],
+      }
+    }
+    if (!ready.attrs) {
+      ready.notifiers.push({ model, key })
+    }
   }
 }

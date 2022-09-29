@@ -12,7 +12,6 @@ import {
   createRandomString,
   each,
 } from 'ts-fns'
-
 import {
   Null,
   Undefined,
@@ -31,18 +30,16 @@ import {
   String32,
   String64,
   String128,
-} from './prototypes.js'
-
-import { Type } from './type.js'
-import { Dict } from './dict.js'
-import { List } from './list.js'
-import { Tupl } from './tuple.js'
-import { Enum } from './enum.js'
-import { Range } from './range.js'
-import { Mapping } from './mapping.js'
-import { SelfRef } from './self-ref.js'
-
-import { Rule } from './rule.js'
+} from '../ty/prototypes.js'
+import { Type } from '../ty/type.js'
+import { Dict } from '../ty/dict.js'
+import { List } from '../ty/list.js'
+import { Tupl } from '../ty/tuple.js'
+import { Enum } from '../ty/enum.js'
+import { Range } from '../ty/range.js'
+import { Mapping } from '../ty/mapping.js'
+import { SelfRef } from '../ty/self-ref.js'
+import { Rule } from '../ty/rule.js'
 
 export class Mocker {
   constructor(loaders) {

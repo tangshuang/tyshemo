@@ -8,20 +8,17 @@ describe('Factory', () => {
     class Child extends Model {
       @state({
         value: false,
-      })
-        is_ok
+      }) is_ok
     }
 
     class Parent extends Model {
       @state({
         value: true,
-      })
-        is_ok
+      }) is_ok
 
       @meta({
         default: 0,
-      })
-        count
+      }) count
 
       @meta(
         [Child],
@@ -33,8 +30,7 @@ describe('Factory', () => {
             child.is_ok = parent.is_ok
           },
         },
-      )
-        children
+      ) children
     }
 
     /**
@@ -61,13 +57,11 @@ describe('Factory', () => {
     class A extends Model {
       @meta({
         default: 'a',
-      })
-        a
+      }) a
     }
 
     class B extends Model {
-      @meta({ default: 'b' })
-        b
+      @meta({ default: 'b' }) b
     }
 
     const m = Factory.selectMeta([A, B], (_, data) => {
@@ -80,8 +74,7 @@ describe('Factory', () => {
     })
 
     class C extends Model {
-      @meta(m)
-        c
+      @meta(m) c
     }
 
     const c = new C({
@@ -104,13 +97,11 @@ describe('Factory', () => {
     class A extends Model {
       @meta({
         default: 'a',
-      })
-        a
+      }) a
     }
 
     class B extends Model {
-      @meta({ default: 'b' })
-        b
+      @meta({ default: 'b' }) b
     }
 
     const m = Factory.selectMeta([[A, B]], (_, data) => {
@@ -123,8 +114,7 @@ describe('Factory', () => {
     })
 
     class C extends Model {
-      @meta(m)
-        c
+      @meta(m) c
     }
 
     const c = new C()

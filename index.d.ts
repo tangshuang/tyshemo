@@ -605,15 +605,8 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
   constructor(options?: Attrs<T, I, M, U>)
-
   extend<D extends T = T, V extends I = I, O extends M = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>
-
-  getAttr(key: string): any
-
-  setAttr(key: string, value: any): void
-
   static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>
-
   static create<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>
 }
 
@@ -677,7 +670,7 @@ declare function createMetaGroup<T extends Meta[]>(count: number, create: (...ar
  * @param attrs
  * @param asyncGetter
  */
-declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: (scope: any) => Obj): Meta<T, I, M, U>
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Obj>): Meta<T, I, M, U>
 
 export { createMeta, createMetaGroup, createAsyncMeta }
 
@@ -827,7 +820,6 @@ export declare class Model implements Obj {
   lock(): void
   unlock(): void
   setParent(parent: [Model, string]): this
-  setAttr(key: string): (attr: string, value: any) => void
 
   watch(key: string | Meta, fn: IWatchFn, deep?: boolean): this
   unwatch(key: string | Meta, fn: IWatchFn): this
@@ -956,11 +948,6 @@ interface FactoryChunk<M, D, U> {
 interface Factory extends FactoryHooks {}
 export declare class Factory {
   getMeta<T = Model | Model[], M extends Model = Model>(): Meta<T, T, M>
-
-  static useAttrs<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(Model: T, modifiers: ({
-    meta: Meta | (new (attrs: any) => Meta),
-    attrs: Partial<Attrs<InstanceType<T>, InstanceType<T>, M, U>>,
-  })[]): Constructor<T> & ModelClass
 
   /**
    * @deprecated use Factory.createMeta instead

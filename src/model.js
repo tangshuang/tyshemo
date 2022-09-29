@@ -15,11 +15,8 @@ import {
   isUndefined,
   inObject,
   isNull,
-  inherit,
   inArray,
   getConstructorOf,
-  isConstructor,
-  mixin,
   createArray,
   makeKeyPath,
   hasOwnKey,
@@ -30,11 +27,8 @@ import { Schema as _Schema } from './schema.js'
 import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
-import { Meta } from './meta.js'
+import { Meta, AsyncMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
-import { AsyncMeta } from './interface.js'
-
-export const CustomMetaAttrsKey = Symbol()
 
 const DEFAULT_ATTRIBUTES = {
   default: null,
@@ -99,7 +93,7 @@ export class State {
 export class Model {
   constructor(data = {}, options = {}) {
     const $this = this
-    const Constructor = getConstructorOf(this)
+    // const Constructor = getConstructorOf(this)
     const { parent, key } = options
 
     define(this, '$hooks', [])
@@ -116,25 +110,12 @@ export class Model {
         const needs = []
         const gives = []
 
-        const custom = Constructor[CustomMetaAttrsKey]
-
         const defs = map(metas, (def) => {
           if (!def) {
             return
           }
 
           if (isInstanceOf(def, Meta) || isInheritedOf(def, Meta)) {
-            // if passed custom meta attrs, use them
-            if (custom.length) {
-              for (let i = custom.length - 1; i >= 0; i --) {
-                const item = custom[i]
-                const { meta, attrs } = item
-                if (isMatchMeta(def, meta)) {
-                  return def.extend(attrs)
-                }
-              }
-            }
-
             if (isFunction(def.needs)) {
               needs.push(...def.needs())
             }
@@ -223,7 +204,7 @@ export class Model {
     // make AsyncMeta enable to notify back
     each(this.$schema, (meta, key) => {
       if (isInstanceOf(meta, AsyncMeta)) {
-        meta.onInitAsyncMeta(this, key, meta)
+        meta._awaitMeta(this, key, meta)
       }
     })
 
@@ -1978,14 +1959,6 @@ export class Model {
     return this
   }
 
-  setAttr(key) {
-    return (attr, value) => {
-      if (this.$views[key]) {
-        this.$views[key][attr] = value
-      }
-    }
-  }
-
   _ensure(key) {
     const add = (value, key) => {
       if (isInstanceOf(value, Model) && !value.$parent) {
@@ -2043,35 +2016,6 @@ export class Model {
         }
       })
     })
-  }
-
-  /**
-   * @deprecated
-   * @param {*} next
-   * @returns
-   */
-  static extend(next) {
-    const Constructor = inherit(this)
-    if (isObject(next)) {
-      const metas = map(next, (value) => {
-        // make it easy to extend, 'default' is required
-        if (isObject(value) && inObject('default', value)) {
-          return new Meta(value)
-        }
-        else {
-          return value
-        }
-      })
-      Object.assign(Constructor, metas)
-    }
-    // isConstructor should must come before isFunction
-    else if (isConstructor(next, 2)) {
-      mixin(Constructor, next)
-    }
-    else if (isFunction(next)) {
-      return next(Constructor)
-    }
-    return Constructor
   }
 
   static mixin(...Models) {
@@ -2137,10 +2081,11 @@ export class Model {
     return Editor
   }
 
-  toEdit(data = {}, attrs) {
+  toEdit(data = {}) {
     const $this = this
     const Constructor = getConstructorOf(this)
-    const _Editor = attrs ? edit(Constructor).extend(attrs) : edit(Constructor)
+    const _Editor = edit(Constructor)
+
     class Editor extends _Editor {
       init(data) {
         // set parent before restore
@@ -2150,16 +2095,6 @@ export class Model {
         }
 
         super.init(data)
-
-        // override current metas to editable metas
-        each($this.$views, (view, key) => {
-          each(view, (descriptor, attr) => {
-            if ('value' in descriptor) {
-              const { value } = descriptor
-              this.setAttr(key, attr, value)
-            }
-          }, true)
-        })
       }
       submit() {
         return super.submit($this)
@@ -2223,6 +2158,4 @@ export class Model {
     memory.deps = depend ? depend.call(this, value) : null
     return value
   }
-
-  static [CustomMetaAttrsKey] = []
 }

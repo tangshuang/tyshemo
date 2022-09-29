@@ -1,9 +1,9 @@
-import { Parser } from './ty/parser.js'
-import { Model } from './model.js'
-import { createAsyncRef } from './shared/utils.js'
+import { Parser } from './parser.js'
+import { Model } from '../model.js'
+import { createAsyncRef } from '../shared/utils.js'
 import { ScopeX, createScope } from 'scopex'
-import { Validator } from './validator.js'
-import { Factory } from './factory.js'
+import { Validator } from '../validator.js'
+import { Factory } from '../factory.js'
 import {
   each,
   isString,
@@ -455,7 +455,83 @@ export class Loader {
     return this.fetch(url).then(json => this.parse(json))
   }
 
-  static getModelAsync(url) {
+  /**
+   * parse attrs for a meta,
+   * `this` inside is not supported
+   * @param {*} attrs
+   * @returns
+   */
+  static parseAttrs(attrs) {
+    const scope = createScope({})
+    const parse = (data) => {
+      const meta = {}
+      each(data, (value, key) => {
+
+        if (key === 'validators') {
+          if (!isArray(value)) {
+            return
+          }
+
+          const items = []
+          const builtinValidators = scope.$new(Validator)
+          value.forEach((validator) => {
+            if (isString(validator)) {
+            // i.e. validators: [ "required('some is required!')" ]
+              const [key, params] = parseKey(validator)
+              if (Validator[key] && params) {
+                items.push(builtinValidators.parse(validator))
+              }
+              return
+            }
+
+            if (!isObject(validator)) {
+              return
+            }
+
+            const item = parse(validator)
+            items.push(item)
+          })
+          meta.validators = items
+          return
+        }
+
+        const [name, params] = parseKey(key)
+        const isStr = typeof value === 'string'
+
+        if (params) {
+          const getter = function(...args) {
+            if (!isStr) {
+              return value
+            }
+            const exp = getExp(value)
+            const localScope = scope.$new(this)
+            const fn = createFn(localScope, exp, params)
+            return fn(...args)
+          }
+          meta[name] = getter
+        }
+        else if (isInlineExp(value)) {
+          const getter = function(...args) {
+            if (!isStr) {
+              return value
+            }
+            const exp = getExp(value)
+            const localScope = scope.$new(this)
+            const fn = createFn(localScope, exp, [])
+            return fn(...args)
+          }
+          meta[name] = getter
+        }
+        else {
+          meta[name] = isStr ? tryGetRealValue(value) : value
+        }
+      })
+      return meta
+    }
+    return parse(attrs)
+  }
+
+  static createModel(url) {
     const Constructor = this
     return new Constructor().load(url)
   }

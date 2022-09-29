@@ -72,8 +72,9 @@ You can look into [unpkg](https://unpkg.com/browse/tyshemo@latest/) to find out 
 - Files in `dist` directory is webpack bundle files which are able to run in browsers directly. There are bundle/minified js files with their .map files.
   - `ty.js` only contains tyshemo's type system (without Parser and Mocker).
   - `store.js` only contains tyshemo's store library.
-  - `tyshemo.js` contains all exports.
+  - `index.js` contains core exports.
+  - `tyshemo.js` contains complete exports which contains `Parser, Mocker, Loader`
 
 ```html
-<script src="https://unpkg.com/tyshemo/dist/tyshemo.min.js"></script>
+<script src="https://unpkg.com/tyshemo/dist/index.min.js"></script>
 ```

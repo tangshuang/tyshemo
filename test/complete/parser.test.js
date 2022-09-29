@@ -1,4 +1,4 @@
-import { Parser } from '../../src/ty/index.js'
+import { Parser } from '../../src/complete/parser.js'
 
 describe('Parser', () => {
   test('parse', () => {
@@ -84,7 +84,7 @@ describe('Parser', () => {
             name: 'string',
             children: '?__self__[]',
           },
-        }
+        },
       ],
       some: 'Some',
     })
@@ -104,10 +104,10 @@ describe('Parser', () => {
           {
             name: 'c',
             children: [
-              { name: 'd' }
+              { name: 'd' },
             ],
           },
-        ]
+        ],
       },
     })).not.toThrowError()
   })
@@ -128,8 +128,8 @@ describe('Parser', () => {
       "some!": "string",
       "dog?": {
         "name": "string",
-        "age": "number"
-      }
+        "age": "number",
+      },
     })
 
     const data = {

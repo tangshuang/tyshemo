@@ -199,7 +199,7 @@ The properties which begin with `#` will be used as these properties' comments.
 ## Usage
 
 ```js
-import { Parser } from 'tyshemo'
+import { Parser } from 'tyshemo/dist/tyshemo'
 
 const parser = new Parser()
 const SomeType = new Dict({

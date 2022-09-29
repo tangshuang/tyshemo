@@ -25,8 +25,11 @@ export function ofChain(target, TopConstructor) {
     }
 
     each(target, (descriptor, key) => {
+      if (key.indexOf('_') === 0) {
+        return
+      }
       if (!Object.getOwnPropertyDescriptor(properties, key)) {
-        const prop = key.indexOf('$_') === 0 ? key.substring(2) : key
+        const prop = key.indexOf('$') === 0 ? key.substring(2) : key
         define(properties, prop, descriptor)
       }
     }, true)

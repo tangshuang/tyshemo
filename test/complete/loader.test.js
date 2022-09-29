@@ -1,5 +1,5 @@
-import { Loader } from '../src/loader.js'
-import json from './model.json'
+import { Loader } from '../../src/complete/loader.js'
+import json from '../model.json'
 
 describe('Loader', () => {
   test('parse', () => {
@@ -82,25 +82,25 @@ describe('Loader', () => {
         "name": {
           "default": "tomy",
           "type": "string",
-          "required()": "age > 10"
+          "required()": "age > 10",
         },
         "age": {
           "default": 11,
-          "type": "number"
+          "type": "number",
         },
         "height": {
           "default": 0,
-          "isNeeded": "{ ..name.required }" // -> special syntax, use .. to instead of `$views.`, equal: "isNeeded": "$views.name.required"
+          "isNeeded": "{ ..name.required }", // -> special syntax, use .. to instead of `$views.`, equal: "isNeeded": "$views.name.required"
         },
         "<child>": {
           "schema": {
             "ghost": {
               "default": "",
-              "required": "{ $parent..height.isNeeded }" // -> read height field view from parent
-            }
-          }
-        }
-      }
+              "required": "{ $parent..height.isNeeded }", // -> read height field view from parent
+            },
+          },
+        },
+      },
     })
 
     const some = new Some()
@@ -124,7 +124,7 @@ describe('Loader', () => {
       "schema": {
         "options": {
           "default": "{ []:fetch({ type: 'options' }) }",
-          "watch(e)": "{ debug(e.value) }"
+          "watch(e)": "{ debug(e.value) }",
         },
         "items": {
           // "default": "{ $(options): []:fetch({ type: 'items', data: options }) }",

@@ -904,26 +904,6 @@ const deps = model.collect(true) // -> ['a', 'b']
 
 Notice: `collect` will pollute sub models, so sub models should not collect deps during parent are collecting.
 
-## static extend
-
-You can use a static `extend` method to create a new Model.
-
-```js
-class SomeModel extends Model {}
-
-const SubModel = SomeModel.extend({
-  // override a field
-  some_field: new Meta({
-    default: 0,
-  }),
-  // override a static property
-  SOME_CONST: {
-    E: 1,
-    D: 2,
-  },
-})
-```
-
 ## static mixin
 
 When you want to mixin some Models together, you can use `Model.mixin`.

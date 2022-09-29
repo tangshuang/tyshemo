@@ -8,7 +8,7 @@ import {
   each,
 } from 'ts-fns'
 import { Meta } from './meta.js'
-import { Model, CustomMetaAttrsKey } from './model.js'
+import { Model } from './model.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
@@ -268,17 +268,6 @@ export class Factory {
 
   getMeta() {
     return this.meta
-  }
-
-  /**
-   * use custom meta attrs, return a new model
-   * @param {Array<{ meta, attrs }>} modifiers
-   */
-  static useAttrs(Model, modifiers) {
-    class InheritedModel extends Model {
-      static [CustomMetaAttrsKey] = modifiers
-    }
-    return InheritedModel
   }
 
   static createMeta(entries, attrs, hooks) {

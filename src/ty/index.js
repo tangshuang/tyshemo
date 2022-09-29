@@ -68,6 +68,3 @@ export {
 export { TyError } from './ty-error.js'
 
 export { Ty }
-
-export { Parser } from './parser.js'
-export { Mocker } from './mocker.js'

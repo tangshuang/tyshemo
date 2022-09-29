@@ -338,6 +338,46 @@ class PoodB extends PoodA {}
 
 `PoodB` will have all atrributes in chain `PoodB`->`PoodA`->`Pood`.
 
+## AsyncMeta
+
+```js
+import { AsyncMeta } from 'tyshemo'
+
+class MyAsyncMeta extends AsyncMeta {
+  static default = 1
+  static type = Number
+
+  fetchAsyncAttrs() {
+    return Promise.resolve({
+      validators: [
+        {
+          validate: v => v > 10,
+          message: 'value should gather 10',
+        },
+      ],
+    })
+  }
+}
+```
+
+Work with Loader:
+
+```js
+import { AsyncMeta, Loader } from 'tyshemo/dist/tyshemo'
+
+class MyAsyncMeta extends AsyncMeta {
+  static default = 1
+  static type = Number
+
+  fetchAsyncAttrs() {
+    return Promise.resolve(Loader.parseAttrs({
+      'disabled(v)': '{ v > 10 }',
+      'drop(v)': '{ !v }',
+    }))
+  }
+}
+```
+
 ## Formatting Control
 
 `drop` `map` `mapAs` `to` `disabled` affect the result of `toData`.

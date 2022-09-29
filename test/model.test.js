@@ -197,7 +197,7 @@ describe('Model', () => {
     class Name extends Meta {
       static default = ''
       static label = 'Name'
-      static get copy() {
+      static copy() {
         return this.name
       }
     }
@@ -353,53 +353,6 @@ describe('Model', () => {
 
     some.$views.$state.isPaid = true
     expect(some.$views.$state.isPaid).toBe(true)
-  })
-
-  test('static extend', () => {
-    class Some extends Model {
-      static name = new Meta({
-        default: 'some',
-      })
-    }
-
-    const One = Some.extend({
-      age: {
-        default: 0,
-      },
-    })
-    const one = new One()
-    // extend static methods are not there
-    expect(one.extend).toBeUndefined()
-    expect(one.name).toBe('some')
-    expect(one.age).toBe(0)
-
-    const Two = Some.extend(class {
-      static age = new Meta({
-        default: 10,
-      })
-      // because a field should must be defined by Meta, so when we set it to be a Non-Meta value, it will not be filed
-      static name = null
-
-      say() {
-        return 100
-      }
-    })
-    const two = new Two()
-    expect(two.name).toBeUndefined()
-    expect(two.age).toBe(10)
-    expect(two.say()).toBe(100)
-
-    const Three = Some.extend((Some) => {
-      return Some.extend({
-        age: {
-          default: 0,
-        },
-        name: null,
-      })
-    })
-    const three = new Three()
-    expect(three.name).toBeUndefined()
-    expect(three.age).toBe(0)
   })
 
   test('extends class', () => {

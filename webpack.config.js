@@ -1,11 +1,11 @@
 const DeepScope = require('webpack-deep-scope-plugin').default
 
-const basic = {
+const core = {
   mode: 'none',
   entry: __dirname + '/src/index.js',
   output: {
     path: __dirname + '/dist',
-    filename: 'tyshemo.js',
+    filename: 'index.js',
     library: 'tyshemo',
     libraryTarget: 'umd',
     globalObject: `typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this`,
@@ -33,64 +33,86 @@ const basic = {
   devtool: 'source-map',
 }
 
-const mini = {
-  ...basic,
+const coreMini = {
+  ...core,
   mode: 'production',
   output: {
-    ...basic.output,
-    filename: 'tyshemo.min.js',
+    ...core.output,
+    filename: 'index.min.js',
   },
   optimization: {
-    ...basic.optimization,
+    ...core.optimization,
     minimize: true,
   },
 }
 
 const ty = {
-  ...basic,
+  ...core,
   entry: __dirname + '/src/ty/index.js',
   output: {
-    ...basic.output,
+    ...core.output,
     library: 'ty',
     filename: 'ty.js',
   },
 }
 
-const tymini = {
-  ...mini,
+const tyMini = {
+  ...coreMini,
   entry: __dirname + '/src/ty/index.js',
   output: {
-    ...mini.output,
+    ...coreMini.output,
     library: 'ty',
     filename: 'ty.min.js',
   },
 }
 
 const store = {
-  ...basic,
+  ...core,
   entry: __dirname + '/src/store.js',
   output: {
-    ...basic.output,
+    ...core.output,
     library: 'store',
     filename: 'store.js',
   },
 }
 
-const storemini = {
-  ...mini,
+const storeMini = {
+  ...coreMini,
   entry: __dirname + '/src/store.js',
   output: {
-    ...mini.output,
+    ...coreMini.output,
     library: 'store',
     filename: 'store.min.js',
   },
 }
 
+const complete = {
+  ...core,
+  entry: __dirname + '/src/complete/index.js',
+  output: {
+    ...core.output,
+    library: 'tyshemo',
+    filename: 'tyshemo.js',
+  },
+}
+
+const completeMini = {
+  ...coreMini,
+  entry: __dirname + '/src/complete/index.js',
+  output: {
+    ...core.output,
+    library: 'tyshemo',
+    filename: 'tyshemo.min.js',
+  },
+}
+
 module.exports = [
-  basic,
-  mini,
+  core,
+  coreMini,
   ty,
-  tymini,
+  tyMini,
   store,
-  storemini,
+  storeMini,
+  complete,
+  completeMini,
 ]

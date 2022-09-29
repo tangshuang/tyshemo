@@ -70,7 +70,7 @@ describe('Store', () => {
     const store = new Store(createData())
     const state = store.state
 
-    store.watch('age', function(age) {
+    store.watch('age', function() {
       state.weight = state.age * 2 + 20
     })
 
@@ -139,11 +139,11 @@ describe('Store', () => {
         {
           name: 'Book2',
           price: 10,
-        }
+        },
       ],
       get cost() {
         return this.list.reduce((prev, curr) => prev + curr.price, 0)
-      }
+      },
     })
     store.testing = true
     const { state } = store
@@ -258,12 +258,12 @@ describe('Store', () => {
   test('change computed manually', () => {
     const store = new Store({
       get age() {
-        return
-      }
+        return null
+      },
     })
 
     // an error ocurs when compute,
-    expect(store.state.age).toBeUndefined()
+    expect(store.state.age).toBe(null)
 
     // we can change computed property
     store.state.age = 10

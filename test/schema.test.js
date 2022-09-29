@@ -118,7 +118,7 @@ describe('Schema', () => {
       key2: new Meta({
         type: String,
         default: '',
-        map(value, key, data) {
+        map(value) {
           return value + '!'
         },
       }),
