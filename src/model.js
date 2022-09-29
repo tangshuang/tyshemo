@@ -27,7 +27,7 @@ import { Schema as _Schema } from './schema.js'
 import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
 import { edit } from './shared/edit.js'
-import { Meta, AsyncMeta } from './meta.js'
+import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 
 const DEFAULT_ATTRIBUTES = {
@@ -90,11 +90,17 @@ export class State {
   }
 }
 
+const SceneCodeSymbol = Symbol()
+
 export class Model {
   constructor(data = {}, options = {}) {
     const $this = this
-    // const Constructor = getConstructorOf(this)
-    const { parent, key } = options
+    const Constructor = getConstructorOf(this)
+    const {
+      parent,
+      key,
+      scene = Constructor[SceneCodeSymbol],
+    } = options
 
     define(this, '$hooks', [])
     define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this._takeAttrs() })
@@ -201,10 +207,16 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
-    // make AsyncMeta enable to notify back
     each(this.$schema, (meta, key) => {
       if (isInstanceOf(meta, AsyncMeta)) {
+        // make async attribute enable to notify back
         meta._awaitMeta(this, key, meta)
+      }
+      else if (scene && isInstanceOf(meta, SceneMeta)) {
+        // make async attribute enable to notify back
+        meta._awaitMeta(this, key, meta)
+        // switch to new scene
+        meta._switchScene(scene)
       }
     })
 
@@ -2157,5 +2169,13 @@ export class Model {
     memory.value = value
     memory.deps = depend ? depend.call(this, value) : null
     return value
+  }
+
+  static Scene(sceneCode) {
+    const Constructor = this
+    class SceneModel extends Constructor {
+      static [SceneCodeSymbol] = sceneCode
+    }
+    return SceneModel
   }
 }

@@ -27,9 +27,9 @@ export class FactoryChunk {
 
 export class Factory {
   // entries should be a Model constructor or an array of Model constructors
-  constructor(entries, options) {
+  constructor(entries, attrs) {
     this.entries = entries
-    this.options = options
+    this.attrs = attrs
     this.meta = null
     this.init(entries)
   }
@@ -51,7 +51,7 @@ export class Factory {
       setter: _setter,
       getter: _getter,
       ...attrs
-    } = this.options || {}
+    } = this.attrs || {}
 
     const isList = isArray(Entries)
 
@@ -152,7 +152,7 @@ export class Factory {
         return outs
       }
 
-      const options = {
+      const attributes = {
         ...attrs,
         default: entity.default(function(key) {
           const items = isFunction(_default) ? _default.call(this, key) : _default
@@ -174,7 +174,7 @@ export class Factory {
         $entries: Entries,
         $create: gen,
       }
-      this.meta = new FactoryMeta(options)
+      this.meta = new FactoryMeta(attributes)
     }
     else {
       const Entry = entity.entry(Entries)
@@ -190,7 +190,7 @@ export class Factory {
         setupLinkage(child, parent, key)
         return child
       }
-      const options = {
+      const attributes = {
         ...attrs,
         default: entity.default(function(key) {
           const value = isFunction(_default) ? _default.call(this, key) : _default
@@ -211,7 +211,7 @@ export class Factory {
         $entries: Entries,
         $create: gen,
       }
-      this.meta = new FactoryMeta(options)
+      this.meta = new FactoryMeta(attributes)
     }
   }
 

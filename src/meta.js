@@ -50,7 +50,7 @@ export class Meta {
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (['constructor', 'extend', 'fetchAsyncAttrs'].includes(key)) {
+      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes'].includes(key)) {
         return
       }
       if (inObject(key, this)) {
@@ -82,48 +82,101 @@ export class Meta {
   }
 }
 
-const AsyncMetaReadyKey = Symbol()
+const AsyncMetaSymbol = Symbol()
 export class AsyncMeta extends Meta {
   constructor(attrs = {}) {
     super()
     const Constructor = getConstructorOf(this)
-    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaReadyKey)?.value
+    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaSymbol)?.value
     if (!ready) {
-      ready = Constructor[AsyncMetaReadyKey] = {
-        attrs: null,
+      ready = Constructor[AsyncMetaSymbol] = {
         notifiers: [],
       }
     }
-    if (!ready.attrs) {
-      this.fetchAsyncAttrs().then((data) => {
-        useAttrs(this, data)
-        useAttrs(this, attrs)
-        ready.attrs = data
-        ready.notifiers.forEach(({ model, key }) => {
-          model.$store.forceDispatch(`!${key}`, 'async meta')
-        })
-        ready.notifiers.length = 0
-      })
-    }
-    else {
-      useAttrs(this, ready.attrs)
+    // fetch each time inistalized
+    this.fetchAsyncAttrs().then((data) => {
+      useAttrs(this, data)
       useAttrs(this, attrs)
-    }
+      ready.notifiers.forEach(({ model, key }) => {
+        model.$store.forceDispatch(`!${key}`, 'async meta')
+      })
+      ready.notifiers.length = 0
+    })
   }
   fetchAsyncAttrs() {
     return Promise.resolve({})
   }
   _awaitMeta(model, key) {
     const Constructor = getConstructorOf(this)
-    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaReadyKey)?.value
+    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaSymbol)?.value
     if (!ready) {
-      ready = Constructor[AsyncMetaReadyKey] = {
-        attrs: null,
+      ready = Constructor[AsyncMetaSymbol] = {
         notifiers: [],
       }
     }
-    if (!ready.attrs) {
-      ready.notifiers.push({ model, key })
+    ready.notifiers.push({ model, key })
+  }
+}
+
+const SceneMetaSymbol = Symbol()
+export class SceneMeta extends Meta {
+  constructor(attrs = {}) {
+    super(attrs)
+    this[SceneMetaSymbol] = {
+      code: '',
+      default: { ...this },
+      keep: attrs,
+      notifiers: [],
     }
+  }
+  defineScenes() {
+    return {}
+  }
+  _switchScene(sceneCode) {
+    const scenes = this.defineScenes()
+    const scene = scenes[sceneCode]
+    const update = (attrs) => {
+      Object.assign(this, this[SceneMetaSymbol].default)
+      Object.assign(this, attrs)
+      Object.assign(this, this[SceneMetaSymbol].keep)
+      this[SceneMetaSymbol].notifiers.forEach(({ model, key }) => {
+        model.$store.forceDispatch(`!${key}`, 'scene meta')
+      })
+      this[SceneMetaSymbol].notifiers.length = 0
+    }
+    if (scene) {
+      // delete prev scene attrs at first
+      const prevSceneCode = this[SceneMetaSymbol]
+      const prevScene = scenes[prevSceneCode]
+      if (prevScene) {
+        const keys = Object.keys(prevScene)
+        keys.forEach((key) => {
+          delete this[key]
+        })
+      }
+
+      this[SceneMetaSymbol] = sceneCode
+      if (typeof scene === 'function') {
+        const res = scene()
+        if (res instanceof Promise) {
+          res.then((data) => {
+            update(data)
+          })
+        }
+        else {
+          update(res)
+        }
+      }
+      else {
+        update(scene)
+      }
+    }
+    else {
+      console.error(`[TySheMo]: Scene ${sceneCode} is not defined on Meta`, this)
+    }
+  }
+  _awaitMeta(model, key) {
+    const { notifiers } = this[SceneMetaSymbol]
+    notifiers.push({ model, key })
   }
 }
