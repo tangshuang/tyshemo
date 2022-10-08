@@ -129,7 +129,6 @@ export class SceneMeta extends Meta {
       notifiers: [],
       disabled: false,
     }
-    this.initScene()
   }
   defineScenes() {
     return {}
@@ -189,9 +188,10 @@ export class SceneMeta extends Meta {
   }
 
   Scene(sceneCode) {
+    const { keep } = this[SceneMetaSymbol]
     const Constructor = getConstructorOf(this)
-    const NewSceneMeta = Constructor.Scene[sceneCode]
-    const newMeta = new NewSceneMeta(this)
+    const NewMetaClass = Constructor.Scene[sceneCode]
+    const newMeta = new NewMetaClass(keep)
     Object.setPrototypeOf(newMeta, this) // make it impossible to use meta
     return newMeta
   }
@@ -201,7 +201,8 @@ export class SceneMeta extends Meta {
     return new Proxy({}, {
       get(_, sceneCode) {
         class SceneModel extends Constructor {
-          initScene() {
+          constructor(attrs) {
+            super(attrs)
             this.switchScene(sceneCode)
             this[SceneMetaSymbol].disabled = true
           }
