@@ -811,7 +811,7 @@ editor.submit(some)
 To use a certain scene, call `Model#Scene` to get one.
 
 ```js
-const SomeSceneModel = SomeModel.Scene.Some
+const SomeSceneModel = SomeModel.Scene('Some')
 const some = new SomeSceneModel()
 ```
 

@@ -21,10 +21,10 @@ describe('Scene', () => {
       static some = SomeMeta
     }
 
-    const some = new SomeModel.Scene.Scene1()
+    const some = new (SomeModel.Scene('Scene1'))()
     expect(some.some).toBe(2)
 
-    const tank = new SomeModel.Scene.Scene2()
+    const tank = new (SomeModel.Scene('Scene2'))()
     expect(tank.some).toBe(3)
   })
 
@@ -43,7 +43,7 @@ describe('Scene', () => {
       }
     }
 
-    class Some1Model extends Model.Scene.Scene1 {
+    class Some1Model extends Model.Scene('Scene1') {
       static some = SomeMeta
     }
 
@@ -51,7 +51,7 @@ describe('Scene', () => {
     expect(some.some).toBe(2)
 
 
-    class Some2Model extends Model.Scene.Scene2 {
+    class Some2Model extends Model.Scene('Scene2') {
       static some = SomeMeta
     }
 
@@ -75,14 +75,14 @@ describe('Scene', () => {
     }
 
     class Some1Model extends Model {
-      static some = SomeMeta.Scene.Scene1
+      static some = SomeMeta.Scene('Scene1')
     }
 
     const some = new Some1Model()
     expect(some.some).toBe(2)
 
     class Some2Model extends Model {
-      static some = SomeMeta.Scene.Scene2
+      static some = SomeMeta.Scene('Scene2')
     }
 
     const tank = new Some2Model()
@@ -119,5 +119,29 @@ describe('Scene', () => {
 
     const tank = new Some2Model()
     expect(tank.some).toBe(3)
+  })
+
+  test('multiple scenes', () => {
+    class SomeMeta extends SceneMeta {
+      static default = 1
+      defineScenes() {
+        return {
+          Scene1: {
+            default: 2,
+          },
+          Scene2: {
+            default: 3,
+          },
+        }
+      }
+    }
+
+    class SomeModel extends Model {
+      static some = SomeMeta
+    }
+
+    const MultiSceneModel = SomeModel.Scene(['Scene2', 'Scene1'])
+    const some = new MultiSceneModel()
+    expect(some.some).toBe(2)
   })
 })

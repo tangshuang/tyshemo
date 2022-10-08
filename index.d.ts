@@ -623,20 +623,19 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
   }
   /**
    * switch self to new scene
-   * @param sceneCode
+   * @param sceneCodes
    */
-  switchScene(sceneCode: string): this
+  switchScene(sceneCodes: string | string[]): this
   /**
    * switch to a new meta instance with given scene
-   * @param sceneCode
+   * @param sceneCodes
    */
-  Scene(sceneCode: string): this
+  Scene(sceneCodes: string | string[]): this
   /**
    * get a new SceneMeta constructor with given scene
+   * @param sceneCodes
    */
-  static get Scene<T>(this: Constructor<T>): {
-    [sceneCode: string]: Constructor<T> & typeof SceneMeta
-  }
+  static Scene<T>(this: Constructor<T>, sceneCodes: string | string[]): Constructor<T> & typeof SceneMeta
 }
 
 /**
@@ -913,9 +912,8 @@ export declare class Model implements Obj {
   onEdit(): EditorModel
 
   static get Edit<T>(this: Constructor<T>): Constructor<T> & EditorModel
-  static get Scene<T>(this: Constructor<T>): {
-    [sceneCode: string]: Constructor<T> & typeof Model
-  }
+
+  static Scene<T>(this: Constructor<T>, sceneCodes: string | string[]): Constructor<T> & typeof Model
 
   static mixin<T extends ModelClass[]>(...Models: T): new () => UnionToInter<InstanceType<T[number]>>
   static mixin<T extends ModelClass[]>(force: boolean, ...Models: T): new () => UnionToInter<InstanceType<T[number]>>

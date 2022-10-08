@@ -50,7 +50,7 @@ export class Meta {
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'initScene', 'Scene'].includes(key)) {
+      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'Scene'].includes(key)) {
         return
       }
       if (inObject(key, this)) {
@@ -123,9 +123,9 @@ export class SceneMeta extends Meta {
   constructor(attrs = {}) {
     super(attrs)
     this[SceneMetaSymbol] = {
-      code: '',
+      codes: [],
       default: { ...this },
-      keep: attrs,
+      passed: attrs,
       notifiers: [],
       disabled: false,
     }
@@ -133,53 +133,105 @@ export class SceneMeta extends Meta {
   defineScenes() {
     return {}
   }
-  switchScene(sceneCode) {
-    const { code, keep, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
-    if (code === sceneCode || disabled) {
+  switchScene(sceneCodes) {
+    const { codes, passed, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
+    if (disabled) {
       return
     }
+
+    sceneCodes = isArray(sceneCodes) ? sceneCodes : [sceneCodes]
     const scenes = this.defineScenes()
-    const scene = scenes[sceneCode]
-    const update = (attrs, emit) => {
+
+    const update = (attrs) => {
       Object.assign(this, defaultAttrs)
       Object.assign(this, attrs)
-      Object.assign(this, keep)
-      if (emit) {
-        notifiers.forEach(({ model, key }) => {
-          model.$store.forceDispatch(`!${key}`, 'scene meta')
-        })
-        notifiers.length = 0
+      Object.assign(this, passed)
+    }
+
+    const use = (sceneCode) => {
+      const scene = scenes[sceneCode]
+      if (scene && typeof scene === 'function') {
+        const res = scene()
+        return res
+      }
+      else if (scene) {
+        return scene
+      }
+      else {
+        return Promise.reject(new Error(`[TySheMo]: Scene ${sceneCode} is not defined on Meta ${JSON.stringify(this)}`))
       }
     }
-    if (scene) {
+
+    const clear = () => {
       // delete prev scene attrs at first
-      const prevScene = scenes[code]
-      if (prevScene) {
-        const keys = Object.keys(prevScene)
-        keys.forEach((key) => {
+      const prevScenes = codes.map((code) => scenes[code] || {})
+      const prevAttrs = prevScenes.reduce((attrs, scene) => {
+        return [...attrs, Object.keys(scene)]
+      }, [])
+      if (prevAttrs.length) {
+        prevAttrs.forEach((key) => {
           delete this[key]
         })
       }
+    }
 
-      this[SceneMetaSymbol].code = sceneCode
-      if (typeof scene === 'function') {
-        const res = scene()
-        if (res instanceof Promise) {
-          res.then((data) => {
-            update(data, true)
-          })
+    const notify = () => {
+      notifiers.forEach(({ model, key }) => {
+        if (model.$store) {
+          model.$store.forceDispatch(`!${key}`, 'scene meta')
         }
-        else {
-          update(res)
-        }
+      })
+    }
+
+    const patch = (scenes) => {
+      clear()
+      const attrs = {}
+      scenes.forEach((scene) => {
+        Object.assign(attrs, scene)
+      })
+      update(attrs)
+    }
+
+    const finish = () => {
+      notifiers.length = 0
+    }
+
+    const deferers = []
+    const patches = []
+
+    sceneCodes.forEach((code) => {
+      const scene = use(code)
+      if (scene instanceof Promise) {
+        deferers.push(scene)
+      }
+      else if (deferers.length) {
+        deferers.push(Promise.resolve(scene))
       }
       else {
-        update(scene)
+        patches.push(scene)
       }
+    })
+
+    if (deferers.length) {
+      Promise.all(deferers).then((scenes) => {
+        patch(scenes)
+      }).then(() => {
+        this[SceneMetaSymbol].codes = sceneCodes
+        notify()
+      }).finally(() => {
+        finish()
+      })
+    }
+    else if (patches.length) {
+      patch(patches)
+      this[SceneMetaSymbol].codes = sceneCodes
+      notify()
+      finish()
     }
     else {
-      console.error(`[TySheMo]: Scene ${sceneCode} is not defined on Meta`, this)
+      finish()
     }
+
     return this
   }
   _awaitMeta(model, key) {
@@ -187,28 +239,24 @@ export class SceneMeta extends Meta {
     notifiers.push({ model, key })
   }
 
-  Scene(sceneCode) {
-    const { keep } = this[SceneMetaSymbol]
+  Scene(sceneCodes) {
+    const { passed } = this[SceneMetaSymbol]
     const Constructor = getConstructorOf(this)
-    const NewMetaClass = Constructor.Scene[sceneCode]
-    const newMeta = new NewMetaClass(keep)
+    const NewMetaClass = Constructor.Scene(sceneCodes)
+    const newMeta = new NewMetaClass(passed)
     Object.setPrototypeOf(newMeta, this) // make it impossible to use meta
     return newMeta
   }
 
-  static get Scene() {
+  static Scene(sceneCodes) {
     const Constructor = this
-    return new Proxy({}, {
-      get(_, sceneCode) {
-        class SceneModel extends Constructor {
-          constructor(attrs) {
-            super(attrs)
-            this.switchScene(sceneCode)
-            this[SceneMetaSymbol].disabled = true
-          }
-        }
-        return SceneModel
-      },
-    })
+    class SceneModel extends Constructor {
+      constructor(attrs) {
+        super(attrs)
+        this.switchScene(sceneCodes)
+        this[SceneMetaSymbol].disabled = true
+      }
+    }
+    return SceneModel
   }
 }

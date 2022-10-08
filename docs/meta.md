@@ -382,7 +382,7 @@ class MyAsyncMeta extends AsyncMeta {
 ## SceneMeta
 
 ```js
-import { SceneMeta, Model } from 'tyshemo'
+import { SceneMeta } from 'tyshemo'
 
 class MySceneMeta extends SceneMeta {
   static default = 1
@@ -401,19 +401,11 @@ class MySceneMeta extends SceneMeta {
     }
   }
 }
-
-class SomeModel extends Model {
-  static my = MySceneMeta
-}
-
-// SomeModel.Scene.Scene1 -> A Model which defined with `Scene1`
-const scene1Model = new SomeModel.Scene.Scene1()
-scene1Model.my === 3
 ```
 
-In this pattern, you can define different scenes, and then use `Model#Scene` to choose a scene to generate.
-
 ### createSceneMeta
+
+Create a SceneMeta instance.
 
 ```js
 import { createSceneMeta, Model } from 'tyshemo'
@@ -422,14 +414,56 @@ const MySceneMeta = createSceneMeta(defaultAttributes, {
   Scene1: Scene1Attributes,
   Scene2: async () => Scene2Attributes,
 })
+```
 
-// Model.Scene.Scene1 -> A Model which defined with `Scene1`
-class SomeModel extends Model.Scene.Scene1 {
+### How to use Scene?
+
+The first way is to call `Meta#Scene`.
+
+```js
+class SomeModel extends Model {
+  static my = MySceneMeta.Scene('Scene1')
+}
+```
+
+The second way is to call `Meta.Scene`.
+
+```js
+class SomeModel extends Model {
+  static my = someSceneMetaInstance.Scene('Scene1')
+}
+```
+
+The third way is to call `Model#Scene`.
+
+```js
+class SomeModel extends Model.Scene('Scene1') {
   static my = MySceneMeta
 }
-
-const scene1Model = new SomeModel()
 ```
+
+or
+
+```js
+class SomeModel extends Model {
+  static my = MySceneMeta
+}
+const SceneModel = SomeModel.Scene('Scene1')
+const some = new SceneModel()
+// const some = new (SomeModel.Scene('Scene1'))()
+```
+
+### Compose multiple scenes.
+
+Just pass an array of scene names to `Scene` method.
+
+```js
+MySceneMeta.Scene(['Scene1', 'Scene2'])
+someSceneMeta.Scene(['Scene1', 'Scene2'])
+SomeSceneModel.Scene(['Scene1', 'Scene2'])
+```
+
+Notice the order of passed names, the after scene atrributes will override previous.
 
 ### SceneMeta#Scene
 
@@ -470,7 +504,6 @@ class SomeModel extends Model.Scene.Scene1 {
 
 const scene1Model = new SomeModel()
 ```
-
 ## Formatting Control
 
 `drop` `map` `mapAs` `to` `disabled` affect the result of `toData`.

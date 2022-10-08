@@ -90,7 +90,7 @@ export class State {
   }
 }
 
-const SceneCodeSymbol = Symbol()
+const SceneCodesSymbol = Symbol()
 
 export class Model {
   constructor(data = {}, options = {}) {
@@ -99,7 +99,7 @@ export class Model {
     const {
       parent,
       key,
-      scene = Constructor[SceneCodeSymbol],
+      scenes = Constructor[SceneCodesSymbol],
     } = options
 
     define(this, '$$hooks', [])
@@ -107,7 +107,7 @@ export class Model {
     define(this, '$$state', this._takeState())
     define(this, '$$deps', {})
     define(this, '$$memories', [])
-    define(this, '$$scene', { value: scene, configurable: true })
+    define(this, '$$scenes', { value: scenes, configurable: true })
 
     /**
      * create schema
@@ -213,11 +213,11 @@ export class Model {
         // make async attribute enable to notify back
         meta._awaitMeta(this, key, meta)
       }
-      else if (scene && isInstanceOf(meta, SceneMeta)) {
+      else if (scenes && isInstanceOf(meta, SceneMeta)) {
         // make async attribute enable to notify back
         meta._awaitMeta(this, key, meta)
         // switch to new scene
-        meta.switchScene(scene)
+        meta.switchScene(scenes)
       }
     })
 
@@ -2172,15 +2172,11 @@ export class Model {
     return value
   }
 
-  static get Scene() {
+  static Scene(sceneCodes) {
     const Constructor = this
-    return new Proxy({}, {
-      get(_, sceneCode) {
-        class SceneModel extends Constructor {
-          static [SceneCodeSymbol] = sceneCode
-        }
-        return SceneModel
-      },
-    })
+    class SceneModel extends Constructor {
+      static [SceneCodesSymbol] = sceneCodes
+    }
+    return SceneModel
   }
 }
