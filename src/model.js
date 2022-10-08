@@ -408,6 +408,7 @@ export class Model {
 
     this.init(data)
     this.emit('init')
+    define(this, '$inited', true)
 
     /**
      * support async onInit
@@ -1036,27 +1037,24 @@ export class Model {
       return this
     }
 
-    const silent = this.$store.silent
-    this.$store.silent = true
+    this.$store.runSilent(() => {
+      // reset changed, make sure changed=false after recompute
+      this.collect(() => {
+        const keys = Object.keys(data)
+        keys.forEach((key) => {
+          if (!inObject(key, this)) {
+            return
+          }
 
-    // reset changed, make sure changed=false after recompute
-    this.collect(() => {
-      const keys = Object.keys(data)
-      keys.forEach((key) => {
-        if (!inObject(key, this)) {
-          return
-        }
+          const value = data[key]
+          this[key] = value
 
-        const value = data[key]
-        this[key] = value
-
-        if (this.$views[key]) {
-          this.$views[key].changed = false
-        }
-      })
-    }, true)
-
-    this.$store.silent = silent
+          if (this.$views[key]) {
+            this.$views[key].changed = false
+          }
+        })
+      }, true)
+    })
 
     this.emit('patch')
 

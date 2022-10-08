@@ -7,6 +7,8 @@ import {
   isArray,
   each,
   isEmpty,
+  filter,
+  isUndefined,
 } from 'ts-fns'
 import { Validator } from './validator.js'
 import { ofChain } from './shared/utils.js'
@@ -98,7 +100,12 @@ export class AsyncMeta extends Meta {
       useAttrs(this, data)
       useAttrs(this, attrs)
       ready.notifiers.forEach(({ model, key }) => {
-        model.$store.forceDispatch(`!${key}`, 'async meta')
+        if (model.$inited) {
+          model.$store.runSilent(() => {
+            model.use(key, view => Object.assign(view, filter(attrs, value => !isUndefined(value))))
+          })
+          model.$store.forceDispatch(`!${key}`, 'async meta')
+        }
       })
       ready.notifiers.length = 0
     })
@@ -176,9 +183,12 @@ export class SceneMeta extends Meta {
       }
     }
 
-    const notify = () => {
+    const notify = (attrs) => {
       notifiers.forEach(({ model, key }) => {
-        if (model.$store) {
+        if (model.$inited) {
+          model.$store.runSilent(() => {
+            model.use(key, view => Object.assign(view, attrs))
+          })
           model.$store.forceDispatch(`!${key}`, 'scene meta')
         }
       })
@@ -188,9 +198,10 @@ export class SceneMeta extends Meta {
       clear()
       const attrs = {}
       scenes.forEach((scene) => {
-        Object.assign(attrs, scene)
+        Object.assign(attrs, filter(scene, value => !isUndefined(value)))
       })
       update(attrs)
+      return attrs
     }
 
     const finish = () => {
@@ -219,18 +230,18 @@ export class SceneMeta extends Meta {
 
     if (deferers.length) {
       Promise.all(deferers).then((scenes) => {
-        patch(scenes)
-      }).then(() => {
+        return patch(scenes)
+      }).then((attrs) => {
         this[SceneMetaSymbol].codes = sceneCodes
-        notify()
+        notify(attrs)
       }).finally(() => {
         finish()
       })
     }
     else if (patches.length) {
-      patch(patches)
+      const attrs = patch(patches)
       this[SceneMetaSymbol].codes = sceneCodes
-      notify()
+      notify(attrs)
       finish()
     }
     else {

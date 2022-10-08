@@ -37,115 +37,120 @@ export class Store {
     this.init(params)
   }
 
-  init(params) {
+  runSilent(fn, ...args) {
     const latestSilent = this.silent
     this.silent = true
+    const res = fn(...args)
+    this.silent = latestSilent
+    return res
+  }
 
-    // remove binders if exist
-    each(this._descriptors, (_, key) => this.del(key))
-    // reset to empty object
-    this._descriptors = {}
-    this._deps = {}
-    this._dep = []
+  init(params) {
+    this.runSilent(() => {
+      // remove binders if exist
+      each(this._descriptors, (_, key) => this.del(key))
+      // reset to empty object
+      this._descriptors = {}
+      this._deps = {}
+      this._dep = []
 
-    // data & state
-    this.data = {}
-    const traps = this._traps({
-      get: (keyPath, active) => {
-        const key = keyPath[0]
-
-        // keep store in state
-        if (isSymbol(key) && getSymbolContent(key) === 'STORE') {
-          return this
-        }
-
-        // auto observe at the first time
-        this._observers.forEach((observer) => {
-          const value = parse(this.data, keyPath)
-          const { nodes, trap } = observer
-          const { match, register } = trap
-          const existing = nodes.find(item => item.value === value && isKeyPathEqual(item.key, keyPath))
-          if (!existing && (match(value) || match(active))) {
-            register(keyPath, value, active)
-          }
-        })
-
-        this._depend(keyPath)
-
-        return active
-      },
-      set: (keyPath, value) => {
-        // computed property
-        const key = keyPath[0]
-        const descriptor = this._descriptors[key]
-        if (keyPath.length === 1 && descriptor) {
-          // call setter
-          if (descriptor.set) {
-            descriptor.set.call(this.state, value)
-          }
-        }
-
-        // support change computed property
-        return value
-      },
-      del: (keyPath) => {
-        // computed property
-        if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
+      // data & state
+      this.data = {}
+      const traps = this._traps({
+        get: (keyPath, active) => {
           const key = keyPath[0]
 
-          // remove existing binders
+          // keep store in state
+          if (isSymbol(key) && getSymbolContent(key) === 'STORE') {
+            return this
+          }
+
+          // auto observe at the first time
+          this._observers.forEach((observer) => {
+            const value = parse(this.data, keyPath)
+            const { nodes, trap } = observer
+            const { match, register } = trap
+            const existing = nodes.find(item => item.value === value && isKeyPathEqual(item.key, keyPath))
+            if (!existing && (match(value) || match(active))) {
+              register(keyPath, value, active)
+            }
+          })
+
+          this._depend(keyPath)
+
+          return active
+        },
+        set: (keyPath, value) => {
+          // computed property
+          const key = keyPath[0]
           const descriptor = this._descriptors[key]
-          if (descriptor && descriptor.binders) {
-            descriptor.binders.forEach((item) => {
-              item.store.unwatch(item.on, item.fn)
-            })
+          if (keyPath.length === 1 && descriptor) {
+            // call setter
+            if (descriptor.set) {
+              descriptor.set.call(this.state, value)
+            }
           }
 
-          // remove computed property
-          delete this._descriptors[key]
+          // support change computed property
+          return value
+        },
+        del: (keyPath) => {
+          // computed property
+          if (keyPath.length === 1 && this._descriptors[keyPath[0]]) {
+            const key = keyPath[0]
 
-          // remove dependencies
-          if (this._deps[key]) {
-            each(this._deps[key], (observe, key) => {
-              this.unwatch(key, observe)
-            })
-            delete this._deps[key]
+            // remove existing binders
+            const descriptor = this._descriptors[key]
+            if (descriptor && descriptor.binders) {
+              descriptor.binders.forEach((item) => {
+                item.store.unwatch(item.on, item.fn)
+              })
+            }
+
+            // remove computed property
+            delete this._descriptors[key]
+
+            // remove dependencies
+            if (this._deps[key]) {
+              each(this._deps[key], (observe, key) => {
+                this.unwatch(key, observe)
+              })
+              delete this._deps[key]
+            }
           }
+        },
+        dispatch: ({ keyPath, value, next, prev, active, invalid }, force) => {
+          this.dispatch(keyPath, { value, next, prev, active, invalid }, force)
+        },
+        writable: () => {
+          // chould not change the value any more
+          return this.editable
+        },
+      })
+      this.state = createProxy(this.data, traps)
+
+      // descriptors
+      each(params, (descriptor, key) => {
+        // make value patch to data, so that the data has initialized value which is needed in compute
+        this.state[key] = params[key]
+
+        // now all keys have been generated
+
+        // collect descriptors
+        if (descriptor.get || descriptor.set) {
+          this._descriptors[key] = descriptor
         }
-      },
-      dispatch: ({ keyPath, value, next, prev, active, invalid }, force) => {
-        this.dispatch(keyPath, { value, next, prev, active, invalid }, force)
-      },
-      writable: () => {
-        // chould not change the value any more
-        return this.editable
-      },
+      }, true)
+
+      // collecting dependencies
+      // this should be executed after all values have been set to state, or computers will throw out errors
+      each(this._descriptors, (item, key) => {
+        if (item.get) {
+          this._collect(key)
+          this._refine(key, true)
+        }
+      })
     })
-    this.state = createProxy(this.data, traps)
-
-    // descriptors
-    each(params, (descriptor, key) => {
-      // make value patch to data, so that the data has initialized value which is needed in compute
-      this.state[key] = params[key]
-
-      // now all keys have been generated
-
-      // collect descriptors
-      if (descriptor.get || descriptor.set) {
-        this._descriptors[key] = descriptor
-      }
-    }, true)
-
-    // collecting dependencies
-    // this should be executed after all values have been set to state, or computers will throw out errors
-    each(this._descriptors, (item, key) => {
-      if (item.get) {
-        this._collect(key)
-        this._refine(key, true)
-      }
-    })
-
-    this.silent = latestSilent
   }
 
   _traps(traps) {
@@ -157,13 +162,13 @@ export class Store {
   }
 
   set(keyPath, value, silent) {
-    const prevSilent = this.silent
     if (silent) {
-      this.silent = true
+      this.runSilent(() => {
+        assign(this.state, keyPath, value)
+      })
     }
-    assign(this.state, keyPath, value)
-    if (silent) {
-      this.silent = prevSilent
+    else {
+      assign(this.state, keyPath, value)
     }
     return value
   }
