@@ -157,9 +157,10 @@ export class SceneMeta extends Meta {
       else if (scene) {
         return scene
       }
-      else {
-        return Promise.reject(new Error(`[TySheMo]: Scene ${sceneCode} is not defined on Meta ${JSON.stringify(this)}`))
-      }
+      // do nothing if not exist
+      // else {
+      //   return Promise.reject(new Error(`[TySheMo]: Scene ${sceneCode} is not defined on Meta ${JSON.stringify(this)}`))
+      // }
     }
 
     const clear = () => {
@@ -201,9 +202,13 @@ export class SceneMeta extends Meta {
 
     sceneCodes.forEach((code) => {
       const scene = use(code)
+      if (!scene) {
+        return
+      }
       if (scene instanceof Promise) {
         deferers.push(scene)
       }
+      // if existing async scene, make it async
       else if (deferers.length) {
         deferers.push(Promise.resolve(scene))
       }
