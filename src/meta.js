@@ -38,7 +38,7 @@ function useAttrs(meta, attrs) {
 export class Meta {
   constructor(attrs = {}) {
     // from inherit chain
-    const properties = ofChain(this, Meta)
+    const properties = ofChain(this, Meta, ['Scene'])
     each(properties, (descriptor, key) => {
       if (inObject(key, attrs, true)) {
         return
@@ -50,7 +50,7 @@ export class Meta {
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes'].includes(key)) {
+      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'initScene', 'Scene'].includes(key)) {
         return
       }
       if (inObject(key, this)) {
@@ -63,7 +63,7 @@ export class Meta {
     useAttrs(this, attrs)
   }
 
-  extend(attrs) {
+  extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
     const meta = new Constructor(this)
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
@@ -127,15 +127,20 @@ export class SceneMeta extends Meta {
       default: { ...this },
       keep: attrs,
       notifiers: [],
+      disabled: false,
     }
+    this.initScene()
   }
   defineScenes() {
     return {}
   }
-  _switchScene(sceneCode) {
+  switchScene(sceneCode) {
+    const { code, keep, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
+    if (code === sceneCode || disabled) {
+      return
+    }
     const scenes = this.defineScenes()
     const scene = scenes[sceneCode]
-    const { code, keep, default: defaultAttrs, notifiers } = this[SceneMetaSymbol]
     const update = (attrs, emit) => {
       Object.assign(this, defaultAttrs)
       Object.assign(this, attrs)
@@ -176,9 +181,33 @@ export class SceneMeta extends Meta {
     else {
       console.error(`[TySheMo]: Scene ${sceneCode} is not defined on Meta`, this)
     }
+    return this
   }
   _awaitMeta(model, key) {
     const { notifiers } = this[SceneMetaSymbol]
     notifiers.push({ model, key })
+  }
+
+  Scene(sceneCode) {
+    const Constructor = getConstructorOf(this)
+    const NewSceneMeta = Constructor.Scene[sceneCode]
+    const newMeta = new NewSceneMeta(this)
+    Object.setPrototypeOf(newMeta, this) // make it impossible to use meta
+    return newMeta
+  }
+
+  static get Scene() {
+    const Constructor = this
+    return new Proxy({}, {
+      get(_, sceneCode) {
+        class SceneModel extends Constructor {
+          initScene() {
+            this.switchScene(sceneCode)
+            this[SceneMetaSymbol].disabled = true
+          }
+        }
+        return SceneModel
+      },
+    })
   }
 }

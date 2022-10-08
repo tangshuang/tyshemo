@@ -406,11 +406,70 @@ class SomeModel extends Model {
   static my = MySceneMeta
 }
 
+// SomeModel.Scene.Scene1 -> A Model which defined with `Scene1`
 const scene1Model = new SomeModel.Scene.Scene1()
 scene1Model.my === 3
 ```
 
 In this pattern, you can define different scenes, and then use `Model#Scene` to choose a scene to generate.
+
+### createSceneMeta
+
+```js
+import { createSceneMeta, Model } from 'tyshemo'
+
+const MySceneMeta = createSceneMeta(defaultAttributes, {
+  Scene1: Scene1Attributes,
+  Scene2: async () => Scene2Attributes,
+})
+
+// Model.Scene.Scene1 -> A Model which defined with `Scene1`
+class SomeModel extends Model.Scene.Scene1 {
+  static my = MySceneMeta
+}
+
+const scene1Model = new SomeModel()
+```
+
+### SceneMeta#Scene
+
+```js
+import { SceneMeta } from 'tyshemo'
+
+class MySceneMeta extends SceneMeta {
+  defineScenes() {
+    return {
+      Scene1: Scene1Attributes,
+      Scene2: async () => Scene2Attributes,
+    }
+  }
+}
+
+class AnyModel extends Model {
+  // MySceneMeta.Scene.Scene2 -> Meta which defined with `Scene2`
+  static some = MySceneMeta.Scene.Scene2
+}
+```
+
+### Meta.switchScene
+
+```js
+import { createSceneMeta, Model } from 'tyshemo'
+
+const MySceneMeta = createSceneMeta(defaultAttributes, {
+  Scene1: Scene1Attributes,
+  Scene2: async () => Scene2Attributes,
+})
+
+// switch a Meta instance to be scene `Scene2`
+const MyMeta = MySceneMeta.Scene('Scene2')
+
+class SomeModel extends Model.Scene.Scene1 {
+  static my = MyMeta
+}
+
+const scene1Model = new SomeModel()
+```
 
 ## Formatting Control
 

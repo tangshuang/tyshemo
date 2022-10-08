@@ -217,7 +217,7 @@ export class Model {
         // make async attribute enable to notify back
         meta._awaitMeta(this, key, meta)
         // switch to new scene
-        meta._switchScene(scene)
+        meta.switchScene(scene)
       }
     })
 

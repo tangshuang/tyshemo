@@ -12,7 +12,7 @@ import {
   isNumber,
 } from 'ts-fns'
 
-export function ofChain(target, TopConstructor) {
+export function ofChain(target, TopConstructor, excludes = []) {
   const properties = {}
   const push = (target) => {
     // if it is a Constructor
@@ -26,6 +26,9 @@ export function ofChain(target, TopConstructor) {
 
     each(target, (descriptor, key) => {
       if (key.indexOf('_') === 0) {
+        return
+      }
+      if (excludes.includes(key)) {
         return
       }
       if (!Object.getOwnPropertyDescriptor(properties, key)) {

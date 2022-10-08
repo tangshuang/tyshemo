@@ -615,8 +615,27 @@ export declare class AsyncMeta<T = any, I = T, M extends Model = Model, U extend
 }
 
 export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
+  /**
+   * define scenes mapping
+   */
   defineScenes(): {
     [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+  }
+  /**
+   * switch self to new scene
+   * @param sceneCode
+   */
+  switchScene(sceneCode: string): this
+  /**
+   * switch to a new meta instance with given scene
+   * @param sceneCode
+   */
+  Scene(sceneCode: string): this
+  /**
+   * get a new SceneMeta constructor with given scene
+   */
+  static get Scene<T>(this: Constructor<T>): {
+    [sceneCode: string]: Constructor<T> & typeof SceneMeta
   }
 }
 
