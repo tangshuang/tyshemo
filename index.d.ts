@@ -469,138 +469,135 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * field default value, used by `reset` `formJSON` and so on
    */
-   default: T
-   /**
-    * field is a computed field, value will be computed until be changed by `set`
-    */
-   compute?(this: M): T
-   /**
-    * calculate value when init and the dependencies change,
-    * different from `compute`, it will rewrite value when inside dependencies change,
-    * you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change
-    */
-   activate?(this: M): T
-   /**
-    * field value type
-    */
-   type?: any
-   /**
-    * error message when set a value not match `type`
-    */
-   message?: string
-   /**
-    * force set `default` when value not match `type`
-    */
-   force?: boolean
-   /**
-    * validators used by `validate` or `validateAsync`
-    */
-   validators?: (Validator | ValidatorOptions)[]
-   /**
-    * create field value used by `formJSON`
-    */
-   create?(this: M, value: any, key: string, data: U): T
-   /**
-    * export field value used by `toJSON`
-    */
-   save?(this: M, value: T, key: string, data: U, output: Obj): Obj | any | void
-   /**
-    * if without `create` and `save`, asset will used as field read proof
-    */
-   asset?: string
-   /**
-    * whether drop this field when `toData()`
-    */
-   drop?: boolean | ((this: M, value: T, key: string, data: U) => boolean)
-   /**
-    * transfer the field value when `toData()`
-    * when `drop` is `false`, map will not work
-    */
-   map?(this: M, value: T, key: string, data: U, output: Obj): any | void
-   /**
-    * map another filed data to output data of `toData()`
-    * `drop` has no effect to map
-    */
-   mapAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
-   /**
-    * @deprecated
-    * @alias mapAs
-    * flat another data to output data of `toData()`
-    * `drop` has no effect to flat
-    */
-   flat?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
-   /**
-    * transfer field name to `to` when `toData`
-    * can use keyPath like 'some.any'
-    */
-   to?: string
-   /**
-    * transfer given value when `set`
-    */
-   setter?(this: M, value: I, key: string): T
-   /**
-    * transfer output value when `get`
-    */
-   getter?(this: M, value: T, key: string): I
-   /**
-    * format field value when use `view.text`
-    */
-   formatter?(this: M, value: T, key: string): string
-   /**
-    * whether the field is readonly, `set` will not work
-    */
-   readonly?: boolean | ((this: M, value: T, key: string) => boolean)
-   /**
-    * whether the field is useless, `drop` will be set true, validators will not work
-    */
-   disabled?: boolean | ((this: M, value: T, key: string) => boolean)
-   /**
-    * whether hide the field, without any effect on model, just a UI helper
-    */
-   hidden?: boolean | ((this: M, value: T, key: string) => boolean)
-   /**
-    * whether the field is required, should be used together with Validator.required in `vlaidators`
-    */
-   required?: boolean | ((this: M, value: T, key: string) => boolean)
-   /**
-    * determine the field is empty, used with `required`
-    */
-   empty?(this: M, value: T, key: string): boolean
-   /**
-    * whether to make the field available, if false, disabled & drop & readonly & hidden will be forcely set `true`
-    */
-   available?: boolean | ((this: M, value: T, key: string) => boolean)
-   /**
-    * provide state
-    */
-   state?(): Obj
-   /**
-    * provide deps
-    */
-   deps?(): { [key: string]: Meta | MetaClass }
-   /**
-    * provide information about deps, it means this field should must work with this metas
-    */
-   needs?(): Array<Meta | MetaClass | ModelClass>
-   /**
-    * invoked when Model initialized
-    */
-   init?(this: M): void
-   /**
-    * invoked when field value changed
-    */
-   watch?(this: M, e: { value: T } & Obj): void
-   /**
-    * when **other** fields changed, follow function will be triggered,
-    * current field changing will NOT be triggered (use watch instead)
-    * @param targetKey the key of which field changes
-    * @param key the key of current field
-    */
-   follow?(this: M, targetKey: string, key: string, context?: { keyPath: string[] }): void
-   /**
-    * invoked errors occur when field change
-    */
-   catch?(this: M, error: Error): void
+  default: T
+  /**
+   * field is a computed field, value will be computed until be changed by `set`
+   */
+  compute?(this: M): T
+  /**
+   * calculate value when init and the dependencies change,
+   * different from `compute`, it will rewrite value when inside dependencies change,
+   * you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change
+   */
+  activate?(this: M): T
+  /**
+   * field value type
+   */
+  type?: any
+  /**
+   * error message when set a value not match `type`
+   */
+  message?: string
+  /**
+   * force set `default` when value not match `type`
+   */
+  force?: boolean
+  /**
+   * validators used by `validate` or `validateAsync`
+   */
+  validators?: (Validator | ValidatorOptions)[]
+  /**
+   * create field value used by `formJSON`
+   */
+  create?(this: M, value: any, key: string, data: U): T
+  /**
+   * export field value used by `toJSON`
+   */
+  save?(this: M, value: T, key: string, data: U): Obj | any | void
+  /**
+   * save another filed data to output data of `toJSON()`
+   */
+ saveAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
+  /**
+   * if without `create` and `save`, asset will used as field read proof
+   */
+  asset?: string
+  /**
+   * whether drop this field when `toData()`
+   */
+  drop?: boolean | ((this: M, value: T, key: string, data: U) => boolean)
+  /**
+   * transfer the field value when `toData()`
+   * when `drop` is `false`, map will not work
+   */
+  map?(this: M, value: T, key: string, data: U): any | void
+  /**
+   * map another filed data to output data of `toData()`
+   * `drop` has no effect to mapAs
+   */
+  mapAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
+  /**
+   * transfer field name to `to` when `toData`
+   * can use keyPath like 'some.any'
+   */
+  to?: string
+  /**
+   * transfer given value when `set`
+   */
+  setter?(this: M, value: I, key: string): T
+  /**
+   * transfer output value when `get`
+   */
+  getter?(this: M, value: T, key: string): I
+  /**
+   * format field value when use `view.text`
+   */
+  formatter?(this: M, value: T, key: string): string
+  /**
+   * whether the field is readonly, `set` will not work
+   */
+  readonly?: boolean | ((this: M, value: T, key: string) => boolean)
+  /**
+   * whether the field is useless, `drop` will be set true, validators will not work
+   */
+  disabled?: boolean | ((this: M, value: T, key: string) => boolean)
+  /**
+   * whether hide the field, without any effect on model, just a UI helper
+   */
+  hidden?: boolean | ((this: M, value: T, key: string) => boolean)
+  /**
+   * whether the field is required, should be used together with Validator.required in `vlaidators`
+   */
+  required?: boolean | ((this: M, value: T, key: string) => boolean)
+  /**
+   * determine the field is empty, used with `required`
+   */
+  empty?(this: M, value: T, key: string): boolean
+  /**
+   * whether to make the field available, if false, disabled & drop & readonly & hidden will be forcely set `true`
+   */
+  available?: boolean | ((this: M, value: T, key: string) => boolean)
+  /**
+   * provide state
+   */
+  state?(): Obj
+  /**
+   * provide deps
+   */
+  deps?(): { [key: string]: Meta | MetaClass }
+  /**
+   * provide information about deps, it means this field should must work with this metas
+   */
+  needs?(): Array<Meta | MetaClass | ModelClass>
+  /**
+   * invoked when Model initialized
+   */
+  init?(this: M): void
+  /**
+   * invoked when field value changed
+   */
+  watch?(this: M, e: { value: T } & Obj): void
+  /**
+   * when **other** fields changed, follow function will be triggered,
+   * current field changing will NOT be triggered (use watch instead)
+   * @param targetKey the key of which field changes
+   * @param key the key of current field
+   */
+  follow?(this: M, targetKey: string, key: string, context?: { keyPath: string[] }): void
+  /**
+   * invoked errors occur when field change
+   */
+  catch?(this: M, error: Error): void
 } & Obj & ThisType<M>
 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {

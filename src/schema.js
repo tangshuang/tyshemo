@@ -1016,11 +1016,7 @@ export class Schema {
     const output = {}
 
     each(this, (meta, key) => {
-      const {
-        drop, map,
-        // @deprecated
-        flat,
-        mapAs = flat, catch: handle, to = key } = meta
+      const { drop, map, mapAs, catch: handle, to = key } = meta
       const value = data[key]
 
       if (this.disabled(key, value, context)) {
@@ -1061,7 +1057,7 @@ export class Schema {
 
       if (isFunction(map)) {
         const res = this._trydo(
-          () => map.call(context, value, key, data, output),
+          () => map.call(context, value, key, data),
           (error) => isFunction(handle) && handle.call(context, error, key) || value,
           {
             key,

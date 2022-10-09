@@ -9,9 +9,12 @@ import {
   isEmpty,
   filter,
   isUndefined,
+  isFunction,
+  define,
 } from 'ts-fns'
 import { Validator } from './validator.js'
 import { ofChain } from './shared/utils.js'
+import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 
 const createValidators = (items) => {
   return items.map(v =>
@@ -85,6 +88,54 @@ export class Meta {
 }
 
 const AsyncMetaSymbol = Symbol()
+const ensureAttrs = (attrs) => {
+  return filter(attrs, (value) => {
+    if (isUndefined(value)) {
+      return false
+    }
+    return true
+  })
+}
+const notifyAttrs = (notifiers, attrs, message) => {
+  const viewGetters = {}
+  const viewAttrs = {}
+  each(attrs, (value, key) => {
+    if (isUndefined(value)) {
+      return
+    }
+    if (inObject(key, RESERVED_ATTRIBUTES)) {
+      return
+    }
+    if (isFunction(value)) {
+      viewGetters[key] = value
+    }
+    else {
+      viewAttrs[key] = value
+    }
+  })
+  notifiers.forEach(({ model, key }) => {
+    if (!model.$inited) {
+      return
+    }
+    model.use(key, (view) => {
+      model.$store.runSilent(() => {
+        Object.assign(view, viewAttrs)
+      })
+      each(viewGetters, (getter, attr) => {
+        define(view, attr, {
+          get: () => {
+            const data = model._getData(key)
+            return getter.call(this, data, key)
+          },
+          enumerable: true,
+          configurable: true,
+        })
+      })
+      model.$store.forceDispatch(`!${key}`, message)
+    })
+  })
+}
+
 export class AsyncMeta extends Meta {
   constructor(attrs = {}) {
     super()
@@ -97,16 +148,12 @@ export class AsyncMeta extends Meta {
     }
     // fetch each time inistalized
     this.fetchAsyncAttrs().then((data) => {
-      useAttrs(this, data)
-      useAttrs(this, attrs)
-      ready.notifiers.forEach(({ model, key }) => {
-        if (model.$inited) {
-          model.$store.runSilent(() => {
-            model.use(key, view => Object.assign(view, filter(attrs, value => !isUndefined(value))))
-          })
-          model.$store.forceDispatch(`!${key}`, 'async meta')
-        }
+      const next = ensureAttrs({
+        ...data,
+        ...attrs,
       })
+      useAttrs(this, next)
+      notifyAttrs(ready.notifiers, next, 'async meta')
       ready.notifiers.length = 0
     })
   }
@@ -149,12 +196,6 @@ export class SceneMeta extends Meta {
     sceneCodes = isArray(sceneCodes) ? sceneCodes : [sceneCodes]
     const scenes = this.defineScenes()
 
-    const update = (attrs) => {
-      Object.assign(this, defaultAttrs)
-      Object.assign(this, attrs)
-      Object.assign(this, passed)
-    }
-
     const use = (sceneCode) => {
       const scene = scenes[sceneCode]
       if (scene && typeof scene === 'function') {
@@ -183,25 +224,19 @@ export class SceneMeta extends Meta {
       }
     }
 
-    const notify = (attrs) => {
-      notifiers.forEach(({ model, key }) => {
-        if (model.$inited) {
-          model.$store.runSilent(() => {
-            model.use(key, view => Object.assign(view, attrs))
-          })
-          model.$store.forceDispatch(`!${key}`, 'scene meta')
-        }
-      })
-    }
-
-    const patch = (scenes) => {
+    const update = (scenes) => {
       clear()
       const attrs = {}
       scenes.forEach((scene) => {
-        Object.assign(attrs, filter(scene, value => !isUndefined(value)))
+        Object.assign(attrs, ensureAttrs(scene))
       })
-      update(attrs)
-      return attrs
+      const next = ensureAttrs({
+        ...defaultAttrs,
+        ...attrs,
+        ...passed,
+      })
+      useAttrs(this, next)
+      return next
     }
 
     const finish = () => {
@@ -230,18 +265,18 @@ export class SceneMeta extends Meta {
 
     if (deferers.length) {
       Promise.all(deferers).then((scenes) => {
-        return patch(scenes)
+        return update(scenes)
       }).then((attrs) => {
         this[SceneMetaSymbol].codes = sceneCodes
-        notify(attrs)
+        notifyAttrs(notifiers, attrs, 'scene meta')
       }).finally(() => {
         finish()
       })
     }
     else if (patches.length) {
-      const attrs = patch(patches)
+      const attrs = update(patches)
       this[SceneMetaSymbol].codes = sceneCodes
-      notify(attrs)
+      notifyAttrs(notifiers, attrs, 'scene meta')
       finish()
     }
     else {

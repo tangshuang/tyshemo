@@ -29,37 +29,7 @@ import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.
 import { edit } from './shared/edit.js'
 import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
-
-const DEFAULT_ATTRIBUTES = {
-  default: null,
-  compute: null,
-  activate: null,
-  type: null,
-  message: null,
-  force: null,
-  validators: null,
-  create: null,
-  save: null,
-  saveAs: null,
-  drop: null,
-  map: null,
-  mapAs: null,
-  to: null,
-  asset: null,
-  getter: null,
-  setter: null,
-  formatter: null,
-  readonly: false,
-  disabled: false,
-  hidden: false,
-  required: false,
-  empty: null,
-  watch: null,
-  catch: null,
-  state: null,
-  deps: null,
-  available: null,
-}
+import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 
 const isMatchMeta = (give, need) => {
   if (give === need) {
@@ -103,7 +73,7 @@ export class Model {
     } = options
 
     define(this, '$$hooks', [])
-    define(this, '$$attrs', { ...DEFAULT_ATTRIBUTES, ...this._takeAttrs() })
+    define(this, '$$attrs', { ...RESERVED_ATTRIBUTES, ...this._takeAttrs() })
     define(this, '$$state', this._takeState())
     define(this, '$$deps', {})
     define(this, '$$memories', [])
@@ -511,7 +481,7 @@ export class Model {
         viewDef[attr] = {
           get: () => {
             // use schema prototype methods to determine, so that go though inside logic
-            if (typeof DEFAULT_ATTRIBUTES[attr] === 'boolean') {
+            if (typeof RESERVED_ATTRIBUTES[attr] === 'boolean') {
               return this.$schema[attr](key, this.get(key), this)
             }
             return this.$schema.$decide(attr, key, this.get(key), this)(fallback)
@@ -595,7 +565,10 @@ export class Model {
         else if (isFunction(descriptor.value)) {
           const { value } = descriptor
           viewDef[attr] = {
-            get: value.bind(this),
+            get: () => {
+              const data = getData()
+              return value.call(this, data, key)
+            },
             enumerable: true,
             configurable: true,
           }

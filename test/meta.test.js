@@ -228,4 +228,23 @@ describe('Meta', () => {
     some.weight ++
     expect(some.height).toBe(1) // has been changed, will use manully value
   })
+
+  test('custom getter', () => {
+    const someMeta = new Meta({
+      default: 0,
+      custom: (value) => {
+        return value > 1
+      },
+    })
+
+    class Some extends Model {
+      static some = someMeta
+    }
+
+    const some = new Some()
+
+    expect(some.use('some', view => view.custom)).toBe(false)
+    some.some = 2
+    expect(some.use('some', view => view.custom)).toBe(true)
+  })
 })

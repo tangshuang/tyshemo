@@ -99,7 +99,7 @@ const attrs = {
   },
   // optional, function, used by `toJSON`.
   // use this to create an object which can be used by fromJSON to recover the model
-  save: (value, key, data, output) => {
+  save: (value, key, data) => {
     // `data` is a bundle object which is from the model
     // `output` is the final result, you can modify it directly and return nothing in `save`
     return newValue
@@ -107,7 +107,7 @@ const attrs = {
   // optional, path some new properties to output data
   saveAs: (value, key, data, output) => {
     // notice: the return value should MUST be an object, and will be patched to output object (like `mapAs` do), so that you can export a complext object
-    return { 'any_other_keys': anyValue }
+    return { 'any_other_key': anyValue }
   }
 
   // optional, function, whether to not use this property when `toData`
@@ -117,7 +117,7 @@ const attrs = {
   to: string,
   // optional, function, to override the property value when `toData`,
   // not work when `drop` is false
-  map: (value, key, data, output) => {
+  map: (value, key, data) => {
     // `output` is the data to be exported, you can modify it directly
     return newValue
   },
@@ -126,7 +126,7 @@ const attrs = {
   // don't forget to set `drop` to be true if you want to drop original property
   mapAs: (value, key, data, output) => {
     // `output` is the data to be exported, you can modify it directly
-    return { [key]: newValue }
+    return { 'any_other_key': newValue }
   },
 
   // optional, function, format this property value when set
@@ -195,10 +195,15 @@ const attrs = {
   // optional, when an error occurs caused by this property, what to do with the error
   catch: (error) => {},
 
-  // any other attr name, which can be used in Model by Model.attrs method
-  // notice, if it is a function, it will be used as a getter whose parameter is the key name and return value will be treated as the real value when called on view
-  // i.e. some(key) { return 'real_value' } -> model.$views.field.some -> 'real_value'
+  // any other attrs
+  // i.e. some: 'real_value' -> model.use('fieldName', view => view.some) -> 'real_value'
+  // can be modified on view
+  // i.e. mode.use('fieldName', view => view.some = 'new_value')
   [attr]: any,
+  // if it is a function, it will be used as a getter whose parameter is the key name and return value will be treated as the real value when called on view
+  // i.e. some(key) { return 'real_value' } -> model.use('fieldName', view => view.some) -> 'real_value'
+  // can NOT be modified on view
+  // i.e. mode.use('fieldName', view => view.some = 'new_value') -> not working
   [attr]: (value, key) => any,
 }
 ```
