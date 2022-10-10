@@ -2,20 +2,27 @@
 /* eslint-disable no-redeclare */
 /* eslint-disable no-unused-vars */
 
-interface Obj { [key: string]: any }
-
 /**
  * 用于得到某个class的构造函数，例如：
  * class Some {}
- * Constructor<Some> -> Some类型的构造函数，也就是class Some本身
+ * ConstructorOf<Some> -> Some类型的构造函数，也就是class Some本身
  * 用处：
  * class Some {
- *  static fn<T>(this: Constructor<T>): void; // -> this: Constructor<T> 规定了该静态方法内的this类型，由于类型推导，此处的this被推导为Some本身
+ *  static fn<T>(this: ConstructorOf<T>): void; // -> this: ConstructorOf<T> 规定了该静态方法内的this类型，由于类型推导，此处的this被推导为Some本身
  * }
  */
-interface Constructor<T> {
-  new (...args: any[]): T
-}
+type ConstructorOf<T> = new (...args: any[]) => T
+
+/**
+ * 读取数组的项的类型
+ */
+type ItemOf<T> = T extends Array<infer P> ? P : never
+
+// -------------
+
+interface Obj { [key: string]: any }
+
+// -------------
 
 interface PrototypeOptions {
   name?: string
@@ -632,7 +639,7 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
    * get a new SceneMeta constructor with given scene
    * @param sceneCodes
    */
-  static Scene<T>(this: Constructor<T>, sceneCodes: string | string[]): Constructor<T> & typeof SceneMeta
+  static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof SceneMeta
 }
 
 /**
@@ -645,37 +652,37 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
  */
 declare function createMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): Meta<T, I, M, U>
 
-/**
- * create a meta by given Model
- * @param entries Model
- * @param attrs append attributes, omit 'default'
- * @param hooks factory hooks
- * @example
- * class A extends Model {}
- * const meta = createMeta(A)
- * class C extends Model {
- *   static some = meta
- *   // same as: static some = A
- * }
- */
-declare function createMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
+// /**
+//  * create a meta by given Model
+//  * @param entries Model
+//  * @param attrs append attributes, omit 'default'
+//  * @param hooks factory hooks
+//  * @example
+//  * class A extends Model {}
+//  * const meta = createMeta(A)
+//  * class C extends Model {
+//  *   static some = meta
+//  *   // same as: static some = A
+//  * }
+//  */
+// declare function createMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
 
-/**
- * create a meta by given Models
- * T: union of ModelClass, i.e. SomeModel | AnyModel
- * @param entries Model[]
- * @param attrs
- * @param hooks
- * @example
- * class A extends Model {}
- * class B extends Model {}
- * const meta = createMeta<A | B>([A, B])
- * class C extends Model {
- *   static some = meta
- *   // same as: static some = [A, B]
- * }
- */
-declare function createMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], attrs?: Omit<Attrs<InstanceType<T>[], InstanceType<T>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>[], InstanceType<T>[], M, U>
+// /**
+//  * create a meta by given Models
+//  * T: union of ModelClass, i.e. SomeModel | AnyModel
+//  * @param entries Model[]
+//  * @param attrs
+//  * @param hooks
+//  * @example
+//  * class A extends Model {}
+//  * class B extends Model {}
+//  * const meta = createMeta<A | B>([A, B])
+//  * class C extends Model {
+//  *   static some = meta
+//  *   // same as: static some = [A, B]
+//  * }
+//  */
+// declare function createMeta<T extends ModelClass[] = ModelClass[], M extends Model = Model, U extends Obj = Obj>(entries: T, attrs?: Omit<Attrs<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>
 
 /**
  * create serval metas as an array
@@ -695,7 +702,7 @@ declare function createMetaGroup<T extends Meta[]>(count: number, create: (...ar
  * @param attrs
  * @param asyncGetter
  */
-declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Omit<Attrs<T, I, M, U>, 'default'>>): Meta<T, I, M, U>
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Partial<Attrs<T, I, M, U>>>): Meta<T, I, M, U>
 
 /**
  * create a scene meta, which can be switch to certain scene by Model#Scene(sceneCode)
@@ -703,7 +710,7 @@ declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U exte
  * @param mapping
  */
 declare function createSceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, mapping: {
-  [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+  [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
 }): Meta<T, I, M, U>
 
 export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta }
@@ -908,9 +915,9 @@ export declare class Model implements Obj {
   onChange(key: string): void
   onEdit(): EditorModel
 
-  static get Edit<T>(this: Constructor<T>): Constructor<T> & EditorModel
+  static get Edit<T>(this: ConstructorOf<T>): ConstructorOf<T> & EditorModel
 
-  static Scene<T>(this: Constructor<T>, sceneCodes: string | string[]): Constructor<T> & typeof Model
+  static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof Model
 
   static mixin<T extends ModelClass[]>(...Models: T): new () => UnionToInter<InstanceType<T[number]>>
   static mixin<T extends ModelClass[]>(force: boolean, ...Models: T): new () => UnionToInter<InstanceType<T[number]>>
@@ -979,12 +986,8 @@ interface FactoryChunk<M, D, U> {
 
 interface Factory extends FactoryHooks {}
 export declare class Factory {
+  constructor(options: Partial<Attrs>);
   getMeta<T = Model | Model[], M extends Model = Model>(): Meta<T, T, M>
-
-  /**
-   * @deprecated use Factory.createMeta instead
-   */
-  static getMeta<T = ModelClass | ModelClass[], M extends Model = Model>(entries: ModelClass | ModelClass[], attrs?: Obj & ThisType<M>, hooks?: FactoryHooks): Meta<T, T, M>
 
   /**
    * create a meta by given Model
@@ -1002,18 +1005,17 @@ export declare class Factory {
   static createMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
 
   /**
-   * create a meta by given Models
-   * T: union of ModelClass, i.e. SomeModel | AnyModel
+   * create a list meta by given Models
    * @example
    * class A extends Model {}
    * class B extends Model {}
-   * const meta = Factory.createMeta<A | B>([A, B])
+   * const meta = Factory.createMeta<(A | B)[]>([A, B])
    * class C extends Model {
    *   static some = meta
    *   // same as: static some = [A, B]
    * }
    */
-  static createMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], attrs?: Omit<Attrs<InstanceType<T>[], InstanceType<T>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>[], InstanceType<T>[], M, U>
+  static createMeta<T extends ModelClass[] = ModelClass[], M extends Model = Model, U extends Obj = Obj>(entries: T, attrs?: Omit<Attrs<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>
 
   /**
    * create a meta by given Model
@@ -1029,17 +1031,17 @@ export declare class Factory {
   static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
 
   /**
-   * create a meta by given Models
+   * create a list meta by given Models
    * @example
    * class A extends Model {}
    * class B extends Model {}
-   * const meta = Factory.selectMeta<A | B>([[A, B]])
+   * const meta = Factory.selectMeta<(A | B)[]>([[A, B]])
    * class C extends Model {
    *   static some = meta
    *   // same as: static some = [A, B]
    * }
    */
-  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: [T[]], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>[], InstanceType<T>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>[], InstanceType<T>[], M, U>
+  static selectMeta<T extends ModelClass[] = ModelClass[], M extends Model = Model, U extends Obj = Obj>(entries: [T], select: (entries?: T, data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>
 
   /**
    * create a chunk for model
