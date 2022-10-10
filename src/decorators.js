@@ -1,4 +1,4 @@
-import { Meta } from './meta.js'
+import { Meta, StateMeta } from './meta.js'
 import { isInheritedOf, isInstanceOf, isObject, isArray } from 'ts-fns'
 import { Model, State } from './model.js'
 import { Factory } from './factory.js'
@@ -100,6 +100,10 @@ export function meta(entry, options, methods) {
 }
 
 export function state(options) {
+  if (options && (isInstanceOf(options, StateMeta) || isInheritedOf(options, StateMeta))) {
+    return meta(options)
+  }
+
   return createDecorator('state', (protos, key) => {
     if (!('value' in options) && !options.get && !options.set) {
       throw new Error(`TySheMo: @state params should not contain either value or get/set.`)

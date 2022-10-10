@@ -1401,10 +1401,10 @@ export class Model {
   }
 
   /**
-   * set field value, with `readonly`, `disabled`, `editable`, `type` checking, and formatting by `setter`
+   * set field value, with `readonly`, `type` checking, and formatting by `setter`
    * @param {array|string} keyPath
    * @param {*} next
-   * @param {boolean} force force set, ignore `readonly` & `disabled`
+   * @param {boolean} force force set, ignore `readonly`
    */
   set(keyPath, next, force) {
     if (!this.$store.editable) {

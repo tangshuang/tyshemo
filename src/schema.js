@@ -224,12 +224,6 @@ export class Schema {
   }
 
   readonly(key, value, context) {
-    if (!this.available(key, value, context)) {
-      return true
-    }
-    if (this.disabled(key, value, context)) {
-      return true
-    }
     return this.$decide('readonly', key, value, context)(false)
   }
 
@@ -385,7 +379,7 @@ export class Schema {
   }
 
   /**
-   * get new value, with `disabled` `readonly` checking
+   * get new value, with `readonly` checking
    * @param {*} key
    * @param {*} next
    * @param {*} prev
@@ -396,20 +390,6 @@ export class Schema {
 
     if (!meta) {
       return next
-    }
-
-    const disabled = this.disabled(key, prev, context)
-    if (disabled) {
-      const e = {
-        key,
-        action: 'set',
-        next,
-        prev,
-        disabled: true,
-        message: this.$message(key, 'disabled', context)(disabled),
-      }
-      this._catch(key, e, context)
-      return prev
     }
 
     const readonly = this.readonly(key, prev, context)

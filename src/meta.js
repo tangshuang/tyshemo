@@ -42,13 +42,15 @@ function useAttrs(meta, attrs) {
 
 export class Meta {
   constructor(attrs = {}) {
+    const descriptors = {}
+
     // from inherit chain
     const properties = ofChain(this, Meta, ['Scene'])
     each(properties, (descriptor, key) => {
       if (inObject(key, attrs, true)) {
         return
       }
-      useAttr(this, key, descriptor)
+      descriptors[key] = descriptor
     }, true)
 
     // from prototype
@@ -58,13 +60,22 @@ export class Meta {
       if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'Scene'].includes(key)) {
         return
       }
-      if (inObject(key, this)) {
+      if (inObject(key, attrs, true)) {
         return
       }
-      useAttr(this, key, descriptor)
+      if (inObject(key, descriptors)) {
+        return
+      }
+      descriptors[key] = descriptor
     }, true)
 
-    // from attrs
+    this.__init(descriptors, attrs)
+  }
+
+  __init(descriptors, attrs) {
+    each(descriptors, (descriptor, key) => {
+      useAttr(this, key, descriptor)
+    })
     useAttrs(this, attrs)
   }
 
@@ -309,5 +320,26 @@ export class SceneMeta extends Meta {
       }
     }
     return SceneModel
+  }
+}
+
+/**
+ * special meta which treated as state, the following attributes not working:
+ * default, drop, to, map, disabled, state
+ * should must pass `value`
+ */
+export class StateMeta extends Meta {
+  __init(descriptors, options) {
+    const { value, ...others } = options
+    others.default = value
+    delete others.disabled
+    delete others.state
+
+    delete descriptors.state
+    delete descriptors.default
+    // force make disabled true, can not be changed
+    descriptors.disabled = { get: () => true, enumerable: true, configurable: false }
+
+    super.__init(descriptors, others)
   }
 }

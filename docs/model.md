@@ -353,7 +353,7 @@ model.age = 20
 model.set('age', 20)
 ```
 
-*force* -> when it is set to be true, `set` will ignore `readonly` and `disabled`.
+*force* -> when it is set to be true, `set` will ignore `readonly`.
 
 **update(data)**
 

@@ -143,7 +143,6 @@ const attrs = {
   // if `disabled` is true, you will not be able to change value by using `set` (however `assign` works),
   // when you invoke `validate`, the validators will be ignored,
   // when you invoke `export`, the `drop` will be set to be `true` automaticly, `mapAs` will not work too
-  // when disabled, readonly will be forcely set `true`
   disabled: boolean | (value, key) => boolean,
   // optional, function or boolean or string,
   // if `hidden` is true, it means you want to hide the field related ui component
@@ -155,8 +154,8 @@ const attrs = {
   // optional, function to determine the value is empty
   empty: (value, key) => boolean,
   // optional, function to determine wheather the field is available
-  // when available is false, disabled (drop), readonly, hidden will be forcely set `true`
-  // it is like a higher priority toggler of `disabled, drop, readonly, hidden`
+  // when available is false, disabled (drop), hidden will be forcely set `true`
+  // it is like a higher priority toggler of `disabled, drop, hidden`
   available: boolean | (value, key) => boolean,
 
   // when this field's value changed, the `watch` function will be invoke
@@ -527,10 +526,6 @@ To create a meta, you can use `createMeta`.
 
 ```
 function createMeta(attrs)
-
-// use Factory.getMeta to generate
-function createMeta(Model, attrs, hooks)
-function createMeta(Model[], attrs, hooks)
 ```
 
 In typescript, you can get better typing feedback.
@@ -568,7 +563,19 @@ const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup(3, (NameMeta, AgeMeta, H
 
 In the previous code, we use NameMeta, AgeMeta, HeightMeta in each meta, however, if we use createMeta directly we may get error about referer to variable which is not declared before we use it. As used createMetaGroup, we can use Meta before it created.
 
-## cretaeAsyncMeta
+## AsyncMeta
+
+```js
+import { AsyncMeta } from 'tyshemo'
+
+class SomeAsyncMeta extends AsyncMeta {
+  async fetchAsyncAttrs() {
+    ...
+  }
+}
+```
+
+### createAsyncMeta
 
 ```
 /**
@@ -599,3 +606,30 @@ const SomeMeta = createAsyncMeta({
 ```
 
 Notice, `default, activate, init, state, compute, AsyncGetter` should not be overrided, they may work only once inside.
+
+## StateMeta
+
+A meta which is treated as state whose `disabled` is force set to be true.
+
+```js
+import { StateMeta } from 'tyshemo'
+
+class SomeState extends StateMeta {
+  static value = 0
+}
+```
+
+`StateMeta` is special:
+
+- should use `value` instead of `default`
+- attributes `default, drop, to, map, disabled, state` are not supported
+- can be passed into `@state()`
+
+### createStateMeta
+
+```js
+const myState = createStateMeta({
+  value: 1,
+  setter: (str) => +str,
+})
+```

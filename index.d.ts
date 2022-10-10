@@ -642,6 +642,10 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
   static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof SceneMeta
 }
 
+export declare class StateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
+  constructor(options?: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: any })
+}
+
 /**
  * crete a meta by given attributes
  * T: the value type
@@ -702,7 +706,7 @@ declare function createMetaGroup<T extends Meta[]>(count: number, create: (...ar
  * @param attrs
  * @param asyncGetter
  */
-declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Partial<Attrs<T, I, M, U>>>): Meta<T, I, M, U>
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Partial<Attrs<T, I, M, U>>>): AsyncMeta<T, I, M, U>
 
 /**
  * create a scene meta, which can be switch to certain scene by Model#Scene(sceneCode)
@@ -711,9 +715,15 @@ declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U exte
  */
 declare function createSceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, mapping: {
   [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
-}): Meta<T, I, M, U>
+}): SceneMeta<T, I, M, U>
 
-export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta }
+/**
+ * create a state meta, whose disabled is force set to be true
+ * @param attrs
+ */
+declare function createStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: any }): Meta<T, I, M, U>
+
+export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta }
 
 /**
  * use type from built meta
