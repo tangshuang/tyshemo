@@ -609,7 +609,7 @@ Notice, `default, activate, init, state, compute, AsyncGetter` should not be ove
 
 ## StateMeta
 
-A meta which is treated as state whose `disabled` is force set to be true.
+A meta which is treated as state whose `available` is force set to be true.
 
 ```js
 import { StateMeta } from 'tyshemo'
@@ -622,7 +622,7 @@ class SomeState extends StateMeta {
 `StateMeta` is special:
 
 - should use `value` instead of `default`
-- attributes `default, drop, to, map, disabled, state` are not supported
+- attributes `default, valiators, drop, to, map, disabled, hidden, available, state` are not supported
 - can be passed into `@state()`
 
 ### createStateMeta

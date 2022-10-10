@@ -325,20 +325,20 @@ export class SceneMeta extends Meta {
 
 /**
  * special meta which treated as state, the following attributes not working:
- * default, drop, to, map, disabled, state
+ * default, drop, to, map, disabled, hidden, available, state
  * should must pass `value`
  */
 export class StateMeta extends Meta {
   __init(descriptors, options) {
     const { value, ...others } = options
-    others.default = value
-    delete others.disabled
+    delete others.available
     delete others.state
+    delete others.default
 
+    // force make available true, can not be changed
+    descriptors.available = { get: () => true, enumerable: true, configurable: false }
     delete descriptors.state
-    delete descriptors.default
-    // force make disabled true, can not be changed
-    descriptors.disabled = { get: () => true, enumerable: true, configurable: false }
+    descriptors.default = isUndefined(value) ? descriptors.value : { value }
 
     super.__init(descriptors, others)
   }

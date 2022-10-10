@@ -1,5 +1,5 @@
 import { Model } from '../src/model.js'
-import { Meta } from '../src/meta.js'
+import { Meta, StateMeta } from '../src/meta.js'
 import { formatDate, createDate } from 'ts-fns'
 import { Numeric } from '../src/ty/index.js'
 import { createMetaGroup, createMeta, createAsyncMeta } from '../src/interface.js'
@@ -246,5 +246,23 @@ describe('Meta', () => {
     expect(some.use('some', view => view.custom)).toBe(false)
     some.some = 2
     expect(some.use('some', view => view.custom)).toBe(true)
+  })
+
+  test('StateMeta', () => {
+    class SomeState extends StateMeta {
+      static value = 1
+    }
+
+    class SomeModel extends Model {
+      static some = SomeState
+    }
+
+    const some = new SomeModel()
+    expect(some.some).toBe(1)
+    some.some = 2
+    expect(some.some).toBe(2)
+
+    const data = some.toData()
+    expect(data.some).toBeUndefined()
   })
 })
