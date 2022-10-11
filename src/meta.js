@@ -13,7 +13,7 @@ import {
   define,
 } from 'ts-fns'
 import { Validator } from './validator.js'
-import { ofChain } from './shared/utils.js'
+import { ofChain, traverseChain } from './shared/utils.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 
 const createValidators = (items) => {
@@ -184,6 +184,7 @@ export class AsyncMeta extends Meta {
 }
 
 const SceneMetaSymbol = Symbol()
+const SceneCodesSymbol = Symbol()
 export class SceneMeta extends Meta {
   constructor(attrs = {}) {
     super(attrs)
@@ -194,6 +195,7 @@ export class SceneMeta extends Meta {
       notifiers: [],
       disabled: false,
     }
+    this._initSceneCode()
   }
   defineScenes() {
     return {}
@@ -201,6 +203,7 @@ export class SceneMeta extends Meta {
   switchScene(sceneCodes) {
     const { codes, passed, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
     if (disabled) {
+      console.warn(this, 'can not switch to scene', sceneCodes, ', because it is presisted.')
       return
     }
 
@@ -300,6 +303,7 @@ export class SceneMeta extends Meta {
     const { notifiers } = this[SceneMetaSymbol]
     notifiers.push({ model, key })
   }
+  _initSceneCode() {}
 
   Scene(sceneCodes) {
     const { passed } = this[SceneMetaSymbol]
@@ -312,14 +316,29 @@ export class SceneMeta extends Meta {
 
   static Scene(sceneCodes) {
     const Constructor = this
-    class SceneModel extends Constructor {
-      constructor(attrs) {
-        super(attrs)
-        this.switchScene(sceneCodes)
+    class PresistSceneMeta extends Constructor {
+      _initSceneCode() {
+        const codes = []
+        const pushSceneCodes = (target) => {
+          const push = (item) => {
+            if (!codes.includes(item)) {
+              codes.push(item)
+            }
+          }
+          if (isArray(target[SceneCodesSymbol])) {
+            target[SceneCodesSymbol].forEach(push)
+          }
+          else if (target[SceneCodesSymbol]) {
+            push(target[SceneCodesSymbol])
+          }
+        }
+        traverseChain(Constructor, SceneMeta, pushSceneCodes)
+        this.switchScene(codes)
         this[SceneMetaSymbol].disabled = true
       }
+      static [SceneCodesSymbol] = sceneCodes
     }
-    return SceneModel
+    return PresistSceneMeta
   }
 }
 

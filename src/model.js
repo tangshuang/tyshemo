@@ -413,9 +413,7 @@ export class Model {
         push(target[SceneCodesSymbol])
       }
     }
-    traverseChain(Constructor, Model, (target) => {
-      pushSceneCodes(target)
-    })
+    traverseChain(Constructor, Model, pushSceneCodes)
     return sceneCodes
   }
 
