@@ -133,7 +133,7 @@ describe('Meta', () => {
   })
 
   test('createMetaGroup', () => {
-    const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup(3, (NameMeta, AgeMeta, HeightMeta) => [
+    const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup((NameMeta, AgeMeta, HeightMeta) => [
       createMeta({
         default: 'tom',
         total() {
