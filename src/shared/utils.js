@@ -12,9 +12,8 @@ import {
   isNumber,
 } from 'ts-fns'
 
-export function ofChain(target, TopConstructor, excludes = []) {
-  const properties = {}
-  const push = (target) => {
+export function traverseChain(target, TopConstructor, fn) {
+  const traverse = (target) => {
     // if it is a Constructor
     if (!isConstructor(target)) {
       target = getConstructorOf(target)
@@ -24,6 +23,20 @@ export function ofChain(target, TopConstructor, excludes = []) {
       return
     }
 
+    fn(target)
+
+    // to parent
+    const Parent = getConstructorOf(target.prototype)
+    if (isInheritedOf(Parent, TopConstructor)) {
+      traverse(target.prototype)
+    }
+  }
+  traverse(target)
+}
+
+export function ofChain(target, TopConstructor, excludes = []) {
+  const properties = {}
+  traverseChain(target, TopConstructor, () => {
     each(target, (descriptor, key) => {
       if (key.indexOf('_') === 0) {
         return
@@ -36,14 +49,7 @@ export function ofChain(target, TopConstructor, excludes = []) {
         define(properties, prop, descriptor)
       }
     }, true)
-
-    // to parent
-    const Parent = getConstructorOf(target.prototype)
-    if (isInheritedOf(Parent, TopConstructor)) {
-      push(target.prototype)
-    }
-  }
-  push(target)
+  })
   return properties
 }
 

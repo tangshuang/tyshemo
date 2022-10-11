@@ -25,7 +25,7 @@ import {
 
 import { Schema as _Schema } from './schema.js'
 import { Store as _Store } from './store.js'
-import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef } from './shared/utils.js'
+import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef, traverseChain } from './shared/utils.js'
 import { edit } from './shared/edit.js'
 import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
@@ -65,11 +65,11 @@ const SceneCodesSymbol = Symbol()
 export class Model {
   constructor(data = {}, options = {}) {
     const $this = this
-    const Constructor = getConstructorOf(this)
+    // const Constructor = getConstructorOf(this)
     const {
       parent,
       key,
-      scenes = Constructor[SceneCodesSymbol],
+      scenes = this._takeSceneCodes(),
     } = options
 
     define(this, '$$hooks', [])
@@ -395,6 +395,28 @@ export class Model {
      * }
      */
     define(this, '$ready', Promise.resolve(this.onInit()))
+  }
+
+  _takeSceneCodes() {
+    const Constructor = getConstructorOf(this)
+    const sceneCodes = []
+    const pushSceneCodes = (target) => {
+      const push = (item) => {
+        if (!sceneCodes.includes(item)) {
+          sceneCodes.push(item)
+        }
+      }
+      if (isArray(target[SceneCodesSymbol])) {
+        target[SceneCodesSymbol].forEach(push)
+      }
+      else if (target[SceneCodesSymbol]) {
+        push(target[SceneCodesSymbol])
+      }
+    }
+    traverseChain(Constructor, Model, (target) => {
+      pushSceneCodes(target)
+    })
+    return sceneCodes
   }
 
   _takeSchema() {
