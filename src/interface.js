@@ -23,7 +23,7 @@ export function createMeta(...args) {
  * @param {function} create return objects to generate metas
  * @returns {Meta[]}
  * @example
- * const [Meta1, Meta2, Meta3] = createMetaGroup(3, (Meta1, Meta2, Meta3) => {
+ * const [Meta1, Meta2, Meta3] = createMetaGroup((Meta1, Meta2, Meta3) => {
  *   return [
  *     // for Meta1
  *     createMeta({
@@ -49,7 +49,8 @@ export function createMeta(...args) {
  *   ]
  * })
  */
-export function createMetaGroup(count, create) {
+export function createMetaGroup(create) {
+  const count = create.length
   const metas = []
   for (let i = 0; i < count; i ++) {
     metas.push(class extends Meta {})

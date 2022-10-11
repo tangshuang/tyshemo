@@ -535,14 +535,15 @@ In typescript, you can get better typing feedback.
 To create several metas, in case you want to referer metas to each other in a group.
 
 ```
-declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: Meta[]) => T): T;
+declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta[]) => T): T;
 ```
 
-- count: the count of metas in the group
 - create: function to return metas in an array
 
+Notice: `...args` should must be refered in `create` function.
+
 ```js
-const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup(3, (NameMeta, AgeMeta, HeightMeta) => [
+const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup((NameMeta, AgeMeta, HeightMeta) => [
   createMeta({
     default: 'tom',
     total() {

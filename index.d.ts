@@ -693,13 +693,13 @@ declare function createMeta<T = any, I = T, M extends Model = Model, U extends O
  * @param count how many metas do you want to create
  * @param create
  * @example
- * const [A, B, C] = createMetaGroup(3, (A, B, C) => [
+ * const [A, B, C] = createMetaGroup((A, B, C) => [
  *   createMeta(...),
  *   createMeta(...),
  *   createMeta(...),
  * ])
  */
-declare function createMetaGroup<T extends Meta[]>(count: number, create: (...args: Meta[]) => T): T
+declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta[]) => T): T
 
 /**
  * create an async meta, which can be overrided by asyncGetter return value
