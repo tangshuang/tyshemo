@@ -121,7 +121,7 @@ describe('Scene', () => {
     expect(tank.some).toBe(3)
   })
 
-  test('multiple scenes', () => {
+  test('multiple scenes, priority of after is higher than before', () => {
     class SomeMeta extends SceneMeta {
       static default = 1
       defineScenes() {

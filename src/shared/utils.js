@@ -12,32 +12,33 @@ import {
   isNumber,
 } from 'ts-fns'
 
-export function traverseChain(target, TopConstructor, fn) {
-  const traverse = (target) => {
+export function traverseChain(Target, TopConstructor, fn) {
+  const traverse = (Target) => {
     // if it is a Constructor
-    if (!isConstructor(target)) {
-      target = getConstructorOf(target)
+    if (!isConstructor(Target)) {
+      Target = getConstructorOf(Target)
     }
 
-    if (target === TopConstructor) {
+    if (Target === TopConstructor) {
       return
     }
 
-    fn(target)
+    fn(Target)
 
     // to parent
-    const Parent = getConstructorOf(target.prototype)
+    const Parent = getConstructorOf(Target.prototype)
     if (isInheritedOf(Parent, TopConstructor)) {
-      traverse(target.prototype)
+      traverse(Target.prototype)
     }
   }
-  traverse(target)
+  traverse(Target)
 }
 
 export function ofChain(target, TopConstructor, excludes = []) {
   const properties = {}
-  traverseChain(target, TopConstructor, () => {
-    each(target, (descriptor, key) => {
+  const Target = getConstructorOf(target)
+  traverseChain(Target, TopConstructor, (Meet) => {
+    each(Meet, (descriptor, key) => {
       if (key.indexOf('_') === 0) {
         return
       }

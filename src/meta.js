@@ -200,15 +200,16 @@ export class SceneMeta extends Meta {
   defineScenes() {
     return {}
   }
-  switchScene(sceneCodes) {
+  switchScene(sceneCode) {
     const { codes, passed, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
     if (disabled) {
-      console.warn(this, 'can not switch to scene', sceneCodes, ', because it is presisted.')
+      // console.warn(this, 'can not switch to scene', sceneCodes, ', because it is presisted.')
       return
     }
 
-    sceneCodes = isArray(sceneCodes) ? sceneCodes : [sceneCodes]
+    const sceneCodes = isArray(sceneCode) ? sceneCode : [sceneCode]
     const scenes = this.defineScenes()
+    console.log(sceneCode, scenes)
 
     const use = (sceneCode) => {
       const scene = scenes[sceneCode]
@@ -305,38 +306,39 @@ export class SceneMeta extends Meta {
   }
   _initSceneCode() {}
 
-  Scene(sceneCodes) {
+  Scene(sceneCode) {
     const { passed } = this[SceneMetaSymbol]
     const Constructor = getConstructorOf(this)
-    const NewMetaClass = Constructor.Scene(sceneCodes)
+    const NewMetaClass = Constructor.Scene(sceneCode)
     const newMeta = new NewMetaClass(passed)
     Object.setPrototypeOf(newMeta, this) // make it impossible to use meta
     return newMeta
   }
 
-  static Scene(sceneCodes) {
+  static Scene(sceneCode) {
     const Constructor = this
     class PresistSceneMeta extends Constructor {
       _initSceneCode() {
-        const codes = []
-        const pushSceneCodes = (target) => {
-          const push = (item) => {
-            if (!codes.includes(item)) {
-              codes.push(item)
-            }
+        const sceneCodes = []
+        const Constructor = getConstructorOf(this)
+        const unshift = (item) => {
+          if (!sceneCodes.includes(item)) {
+            sceneCodes.unshift(item)
           }
+        }
+        const pushSceneCodes = (target) => {
           if (isArray(target[SceneCodesSymbol])) {
-            target[SceneCodesSymbol].forEach(push)
+            target[SceneCodesSymbol].forEach(unshift)
           }
           else if (target[SceneCodesSymbol]) {
-            push(target[SceneCodesSymbol])
+            unshift(target[SceneCodesSymbol])
           }
         }
         traverseChain(Constructor, SceneMeta, pushSceneCodes)
-        this.switchScene(codes)
+        this.switchScene(sceneCodes)
         this[SceneMetaSymbol].disabled = true
       }
-      static [SceneCodesSymbol] = sceneCodes
+      static [SceneCodesSymbol] = sceneCode
     }
     return PresistSceneMeta
   }

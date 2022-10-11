@@ -401,19 +401,20 @@ export class Model {
     const Constructor = getConstructorOf(this)
     const sceneCodes = []
     const pushSceneCodes = (target) => {
-      const push = (item) => {
+      const unshift = (item) => {
         if (!sceneCodes.includes(item)) {
-          sceneCodes.push(item)
+          sceneCodes.unshift(item)
         }
       }
       if (isArray(target[SceneCodesSymbol])) {
-        target[SceneCodesSymbol].forEach(push)
+        target[SceneCodesSymbol].forEach(unshift)
       }
       else if (target[SceneCodesSymbol]) {
-        push(target[SceneCodesSymbol])
+        unshift(target[SceneCodesSymbol])
       }
     }
     traverseChain(Constructor, Model, pushSceneCodes)
+    sceneCodes.reverse()
     return sceneCodes
   }
 
@@ -2174,10 +2175,10 @@ export class Model {
     return value
   }
 
-  static Scene(sceneCodes) {
+  static Scene(sceneCode) {
     const Constructor = this
     class SceneModel extends Constructor {
-      static [SceneCodesSymbol] = sceneCodes
+      static [SceneCodesSymbol] = sceneCode
     }
     return SceneModel
   }
