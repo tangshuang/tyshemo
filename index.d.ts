@@ -1097,7 +1097,7 @@ declare function meta<T = any, I = T, M extends Model = Model, U extends Obj = O
 declare function meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(entries: ModelClass | ModelClass[], attrs?: Attrs<T, I, M, U>, hooks?: FactoryHooks): PropertyDecorator
 export { meta }
 
-export declare function state<T>(options: { value: T } | { get: () => T, set?: (v: T) => void }): PropertyDecorator
+export declare function state<T>(options: { value: T } | { get: () => T, set?: (v: T) => void } | Meta): PropertyDecorator
 
 export declare function type(type: any): PropertyDecorator
 
