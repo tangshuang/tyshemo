@@ -806,6 +806,7 @@ export class Model {
     // register a global listener to watch all changes
     this.watch('*', (e) => {
       const { key, compute } = e
+      // root: changed field key
       const root = key[0]
       const def = this.$schema[root]
 
@@ -820,7 +821,7 @@ export class Model {
 
       // response for def.watch attribute
       if (def.watch) {
-        def.watch.call(this, e, key)
+        def.watch.call(this, e)
       }
 
       const fields = Object.keys(this.$schema)
@@ -832,8 +833,18 @@ export class Model {
         const meta = this.$schema[root]
         const { follow, needs, deps, state } = this.$schema[field]
 
-        if (follow) {
-          follow.call(this, root, field, { keyPath: key })
+        if (isFunction(follow)) {
+          follow.call(this, root, e)
+        }
+        else if (isArray(follow)) {
+          follow.forEach((item) => {
+            const { meta, key = meta, action } = item
+            this.use(key, (view) => {
+              if (view.key === root) {
+                action.call(this, e)
+              }
+            })
+          })
         }
 
         if (needs) {

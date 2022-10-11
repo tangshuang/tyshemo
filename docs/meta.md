@@ -159,10 +159,12 @@ const attrs = {
   available: boolean | (value, key) => boolean,
 
   // when this field's value changed, the `watch` function will be invoke
-  watch({ value }, key) {},
+  watch(e) {},
   // when **other** fields changed, follow function will be triggered
   // current field changing will NOT be triggered (use watch instead)
-  follow(targetKeyPath:string, key) {},
+  // if pass an array, it means you want to follow certain field's changes,
+  // if pass a function, it means you want to follow any field's changes, you should use `key` to determine which field is changed
+  follow: Array<{ key?, meta?, action: (e) => void }> | ((key, e) => void),
 
   // invoke when the model initailized
   init() {},

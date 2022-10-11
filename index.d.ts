@@ -597,10 +597,29 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * when **other** fields changed, follow function will be triggered,
    * current field changing will NOT be triggered (use watch instead)
-   * @param targetKey the key of which field changes
-   * @param key the key of current field
    */
-  follow?(this: M, targetKey: string, key: string, context?: { keyPath: string[] }): void
+  follow?:
+    | Array<{
+      /**
+       * the target to follow
+       */
+      key?: string
+      /**
+       * the target to follow
+       */
+      meta?: Meta
+      /**
+       * @param e changed information
+       */
+      action: (this: M, e: any) => void
+    }>
+    | (
+      /**
+       * @param key the target changed field's key
+       * @param e changed information
+       */
+      (this: M, key: string, e: any) => void
+    )
   /**
    * invoked errors occur when field change
    */
