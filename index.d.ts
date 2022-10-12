@@ -18,6 +18,39 @@ type ConstructorOf<T> = new (...args: any[]) => T
  */
 type ItemOf<T> = T extends Array<infer P> ? P : never
 
+// https://lifesaver.codes/answer/type-manipulations-union-to-tuple-13298
+// https://note.xiexuefeng.cc/post/ts-union-to-tuple/
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
+type IsUnion<T> = [T] extends [UnionToIntersection<T>] ? false : true
+type UnionToOvlds<U> = UnionToIntersection<U extends any ? (f: U) => void : never>
+type PopUnion<U> = UnionToOvlds<U> extends ((a: infer A) => void) ? (A extends boolean ? boolean extends U ? boolean : A : A) : never
+type GetUnionLast<Unoin> = IsUnion<Unoin> extends true ? PopUnion<Unoin> : Unoin
+
+// https://www.tangshuang.net/8487.html
+type GetUnionKeys<Unoin> = Unoin extends any
+  ? {
+    [key in keyof Unoin]: key
+  } extends {
+    [key in keyof Unoin]: infer K
+  }
+  ? K
+  : never
+  : never
+type UnionToInterByKeys<Union, Keys extends string | number | symbol> = {
+  [key in Keys]: GetUnionLast<
+    Union extends any
+    ? {
+      [k in keyof Union]: k extends key ? Union[k] : never
+    } extends {
+      [k in keyof Union]: infer P
+    }
+    ? P
+    : never
+    : never
+  >
+}
+type UnionToInter<Unoin> = UnionToInterByKeys<Unoin, GetUnionKeys<Unoin>>
+
 // -------------
 
 interface Obj { [key: string]: any }
@@ -153,9 +186,9 @@ export declare class Type {
   toBeLoose(mode: boolean): this
 
   /**
-   * format error message text
-   * @param options
-   */
+    * format error message text
+    * @param options
+    */
   with(options: {
     name?: string
     strict?: boolean
@@ -188,12 +221,12 @@ export declare class Tupl extends Type {
 export declare function tupl(pattern: any[]): Tupl
 
 /**
- * @deprecated use Tupl instead
- */
+  * @deprecated use Tupl instead
+  */
 export declare type Tuple = Tupl
 /**
- * @deprecated use tupl instead
- */
+  * @deprecated use tupl instead
+  */
 export declare type tuple = typeof tupl
 
 export declare class Enum extends Type {
@@ -376,16 +409,16 @@ export declare class Parser {
   describe(dict: Obj, options: { arrayStyle: number, ruleStyle: number }): Obj
 
   /**
-   * give a real data object, give its type shape
-   * @param data
-   */
+    * give a real data object, give its type shape
+    * @param data
+    */
   guess(data: Obj): ITypes
 
   /**
-   * merge two type shapes
-   * @param exist
-   * @param data
-   */
+    * merge two type shapes
+    * @param exist
+    * @param data
+    */
   merge(exist: Obj, data: Obj): Obj
 
   static defaultTypes: Obj
@@ -468,9 +501,8 @@ export declare class Validator<T extends Model = Model> {
   static readonly anyOf: (validators: Validator[], message: string) => Validator
 }
 
-
-type ModelClass = (new () => Model) & typeof Model
-type MetaClass<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = (new () => Meta<T, I, M, U>) & typeof Meta
+type ModelClass = new (...args: any[]) => Model
+type MetaClass<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = new (options: Attrs<T, I, M, U>) => Meta<T, I, M, U>
 
 export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> = {
   /**
@@ -514,7 +546,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * save another filed data to output data of `toJSON()`
    */
- saveAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
+  saveAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
   /**
    * if without `create` and `save`, asset will used as field read proof
    */
@@ -629,8 +661,8 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
   constructor(options?: Attrs<T, I, M, U>)
   extend<D extends T = T, V extends I = I, O extends M = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>
-  static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>
-  static create<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): MetaClass<T, I, M, U>
+  static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): typeof Meta & MetaClass<T, I, M, U>
+  static create<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): typeof Meta & MetaClass<T, I, M, U>
 }
 
 export declare class AsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
@@ -832,39 +864,6 @@ type View<T = any, I = T> = {
   changed: boolean
 } & Obj
 
-// https://lifesaver.codes/answer/type-manipulations-union-to-tuple-13298
-// https://note.xiexuefeng.cc/post/ts-union-to-tuple/
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
-type IsUnion<T> = [T] extends [UnionToIntersection<T>] ? false : true
-type UnionToOvlds<U> = UnionToIntersection<U extends any ? (f: U) => void : never>
-type PopUnion<U> = UnionToOvlds<U> extends ((a: infer A) => void) ? (A extends boolean ? boolean extends U ? boolean : A : A) : never
-type GetUnionLast<Unoin> = IsUnion<Unoin> extends true ? PopUnion<Unoin> : Unoin
-
-// https://www.tangshuang.net/8487.html
-type GetUnionKeys<Unoin> = Unoin extends any
-  ? {
-      [key in keyof Unoin]: key
-    } extends {
-      [key in keyof Unoin]: infer K
-    }
-    ? K
-    : never
-  : never
-type UnionToInterByKeys<Union, Keys extends string | number | symbol> = {
-  [key in Keys]: GetUnionLast<
-    Union extends any
-      ? {
-          [k in keyof Union]: k extends key ? Union[k] : never
-        } extends {
-          [k in keyof Union]: infer P
-        }
-        ? P
-        : never
-      : never
-  >
-}
-type UnionToInter<Unoin> = UnionToInterByKeys<Unoin, GetUnionKeys<Unoin>>
-
 export declare class Model implements Obj {
   constructor(data?: Obj, parent?: [Model, string | string[]])
 
@@ -926,8 +925,10 @@ export declare class Model implements Obj {
   use<T>(keyPath: string[], getter: (view: View) => T): T
   use<K extends string>(key: K): View<this[K]>
   use<K extends string, T>(key: K, getter: (view: View<this[K]>) => T): T
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N = Meta<T, I, M, U> | MetaClass<T, I, M, U>>(Meta: N): ReflectView<N>
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any, N = Meta<T, I, M, U> | MetaClass<T, I, M, U>>(Meta: N, getter: (view: ReflectView<N>) => P): P
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N extends MetaClass>(Meta: N): any
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any, N extends MetaClass>(Meta: N, getter: (view: any) => P): P
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N extends Meta = Meta<T, I, M, U>>(meta: N): ReflectView<N>
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P extends Meta = any, N = Meta<T, I, M, U>>(meta: N, getter: (view: ReflectView<N>) => P): P
 
   memo<T, U>(
     getter: (this: this) => T,
