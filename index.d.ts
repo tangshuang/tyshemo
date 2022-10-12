@@ -745,7 +745,7 @@ declare function createStateMeta<T = any, I = T, M extends Model = Model, U exte
 export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta }
 
 /**
- * use type from built meta
+ * use field value type from a meta
  * @example
  * ReflectMeta<SomeMeta> extends string
  * ReflectMeta<SomeMeta, 'data'> extends object
@@ -765,6 +765,17 @@ export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
     : key extends 'data' ? U
     : never
   : never
+
+/**
+ * use field view type from a meta
+ * @example
+ * ReflectView<SomeMeta> extends View
+ */
+export declare type ReflectView<M extends Meta | MetaClass> =
+  M extends Meta<infer T, infer I> ? View<T, I>
+  : M extends MetaClass<infer T, infer I> ? View<T, I>
+  : never
+
 
 type View<T = any, I = T> = {
   /**
@@ -911,19 +922,12 @@ export declare class Model implements Obj {
 
   toEdit(next?: Obj): this
 
-  use(keyPath: string | string[]): View
-  use<T>(keyPath: string | string[], getter: (view: View) => T): T
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(Meta: Meta<T, I, M, U> | MetaClass<T, I, M, U>): View<T, I>
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any>(Meta: Meta<T, I, M, U> | MetaClass<T, I, M, U>, getter: (view: View<T, I>) => P): P
-
-  /**
-   * @deprecated use this.use instead
-   */
-  reflect<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(Meta: Meta<T, I, M, U>): View<T, I>
-  /**
-   * @deprecated use this.use instead
-   */
-  reflect<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any>(Meta: Meta<T, I, M, U>, getter: (view: View<T, I>) => P): P
+  use(keyPath: string[]): View
+  use<T>(keyPath: string[], getter: (view: View) => T): T
+  use<K extends string>(key: K): View<this[K]>
+  use<K extends string, T>(key: K, getter: (view: View<this[K]>) => T): T
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N = Meta<T, I, M, U> | MetaClass<T, I, M, U>>(Meta: N): ReflectView<N>
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any, N = Meta<T, I, M, U> | MetaClass<T, I, M, U>>(Meta: N, getter: (view: ReflectView<N>) => P): P
 
   memo<T, U>(
     getter: (this: this) => T,
