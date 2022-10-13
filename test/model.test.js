@@ -498,7 +498,7 @@ describe('Model', () => {
     expect(some.age).toBe(11)
 
     // use method directly
-    const editor2 = some.toEdit()
+    const editor2 = some.Edit()
 
     editor2.name = 'tomy'
     expect(some.name).toBe('tomi')

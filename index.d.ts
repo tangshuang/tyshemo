@@ -804,9 +804,11 @@ export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
  * ReflectView<SomeMeta> extends View
  */
 export declare type ReflectView<M extends Meta | MetaClass> =
-  M extends Meta<infer T, infer I> ? View<T, I>
-  : M extends MetaClass<infer T, infer I> ? View<T, I>
-  : never
+  M extends MetaClass<infer T, infer I> ? View<T, I>
+  : M extends SceneMeta<infer T, infer I> ? View<T, I>
+  : M extends Meta<infer T, infer I> ? View<T, I>
+  : M extends StateMeta<infer T, infer I> ? View<T, I>
+  : View
 
 
 type View<T = any, I = T> = {
@@ -919,12 +921,12 @@ export declare class Model implements Obj {
   off(hook: string, fn: Function): this
   emit(hook: string, ...args: any[]): void
 
-  toEdit(next?: Obj): this
+  Edit(next?: Obj): this
 
   use(keyPath: string[]): View
   use<R>(keyPath: string[], getter: (view: View) => R): R
-  use<K extends string>(key: K): View<this[K]>
-  use<K extends string, R>(key: K, getter: (view: View<this[K]>) => R): R
+  use<K extends keyof this>(key: K): View<this[K]>
+  use<K extends keyof this, R>(key: K, getter: (view: View<this[K]>) => R): R
   use<T = any, I = T>(Meta: MetaClass): View<T, I>
   use<T = any, I = T, R = any>(Meta: MetaClass, getter: (view: View<T, I>) => R): R
   use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N extends Meta = Meta<T, I, M, U>>(meta: N): ReflectView<N>
@@ -949,7 +951,7 @@ export declare class Model implements Obj {
   onChange(key: string): void
   onEdit(): EditorModel
 
-  static get Edit<T>(this: ConstructorOf<T>): ConstructorOf<T> & EditorModel
+  static Edit<T>(this: ConstructorOf<T>): ConstructorOf<T> & EditorModel
 
   static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof Model
 

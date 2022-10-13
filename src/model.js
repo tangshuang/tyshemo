@@ -2092,12 +2092,12 @@ export class Model {
     return Mixin
   }
 
-  static get Edit() {
+  static Edit() {
     const Editor = edit(this)
     return Editor
   }
 
-  toEdit(data = {}) {
+  Edit(data = {}) {
     const $this = this
     const Constructor = getConstructorOf(this)
     const _Editor = edit(Constructor)
