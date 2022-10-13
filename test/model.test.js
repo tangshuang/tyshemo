@@ -461,7 +461,7 @@ describe('Model', () => {
     expect(some.child.name).toBe('lily')
 
     // use static method of Model
-    const editor = new Some.Edit(some)
+    const editor = new (Some.Edit())(some)
 
     editor.name = 'tomi'
     expect(some.name).toBe('tomy')
