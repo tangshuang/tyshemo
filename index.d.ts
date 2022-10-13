@@ -922,13 +922,13 @@ export declare class Model implements Obj {
   toEdit(next?: Obj): this
 
   use(keyPath: string[]): View
-  use<T>(keyPath: string[], getter: (view: View) => T): T
+  use<R>(keyPath: string[], getter: (view: View) => R): R
   use<K extends string>(key: K): View<this[K]>
-  use<K extends string, T>(key: K, getter: (view: View<this[K]>) => T): T
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N extends MetaClass>(Meta: N): any
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P = any, N extends MetaClass>(Meta: N, getter: (view: any) => P): P
+  use<K extends string, R>(key: K, getter: (view: View<this[K]>) => R): R
+  use<T = any, I = T>(Meta: MetaClass): View<T, I>
+  use<T = any, I = T, R = any>(Meta: MetaClass, getter: (view: View<T, I>) => R): R
   use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N extends Meta = Meta<T, I, M, U>>(meta: N): ReflectView<N>
-  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, P extends Meta = any, N = Meta<T, I, M, U>>(meta: N, getter: (view: ReflectView<N>) => P): P
+  use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, R = any, N extends Meta = Meta<T, I, M, U>>(meta: N, getter: (view: ReflectView<N>) => R): R
 
   memo<T, U>(
     getter: (this: this) => T,
