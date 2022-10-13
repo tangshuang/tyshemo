@@ -209,7 +209,6 @@ export class SceneMeta extends Meta {
 
     const sceneCodes = isArray(sceneCode) ? sceneCode : [sceneCode]
     const scenes = this.defineScenes()
-    console.log(sceneCode, scenes)
 
     const use = (sceneCode) => {
       const scene = scenes[sceneCode]
