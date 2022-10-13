@@ -927,6 +927,8 @@ export declare class Model implements Obj {
   use<R>(keyPath: string[], getter: (view: View) => R): R
   use<K extends keyof this>(key: K): View<this[K]>
   use<K extends keyof this, R>(key: K, getter: (view: View<this[K]>) => R): R
+  use(key: string): View
+  use<R>(key: string, getter: (view: View) => R): R
   use<T = any, I = T>(Meta: MetaClass): View<T, I>
   use<T = any, I = T, R = any>(Meta: MetaClass, getter: (view: View<T, I>) => R): R
   use<T = any, I = T, M extends Model = Model, U extends Obj = Obj, N extends Meta = Meta<T, I, M, U>>(meta: N): ReflectView<N>
