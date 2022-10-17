@@ -136,7 +136,28 @@ export class Model {
           return def
         })
 
-        if (needs.length) {
+
+        // switchScene should come before needs check
+        const items = Object.values(defs)
+        let deferer = null
+        items.forEach((meta) => {
+          if (isInstanceOf(meta, AsyncMeta)) {
+            // make async attribute enable to notify back
+            meta._awaitMeta(this, key, meta)
+          }
+          else if (scenes && isInstanceOf(meta, SceneMeta)) {
+            // make async attribute enable to notify back
+            meta._awaitMeta(this, key, meta)
+            // switch to new scene
+            deferer = meta.switchScene(scenes)
+          }
+        })
+
+        // check needs() and deps()
+        const checkNeeds = () => {
+          if (!needs.length) {
+            return
+          }
           for (let i = 0, len = needs.length; i < len; i ++) {
             const need = needs[i]
             let flag = false
@@ -152,6 +173,12 @@ export class Model {
               throw new Error('Dependence is not given, please check dependencies graph.')
             }
           }
+        }
+        if (deferer instanceof Promise) {
+          deferer.then(checkNeeds)
+        }
+        else {
+          checkNeeds()
         }
 
         super(defs)
@@ -178,18 +205,6 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
-    each(this.$schema, (meta, key) => {
-      if (isInstanceOf(meta, AsyncMeta)) {
-        // make async attribute enable to notify back
-        meta._awaitMeta(this, key, meta)
-      }
-      else if (scenes && isInstanceOf(meta, SceneMeta)) {
-        // make async attribute enable to notify back
-        meta._awaitMeta(this, key, meta)
-        // switch to new scene
-        meta.switchScene(scenes)
-      }
-    })
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {

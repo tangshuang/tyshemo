@@ -278,7 +278,7 @@ export class SceneMeta extends Meta {
     })
 
     if (deferers.length) {
-      Promise.all(deferers).then((scenes) => {
+      return Promise.all(deferers).then((scenes) => {
         return update(scenes)
       }).then((attrs) => {
         this[SceneMetaSymbol].codes = sceneCodes
@@ -296,8 +296,6 @@ export class SceneMeta extends Meta {
     else {
       finish()
     }
-
-    return this
   }
   _awaitMeta(model, key) {
     const { notifiers } = this[SceneMetaSymbol]
