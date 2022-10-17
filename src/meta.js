@@ -287,15 +287,14 @@ export class SceneMeta extends Meta {
         finish()
       })
     }
-    else if (patches.length) {
+
+    if (patches.length) {
       const attrs = update(patches)
       this[SceneMetaSymbol].codes = sceneCodes
       notifyAttrs(notifiers, attrs, 'scene meta')
-      finish()
     }
-    else {
-      finish()
-    }
+
+    finish()
   }
   _awaitMeta(model, key) {
     const { notifiers } = this[SceneMetaSymbol]

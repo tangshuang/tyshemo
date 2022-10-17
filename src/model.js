@@ -84,32 +84,17 @@ export class Model {
      */
     class Schema extends _Schema {
       constructor(metas) {
-        const needs = []
-        const gives = []
-
         const defs = map(metas, (def) => {
           if (!def) {
             return
           }
 
           if (isInstanceOf(def, Meta) || isInheritedOf(def, Meta)) {
-            if (isFunction(def.needs)) {
-              needs.push(...def.needs())
-            }
-            gives.push(def)
-            // if it is Model, make make visible in gives
-            if (isInstanceOf(def, FactoryMeta)) {
-              const entries = def.$entries
-              gives.push(...[].concat(entries))
-            }
             return def
           }
 
           if (isObject(def) && inObject('default', def)) {
             const meta = new Meta(def)
-            if (isFunction(meta.needs)) {
-              needs.push(...meta.needs())
-            }
             return meta
           }
 
@@ -119,7 +104,6 @@ export class Model {
            * }
            */
           if (isInheritedOf(def, Model)) {
-            gives.push(def)
             return Factory.createMeta(def)
           }
 
@@ -129,57 +113,11 @@ export class Model {
            * }
            */
           if (isArray(def) && !def.some(def => !isInheritedOf(def, Model))) {
-            gives.push(...def)
             return Factory.createMeta(def)
           }
 
           return def
         })
-
-
-        // switchScene should come before needs check
-        const items = Object.values(defs)
-        let deferer = null
-        items.forEach((meta) => {
-          if (isInstanceOf(meta, AsyncMeta)) {
-            // make async attribute enable to notify back
-            meta._awaitMeta(this, key, meta)
-          }
-          else if (scenes && isInstanceOf(meta, SceneMeta)) {
-            // make async attribute enable to notify back
-            meta._awaitMeta(this, key, meta)
-            // switch to new scene
-            deferer = meta.switchScene(scenes)
-          }
-        })
-
-        // check needs() and deps()
-        const checkNeeds = () => {
-          if (!needs.length) {
-            return
-          }
-          for (let i = 0, len = needs.length; i < len; i ++) {
-            const need = needs[i]
-            let flag = false
-            for (let j = 0, leng = gives.length; j < leng; j ++) {
-              const give = gives[j]
-              if (isMatchMeta(give, need)) {
-                flag = true
-                break
-              }
-            }
-            if (!flag) {
-              console.error(need, `is needed, but not given in Model`, $this)
-              throw new Error('Dependence is not given, please check dependencies graph.')
-            }
-          }
-        }
-        if (deferer instanceof Promise) {
-          deferer.then(checkNeeds)
-        }
-        else {
-          checkNeeds()
-        }
 
         super(defs)
       }
@@ -205,6 +143,62 @@ export class Model {
       schema = new Schema(schema)
     }
     define(this, '$schema', schema)
+
+    const needs = []
+    const gives = []
+    let deferer = null
+    // switchScene should come before needs check
+    const metaKeys = Object.keys(this.$schema)
+    metaKeys.forEach((metaKey) => {
+      const meta = this.$schema[metaKey]
+      if (isFunction(meta.needs)) {
+        needs.push(...meta.needs())
+      }
+      gives.push(meta)
+      // if it is Model, make make visible in gives
+      if (isInstanceOf(meta, FactoryMeta)) {
+        const entries = meta.$entries
+        gives.push(...[].concat(entries))
+      }
+
+      if (isInstanceOf(meta, AsyncMeta)) {
+        // make async attribute enable to notify back
+        meta._awaitMeta($this, metaKey, meta)
+      }
+      else if (scenes && isInstanceOf(meta, SceneMeta)) {
+        // make async attribute enable to notify back
+        meta._awaitMeta($this, metaKey, meta)
+        // switch to new scene
+        deferer = meta.switchScene(scenes)
+      }
+    })
+    // check needs() and deps()
+    const checkNeeds = () => {
+      if (!needs.length) {
+        return
+      }
+      for (let i = 0, len = needs.length; i < len; i ++) {
+        const need = needs[i]
+        let flag = false
+        for (let j = 0, leng = gives.length; j < leng; j ++) {
+          const give = gives[j]
+          if (isMatchMeta(give, need)) {
+            flag = true
+            break
+          }
+        }
+        if (!flag) {
+          console.error(need, `is needed, but not given in Model`, $this)
+          throw new Error('Dependence is not given, please check dependencies graph.')
+        }
+      }
+    }
+    if (deferer instanceof Promise) {
+      deferer.then(checkNeeds)
+    }
+    else {
+      checkNeeds()
+    }
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {
