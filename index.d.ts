@@ -694,7 +694,7 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
 }
 
 export declare class StateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
-  constructor(options?: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T })
+  constructor(options?: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T })
 }
 
 /**
@@ -772,7 +772,7 @@ declare function createSceneMeta<T = any, I = T, M extends Model = Model, U exte
  * create a state meta, whose disabled is force set to be true
  * @param attrs
  */
-declare function createStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }): Meta<T, I, M, U>
+declare function createStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }): Meta<T, I, M, U>
 
 export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta }
 

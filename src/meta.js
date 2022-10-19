@@ -348,12 +348,12 @@ export class SceneMeta extends Meta {
 export class StateMeta extends Meta {
   __init(descriptors, options) {
     const { value, ...others } = options
-    delete others.available
+    delete others.disabled
     delete others.state
     delete others.default
 
-    // force make available true, can not be changed
-    descriptors.available = { get: () => true, enumerable: true, configurable: false }
+    // force make disabled true, can not be changed
+    descriptors.disabled = { get: () => true, enumerable: true, configurable: false }
     delete descriptors.state
     descriptors.default = isUndefined(value) ? descriptors.value : { value }
 
