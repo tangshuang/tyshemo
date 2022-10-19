@@ -1007,6 +1007,10 @@ interface FactoryHooks {
   adapt?(entries?: ModelClass[], data?: any): boolean
   transport?(child?: Model, parent?: Model, key?: string): void
   linkage?(child?: Model, parent?: Model, key?: string): void
+  override?(child?: Model, parent?: Model, key?: string): Array<{
+    meta: Meta | MetaClass,
+    attrs: Partial<Attrs>,
+  }>
   default?(fn?: Function): Function
   type?(type?: any): any
   validators?(validators?: Validator[]): Validator[]

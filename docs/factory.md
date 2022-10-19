@@ -32,6 +32,7 @@ You can override the methods for meta generators by hooks functions, they are:
 - instance(childModel, parentModel) // do when a new child model initialize
 - adapt(Entries, data) // determine the given data whether adapt to the give Model, if false, the data will be dropped
 - linkage(childModel, parentModel) // do each time when parent model changes, you can assign parent's properties value to child inside, so that build up the linkage between parent and child.（never use condition sentence inside linkage function）
+- override(childModel, parentModel) // override metas' attrs by given an array with `meta` and `attrs` properties
 - transport(childModel, parentModel) // do only once when child model initialized, you can assign parent's properties value to child inside,so that the child model can inherit some properties value from parent
 - default(fn)
 - type(type)

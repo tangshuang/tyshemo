@@ -2,6 +2,7 @@ import { Model } from '../src/model.js'
 import { meta, state } from '../src/decorators.js'
 import { Factory } from '../src/factory.js'
 import { isInstanceOf } from 'ts-fns'
+import { Meta } from '../src/meta'
 
 describe('Factory', () => {
   test('linkage', () => {
@@ -128,5 +129,48 @@ describe('Factory', () => {
     c.c.push({ b: '2' })
     expect(c.c[1]?.b).toBe('2')
     expect(isInstanceOf(c.c[1], B)).toBe(true)
+  })
+
+  test('override', () => {
+    class SomeMeta extends Meta {
+      static default = 1
+      static required(v) {
+        return v < 5
+      }
+    }
+
+    class SomeModel extends Model {
+      static some = SomeMeta
+    }
+
+    const SomesMeta = Factory.createMeta([SomeModel], {
+      default: [{}],
+    }, {
+      override() {
+        return [
+          {
+            meta: SomeMeta,
+            attrs: {
+              required(v) {
+                return v < 10
+              },
+            },
+          },
+        ]
+      },
+    })
+
+    class TopModel extends Model {
+      static somes = SomesMeta
+    }
+
+    const top = new TopModel()
+    expect(top.somes[0].$views.some.required).toBe(true)
+
+    top.somes[0].some = 8
+    expect(top.somes[0].$views.some.required).toBe(true)
+
+    top.somes[0].some = 11
+    expect(top.somes[0].$views.some.required).toBe(false)
   })
 })

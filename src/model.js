@@ -84,12 +84,20 @@ export class Model {
      */
     class Schema extends _Schema {
       constructor(metas) {
+        const overrideMetas = $this._takeOverrideMetas()
+
         const defs = map(metas, (def) => {
           if (!def) {
             return
           }
 
           if (isInstanceOf(def, Meta) || isInheritedOf(def, Meta)) {
+            if (overrideMetas.length) {
+              const item = overrideMetas.find(item => isMatchMeta(def, item.meta))
+              if (item) {
+                return def.extend(item.attrs)
+              }
+            }
             return def
           }
 
@@ -404,6 +412,10 @@ export class Model {
      * }
      */
     define(this, '$ready', Promise.resolve(this.onInit()))
+  }
+
+  _takeOverrideMetas() {
+    return []
   }
 
   _takeSceneCodes() {

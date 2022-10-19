@@ -140,6 +140,11 @@ export class Factory {
             throw new Error('[TySheMo]: Factory.entry Model not found!')
           }
           const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
+          if (entity.override) {
+            ChoosedModel.prototype._takeOverrideMetas = function() {
+              return entity.override(this, parent)
+            }
+          }
           const model = this.adapt(Entries, next) ? next.setParent([parent, key])
             : isObject(next) ? new ChoosedModel(next, { parent, key })
               : new ChoosedModel({}, { parent, key })
@@ -187,6 +192,11 @@ export class Factory {
           throw new Error('[TySheMo]: Factory.entry Model not found!')
         }
         const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
+        if (entity.override) {
+          ChoosedModel.prototype._takeOverrideMetas = function() {
+            return entity.override(this, parent)
+          }
+        }
         const model = entity.adapt(Entries, value) ? value.setParent([parent, key])
           : isObject(value) ? new ChoosedModel(value, { key, parent })
             : new ChoosedModel({}, { key, parent })
@@ -247,6 +257,10 @@ export class Factory {
   adapt(Entries, data) {
     return isArray(Entries) ? Entries.some(Entry => isInstanceOf(data, Entry)) : isInstanceOf(data, Entries)
   }
+
+  // transport
+  // linkage
+  // override
 
   default(fn) {
     return fn
