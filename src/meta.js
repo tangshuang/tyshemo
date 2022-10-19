@@ -353,7 +353,7 @@ export class StateMeta extends Meta {
     delete others.default
 
     // force make disabled true, can not be changed
-    descriptors.disabled = { get: () => true, enumerable: true, configurable: false }
+    descriptors.disabled = { value: true, writable: false, enumerable: true, configurable: false }
     delete descriptors.state
     descriptors.default = isUndefined(value) ? descriptors.value : { value }
 

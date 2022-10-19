@@ -259,6 +259,8 @@ describe('Meta', () => {
 
     const some = new SomeModel()
     expect(some.some).toBe(1)
+    expect(some.use(SomeState, view => view.disabled)).toBe(true)
+
     some.some = 2
     expect(some.some).toBe(2)
 
