@@ -1,4 +1,4 @@
-import { Meta, StateMeta } from './meta.js'
+import { Meta, StateMeta, SceneStateMeta } from './meta.js'
 import { isInheritedOf, isInstanceOf, isObject, isArray } from 'ts-fns'
 import { Model, State } from './model.js'
 import { Factory } from './factory.js'
@@ -101,6 +101,9 @@ export function meta(entry, options, methods) {
 
 export function state(options) {
   if (options && (isInstanceOf(options, StateMeta) || isInheritedOf(options, StateMeta))) {
+    return meta(options)
+  }
+  if (options && (isInstanceOf(options, SceneStateMeta) || isInheritedOf(options, SceneStateMeta))) {
     return meta(options)
   }
 

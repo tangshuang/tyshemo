@@ -188,7 +188,6 @@ const SceneCodesSymbol = Symbol()
 export class SceneMeta extends Meta {
   __init(descriptors, attrs) {
     super.__init(descriptors, attrs)
-
     this[SceneMetaSymbol] = {
       codes: [],
       default: { ...this },
@@ -197,6 +196,9 @@ export class SceneMeta extends Meta {
       disabled: false,
     }
     this._initSceneCode()
+  }
+  _ensureAttrs(attrs) {
+    return ensureAttrs(attrs)
   }
   defineScenes() {
     return {}
@@ -243,9 +245,9 @@ export class SceneMeta extends Meta {
       clear()
       const attrs = {}
       scenes.forEach((scene) => {
-        Object.assign(attrs, ensureAttrs(scene))
+        Object.assign(attrs, this._ensureAttrs(scene))
       })
-      const next = ensureAttrs({
+      const next = this._ensureAttrs({
         ...defaultAttrs,
         ...attrs,
         ...passed,
@@ -360,9 +362,6 @@ export class StateMeta extends Meta {
 
     super.__init(descriptors, others)
   }
-  static [Symbol.hasInstance](target) {
-    return [this, SceneStateMeta].some((Meta) => target instanceof Meta)
-  }
 }
 
 export class SceneStateMeta extends SceneMeta {
@@ -378,5 +377,18 @@ export class SceneStateMeta extends SceneMeta {
     descriptors.default = isUndefined(value) ? descriptors.value : { value }
 
     super.__init(descriptors, others)
+  }
+  _ensureAttrs(attrs) {
+    const { value, ...others } = attrs
+
+    delete others.disabled
+    delete others.state
+    delete others.default
+
+    if (!isUndefined(value)) {
+      others.default = value
+    }
+
+    return others
   }
 }
