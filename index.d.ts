@@ -694,7 +694,11 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
 }
 
 export declare class StateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends Meta<T, I, M, U> {
-  constructor(options?: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T })
+  constructor(attrs?: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T })
+}
+
+export declare class SceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> extends SceneMeta<T, I, M, U> {
+  constructor(attrs?: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T })
 }
 
 /**
@@ -774,7 +778,16 @@ declare function createSceneMeta<T = any, I = T, M extends Model = Model, U exte
  */
 declare function createStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }): Meta<T, I, M, U>
 
-export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta }
+/**
+ * create a state meta which is in scene mode
+ * @param attrs
+ * @param mapping
+ */
+declare function createSceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }, mapping: {
+  [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
+}): SceneMeta<T, I, M, U>
+
+export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta, createSceneStateMeta }
 
 /**
  * use field value type from a meta

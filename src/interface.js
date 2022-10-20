@@ -2,7 +2,7 @@ import {
   isInheritedOf,
   isArray,
 } from 'ts-fns'
-import { Meta, AsyncMeta, SceneMeta, StateMeta } from './meta.js'
+import { Meta, AsyncMeta, SceneMeta, StateMeta, SceneStateMeta } from './meta.js'
 import { Model } from './model.js'
 import { Factory } from './factory.js'
 
@@ -95,9 +95,19 @@ export function createSceneMeta(defaultAttrs, sceneMapping) {
     }
   }
   Object.assign(ThisSceneMeta, defaultAttrs)
-  return ThisSceneMeta
+  return new ThisSceneMeta()
 }
 
-export function createStateMeta(options) {
-  return new StateMeta(options)
+export function createStateMeta(attrs) {
+  return new StateMeta(attrs)
+}
+
+export function createSceneStateMeta(defaultAttrs, sceneMapping) {
+  class ThisSceneStateMeta extends SceneStateMeta {
+    defineScenes() {
+      return sceneMapping
+    }
+  }
+  Object.assign(ThisSceneStateMeta, defaultAttrs)
+  return new ThisSceneStateMeta()
 }

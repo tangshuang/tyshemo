@@ -186,8 +186,9 @@ export class AsyncMeta extends Meta {
 const SceneMetaSymbol = Symbol()
 const SceneCodesSymbol = Symbol()
 export class SceneMeta extends Meta {
-  constructor(attrs = {}) {
-    super(attrs)
+  __init(descriptors, attrs) {
+    super.__init(descriptors, attrs)
+
     this[SceneMetaSymbol] = {
       codes: [],
       default: { ...this },
@@ -346,8 +347,27 @@ export class SceneMeta extends Meta {
  * should must pass `value`
  */
 export class StateMeta extends Meta {
-  __init(descriptors, options) {
-    const { value, ...others } = options
+  __init(descriptors, attrs) {
+    const { value, ...others } = attrs
+    delete others.disabled
+    delete others.state
+    delete others.default
+
+    // force make disabled true, can not be changed
+    descriptors.disabled = { value: true, writable: false, enumerable: true, configurable: false }
+    delete descriptors.state
+    descriptors.default = isUndefined(value) ? descriptors.value : { value }
+
+    super.__init(descriptors, others)
+  }
+  static [Symbol.hasInstance](target) {
+    return [this, SceneStateMeta].some((Meta) => target instanceof Meta)
+  }
+}
+
+export class SceneStateMeta extends SceneMeta {
+  __init(descriptors, attrs) {
+    const { value, ...others } = attrs
     delete others.disabled
     delete others.state
     delete others.default

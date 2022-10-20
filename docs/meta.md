@@ -636,3 +636,29 @@ const myState = createStateMeta({
   setter: (str) => +str,
 })
 ```
+
+### createSceneStateMeta
+
+```js
+import { SceneStateMeta, createSceneStateMeta } from 'tyshemo'
+
+// define a class
+class SomeSeneState extends SceneStateMeta {
+  static value = 0
+  defineScenes() {
+    return {
+      Scene1: Scene1Attributes,
+      Scene2: async () => Scene2Attributes,
+    }
+  }
+}
+
+// create an instance
+const SomeSceneState = createSceneStateMeta(
+  { value: 0 },
+  {
+    Scene1: Scene1Attributes,
+    Scene2: async () => Scene2Attributes,
+  },
+)
+```
