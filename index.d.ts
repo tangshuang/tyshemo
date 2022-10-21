@@ -934,7 +934,7 @@ export declare class Model implements Obj {
   off(hook: string, fn: Function): this
   emit(hook: string, ...args: any[]): void
 
-  Edit(next?: Obj): this
+  Edit(next?: Obj): this & EditorModel
 
   use(keyPath: string[]): View
   use<R>(keyPath: string[], getter: (view: View) => R): R
@@ -966,7 +966,7 @@ export declare class Model implements Obj {
   onChange(key: string): void
   onEdit(): EditorModel
 
-  static Edit<T>(this: ConstructorOf<T>): ConstructorOf<T> & EditorModel
+  static Edit<T>(this: ConstructorOf<T>): ConstructorOf<T & EditorModel> & typeof Model
 
   static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof Model
 
