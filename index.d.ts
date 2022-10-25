@@ -795,13 +795,25 @@ export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createSt
  * ReflectMeta<SomeMeta, 'default'> extends string, from attrs
  */
 export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
-  A extends Meta<infer T, infer I, infer M, infer U> ?
+  A extends SceneMeta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends StateMeta<infer T, infer I, infer M, infer U> ?
     key extends 'value' ? I
     : key extends 'originalValue' ? T
     : key extends 'model' ? M
     : key extends 'data' ? U
     : never
   : A extends MetaClass<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends Meta<infer T, infer I, infer M, infer U> ?
     key extends 'value' ? I
     : key extends 'originalValue' ? T
     : key extends 'model' ? M
