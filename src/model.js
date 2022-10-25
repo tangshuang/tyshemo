@@ -1078,13 +1078,26 @@ export class Model {
    * @param {*} key
    * @returns
    */
-  reset(key, value = this.$schema.getDefault(key, this)) {
+  reset(key, value) {
+    if (!key) {
+      return this
+    }
+
+    if (isInstanceOf(key, Meta) || isInheritedOf(key, Meta)) {
+      key = this.use(key, view => view.key)
+    }
+
+    if (isUndefined(value)) {
+      value = this.$schema.getDefault(key, this)
+    }
+
     this.collect(() => {
       this.set(key, value, true)
       this.use(key, (view) => {
         view.changed = false
       })
     }, true)
+
     this.emit('reset')
     return this
   }

@@ -904,7 +904,7 @@ export declare class Model implements Obj {
   get(keyPath: string | string[]): any
   set(keyPath: string | string[], next: any, force?: boolean): this
   update(data: Obj): this
-  reset(key: string): this
+  reset(key: string | Meta | MetaClass): this
   patch(data: Obj): this
   define(key: string, value: Function | any): any
   lock(): void
