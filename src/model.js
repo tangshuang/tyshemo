@@ -2249,7 +2249,7 @@ export class Model {
   static Scene(sceneCode) {
     const Constructor = this
     class SceneModel extends Constructor {
-      static [SceneCodesSymbol] = sceneCode
+      static [SceneCodesSymbol] = isArray(sceneCode) ? sceneCode : [sceneCode]
     }
     return SceneModel
   }

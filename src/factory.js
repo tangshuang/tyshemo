@@ -6,6 +6,7 @@ import {
   define,
   flat,
   each,
+  decideby,
 } from 'ts-fns'
 import { Meta } from './meta.js'
 import { Model } from './model.js'
@@ -69,11 +70,11 @@ export class Factory {
 
       const register = () => {
         const deps = parent.collect(() => {
-          entity.linkage(child, parent)
+          entity.linkage(child, parent, key)
         })
 
         const fn = () => {
-          entity.linkage(child, parent)
+          entity.linkage(child, parent, key)
 
           // -------
           // check whether the child is in parent model, if not, remove watchers
@@ -119,9 +120,9 @@ export class Factory {
     }
 
     if (isList) {
-      const filter = (items) => {
+      const filter = (items, key, parent) => {
         const nexts = items.filter((item) => {
-          if (this.adapt(Entries, item)) {
+          if (this.adapt(Entries, item, key, parent)) {
             return true
           }
           if (isObject(item)) {
@@ -133,25 +134,30 @@ export class Factory {
       }
       const gen = (items, key, parent) => {
         const scenes = parent.$$scenes
-        const nexts = filter(items)
+        const nexts = filter(items, key, parent)
         const values = nexts.map((next) => {
-          const FoundModel = entity.entry(Entries, next, key, parent)
+          const FoundModel = entity.entry(Entries, next, parent, key)
           if (!FoundModel) {
             throw new Error('[TySheMo]: Factory.entry Model not found!')
           }
           const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
           if (entity.override) {
             ChoosedModel.prototype._takeOverrideMetas = function() {
-              return entity.override(this, parent)
+              return entity.override(this, parent, scenes)
             }
           }
-          const model = this.adapt(Entries, next) ? next.setParent([parent, key])
-            : isObject(next) ? new ChoosedModel(next, { parent, key })
-              : new ChoosedModel({}, { parent, key })
-          if (!model) {
+          const child = decideby(() => {
+            if (this.adapt(Entries, next, parent, key)) {
+              return next.setParent([parent, key])
+            }
+            if (isObject(next)) {
+              return entity.instance(ChoosedModel, next, { parent, key, scenes })
+            }
+            return entity.instance(ChoosedModel, {}, { parent, key, scenes })
+          })
+          if (!child) {
             return
           }
-          const child = entity.instance(model, parent)
           setupLinkage(child, parent, key)
           return child
         })
@@ -184,23 +190,27 @@ export class Factory {
       this.meta = new FactoryMeta(attributes)
     }
     else {
-      const Entry = entity.entry(Entries)
       const gen = function(value, key, parent) {
         const scenes = parent.$$scenes
-        const FoundModel = entity.entry(Entries, value, key, parent)
+        const FoundModel = entity.entry(Entries, value, parent, key)
         if (!FoundModel) {
           throw new Error('[TySheMo]: Factory.entry Model not found!')
         }
         const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
         if (entity.override) {
           ChoosedModel.prototype._takeOverrideMetas = function() {
-            return entity.override(this, parent)
+            return entity.override(this, parent, scenes)
           }
         }
-        const model = entity.adapt(Entries, value) ? value.setParent([parent, key])
-          : isObject(value) ? new ChoosedModel(value, { key, parent })
-            : new ChoosedModel({}, { key, parent })
-        const child = entity.instance(model, parent)
+        const child = decideby(() => {
+          if (entity.adapt(Entries, value, key, parent)) {
+            return value.setParent([parent, key])
+          }
+          if (isObject(value)) {
+            return entity.instance(ChoosedModel, value, { key, parent, scenes })
+          }
+          return entity.instance(ChoosedModel, {}, { key, parent, scenes })
+        })
         setupLinkage(child, parent, key)
         return child
       }
@@ -210,7 +220,7 @@ export class Factory {
           const value = isFunction(_default) ? _default.call(this, key) : _default
           return gen(value, key, this)
         }),
-        type: entity.type(Entry),
+        type: entity.type(Entries),
         validators: entity.validators(_validators),
         create: entity.create(function(value, key, json) {
           const coming = _create ? _create.call(this, value, key, json) : value
@@ -237,7 +247,7 @@ export class Factory {
    * @param {*} parent
    * @returns
    */
-  entry(Entries, _data, _key, _parent) {
+  entry(Entries) {
     return isArray(Entries) ? Entries[0] : Entries
   }
   /**
@@ -245,8 +255,8 @@ export class Factory {
    * @param {*} model
    * @returns
    */
-  instance(model) {
-    return model
+  instance(ChoosedModel, data, options) {
+    return new ChoosedModel(data, options)
   }
   /**
    * detect whether a data is adapt to Entries
@@ -322,8 +332,8 @@ export class Factory {
     }
     return this.createMeta(isList ? [SharedModel] : SharedModel, attrs, {
       ...hooks,
-      entry(_, data, key, parent) {
-        return select(items, data, key, parent)
+      entry(_, data, parent, key) {
+        return select(items, data, parent, key)
       },
     })
   }

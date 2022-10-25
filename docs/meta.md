@@ -497,7 +497,7 @@ class MySceneMeta extends SceneMeta {
 
 class AnyModel extends Model {
   // MySceneMeta.Scene.Scene2 -> Meta which defined with `Scene2`
-  static some = MySceneMeta.Scene.Scene2
+  static some = MySceneMeta.Scene('Scene2')
 }
 ```
 
