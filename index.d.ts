@@ -759,7 +759,7 @@ declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta[]) => 
  * @param attrs
  * @param asyncGetter
  */
-declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Partial<Attrs<T, I, M, U>>>): Meta<T, I, M, U>
+declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Partial<Attrs<T, I, M, U>>>): AsyncMeta<T, I, M, U>
 
 /**
  * create a scene meta, which can be switch to certain scene by Model#Scene(sceneCode)
@@ -768,7 +768,7 @@ declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U exte
  */
 declare function createSceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, mapping: {
   [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
-}): Meta<T, I, M, U>
+}): SceneMeta<T, I, M, U>
 
 /**
  * create a state meta, whose disabled is force set to be true
@@ -783,7 +783,7 @@ declare function createStateMeta<T = any, I = T, M extends Model = Model, U exte
  */
 declare function createSceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }, mapping: {
   [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
-}): Meta<T, I, M, U>
+}): SceneMeta<T, I, M, U>
 
 export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta, createSceneStateMeta }
 
@@ -795,13 +795,31 @@ export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createSt
  * ReflectMeta<SomeMeta, 'default'> extends string, from attrs
  */
 export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
-  A extends MetaClass<infer T, infer I, infer M, infer U> ?
+  A extends SceneStateMeta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends SceneMeta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends AsyncMeta<infer T, infer I, infer M, infer U> ?
     key extends 'value' ? I
     : key extends 'originalValue' ? T
     : key extends 'model' ? M
     : key extends 'data' ? U
     : never
   : A extends Meta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends MetaClass<infer T, infer I, infer M, infer U> ?
     key extends 'value' ? I
     : key extends 'originalValue' ? T
     : key extends 'model' ? M
@@ -815,8 +833,11 @@ export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
  * ReflectView<SomeMeta> extends View
  */
 export declare type ReflectView<M extends Meta | MetaClass> =
-  M extends MetaClass<infer T, infer I> ? View<T, I>
+  M extends SceneMeta<infer T, infer I> ? View<T, I>
+  : M extends SceneMeta<infer T, infer I> ? View<T, I>
+  : M extends AsyncMeta<infer T, infer I> ? View<T, I>
   : M extends Meta<infer T, infer I> ? View<T, I>
+  : M extends MetaClass<infer T, infer I> ? View<T, I>
   : View
 
 type View<T = any, I = T> = {
