@@ -644,7 +644,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
       /**
        * when target field changed, this `action` will be invoked
        */
-      action: (this: M) => void
+      action: (this: M, e: { value: any } & Obj, keyOfChangedField: string) => void
     }>
   /**
    * invoked errors occur when field change

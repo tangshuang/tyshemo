@@ -882,7 +882,7 @@ export class Model {
               const { meta, key = meta, action } = item
               this.use(key, (view) => {
                 if (view.key === root) {
-                  action.call(this)
+                  action.call(this, e, root)
                 }
               })
             })
