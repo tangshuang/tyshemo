@@ -160,7 +160,7 @@ export class Model {
     metaKeys.forEach((metaKey) => {
       const meta = this.$schema[metaKey]
       if (isFunction(meta.needs)) {
-        needs.push(...meta.needs())
+        needs.push(...meta.needs.call(this, metaKey))
       }
       gives.push(meta)
       // if it is Model, make make visible in gives
@@ -731,7 +731,7 @@ export class Model {
         },
         state: {
           get: () => {
-            const state = meta.state ? meta.state() : {}
+            const state = meta.state ? meta.state.call(this, key) : {}
             const keys = Object.keys(state)
             const proxy = new Proxy(state, {
               get: (_, key) => inArray(key, keys) ? this.get(key) : undefined,
@@ -862,8 +862,8 @@ export class Model {
       }
 
       // response for def.watch attribute
-      if (def.watch) {
-        def.watch.call(this, e)
+      if (isFunction(def.watch)) {
+        def.watch.call(this, e, root)
       }
 
       const fields = Object.keys(this.$schema)
@@ -876,21 +876,21 @@ export class Model {
         const { follow, needs, deps, state } = this.$schema[field]
 
         if (isFunction(follow)) {
-          follow.call(this, root, e)
-        }
-        else if (isArray(follow)) {
-          follow.forEach((item) => {
-            const { meta, key = meta, action } = item
-            this.use(key, (view) => {
-              if (view.key === root) {
-                action.call(this, e)
-              }
+          const items = follow.call(this, e, field, root)
+          if (isArray(items)) {
+            items.forEach((item) => {
+              const { meta, key = meta, action } = item
+              this.use(key, (view) => {
+                if (view.key === root) {
+                  action.call(this)
+                }
+              })
             })
-          })
+          }
         }
 
         if (needs) {
-          const needMetas = needs()
+          const needMetas = needs.call(this, field)
           if (needMetas.some(item => isMatchMeta(meta, item))) {
             this.$store.forceDispatch(`!${field}`, `needs ${root}`)
             // after dependencies changed, errors should be recompute
@@ -900,7 +900,7 @@ export class Model {
         }
 
         if (deps) {
-          const depMap = deps()
+          const depMap = deps.call(this, field)
           if (depMap[root]) {
             this.$store.forceDispatch(`!${field}`, `depends on ${root}`)
             // after dependencies changed, errors should be recompute
@@ -910,7 +910,7 @@ export class Model {
         }
 
         if (state) {
-          const stateObj = state()
+          const stateObj = state.call(this, field)
           const stateKeys = Object.keys(stateObj)
           if (stateKeys.includes(root)) {
             this.$store.forceDispatch(`!${field}`, `by state ${root}`)
@@ -989,12 +989,12 @@ export class Model {
       }, true)
     }
 
-    each(this.$schema, (meta) => {
+    each(this.$schema, (meta, key) => {
       if (!meta.state) {
         return
       }
 
-      const metaState = meta.state()
+      const metaState = meta.state.call(this, key)
       if (metaState) {
         combine(metaState)
       }
@@ -1010,12 +1010,12 @@ export class Model {
     const basicState = this.$$state
     const metasState = {}
 
-    each(this.$schema, (meta) => {
+    each(this.$schema, (meta, key) => {
       if (!meta.state) {
         return
       }
 
-      const metaState = meta.state()
+      const metaState = meta.state.call(this, key)
       if (metaState) {
         Object.assign(metasState, metaState)
       }

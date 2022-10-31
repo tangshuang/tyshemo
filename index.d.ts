@@ -609,28 +609,29 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * provide state
    */
-  state?(): Obj
+  state?(this: M, key: string): Obj
   /**
    * provide deps
    */
-  deps?(): { [key: string]: Meta | MetaClass }
+  deps?(this: M, key: string): { [key: string]: Meta | MetaClass }
   /**
    * provide information about deps, it means this field should must work with this metas
    */
-  needs?(): Array<Meta | MetaClass | ModelClass>
+  needs?(this: M, key: string): Array<Meta | MetaClass | ModelClass>
   /**
    * invoked when Model initialized
    */
-  init?(this: M): void
+  init?(this: M, key: string): void
   /**
    * invoked when field value changed
    */
-  watch?(this: M, e: { value: T } & Obj): void
+  watch?(this: M, e: { value: T } & Obj, key: string): void
   /**
    * when **other** fields changed, follow function will be triggered,
    * current field changing will NOT be triggered (use watch instead)
    */
-  follow?:
+  follow?(this: M, e: Obj, key: string, keyOfChangedField: string):
+    | void
     | Array<{
       /**
        * the target to follow
@@ -641,21 +642,14 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
        */
       meta?: Meta
       /**
-       * @param e changed information
+       * when target field changed, this `action` will be invoked
        */
-      action: (this: M, e: any) => void
+      action: (this: M) => void
     }>
-    | (
-      /**
-       * @param key the target changed field's key
-       * @param e changed information
-       */
-      (this: M, key: string, e: any) => void
-    )
   /**
    * invoked errors occur when field change
    */
-  catch?(this: M, error: Error): void
+  catch?(this: M, error: Error, key: string): void
 } & Obj & ThisType<M>
 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
