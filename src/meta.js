@@ -100,6 +100,9 @@ export class Meta {
 
 const AsyncMetaSymbol = Symbol()
 const ensureAttrs = (attrs) => {
+  if (!attrs || typeof attrs !== 'object') {
+    return {}
+  }
   return filter(attrs, (value) => {
     if (isUndefined(value)) {
       return false
