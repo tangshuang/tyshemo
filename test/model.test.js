@@ -1276,8 +1276,8 @@ describe('Model', () => {
     }
     class Height extends Meta {
       default = 0
-      follow(key) {
-        changed.push(key)
+      follow(e, key, keyOfChagned) {
+        changed.push(keyOfChagned)
       }
     }
 
