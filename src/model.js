@@ -31,29 +31,6 @@ import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 
-const isMatchMeta = (give, need) => {
-  if (give === need) {
-    return true
-  }
-
-  if (isInheritedOf(need, Meta) && (isInstanceOf(give, need) || isInheritedOf(give, need))) {
-    return true
-  }
-
-  // meta.extend
-  const walk = (meta) => {
-    const from = Object.getPrototypeOf(meta)
-    if (!from) {
-      return false
-    }
-    if (from === need) {
-      return true
-    }
-    return walk(from)
-  }
-  return walk(give)
-}
-
 export class State {
   constructor(options) {
     Object.assign(this, options)
@@ -205,7 +182,7 @@ export class Model {
       deferer.then(checkNeeds)
     }
     else {
-      checkNeeds()
+      Promise.resolve().then(checkNeeds)
     }
 
     // use passed parent
@@ -850,6 +827,7 @@ export class Model {
       const { key, compute } = e
       // root: changed field key
       const root = key[0]
+      // changed meta
       const def = this.$schema[root]
 
       if (!def) {
@@ -917,6 +895,51 @@ export class Model {
           }
         }
       })
+
+      /**
+       * factors need to traverse to deep subm models
+       */
+      const traverseToImpact = (model) => {
+        const $this = this
+
+        function walk(model, key) {
+          const subs = model[key]
+          if (isArray(subs)) {
+            subs.forEach(impact)
+          }
+          else {
+            impact(subs)
+          }
+        }
+
+        function impact(sub) {
+          if (!isInstanceOf(sub, Model)) {
+            return
+          }
+          const schema = sub.$schema
+          const keys = Object.keys(schema)
+          keys.forEach((key) => {
+            const meta = schema[key]
+            if (isInstanceOf(meta, FactoryMeta)) {
+              walk(sub, key)
+            }
+            else {
+              const { factors } = meta
+              if (!factors) {
+                return
+              }
+              const items = factors.call($this, key)
+              const matched = items.find(item => isMatchMeta(def, item))
+              if (matched) {
+                sub.$store.forceDispatch(`!${key}`, 'by factors', matched)
+              }
+            }
+          })
+        }
+
+        impact(model)
+      }
+      traverseToImpact(this)
 
       // check $parent
       this._ensure(root)
@@ -2203,4 +2226,37 @@ export class Model {
     }
     return SceneModel
   }
+}
+
+function isMatchMeta (give, need) {
+  if (give === need) {
+    return true
+  }
+
+  if (isInheritedOf(need, Meta) && (isInstanceOf(give, need) || isInheritedOf(give, need))) {
+    return true
+  }
+
+  if (isInstanceOf(need, Model) && isInstanceOf(give, FactoryMeta)) {
+    const entries = give.$entries
+    if (isArray(entries)) {
+      return entries.some(item => item === need)
+    }
+    else {
+      return entries === need
+    }
+  }
+
+  // meta.extend
+  const walk = (meta) => {
+    const from = Object.getPrototypeOf(meta)
+    if (!from) {
+      return false
+    }
+    if (from === need) {
+      return true
+    }
+    return walk(from)
+  }
+  return walk(give)
 }

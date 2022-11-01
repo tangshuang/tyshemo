@@ -607,17 +607,21 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    */
   available?: boolean | ((this: M, value: T, key: string) => boolean)
   /**
-   * provide state
-   */
-  state?(this: M, key: string): Obj
-  /**
    * provide deps
    */
   deps?(this: M, key: string): { [key: string]: Meta | MetaClass }
   /**
-   * provide information about deps, it means this field should must work with this metas
+   * provide information about needs, it means this field should must work with this metas
    */
   needs?(this: M, key: string): Array<Meta | MetaClass | ModelClass>
+  /**
+   * provide information about factors, it means this field will be trigger by the given metas
+   */
+  factors?(): Array<Meta | MetaClass | ModelClass>
+  /**
+   * provide state
+   */
+  state?(this: M, key: string): Obj
   /**
    * invoked when Model initialized
    */

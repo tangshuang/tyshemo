@@ -29,5 +29,6 @@ export const RESERVED_ATTRIBUTES = {
   state: null,
   deps: null,
   needs: null,
+  factors: null,
   catch: null,
 }

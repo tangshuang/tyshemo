@@ -192,6 +192,16 @@ const attrs = {
       B_Meta,
     ]
   }
+  // optional, return an array which contains Metas or Models to point out which targets will trigger current field's reaction.
+  // different from `needs` or `deps`, if some Metas or Models are not in this array, there will be no nofication, the missing ones will be ignored
+  // and, you can put Metas or Models of parents chain of current field's host model, for example:
+  // parent model has a Meta `A_Meta`, and child field `xx` can trace `A_Meta` as you wanted, howver, this pattern is only allowed in Factory hooks, keep in mind that, dont depend on outside models.
+  factors() {
+    return [
+      A_Meta,
+      B_Meta,
+    ]
+  }
 
   // optional, when an error occurs caused by this property, what to do with the error
   catch: (error) => {},

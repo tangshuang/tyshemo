@@ -267,4 +267,52 @@ describe('Meta', () => {
     const data = some.toData()
     expect(data.some).toBeUndefined()
   })
+
+  test('factors', () => {
+    class A_Meta extends Meta {
+      default = 'a'
+    }
+
+    class B_Meta extends Meta {
+      factors() {
+        return [A_Meta]
+      }
+      default = 'b'
+    }
+
+    class C_Meta extends Meta {
+      factors() {
+        return [A_Meta]
+      }
+      default = 'c'
+    }
+
+    class Child extends Model {
+      static c = C_Meta
+    }
+
+    class Parent extends Model {
+      static a = A_Meta
+      static b = B_Meta
+      static child = Child
+    }
+
+    const some = new Parent()
+
+    let count = 0
+    some.watch('!b', () => {
+      count ++
+    })
+    some.a = 1
+    expect(count).toBe(1)
+
+    let flag = 0
+    some.child.watch('!c', () => {
+      count ++
+      flag ++
+    })
+    some.a = 2
+    expect(flag).toBe(1)
+    expect(count).toBe(3)
+  })
 })
