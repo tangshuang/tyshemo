@@ -109,7 +109,7 @@ function minLen(message, len) {
         return false
       }
 
-      const attr = this?.$views?.[key]?.maxLen
+      const attr = this?.$views?.[key]?.minLen
       const minNum = isNumber(len) ? len : isNumber(attr) ? attr : NaN
       return value.length >= minNum
     },
