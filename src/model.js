@@ -834,7 +834,7 @@ export class Model {
       const notifyStateToField = (field) => {
         const { state } = this.$schema[field]
         if (!state) {
-          this.return
+          return
         }
         const stateObj = state.call(this, field)
         const stateKeys = Object.keys(stateObj)
