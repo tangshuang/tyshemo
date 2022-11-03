@@ -830,7 +830,28 @@ export class Model {
       // changed meta
       const def = this.$schema[root]
 
+      const fields = Object.keys(this.$schema)
+      const notifyStateToField = (field) => {
+        const { state } = this.$schema[field]
+        if (!state) {
+          this.return
+        }
+        const stateObj = state.call(this, field)
+        const stateKeys = Object.keys(stateObj)
+        if (stateKeys.includes(root)) {
+          this.$store.forceDispatch(`!${field}`, `by state ${root}`)
+        }
+      }
+
       if (!def) {
+        // if a state changed, should notify fields which depend on it
+        if (root in this.$$state) {
+          fields.forEach((field) => {
+            notifyStateToField(field)
+          })
+          this.onChange(root)
+        }
+
         return
       }
 
@@ -844,14 +865,13 @@ export class Model {
         def.watch.call(this, e, root)
       }
 
-      const fields = Object.keys(this.$schema)
       fields.forEach((field) => {
         if (root === field) {
           return
         }
 
         const meta = this.$schema[root]
-        const { follow, needs, deps, state } = this.$schema[field]
+        const { follow, needs, deps } = this.$schema[field]
 
         if (isFunction(follow)) {
           const items = follow.call(this, e, field, root)
@@ -887,13 +907,7 @@ export class Model {
           }
         }
 
-        if (state) {
-          const stateObj = state.call(this, field)
-          const stateKeys = Object.keys(stateObj)
-          if (stateKeys.includes(root)) {
-            this.$store.forceDispatch(`!${field}`, `by state ${root}`)
-          }
-        }
+        notifyStateToField(field)
       })
 
       /**
