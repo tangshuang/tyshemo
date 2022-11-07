@@ -366,6 +366,9 @@ export class Model {
         }
         return notified
       }
+      getContext() {
+        return $this
+      }
     }
     const store = new Store()
     define(this, '$store', store)
@@ -1589,7 +1592,7 @@ export class Model {
     if (!key) {
       return this
     }
-    this.$store.watch(key, fn, deep, this)
+    this.$store.watch(key, fn, deep)
     return this
   }
 

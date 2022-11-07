@@ -22,6 +22,7 @@ export class Store {
     this.state = null
     this.editable = true
     this.silent = false
+    this.context = this.getContext()
 
     this._watchers = []
 
@@ -43,6 +44,10 @@ export class Store {
     const res = fn(...args)
     this.silent = latestSilent
     return res
+  }
+
+  getContext() {
+    return null
   }
 
   init(params) {
@@ -429,10 +434,10 @@ export class Store {
     return value
   }
 
-  watch(keyPath, fn, deep = false, context) {
+  watch(keyPath, fn, deep = false) {
     const items = this._watchers
     const key = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
-    items.push({ key, fn, deep, context })
+    items.push({ key, fn, deep })
     return this
   }
 
@@ -489,7 +494,7 @@ export class Store {
 
     items.forEach((item) => {
       const target = item.key
-      item.fn.call(item.context || this.state, { target, key, value, next, prev, active, invalid, compute })
+      item.fn.call(this.context || this.state, { target, key, value, next, prev, active, invalid, compute })
     })
 
     return true
@@ -531,7 +536,7 @@ export class Store {
     items.push(...anys)
 
     items.forEach((item) => {
-      item.fn.call(item.context || this.state, key, ...args)
+      item.fn.call(this.context || this.state, key, ...args)
     })
 
     return true
