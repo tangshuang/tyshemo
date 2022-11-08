@@ -571,11 +571,10 @@ model.fromJSON({
 *It will not trigger watchers.*
 
 ```
-fromJSONPatch(data: object, onlyKeys: string[]): this
+fromJSONPatch(data: object): this
 ```
 
 - data: object which contains fields you want to update
-- onlyKeys: only this keys will be used as input data
 
 It will use `create` attribute to generate data.
 
