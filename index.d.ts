@@ -795,7 +795,25 @@ export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createSt
  * ReflectMeta<SomeMeta, 'default'> extends string, from attrs
  */
 export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
-  A extends Meta<infer T, infer I, infer M, infer U> ?
+  A extends SceneStateMeta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends SceneMeta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends AsyncMeta<infer T, infer I, infer M, infer U> ?
+    key extends 'value' ? I
+    : key extends 'originalValue' ? T
+    : key extends 'model' ? M
+    : key extends 'data' ? U
+    : never
+  : A extends Meta<infer T, infer I, infer M, infer U> ?
     key extends 'value' ? I
     : key extends 'originalValue' ? T
     : key extends 'model' ? M
@@ -815,12 +833,12 @@ export declare type ReflectMeta<A extends Meta | MetaClass, key = 'value'> =
  * ReflectView<SomeMeta> extends View
  */
 export declare type ReflectView<M extends Meta | MetaClass> =
-  M extends MetaClass<infer T, infer I> ? View<T, I>
+  M extends SceneMeta<infer T, infer I> ? View<T, I>
   : M extends SceneMeta<infer T, infer I> ? View<T, I>
+  : M extends AsyncMeta<infer T, infer I> ? View<T, I>
   : M extends Meta<infer T, infer I> ? View<T, I>
-  : M extends StateMeta<infer T, infer I> ? View<T, I>
+  : M extends MetaClass<infer T, infer I> ? View<T, I>
   : View
-
 
 type View<T = any, I = T> = {
   /**
@@ -907,7 +925,7 @@ export declare class Model implements Obj {
   get(keyPath: string | string[]): any
   set(keyPath: string | string[], next: any, force?: boolean): this
   update(data: Obj): this
-  reset(key: string): this
+  reset(key: string | Meta | MetaClass): this
   patch(data: Obj): this
   define(key: string, value: Function | any): any
   lock(): void
@@ -1012,16 +1030,42 @@ export declare function MemoGetter<T, U>(
 } & Obj
 
 interface FactoryHooks {
-  entry?(entries?: ModelClass): ModelClass
-  entry?(entries?: ModelClass[], data?: any, key?: string, parent?: Model): ModelClass[]
-  instance?(model?: Model, parent?: Model): Model
-  adapt?(entries?: ModelClass[], data?: any): boolean
-  transport?(child?: Model, parent?: Model, key?: string): void
-  linkage?(child?: Model, parent?: Model, key?: string): void
-  override?(child?: Model, parent?: Model, key?: string): Array<{
+  /**
+   * choose which Model Class to use
+   */
+  entry?(entries?: ModelClass[], data?: any, parent?: Model): ModelClass[]
+
+  /**
+   * determine whether the given data is an instance of given Model Class
+   */
+  adapt?(entries?: ModelClass[], data?: any, parent?: Model): boolean
+
+  /**
+   * how to initialize the child Model,
+   * if return void, it means we do not need this item, only for sub-models list
+   */
+  instance?(ChoosedModel: ModelClass, data: Obj, options: any): Model | void
+
+  /**
+   * after child model generated,
+   * only once
+   */
+  transport?(child?: Model, parent?: Model): void
+
+  /**
+   * each the parent's fields which are depended on changed,
+   * use `use` before `if...else`
+   */
+  linkage?(child?: Model, parent?: Model): void
+
+  /**
+   * override Meta Attribute of child Model
+   */
+  override?(child?: Model, parent?: Model, scenes?: string[]): Array<{
     meta: Meta | MetaClass,
     attrs: Partial<Attrs>,
   }>
+
   default?(fn?: Function): Function
   type?(type?: any): any
   validators?(validators?: Validator[]): Validator[]
@@ -1081,7 +1125,7 @@ export declare class Factory {
    *   // same as: static some = A | B
    * }
    */
-  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
+  static selectMeta<T extends ModelClass = ModelClass, M extends Model = Model, U extends Obj = Obj>(entries: T[], select: (entries?: T[], data?: any, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<T>, InstanceType<T>, M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<T>, InstanceType<T>, M, U>
 
   /**
    * create a list meta by given Models
@@ -1094,7 +1138,7 @@ export declare class Factory {
    *   // same as: static some = [A, B]
    * }
    */
-  static selectMeta<T extends ModelClass[] = ModelClass[], M extends Model = Model, U extends Obj = Obj>(entries: [T], select: (entries?: T, data?: any, key?: string, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>
+  static selectMeta<T extends ModelClass[] = ModelClass[], M extends Model = Model, U extends Obj = Obj>(entries: [T], select: (entries?: T, data?: any, parent?: Model) => T, attrs?: Omit<Attrs<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>, 'default'>, hooks?: FactoryHooks): Meta<InstanceType<ItemOf<T>>[], InstanceType<ItemOf<T>>[], M, U>
 
   /**
    * create a chunk for model

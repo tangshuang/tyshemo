@@ -1084,7 +1084,11 @@ export class Model {
    * @returns
    */
   reset(key, value) {
-    if (isInstanceOf(key, key) || isInheritedOf(key, Meta)) {
+    if (!key) {
+      return this
+    }
+
+    if (isInstanceOf(key, Meta) || isInheritedOf(key, Meta)) {
       key = this.use(key, view => view.key)
     }
 
@@ -2284,7 +2288,7 @@ export class Model {
   static Scene(sceneCode) {
     const Constructor = this
     class SceneModel extends Constructor {
-      static [SceneCodesSymbol] = sceneCode
+      static [SceneCodesSymbol] = isArray(sceneCode) ? sceneCode : [sceneCode]
     }
     return SceneModel
   }
