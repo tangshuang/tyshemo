@@ -1824,17 +1824,23 @@ export class Model {
     chunk = chunk || Constructor.Chunk
     const isChunk = chunk && isInstanceOf(chunk, FactoryChunk)
 
+    const fromJSON = (data) => {
+      if (isChunk && chunk.fromJSON) {
+        const json = chunk.fromJSON(data)
+        this.fromJSON(json)
+        return
+      }
+      this.fromJSON(data)
+    }
+
     return {
       fromChunk: (...params) => {
         if (isChunk) {
-          return Promise.resolve(chunk.data(...params)).then((data) => {
-            const json = chunk.fromJSON ? chunk.fromJSON(data) : data
-            this.fromJSON(json)
-            return data
-          })
+          return Promise.resolve(chunk.data(...params)).then(fromJSON)
         }
         return Promise.reject(new Error('chunk is not a FactoryChunk.'))
       },
+      fromJSON,
       toData: () => {
         if (isChunk && chunk.toData) {
           const res = chunk.toData(this)

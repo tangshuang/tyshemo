@@ -942,6 +942,7 @@ export declare class Model implements Obj {
    */
   Chunk<U extends any[] = any[]>(chunk?: FactoryChunk<Model, any, U>): {
     fromChunk: (...args: U) => Promise<any>,
+    fromJSON: (data: Obj) => void,
     toData: () => any,
     toJSON: () => any,
   }

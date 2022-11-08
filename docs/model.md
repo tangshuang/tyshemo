@@ -987,18 +987,19 @@ const data = toData()
 
 **Chunk(chunk?)**
 
-Get a context with 3 methods:
+Get a context with 4 methods:
 
-- `fromChunk(...params): Promise<void>`
-- `toJSON()`
-- `toData()`
+- `fromChunk(...params): Promise<void>` package data requesting with `chunk.data` and `fromJSON`
+- `fromJSON(json)` use `chunk.fromJSON` to recover model data
+- `toJSON()` use `chunk.toJSON` to record model
+- `toData()` use `chunk.toData` to export model
 
 If the Model has a `static Chunk` and you do not pass a `chunk` into it, it will use the `static Chunk` as default.
 
 The parameters of `fromChunk` will be passed into `data` method to request data.
 
 ```js
-await model.Chunk(someChunk).fromChunk('id')
+await model.Chunk(someChunk).fromChunk('id') // 1. data requesting, 2. fromJSON
 
 const json = model.Chunk(someChunk).toJSON()
 
