@@ -38,6 +38,8 @@ export class State {
 }
 
 const SceneCodesSymbol = Symbol()
+const ComputeSymbol = Symbol()
+let __keysFromJson = null
 
 export class Model {
   constructor(data = {}, options = {}) {
@@ -1081,13 +1083,29 @@ export class Model {
    * @param {*} key
    * @returns
    */
-  reset(key, value = this.$schema.getDefault(key, this)) {
+  reset(key, value) {
+    if (isInstanceOf(key, key) || isInheritedOf(key, Meta)) {
+      key = this.use(key, view => view.key)
+    }
+
+    if (isUndefined(value)) {
+      value = this.$schema.getDefault(key, this)
+    }
+
     this.collect(() => {
       this.set(key, value, true)
       this.use(key, (view) => {
         view.changed = false
       })
     }, true)
+
+    // reset compute
+    const def = this.$schema[key]
+    if (def[ComputeSymbol]) {
+      def.compute = def[ComputeSymbol]
+      delete def[ComputeSymbol]
+    }
+
     this.emit('reset')
     return this
   }
@@ -1131,9 +1149,8 @@ export class Model {
    * reset and cover all data, original model will be clear first, and will use new data to cover the whole model.
    * notice that, properties which are in original model be not in schema may be removed.
    * @param {*} data
-   * @param {string[]} keysAddToThis keys those not in schema but path to this
    */
-  restore(data, keysAddToThis = []) {
+  restore(data) {
     if (!this.$store.editable) {
       return this
     }
@@ -1160,7 +1177,6 @@ export class Model {
     }
 
     // patch state
-    const asyncReactors = {}
     each(state, (descriptor, key) => {
       const { get, set } = descriptor
       if (get || set) {
@@ -1188,6 +1204,7 @@ export class Model {
     }, true)
 
     // those on schema but not in data
+    const asyncReactors = {}
     each(schema, (_, key) => {
       const push = (value) => {
         if (!isAsyncRef(value)) {
@@ -1272,11 +1289,13 @@ export class Model {
     })
 
     // patch keys to this, these keys are not on this, i.e. this.fromJSON(data, ['policies']) => this.policies (this.policies is not existing before)
-    keysAddToThis.forEach((key) => {
-      if (!inObject(key, this)) {
-        this[key] = data[key]
-      }
-    })
+    if (__keysFromJson) {
+      __keysFromJson.forEach((key) => {
+        if (!inObject(key, this)) {
+          this[key] = data[key]
+        }
+      })
+    }
 
     // reset changed
     this.$views.$changed = false
@@ -1287,6 +1306,17 @@ export class Model {
     // dependencies collection
     // after onRestore, so that developers can do some thing before collection
     each(this.$schema, (meta, key) => {
+      // if this field is put in keysAddToThis, it means the computed field need to set given value,
+      // so we do not recover the compute
+      if (__keysFromJson && meta.compute && __keysFromJson.includes(key)) {
+        meta[ComputeSymbol] = meta.compute
+        delete meta.compute
+      }
+      else if (__keysFromJson && meta[ComputeSymbol] && !__keysFromJson.includes(key)) {
+        meta.compute = meta[ComputeSymbol]
+        delete meta[ComputeSymbol]
+      }
+
       if (meta.compute) {
         this._getData(key)
       }
@@ -1528,6 +1558,13 @@ export class Model {
       this.$views[key].changed = true
     }
     const coming = this.$store.set(key, value)
+
+    // BREAKING CHANGE
+    // drop the ability of compute, after change vlaue manully, the field will be a normal field
+    if (def.compute) {
+      def[ComputeSymbol] = def.compute
+      delete def.compute
+    }
 
     this.emit('set', keyPath, coming, prev)
 
@@ -1779,6 +1816,9 @@ export class Model {
   }
 
   fromChunk(chunk, ...params) {
+    const Constructor = getConstructorOf(this)
+    chunk = chunk || Constructor.Chunk
+
     if (chunk && chunk instanceof FactoryChunk) {
       return Promise.resolve(chunk.data(...params)).then((data) => {
         const json = chunk.fromJSON ? chunk.fromJSON(data) : data
@@ -1792,7 +1832,7 @@ export class Model {
    * use schema `create` option to generate and restore data
    * @param {*} json
    */
-  fromJSON(json, keysAddToThis) {
+  fromJSON(json) {
     if (!this.$store.editable) {
       return this
     }
@@ -1822,7 +1862,15 @@ export class Model {
     const data = this.$schema.parse(entry, this)
     const next = { ...entry, ...data }
 
-    this.restore(next, keysAddToThis)
+    __keysFromJson = Object.keys(entry)
+    try {
+      this.restore(next)
+      __keysFromJson = null
+    }
+    catch (e) {
+      __keysFromJson = null
+      throw e
+    }
 
     // ask children to recompute computed properties
     this.$children.forEach(child => child.onRegress())
@@ -1866,28 +1914,16 @@ export class Model {
   /**
    * update model by passing data, which will use schema `create` attribute to generate value, without dispatch, reset `changed`
    * @param {*} data
-   * @param {string[]} onlyKeys the keys outside of this array will not be used, if not set, all keys will be used
    */
-  fromJSONPatch(data, onlyKeys) {
+  fromJSONPatch(data) {
     if (!this.$store.editable) {
       return
     }
 
-    const entry = {}
-
     // prepare for sub models
     this.$children = []
 
-    each(data, (value, key) => {
-      if (onlyKeys && inArray(key, onlyKeys)) {
-        entry[key] = value
-      }
-      else if (!onlyKeys) {
-        entry[key] = value
-      }
-    })
-
-    const output = this.$schema.discover(entry, this)
+    const output = this.$schema.discover(data, this)
 
     this.patch(output)
 
@@ -1905,6 +1941,9 @@ export class Model {
   toData(chunk) {
     this._check()
 
+    const Constructor = getConstructorOf(this)
+    chunk = chunk || Constructor.Chunk
+
     if (chunk && isInstanceOf(chunk, FactoryChunk) && chunk.toData) {
       const res = chunk.toData(this)
       const result = this.onExport(res) || res
@@ -1920,12 +1959,18 @@ export class Model {
   }
 
   toParams(chunk, determine) {
+    const Constructor = getConstructorOf(this)
+    chunk = chunk || Constructor.Chunk
+
     const data = this.toData(chunk)
     const output = Factory.toParams(data, determine)
     return output
   }
 
   toFormData(chunk, determine) {
+    const Constructor = getConstructorOf(this)
+    chunk = chunk || Constructor.Chunk
+
     const data = this.toData(chunk)
     const formdata = Factory.toFormData(data, determine)
     return formdata

@@ -544,11 +544,10 @@ Read JSON from backend, and recover the model.
 **fromJSON**
 
 ```
-fromJSON(json: object, keysAddToThis: string[]): this
+fromJSON(json: object): this
 ```
 
 - json: JSON data contains fields
-- keysAddToThis: add new keys which is not in model but in in `json` into model
 
 It will use attributes:
 
@@ -653,7 +652,7 @@ Invoke after restored, before computed properties built.
 
 **patch**
 
-Unlike `restore`, `patch` will not rebuild all properties, it will only patch given propeties. For example:
+Unlike `restore`, `patch` will not set all properties, it will only patch given propeties. For example:
 
 ```js
 class Some extends Model {
@@ -680,6 +679,8 @@ some.patch({
 
 // some.age not changed, still is 10
 ```
+
+*Without trigger `watch` too.*
 
 ### Lock
 

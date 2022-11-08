@@ -315,4 +315,62 @@ describe('Meta', () => {
     expect(flag).toBe(1)
     expect(count).toBe(3)
   })
+
+  test('change computed filed', () => {
+    class CountMeta extends Meta {
+      static default = 1
+    }
+    class SomeMeta extends Meta {
+      static default = 0
+      static compute() {
+        const count = this.use(CountMeta, view => view.value)
+        return count * 10
+      }
+    }
+    class SomeModel extends Model {
+      static count = CountMeta
+      static some = SomeMeta
+    }
+
+    const some = new SomeModel()
+    let count = 0
+    some.watch(SomeMeta, () => {
+      count ++
+    })
+    expect(some.some).toBe(10)
+
+    some.count ++
+    expect(some.some).toBe(20)
+    expect(count).toBe(1)
+
+    some.some = 21
+    expect(some.some).toBe(21)
+    expect(count).toBe(2)
+
+    // after change manully, lose computed
+    some.count ++ // no effects
+    expect(some.some).toBe(21)
+    expect(count).toBe(2)
+
+    some.reset(SomeMeta) // trigger watcher
+    expect(some.some).toBe(30)
+    expect(count).toBe(3)
+
+    // after reset, it recover to computed
+    some.count ++
+    expect(some.some).toBe(40)
+    expect(count).toBe(4)
+
+    some.fromJSON({
+      count: 1,
+    })
+    expect(some.some).toBe(10)
+
+    // make it non-computed when restore
+    some.fromJSON({
+      count: 1,
+      some: 9,
+    })
+    expect(some.some).toBe(9)
+  })
 })
