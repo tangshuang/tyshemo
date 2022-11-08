@@ -1820,9 +1820,6 @@ export class Model {
   }
 
   fromChunk(chunk, ...params) {
-    const Constructor = getConstructorOf(this)
-    chunk = chunk || Constructor.Chunk
-
     if (chunk && chunk instanceof FactoryChunk) {
       return Promise.resolve(chunk.data(...params)).then((data) => {
         const json = chunk.fromJSON ? chunk.fromJSON(data) : data
@@ -1962,20 +1959,14 @@ export class Model {
     return result
   }
 
-  toParams(chunk, determine) {
-    const Constructor = getConstructorOf(this)
-    chunk = chunk || Constructor.Chunk
-
-    const data = this.toData(chunk)
+  toParams(determine) {
+    const data = this.toData()
     const output = Factory.toParams(data, determine)
     return output
   }
 
-  toFormData(chunk, determine) {
-    const Constructor = getConstructorOf(this)
-    chunk = chunk || Constructor.Chunk
-
-    const data = this.toData(chunk)
+  toFormData(determine) {
+    const data = this.toData()
     const formdata = Factory.toFormData(data, determine)
     return formdata
   }
