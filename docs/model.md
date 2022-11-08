@@ -603,10 +603,6 @@ class StudentModel extends Model {
 
 `onParse` is invoked before data comes into model, you chan do some transforming here.
 
-**fromChunk**
-
-Use `chunk` to generate data. It use `fromJSON` inside. Read more `Factory##chunk`.
-
 ### Restore
 
 Restore data into model, with out any parser or transform.
@@ -953,3 +949,60 @@ class C extends Model.mixin(true, A, B)
 ```
 
 When `force` true, other hook methods will be overrided too as normal methods.
+
+## Chunk
+
+```js
+const SomeChunk = Factory.chunk({
+  data: async (id) => {
+    const res = await fetch('xxx' + id)
+    const data = await res.json()
+    return data
+  },
+  fromJSON: (data) => {
+    const { title, count } = data
+    return { title, count }
+  },
+  toJSON: (model) => {
+    const { title, count } = model
+    return { title, count }
+  },
+  toData: (model) => {
+    const { title, count } = model
+    return { title, count }
+  },
+})
+
+class SomeModel extends Model {
+  static Chunk = SomeChunk
+}
+
+const some = new SomeModel()
+const { fromChunk, toJSON, toData } = some.Chunk()
+
+await fromChunk('id')
+const json = toJSON()
+const data = toData()
+```
+
+**Chunk(chunk?)**
+
+Get a context with 3 methods:
+
+- `fromChunk(...params): Promise<void>`
+- `toJSON()`
+- `toData()`
+
+If the Model has a `static Chunk` and you do not pass a `chunk` into it, it will use the `static Chunk` as default.
+
+The parameters of `fromChunk` will be passed into `data` method to request data.
+
+```js
+await model.Chunk(someChunk).fromChunk('id')
+
+const json = model.Chunk(someChunk).toJSON()
+
+const data = model.Chunk(someChunk).toData()
+```
+
+Why we need `chunk`? Because in some cases we do not sure the `create` and `save` is enough, a Model may have different data sources and need to generate by different ways. In these situations, we can create different chunks and use `model.fromChunk` `model.toJSON` `model.toData` to generate different kind of data.

@@ -1819,14 +1819,41 @@ export class Model {
     return { ...state, ...computed }
   }
 
-  fromChunk(chunk, ...params) {
-    if (chunk && chunk instanceof FactoryChunk) {
-      return Promise.resolve(chunk.data(...params)).then((data) => {
-        const json = chunk.fromJSON ? chunk.fromJSON(data) : data
-        this.fromJSON(json)
-      })
+  Chunk(chunk) {
+    const Constructor = getConstructorOf(this)
+    chunk = chunk || Constructor.Chunk
+    const isChunk = chunk && isInstanceOf(chunk, FactoryChunk)
+
+    return {
+      fromChunk: (...params) => {
+        if (isChunk) {
+          return Promise.resolve(chunk.data(...params)).then((data) => {
+            const json = chunk.fromJSON ? chunk.fromJSON(data) : data
+            this.fromJSON(json)
+            return data
+          })
+        }
+        return Promise.reject(new Error('chunk is not a FactoryChunk.'))
+      },
+      toData: () => {
+        if (isChunk && chunk.toData) {
+          const res = chunk.toData(this)
+          const result = this.onExport(res) || res
+          this.emit('export', result)
+          return result
+        }
+        return this.toData()
+      },
+      toJSON: () => {
+        if (isChunk && chunk.toJSON) {
+          const res = chunk.toJSON(this)
+          const result = this.onRecord(res) || res
+          this.emit('record', result)
+          return result
+        }
+        return this.toJSON()
+      },
     }
-    return Promise.reject(new Error('chunk is not a FactoryChunk.'))
   }
 
   /**
@@ -1887,15 +1914,8 @@ export class Model {
     return this
   }
 
-  toJSON(chunk) {
+  toJSON() {
     this._check()
-
-    if (chunk && isInstanceOf(chunk, FactoryChunk) && chunk.toJSON) {
-      const res = chunk.toJSON(this)
-      const result = this.onRecord(res) || res
-      this.emit('record', result)
-      return result
-    }
 
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.record(data, this)
@@ -1939,19 +1959,8 @@ export class Model {
     return this
   }
 
-  toData(chunk) {
+  toData() {
     this._check()
-
-    const Constructor = getConstructorOf(this)
-    chunk = chunk || Constructor.Chunk
-
-    if (chunk && isInstanceOf(chunk, FactoryChunk) && chunk.toData) {
-      const res = chunk.toData(this)
-      const result = this.onExport(res) || res
-      this.emit('export', result)
-      return result
-    }
-
     const data = clone(this._bundleData()) // original data
     const output = this.$schema.export(data, this)
     const result = this.onExport(output) || output

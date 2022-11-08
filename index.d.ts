@@ -935,14 +935,23 @@ export declare class Model implements Obj {
   watch(key: string | Meta, fn: IWatchFn, deep?: boolean): this
   unwatch(key: string | Meta, fn: IWatchFn): this
 
-  fromChunk<U extends any[] = any[]>(chunk?: FactoryChunk<Model, any, U>, ...args: U): Promise<void>
+  /**
+   * operate model with a chunk,
+   * you can patch a chunk (Factory.chunk) to a static Chunk property of a Model
+   * @param chunk
+   */
+  Chunk<U extends any[] = any[]>(chunk?: FactoryChunk<Model, any, U>): {
+    fromChunk: (...args: U) => Promise<any>,
+    toData: () => any,
+    toJSON: () => any,
+  }
+
   fromJSON(data: Obj): this
   fromJSONPatch(data: Obj): this
   toJSON(): Obj
-  toJSON<D extends Obj = Obj>(chunk?: FactoryChunk<Model, D, any[]>): D
-  toData(chunk?: FactoryChunk<Model, any, any[]>): Obj
-  toParams(chunk?: FactoryChunk<Model, any, any[]>, determine?: (value: any) => boolean): Obj
-  toFormData(chunk?: FactoryChunk<Model, any, any[]>, determine?: (value: any) => boolean): Obj
+  toData(): Obj
+  toParams(determine?: (value: any) => boolean): Obj
+  toFormData(determine?: (value: any) => boolean): Obj
   validate(key?: string | string[]): Error[] | any[]
   validateAsync(key?: string | string[]): Promise<Error[] | any[]>
 
