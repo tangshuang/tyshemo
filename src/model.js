@@ -30,6 +30,7 @@ import { edit } from './shared/edit.js'
 import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
+import { Type } from './ty/type.js'
 
 export class State {
   constructor(options) {
@@ -1836,7 +1837,16 @@ export class Model {
     return {
       fromChunk: (...params) => {
         if (isChunk) {
-          return Promise.resolve(chunk.data(...params)).then(fromJSON)
+          return Promise.resolve(chunk.data(...params))
+            .then((data) => {
+              if (chunk.type && isInstanceOf(chunk.type, Type)) {
+                chunk.type.trace(data).catch((e) => {
+                  console.error(e, data)
+                })
+              }
+              return data
+            })
+            .then(fromJSON)
         }
         return Promise.reject(new Error('chunk is not a FactoryChunk.'))
       },

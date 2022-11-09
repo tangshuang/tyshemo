@@ -959,6 +959,10 @@ const SomeChunk = Factory.chunk({
     const data = await res.json()
     return data
   },
+  type: new Dict({
+    name: String,
+    age: Number,
+  }),
   fromJSON: (data) => {
     const { title, count } = data
     return { title, count }
