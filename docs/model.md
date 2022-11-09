@@ -1011,3 +1011,12 @@ const data = model.Chunk(someChunk).toData()
 ```
 
 Why we need `chunk`? Because in some cases we do not sure the `create` and `save` is enough, a Model may have different data sources and need to generate by different ways. In these situations, we can create different chunks and use `model.fromChunk` `model.toJSON` `model.toData` to generate different kind of data.
+
+
+## Data Flow
+
+In tyshemo Model, data will be kept as different format, read the following picture to understand the data flow:
+
+![](./data-flow.png)
+
+As the picture shown, you may get value by correct method. Keep in mind that data is to storage and value is to use.

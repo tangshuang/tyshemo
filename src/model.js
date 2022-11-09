@@ -1925,7 +1925,7 @@ export class Model {
   toJSON() {
     this._check()
 
-    const data = clone(this._bundleData()) // original data
+    const data = clone(this._bundleData()) // original data format
     const output = this.$schema.record(data, this)
 
     const state = this._combineState()
@@ -1969,7 +1969,7 @@ export class Model {
 
   toData() {
     this._check()
-    const data = clone(this._bundleData()) // original data
+    const data = { ...this } // value format
     const output = this.$schema.export(data, this)
     const result = this.onExport(output) || output
     this.emit('export', result)

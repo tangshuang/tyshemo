@@ -169,7 +169,10 @@ describe('Model', () => {
 
     person.age = '30'
     const data = person.toData()
-    expect(data.age).toBe(30)
+    expect(data.age).toBe('30')
+
+    const json = person.toJSON()
+    expect(json.age).toBe(30)
   })
 
   test('message when type checking fail', () => {
