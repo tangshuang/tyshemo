@@ -21,6 +21,7 @@ import {
   makeKeyPath,
   hasOwnKey,
   decideby,
+  refineProxy,
 } from 'ts-fns'
 
 import { Schema as _Schema } from './schema.js'
@@ -40,7 +41,6 @@ export class State {
 
 const SceneCodesSymbol = Symbol()
 const ComputeSymbol = Symbol()
-let __keysFromJson = null
 
 export class Model {
   constructor(data = {}, options = {}) {
@@ -1015,7 +1015,7 @@ export class Model {
             if (this[key] === next) {
               return
             }
-            if (this[key] && typeof this[key] === 'object' && this[key][Symbol('ORIGIN')] === next) {
+            if (this[key] && refineProxy(this[key]) === next) {
               return
             }
             this[key] = next // will trigger watcher
@@ -1163,43 +1163,21 @@ export class Model {
     const schema = this.$schema
     const state = this._initState()
     const params = {}
-    const input = {}
-
-    const ensure = (value, key) => {
-      if (isArray(value)) {
-        value.forEach((item) => ensure(item, key))
-      }
-      else if (isInstanceOf(value, Model)) {
-        value.setParent([this, key])
-      }
-    }
-    const record = (key) => {
-      if (inObject(key, data)) {
-        const value = data[key]
-        input[key] = value
-        ensure(value, key)
-      }
-    }
+    const keys = {} // keys of state and schema and this
 
     // patch state
     each(state, (descriptor, key) => {
-      const { get, set } = descriptor
-      if (get || set) {
-        define(params, key, {
-          get: get && get.bind(this),
-          set: set && set.bind(this),
-          enumerable: true,
-        })
-        // use data property if exist, use data property directly
-        record(key)
-      }
-      else if (inObject(key, data)) {
-        params[key] = data[key]
+      if (inObject(key, data)) {
+        const desc = Object.getOwnPropertyDescriptor(data, key)
+        Object.defineProperty(params, key, desc)
       }
       else {
-        params[key] = descriptor.value
+        Object.defineProperty(params, key, descriptor)
       }
-      // define state here so that we can invoke this.state() only once when initialize
+
+      keys[key] = !0
+
+      // redefine state here so that we can invoke this.state() only once when initialize
       define(this, key, {
         get: () => this.get(key),
         set: (value) => this.set(key, value),
@@ -1208,9 +1186,17 @@ export class Model {
       })
     }, true)
 
-    // those on schema but not in data
+    // patch fields
+    const ensure = (value, key) => {
+      if (isArray(value)) {
+        value.forEach((item) => ensure(item, key))
+      }
+      else if (isInstanceOf(value, Model)) {
+        value.setParent([this, key])
+      }
+    }
     const asyncReactors = {}
-    each(schema, (_, key) => {
+    each(schema, (meta, key) => {
       const push = (value) => {
         if (!isAsyncRef(value)) {
           params[key] = value
@@ -1223,7 +1209,7 @@ export class Model {
           if (this[key] === next) {
             return
           }
-          if (this[key] && typeof this[key] === 'object' && this[key][Symbol('ORIGIN')] === next) {
+          if (this[key] && refineProxy(this[key]) === next) {
             return
           }
           this[key] = next // will trigger watcher
@@ -1246,15 +1232,28 @@ export class Model {
         }
       }
 
+      keys[key] = !0
+
       if (inObject(key, data)) {
+        // disable compute ability
+        if (meta.compute) {
+          meta[ComputeSymbol] = meta.compute
+          delete meta.compute
+        }
+        // use the value directly
         const value = data[key]
         push(value)
-        return
       }
-
-      // notice here, we call this in default(), we can get passed state properties
-      const value = schema.getDefault(key, this)
-      push(value)
+      else {
+        // recover compute
+        if (meta[ComputeSymbol]) {
+          meta.compute = meta[ComputeSymbol]
+          delete meta[ComputeSymbol]
+        }
+        // notice here, we call this in default(), we can get passed state properties
+        const value = schema.getDefault(key, this)
+        push(value)
+      }
     })
     Object.keys(asyncReactors).forEach((key) => {
       this.watch(key, ({ prev, next }) => {
@@ -1266,9 +1265,15 @@ export class Model {
       }, true)
     })
 
-    // delete the outdate properties
+    // reset into store
+    const initParams = this.onSwitch(params)
+    this.emit('switch', initParams)
+    this.$store.init(initParams)
+
+    // delete the outdate properties,
+    // these properties may be pended by manully by `define`, we should clear them to reset the model
     each(this.$store.state, (_, key) => {
-      if (inObject(key, params)) {
+      if (keys[key]) {
         return
       }
 
@@ -1281,51 +1286,34 @@ export class Model {
       delete this[key]
     }, true)
 
-    // reset into store
-    const initParams = this.onSwitch(params)
-    this.emit('switch', initParams)
-    this.$store.init(initParams)
-
-    // patch those which are not in store but on `this`
-    each(data, (value, key) => {
-      if (!inObject(key, params) && inObject(key, this)) {
-        this[key] = value
-      }
-    })
-
-    // patch keys to this, these keys are not on this, i.e. this.fromJSON(data, ['policies']) => this.policies (this.policies is not existing before)
-    if (__keysFromJson) {
-      __keysFromJson.forEach((key) => {
-        if (!inObject(key, this)) {
-          this[key] = data[key]
-        }
-      })
-    }
-
     // reset changed
     this.$views.$changed = false
 
-    this.onRestore()
-    this.emit('restore')
-
     // dependencies collection
     // after onRestore, so that developers can do some thing before collection
-    each(this.$schema, (meta, key) => {
-      // if this field is put in keysAddToThis, it means the computed field need to set given value,
-      // so we do not recover the compute
-      if (__keysFromJson && meta.compute && __keysFromJson.includes(key)) {
-        meta[ComputeSymbol] = meta.compute
-        delete meta.compute
-      }
-      else if (__keysFromJson && meta[ComputeSymbol] && !__keysFromJson.includes(key)) {
-        meta.compute = meta[ComputeSymbol]
-        delete meta[ComputeSymbol]
-      }
-
+    each(schema, (meta, key) => {
       if (meta.compute) {
         this._getData(key)
       }
     })
+
+    // patch those which are not in store but on `this`
+    // should must be after previous delete
+    this.$store.runSilent(() => {
+      each(data, (value, key) => {
+        if (keys[key]) {
+          return
+        }
+
+        // cover those which are on this
+        if (inObject(key, this)) {
+          this[key] = value
+        }
+      })
+    })
+
+    this.onRestore()
+    this.emit('restore', keys)
 
     return this
   }
@@ -1906,15 +1894,18 @@ export class Model {
     const data = this.$schema.parse(entry, this)
     const next = { ...entry, ...data }
 
-    __keysFromJson = Object.keys(entry)
-    try {
-      this.restore(next)
-      __keysFromJson = null
-    }
-    catch (e) {
-      __keysFromJson = null
-      throw e
-    }
+    // if computed properties are not passed in json,
+    // we should remove theme from `next`, so that computed properties will be generated automaticly in `restore`
+    // if we do not do this, the compute ability will lose because of `restore` logic
+    each(this.$schema, (def, key) => {
+      const { asset, compute } = def
+      const dataKey = asset ? (isFunction(asset) ? asset(entry, key) : asset) : key
+      if ((compute || def[ComputeSymbol]) && !inObject(dataKey, entry)) {
+        delete next[key]
+      }
+    })
+
+    this.restore(next)
 
     // ask children to recompute computed properties
     this.$children.forEach(child => child.onRegress())
