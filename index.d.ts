@@ -475,7 +475,7 @@ export declare class Store {
 
 interface ValidatorOptions<T extends Model = Model> {
   name?: string
-  determine?: boolean | ((this: T, value: any) => boolean | Promise<boolean>)
+  determine?: boolean | ((this: T, value: any, key: string) => boolean | Promise<boolean>)
   validate: (this: T, value: any, key: string) => boolean | Promise<boolean> | Error
   message: string
   break?: boolean
