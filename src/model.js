@@ -1813,28 +1813,28 @@ export class Model {
     chunk = chunk || Constructor.Chunk
     const isChunk = chunk && isInstanceOf(chunk, FactoryChunk)
 
+    const checkType = (data, message) => {
+      if (isChunk && chunk.type && isInstanceOf(chunk.type, Type)) {
+        chunk.type.trace(data).catch((e) => {
+          console.error(message, e, data, chunk)
+        })
+      }
+    }
+
     const fromJSON = (data) => {
       if (isChunk && chunk.fromJSON) {
         const json = chunk.fromJSON(data)
         this.fromJSON(json)
         return
       }
+      checkType(data, 'chunk.fromJSON')
       this.fromJSON(data)
     }
 
     return {
       fromChunk: (...params) => {
         if (isChunk) {
-          return Promise.resolve(chunk.data(...params))
-            .then((data) => {
-              if (chunk.type && isInstanceOf(chunk.type, Type)) {
-                chunk.type.trace(data).catch((e) => {
-                  console.error(e, data)
-                })
-              }
-              return data
-            })
-            .then(fromJSON)
+          return Promise.resolve(chunk.data(...params)).then(fromJSON)
         }
         return Promise.reject(new Error('chunk is not a FactoryChunk.'))
       },
@@ -1853,6 +1853,7 @@ export class Model {
           const res = chunk.toJSON(this)
           const result = this.onRecord(res) || res
           this.emit('record', result)
+          checkType(result, 'chunk.toJSON')
           return result
         }
         return this.toJSON()
