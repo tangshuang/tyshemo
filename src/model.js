@@ -630,7 +630,7 @@ export class Model {
       })
 
       // unwritable mandatory view properties
-      const getData = () => this._getData(key)
+      const getData = () => this.getData(key)
       let changed = false // whether the field has changed
 
       // delcare current key's validatingQueue
@@ -654,7 +654,7 @@ export class Model {
         if (this.$schema[key].validators?.some(item => item.async)) {
           clearTimeout(cachedDeferTimer)
           cachedDeferTimer = setTimeout(() => {
-            const deferer = this.$schema.$validateAsync(key, getData(), this)([])
+            const deferer = this.$schema.$validateAsync(key, this.get(key), this)([])
             validatingQueue.push(deferer)
           }, 7)
           clearTimeout(cachedTimer)
@@ -669,7 +669,7 @@ export class Model {
           }, 15)
         }
         // bugfix: fallback, to make UI stable without twinkling
-        const errors = this.$schema.$validate(key, getData(), this)([])
+        const errors = this.$schema.$validate(key, this.get(key), this)([])
         // when value change, notification will be send, so make it silent
         setCachedErrors(errors, true)
         cachedErrorsInited = true
@@ -701,7 +701,7 @@ export class Model {
           enumerable: true,
         },
         empty: {
-          get: () => this.$schema.empty(key, getData(), this),
+          get: () => this.$schema.empty(key, this.get(key), this),
           enumerable: true,
         },
         data: {
@@ -709,7 +709,7 @@ export class Model {
           enumerable: true,
         },
         text: {
-          get: () => this.$schema.format(key, getData(), this),
+          get: () => this.$schema.format(key, this.get(key), this),
           enumerable: true,
         },
         state: {
@@ -1293,7 +1293,7 @@ export class Model {
     // after onRestore, so that developers can do some thing before collection
     each(schema, (meta, key) => {
       if (meta.compute) {
-        this._getData(key)
+        this.getData(key)
       }
     })
 
@@ -1326,7 +1326,7 @@ export class Model {
     const chain = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
     const key = chain.shift()
 
-    const value = this._getData(key)
+    const value = this.getData(key)
     const transformed = this.$schema.get(key, value, this)
     const output = parse(transformed, chain)
 
@@ -1640,7 +1640,7 @@ export class Model {
 
     const validate = (key, emit) => {
       this._check(key, true)
-      const value = this._getData(key)
+      const value = this.get(key)
       const outs = decideby(() => {
         // check the given meta validators at first
         const outs = this.$schema.validate(key, value, this)
@@ -1689,7 +1689,7 @@ export class Model {
 
     const validate = (key, emit) => {
       this._check(key, true)
-      const value = this._getData(key)
+      const value = this.get(key)
       const defer = decideby(() => {
         // check the given meta validators at first
         return this.$schema.validateAsync(key, value, this).then((preouts) => {
@@ -1740,7 +1740,7 @@ export class Model {
     return validate(key, true)
   }
 
-  _getData(key) {
+  getData(key) {
     const value = this.$store.get(key)
     const meta = this.$schema[key]
     const view = this.collect(() => this.$views[key], true)
@@ -2111,7 +2111,7 @@ export class Model {
     }
 
     const root = isArray(key) ? key[0] : key
-    const value = this._getData(root)
+    const value = this.getData(root)
     use(value, key)
   }
 
@@ -2121,7 +2121,7 @@ export class Model {
 
     keys.forEach((key) => {
       // dont check if disabled
-      if (this.$schema.disabled(key, this._getData(key), this)) {
+      if (this.$schema.disabled(key, this.getData(key), this)) {
         return
       }
 

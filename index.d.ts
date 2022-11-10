@@ -473,17 +473,17 @@ export declare class Store {
   forceDispatch(keyPath: string | (string | symbol)[], ...args: any[]): boolean
 }
 
-interface ValidatorOptions<T extends Model = Model> {
+interface ValidatorOptions<T extends Model = Model, I extends any = any> {
   name?: string
-  determine?: boolean | ((this: T, value: any, key: string) => boolean | Promise<boolean>)
-  validate: (this: T, value: any, key: string) => boolean | Promise<boolean> | Error
+  determine?: boolean | ((this: T, value: I, key: string) => boolean | Promise<boolean>)
+  validate: (this: T, value: I, key: string) => boolean | Promise<boolean> | Error
   message: string
   break?: boolean
   async?: boolean
 }
-export declare class Validator<T extends Model = Model> {
-  constructor(options: ValidatorOptions<T>)
-  extend<M extends Model = T>(attrs: Obj): Validator<M>
+export declare class Validator<T extends Model = Model, I extends any = any> {
+  constructor(options: ValidatorOptions<T, I>)
+  extend<M extends Model = T>(attrs: Obj): Validator<M, I>
 
   static readonly required: <T extends Model>(message: string, emptyFn?: (this: T, value: any) => boolean) => Validator
   static readonly maxLen: (message: string, len?: number) => Validator
@@ -534,7 +534,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * validators used by `validate` or `validateAsync`
    */
-  validators?: (Validator | ValidatorOptions)[]
+  validators?: (Validator<M, I> | ValidatorOptions<M, I>)[]
   /**
    * create field value used by `formJSON`
    */
