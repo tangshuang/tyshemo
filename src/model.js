@@ -709,7 +709,7 @@ export class Model {
           enumerable: true,
         },
         text: {
-          get: () => this.$schema.format(key, this.get(key), this),
+          get: () => this.$schema.format(key, this.getData(key), this),
           enumerable: true,
         },
         state: {

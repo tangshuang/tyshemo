@@ -292,7 +292,7 @@ export class Schema {
     const meta = this[key]
 
     if (!meta) {
-      return value + ''
+      return isNone(value) ? '' : value + ''
     }
 
     const { formatter, catch: handle } = meta
@@ -300,14 +300,14 @@ export class Schema {
 
     if (isFunction(formatter)) {
       const coming = this._trydo(
-        () => formatter.call(context, value, key) + '',
+        () => formatter.call(context, value, key),
         (error) => isFunction(handle) && handle.call(context, error, key) || text,
         {
           key,
           attr: 'formatter',
         },
       )
-      return coming
+      return isNone(coming) ? '' : coming + ''
     }
     else {
       return text
