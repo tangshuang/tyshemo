@@ -554,17 +554,17 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * whether drop this field when `toData()`
    */
-  drop?: boolean | ((this: M, value: T, key: string, data: U) => boolean)
+  drop?: boolean | ((this: M, value: I, key: string, data: U) => boolean)
   /**
    * transfer the field value when `toData()`
    * when `drop` is `false`, map will not work
    */
-  map?(this: M, value: T, key: string, data: U): any | void
+  map?(this: M, value: I, key: string, data: U): any | void
   /**
    * map another filed data to output data of `toData()`
    * `drop` has no effect to mapAs
    */
-  mapAs?(this: M, value: T, key: string, data: U, output: Obj): Obj | void
+  mapAs?(this: M, value: I, key: string, data: U, output: Obj): Obj | void
   /**
    * transfer field name to `to` when `toData`
    * can use keyPath like 'some.any'
@@ -585,27 +585,27 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * whether the field is readonly, `set` will not work
    */
-  readonly?: boolean | ((this: M, value: T, key: string) => boolean)
+  readonly?: boolean | ((this: M, value: I, key: string) => boolean)
   /**
    * whether the field is useless, `drop` will be set true, validators will not work
    */
-  disabled?: boolean | ((this: M, value: T, key: string) => boolean)
+  disabled?: boolean | ((this: M, value: I, key: string) => boolean)
   /**
    * whether hide the field, without any effect on model, just a UI helper
    */
-  hidden?: boolean | ((this: M, value: T, key: string) => boolean)
+  hidden?: boolean | ((this: M, value: I, key: string) => boolean)
   /**
    * whether the field is required, should be used together with Validator.required in `vlaidators`
    */
-  required?: boolean | ((this: M, value: T, key: string) => boolean)
+  required?: boolean | ((this: M, value: I, key: string) => boolean)
   /**
    * determine the field is empty, used with `required`
    */
-  empty?(this: M, value: T, key: string): boolean
+  empty?(this: M, value: I, key: string): boolean
   /**
    * whether to make the field available, if false, disabled & drop & readonly & hidden will be forcely set `true`
    */
-  available?: boolean | ((this: M, value: T, key: string) => boolean)
+  available?: boolean | ((this: M, value: I, key: string) => boolean)
   /**
    * provide deps
    */
@@ -629,7 +629,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * invoked when field value changed
    */
-  watch?(this: M, e: { value: T } & Obj, key: string): void
+  watch?(this: M, e: { value: I } & Obj, key: string): void
   /**
    * when **other** fields changed, follow function will be triggered,
    * current field changing will NOT be triggered (use watch instead)
