@@ -2152,64 +2152,6 @@ export class Model {
     })
   }
 
-  static mixin(...Models) {
-    let force = false
-    if (Models[0] === true) {
-      force = Models.shift()
-    }
-
-    const Constructor = this
-    class Mixin extends Constructor {
-      static [Symbol.hasInstance](target) {
-        return Models.some((Model) => target instanceof Model)
-      }
-    }
-
-    const hooks = {}
-    const warnBeforeOverride = (key) => {
-      console.warn(`[TySheMo]: ${key} in Model prototype will override existing when mixin.`)
-    }
-
-    Models.forEach((Model) => {
-      each(Model, (descriptor, key) => {
-        if (!isUndefined(Mixin[key]) && !force) {
-          warnBeforeOverride(key)
-        }
-        define(Mixin, key, descriptor)
-      }, true)
-
-      each(Model.prototype, (descriptor, key) => {
-        if (key === 'constructor') {
-          return
-        }
-        // only this hooks do not return any value
-        if (['onInit', 'onCheck', 'onError', 'onRestore', 'onRegress', 'onChange', 'onEdit'].includes(key)) {
-          hooks[key] = hooks[key] || []
-          hooks[key].push(descriptor.value)
-          return
-        }
-        // these hooks return values, so did not override
-        if (['onSwitch', 'onParse', 'onRecord', 'onExport'].includes(key) && !force) {
-          console.warn(`[TySheMo]: ${key} will not be mixined.`)
-          return
-        }
-
-        if (!isUndefined(Mixin.prototype[key]) && !force) {
-          warnBeforeOverride(key)
-        }
-        define(Mixin.prototype, key, descriptor)
-      }, true)
-    })
-    each(hooks, (fns, key) => {
-      Mixin.prototype[key] = function(...args) {
-        fns.forEach((fn) => {
-          fn.call(this, ...args)
-        })
-      }
-    })
-    return Mixin
-  }
-
   static Edit() {
     const Editor = edit(this)
     return Editor

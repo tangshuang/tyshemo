@@ -910,46 +910,6 @@ const deps = model.collect(true) // -> ['a', 'b']
 ```
 
 Notice: `collect` will pollute sub models, so sub models should not collect deps during parent are collecting.
-
-## static mixin
-
-When you want to mixin some Models together, you can use `Model.mixin`.
-
-```js
-class A extends Model {
-  getA() {}
-
-  onInit() {}
-
-  handleIt() {}
-}
-
-class B extends Model {
-  getB() {}
-
-  onInit() {}
-
-  handleIt() {}
-}
-
-class C extends Model.mixin(A, B) {}
-
-const c = new C()
-c.getA()
-c.getB()
-c.handleIt()
-```
-
-Model `C` will mixin `A` and `B`, however, mixined Model may case some problems. So make sure you are using it without any Error or mistakes.
-
-Some special rules, if mixined Models has same hook methods, `onInit, onCheck, onError, onEnsure, onRestore, onRegress, onChange, onEdit` be merged together, other hook methods will be ignored, methods will be overrided by following one. When overriding, there will be a console.warn message, you can set the first parameter `force` to be `true` to close it:
-
-```js
-class C extends Model.mixin(true, A, B)
-```
-
-When `force` true, other hook methods will be overrided too as normal methods.
-
 ## Chunk
 
 ```js

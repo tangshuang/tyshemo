@@ -995,9 +995,6 @@ export declare class Model implements Obj {
   static Edit<T>(this: ConstructorOf<T>): ConstructorOf<T & EditorModel> & typeof Model
 
   static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof Model
-
-  static mixin<T extends ModelClass[]>(...Models: T): new () => UnionToInter<InstanceType<T[number]>>
-  static mixin<T extends ModelClass[]>(force: boolean, ...Models: T): new () => UnionToInter<InstanceType<T[number]>>
 }
 
 declare class EditorModel extends Model {
