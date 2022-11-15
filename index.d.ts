@@ -1040,7 +1040,7 @@ interface FactoryHooks {
   /**
    * choose which Model Class to use
    */
-  entry?(entries?: ModelClass[], data?: any, parent?: Model): ModelClass[]
+  select?(entries?: ModelClass[], data?: any, parent?: Model): ModelClass[]
 
   /**
    * determine whether the given data is an instance of given Model Class

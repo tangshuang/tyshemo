@@ -838,7 +838,7 @@ describe('Model', () => {
     }
 
     class Parent extends Model {
-      static children = Factory.getMeta([Child], {
+      static children = Factory.createMeta([Child], {
         default: () => [{}],
       })
     }
@@ -861,7 +861,7 @@ describe('Model', () => {
         default: '',
         type: String,
       })
-      static sub = Factory.getMeta([Sun], {
+      static sub = Factory.createMeta([Sun], {
         default: () => [{}],
       })
     }
@@ -925,7 +925,7 @@ describe('Model', () => {
         default: '',
         type: String,
       })
-      static sub = Factory.getMeta([Sun], {
+      static sub = Factory.createMeta([Sun], {
         default: () => [{}],
       })
     }

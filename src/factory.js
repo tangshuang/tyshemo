@@ -9,7 +9,6 @@ import {
   decideby,
 } from 'ts-fns'
 import { Meta } from './meta.js'
-import { Model } from './model.js'
 
 export class FactoryMeta extends Meta {
   constructor(options) {
@@ -40,6 +39,7 @@ export class Factory {
    */
   init(Entries) {
     const entity = this
+    const isList = isArray(Entries)
 
     const {
       default: _default,
@@ -53,8 +53,6 @@ export class Factory {
       getter: _getter,
       ...attrs
     } = this.attrs || {}
-
-    const isList = isArray(Entries)
 
     const setupLinkage = (child, parent, key) => {
       // do only once
@@ -136,9 +134,9 @@ export class Factory {
         const scenes = parent.$$scenes
         const nexts = filter(items, key, parent)
         const values = nexts.map((next) => {
-          const FoundModel = entity.entry(Entries, next, parent, key)
+          const FoundModel = entity.select(Entries, next, parent, key)
           if (!FoundModel) {
-            throw new Error('[TySheMo]: Factory.entry Model not found!')
+            throw new Error('[TySheMo]: Factory.select Model not found!')
           }
           const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
           if (entity.override) {
@@ -192,9 +190,9 @@ export class Factory {
     else {
       const gen = function(value, key, parent) {
         const scenes = parent.$$scenes
-        const FoundModel = entity.entry(Entries, value, parent, key)
+        const FoundModel = entity.select(Entries, value, parent, key)
         if (!FoundModel) {
-          throw new Error('[TySheMo]: Factory.entry Model not found!')
+          throw new Error('[TySheMo]: Factory.select Model not found!')
         }
         const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
         if (entity.override) {
@@ -240,14 +238,14 @@ export class Factory {
   }
 
   /**
-   * choose which Model to use when
+   * choose which Model to use before instance
    * @param {*} Entries
    * @param {*} data
    * @param {*} key
    * @param {*} parent
    * @returns
    */
-  entry(Entries) {
+  select(Entries) {
     return isArray(Entries) ? Entries[0] : Entries
   }
   /**
@@ -308,13 +306,6 @@ export class Factory {
   }
 
   /**
-   * @deprecated
-   */
-  static getMeta(entries, attrs, hooks = {}) {
-    return this.createMeta(entries, attrs, hooks)
-  }
-
-  /**
    * create a meta by given entries
    * @param {ModelClass[] | ModelClass[][]} entries
    * @param {ModelClass[] => Model} select
@@ -325,15 +316,14 @@ export class Factory {
   static selectMeta(entries, select, attrs, hooks = {}) {
     const isList = isArray(entries[0])
     const items = isList ? entries[0] : entries
-    class SharedModel extends Model {
-      static [Symbol.hasInstance](target) {
-        return items.some((Model) => target instanceof Model)
-      }
-    }
-    return this.createMeta(isList ? [SharedModel] : SharedModel, attrs, {
+    const input = isList ? items : items[0]
+    return this.createMeta(input, attrs, {
       ...hooks,
-      entry(_, data, parent, key) {
+      select(_, data, parent, key) {
         return select(items, data, parent, key)
+      },
+      adapt(_, data) {
+        return items.some(Entry => isInstanceOf(data, Entry))
       },
     })
   }

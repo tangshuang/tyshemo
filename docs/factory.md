@@ -28,7 +28,7 @@ class AnyModel extends Model {
 
 You can override the methods for meta generators by hooks functions, they are:
 
-- entry(Entries, data, parent): ModelClass // choose which Model to use
+- select(Entries, data, parent): ModelClass // choose which Model to use
 - instance(ChoosedModel, data, options): Model // how to initailize the Model
 - adapt(Entries, data, parent): boolean // determine the given data whether adapt to the give Model, if false, the data will be dropped
 - transport(childModel, parentModel) // do only once when child model initialized, you can assign parent's properties value to child inside, so that the child model can inherit some properties value from parent
@@ -46,7 +46,7 @@ You can override the methods for meta generators by hooks functions, they are:
 
 ```js
 const SomeMeta = Factory.createMeta([Model1, Model2], null, {
-  entry([Model1, Model2], data) {
+  select([Model1, Model2], data) {
     if (data.type === 'a') {
       return Model1
     }
@@ -89,7 +89,7 @@ class SomeModel extends Model {
 }
 ```
 
-The `select` function will override `entry` hook to help you to choose which Model to use.
+The `select` function will override `select` hook to help you to choose which Model to use.
 
 To create a meta which refer to an array of given Models, you should give the list in an array, i.e.
 
