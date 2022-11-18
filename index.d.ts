@@ -1076,7 +1076,7 @@ interface FactoryHooks {
   /**
    * provide scenes to factory meta
    */
-  scenes(): {
+  scenes?(): {
     [sceneCode: string]: Partial<Attrs> | (() => Partial<Attrs>) | (() => Promise<Partial<Attrs>>)
   }
 
