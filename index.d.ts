@@ -672,7 +672,7 @@ export declare class SceneMeta<T = any, I = T, M extends Model = Model, U extend
    * define scenes mapping
    */
   defineScenes(): {
-    [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+    [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
   }
   /**
    * switch self to new scene
@@ -1076,8 +1076,8 @@ interface FactoryHooks {
   /**
    * provide scenes to factory meta
    */
-  scenes<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(): {
-    [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+  scenes(): {
+    [sceneCode: string]: Partial<Attrs> | (() => Partial<Attrs>) | (() => Promise<Partial<Attrs>>)
   }
 
   default?(fn?: Function): Function
