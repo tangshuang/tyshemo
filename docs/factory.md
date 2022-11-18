@@ -34,6 +34,7 @@ You can override the methods for meta generators by hooks functions, they are:
 - transport(childModel, parentModel) // do only once when child model initialized, you can assign parent's properties value to child inside, so that the child model can inherit some properties value from parent
 - linkage(childModel, parentModel) // do each time when parent model changes, you can assign parent's properties value to child inside, so that build up the linkage between parent and child.(never use condition sentence inside linkage function)
 - override(childModel, parentModel): [{ meta, attrs }] // override metas' attrs by given an array with `meta` and `attrs` properties
+- scenes() // provide scenes, the same usage with `SceneMeta.defineScenes`
 - default(fn)
 - type(type)
 - validators(validators)

@@ -1073,6 +1073,13 @@ interface FactoryHooks {
     attrs: Partial<Attrs>,
   }>
 
+  /**
+   * provide scenes to factory meta
+   */
+  scenes<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(): {
+    [sceneCode: string]: Attrs<T, I, M, U> | (() => Attrs<T, I, M, U>) | (() => Promise<Omit<Attrs<T, I, M, U>, 'default'>>)
+  }
+
   default?(fn?: Function): Function
   type?(type?: any): any
   validators?(validators?: Validator[]): Validator[]

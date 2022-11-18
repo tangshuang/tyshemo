@@ -8,9 +8,9 @@ import {
   each,
   decideby,
 } from 'ts-fns'
-import { Meta } from './meta.js'
+import { SceneMeta } from './meta.js'
 
-export class FactoryMeta extends Meta {
+export class FactoryMeta extends SceneMeta {
   constructor(options) {
     const { $entries, $create, ...opts } = options
     super(opts)
@@ -233,7 +233,15 @@ export class Factory {
         $entries: Entries,
         $create: gen,
       }
-      this.meta = new FactoryMeta(attributes)
+      class ThisFactoryMeta extends FactoryMeta {
+        defineScenes() {
+          if (isFunction(entity.scenes)) {
+            return entity.scenes()
+          }
+          return {}
+        }
+      }
+      this.meta = new ThisFactoryMeta(attributes)
     }
   }
 
