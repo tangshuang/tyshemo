@@ -150,7 +150,8 @@ export function enhance(source) {
 export function eject(force) {
   return createDecorator('eject', (protos, key) => {
     if (force) {
-      protos[key] = null
+      const CurrentModel = protos.constructor
+      define(CurrentModel, key, null)
     }
   }, force)
 }
