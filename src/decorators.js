@@ -145,7 +145,12 @@ export function enhance(source) {
  *   @eject()
  *   some: string;
  * }
+ * @param {boolean} [force] whether to override model field to null
  */
-export function eject() {
-  return createDecorator('eject')
+export function eject(force) {
+  return createDecorator('eject', (protos, key) => {
+    if (force) {
+      protos[key] = null
+    }
+  }, force)
 }

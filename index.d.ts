@@ -1190,4 +1190,4 @@ export declare function enhance(source: any): PropertyDecorator
  * @deprecated use eject instead
  */
 export declare function layoff(): PropertyDecorator
-export declare function eject(): PropertyDecorator
+export declare function eject(froce?: boolean): PropertyDecorator
