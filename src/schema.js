@@ -471,10 +471,11 @@ export class Schema {
         return
       }
 
-      let msg = isString(message) ? message
+      let msg =
         // if validate return an error, use error message as
-        : isInstanceOf(res, Error) ? res.message
-          : ''
+        isInstanceOf(res, Error) ? res.message
+          : isString(message) ? message
+            : ''
 
       if (isFunction(message)) {
         msg = this._trydo(
