@@ -542,12 +542,12 @@ function createMeta(attrs)
 
 In typescript, you can get better typing feedback.
 
-## createMetaGroup()
+## createMetaRef()
 
 To create several metas, in case you want to referer metas to each other in a group.
 
 ```
-declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta[]) => T): T;
+declare function createMetaRef<T extends Meta[]>(create: (...args: Meta[]) => T): T;
 ```
 
 - create: function to return metas in an array
@@ -555,7 +555,7 @@ declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta[]) => 
 Notice: `...args` should must be refered in `create` function.
 
 ```js
-const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup((NameMeta, AgeMeta, HeightMeta) => [
+const [NameMeta, AgeMeta, HeightMeta] = createMetaRef((NameMeta, AgeMeta, HeightMeta) => [
   createMeta({
     default: 'tom',
     total() {
@@ -574,7 +574,7 @@ const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup((NameMeta, AgeMeta, Heig
 ])
 ```
 
-In the previous code, we use NameMeta, AgeMeta, HeightMeta in each meta, however, if we use createMeta directly we may get error about referer to variable which is not declared before we use it. As used createMetaGroup, we can use Meta before it created.
+In the previous code, we use NameMeta, AgeMeta, HeightMeta in each meta, however, if we use createMeta directly we may get error about referer to variable which is not declared before we use it. As used createMetaRef, we can use Meta before it created.
 
 ## AsyncMeta
 

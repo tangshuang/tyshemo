@@ -23,7 +23,7 @@ export function createMeta(...args) {
  * @param {function} create return objects to generate metas
  * @returns {Meta[]}
  * @example
- * const [Meta1, Meta2, Meta3] = createMetaGroup((Meta1, Meta2, Meta3) => {
+ * const [Meta1, Meta2, Meta3] = createMetaRef((Meta1, Meta2, Meta3) => {
  *   return [
  *     // for Meta1
  *     createMeta({
@@ -49,7 +49,7 @@ export function createMeta(...args) {
  *   ]
  * })
  */
-export function createMetaGroup(create) {
+export function createMetaRef(create) {
   const count = create.length
   const metas = []
   for (let i = 0; i < count; i ++) {
@@ -59,7 +59,7 @@ export function createMetaGroup(create) {
   const items = create(...metas)
 
   if (!isArray(items) || items.length !== count) {
-    throw new Error('[TySheMo]: createMetaGroup should get an array with same length as count.')
+    throw new Error('[TySheMo]: createMetaRef should get an array with same length as count.')
   }
 
   const output = items.map((item, i) => {
@@ -69,6 +69,11 @@ export function createMetaGroup(create) {
 
   return output
 }
+
+/**
+ * @deprecated
+ */
+export const createMetaGroup = createMetaRef
 
 /**
  *
