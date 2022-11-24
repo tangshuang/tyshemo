@@ -635,7 +635,7 @@ class SomeState extends StateMeta {
 `StateMeta` is special:
 
 - should use `value` instead of `default`
-- attributes `default, valiators, drop, to, map, disabled, state` are not supported
+- attributes `default, drop, to, map, state` are not supported
 - can be passed into `@state()`
 
 ### createStateMeta

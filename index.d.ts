@@ -784,14 +784,14 @@ export declare function createSceneMeta<T = any, I = T, M extends Model = Model,
  * create a state meta, whose disabled is force set to be true
  * @param attrs
  */
-export declare function createStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }): Meta<T, I, M, U>
+export declare function createStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'state'> & { value: T }): Meta<T, I, M, U>
 
 /**
  * create a state meta which is in scene mode
  * @param attrs
  * @param mapping
  */
-export declare function createSceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'validators' | 'drop' | 'to' | 'map' | 'disabled' | 'state'> & { value: T }, mapping: {
+export declare function createSceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'state'> & { value: T }, mapping: {
   [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
 }): SceneMeta<T, I, M, U>
 

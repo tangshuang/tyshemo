@@ -357,19 +357,18 @@ export class SceneMeta extends Meta {
 }
 
 /**
- * special meta which treated as state, the following attributes not working:
- * default, drop, to, map, disabled, hidden, available, state
+ * special meta which treated as state, the following attributes not working: default, drop, to, map, state
  * should must pass `value`
  */
 export class StateMeta extends Meta {
   __init(descriptors, attrs) {
     const { value, ...others } = attrs
-    delete others.disabled
+    delete others.drop
     delete others.state
     delete others.default
 
-    // force make disabled true, can not be changed
-    descriptors.disabled = { value: true, writable: false, enumerable: true, configurable: false }
+    // force make drop true, can not be changed
+    descriptors.drop = { value: true, writable: false, enumerable: true, configurable: false }
     delete descriptors.state
     descriptors.default = isUndefined(value) ? descriptors.value : { value }
 
@@ -380,12 +379,12 @@ export class StateMeta extends Meta {
 export class SceneStateMeta extends SceneMeta {
   __init(descriptors, attrs) {
     const { value, ...others } = attrs
-    delete others.disabled
+    delete others.drop
     delete others.state
     delete others.default
 
-    // force make disabled true, can not be changed
-    descriptors.disabled = { value: true, writable: false, enumerable: true, configurable: false }
+    // force make drop true, can not be changed
+    descriptors.drop = { value: true, writable: false, enumerable: true, configurable: false }
     delete descriptors.state
     descriptors.default = isUndefined(value) ? descriptors.value : { value }
 
@@ -394,7 +393,7 @@ export class SceneStateMeta extends SceneMeta {
   _ensureAttrs(attrs) {
     const { value, ...others } = attrs
 
-    delete others.disabled
+    delete others.drop
     delete others.state
     delete others.default
 
