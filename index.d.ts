@@ -476,7 +476,7 @@ export declare class Store {
 interface ValidatorOptions<T extends Model = Model, I extends any = any> {
   name?: string
   determine?: boolean | ((this: T, value: I, key: string) => boolean | Promise<boolean>)
-  validate: (this: T, value: I, key: string) => boolean | Promise<boolean> | Error | null
+  validate: (this: T, value: I, key: string) => boolean | Promise<boolean> | Error
   message?: string
   break?: boolean
   async?: boolean
