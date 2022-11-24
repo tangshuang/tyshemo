@@ -663,7 +663,7 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
 
 export declare class Meta<T = any, I = T, M extends Model = Model, U extends Obj = Obj> {
   constructor(options?: Attrs<T, I, M, U>)
-  extend<D extends T = T, V extends I = I, O extends M = M, B = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>
+  extend<D extends T = T, V extends I = I, O extends M = M, B extends Obj = U>(attrs: Partial<Attrs<D, V, O, B>>): Meta<D, V, O, B>
   static extend<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): typeof Meta & MetaClass<T, I, M, U>
   static create<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>): typeof Meta & MetaClass<T, I, M, U>
 }
