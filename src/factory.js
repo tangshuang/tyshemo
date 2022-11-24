@@ -38,7 +38,7 @@ export class Factory {
    * @param {Model|Model[]} Entries
    */
   init(Entries) {
-    const entity = this
+    const factory = this
     const isList = isArray(Entries)
 
     const {
@@ -56,23 +56,23 @@ export class Factory {
 
     const setupLinkage = (child, parent, key) => {
       // do only once
-      if (entity.transport) {
-        entity.transport(child, parent, key)
+      if (factory.transport) {
+        factory.transport(child, parent, key)
       }
 
       // --------
 
-      if (!entity.linkage) {
+      if (!factory.linkage) {
         return
       }
 
       const register = () => {
         const deps = parent.collect(() => {
-          entity.linkage(child, parent, key)
+          factory.linkage(child, parent, key)
         })
 
         const fn = () => {
-          entity.linkage(child, parent, key)
+          factory.linkage(child, parent, key)
 
           // -------
           // check whether the child is in parent model, if not, remove watchers
@@ -134,14 +134,14 @@ export class Factory {
         const scenes = parent.$$scenes
         const nexts = filter(items, key, parent)
         const values = nexts.map((next) => {
-          const FoundModel = entity.select(Entries, next, parent, key)
+          const FoundModel = factory.select(Entries, next, parent, key)
           if (!FoundModel) {
             throw new Error('[TySheMo]: Factory.select Model not found!')
           }
           const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
-          if (entity.override) {
+          if (factory.override) {
             ChoosedModel.prototype._takeOverrideMetas = function() {
-              return entity.override(this, parent, scenes)
+              return factory.override(this, parent, scenes)
             }
           }
           const child = decideby(() => {
@@ -149,9 +149,9 @@ export class Factory {
               return next.setParent([parent, key])
             }
             if (isObject(next)) {
-              return entity.instance(ChoosedModel, next, { parent, key, scenes })
+              return factory.instance(ChoosedModel, next, { parent, key, scenes })
             }
-            return entity.instance(ChoosedModel, {}, { parent, key, scenes })
+            return factory.instance(ChoosedModel, {}, { parent, key, scenes })
           })
           if (!child) {
             return
@@ -165,20 +165,20 @@ export class Factory {
 
       const attributes = {
         ...attrs,
-        default: entity.default(function(key) {
+        default: factory.default(function(key) {
           const items = isFunction(_default) ? _default.call(this, key) : _default
           const values = isArray(items) ? items : []
           return gen(values, key, this)
         }),
-        type: entity.type(Entries),
-        validators: entity.validators(_validators),
-        create: entity.create(function(value, key, json) {
+        type: factory.type(Entries),
+        validators: factory.validators(_validators),
+        create: factory.create(function(value, key, json) {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(isArray(coming) ? coming : [], key, this)
         }),
-        save: entity.save(_save || ((ms) => ms.map(m => m.toJSON()))),
-        map: entity.map(_map || (ms => ms.map(m => m.toData()))),
-        setter: entity.setter(function(value, key) {
+        save: factory.save(_save || ((ms) => ms.map(m => m.toJSON()))),
+        map: factory.map(_map || (ms => ms.map(m => m.toData()))),
+        setter: factory.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
           return gen(isArray(coming) ? coming : [], key, this)
         }),
@@ -190,43 +190,43 @@ export class Factory {
     else {
       const gen = function(value, key, parent) {
         const scenes = parent.$$scenes
-        const FoundModel = entity.select(Entries, value, parent, key)
+        const FoundModel = factory.select(Entries, value, parent, key)
         if (!FoundModel) {
           throw new Error('[TySheMo]: Factory.select Model not found!')
         }
         const ChoosedModel = scenes ? FoundModel.Scene(scenes) : FoundModel
-        if (entity.override) {
+        if (factory.override) {
           ChoosedModel.prototype._takeOverrideMetas = function() {
-            return entity.override(this, parent, scenes)
+            return factory.override(this, parent, scenes)
           }
         }
         const child = decideby(() => {
-          if (entity.adapt(Entries, value, key, parent)) {
+          if (factory.adapt(Entries, value, key, parent)) {
             return value.setParent([parent, key])
           }
           if (isObject(value)) {
-            return entity.instance(ChoosedModel, value, { key, parent, scenes })
+            return factory.instance(ChoosedModel, value, { key, parent, scenes })
           }
-          return entity.instance(ChoosedModel, {}, { key, parent, scenes })
+          return factory.instance(ChoosedModel, {}, { key, parent, scenes })
         })
         setupLinkage(child, parent, key)
         return child
       }
       const attributes = {
         ...attrs,
-        default: entity.default(function(key) {
+        default: factory.default(function(key) {
           const value = isFunction(_default) ? _default.call(this, key) : _default
           return gen(value, key, this)
         }),
-        type: entity.type(Entries),
-        validators: entity.validators(_validators),
-        create: entity.create(function(value, key, json) {
+        type: factory.type(Entries),
+        validators: factory.validators(_validators),
+        create: factory.create(function(value, key, json) {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(coming, key, this)
         }),
-        save: entity.save(_save || ((m) => m.toJSON())),
-        map: entity.map(_map || (m => m.toData())),
-        setter: entity.setter(function(value, key) {
+        save: factory.save(_save || ((m) => m.toJSON())),
+        map: factory.map(_map || (m => m.toData())),
+        setter: factory.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
           return gen(coming, key, this)
         }),
@@ -235,8 +235,8 @@ export class Factory {
       }
       class ThisFactoryMeta extends FactoryMeta {
         defineScenes() {
-          if (isFunction(entity.scenes)) {
-            return entity.scenes()
+          if (isFunction(factory.scenes)) {
+            return factory.scenes()
           }
           return {}
         }
@@ -309,8 +309,8 @@ export class Factory {
     if (hooks) {
       Object.assign(Constructor.prototype, hooks)
     }
-    const entity = new Constructor(entries, attrs)
-    return entity.getMeta()
+    const factory = new Constructor(entries, attrs)
+    return factory.getMeta()
   }
 
   /**
