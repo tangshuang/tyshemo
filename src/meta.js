@@ -11,6 +11,7 @@ import {
   isUndefined,
   isFunction,
   define,
+  isString,
 } from 'ts-fns'
 import { Validator } from './validator.js'
 import { ofChain, traverseChain } from './shared/utils.js'
@@ -273,44 +274,39 @@ export class SceneMeta extends Meta {
       notifiers.length = 0
     }
 
-    const deferers = []
-    const patches = []
-
+    const results = []
     sceneCodes.forEach((code) => {
       const scene = use(code)
       if (!scene) {
         return
       }
-      if (scene instanceof Promise) {
-        deferers.push(scene)
-      }
-      // if existing async scene, make it async
-      else if (deferers.length) {
-        deferers.push(Promise.resolve(scene))
-      }
-      else {
-        patches.push(scene)
-      }
+      results.push(scene)
     })
 
-    if (deferers.length) {
-      return Promise.all(deferers).then((scenes) => {
-        return update(scenes)
-      }).then((attrs) => {
-        this[SceneMetaSymbol].codes = sceneCodes
-        notifyAttrs(notifiers, attrs, 'scene meta')
-      }).finally(() => {
-        finish()
-      })
+    if (results.some(item => item instanceof Promise)) {
+      return Promise.all(results.map(item => item instanceof Promise ? item : Promise.resolve(item)))
+        .then((scenes) => {
+          return update(scenes)
+        })
+        .then((attrs) => {
+          this[SceneMetaSymbol].codes = sceneCodes
+          notifyAttrs(notifiers, attrs, 'scene meta')
+        })
+        .finally(() => {
+          finish()
+        })
     }
-
-    if (patches.length) {
-      const attrs = update(patches)
+    else if (results.length) {
+      const attrs = update(results)
       this[SceneMetaSymbol].codes = sceneCodes
       notifyAttrs(notifiers, attrs, 'scene meta')
+      finish()
+      return Promise.resolve()
     }
-
-    finish()
+    else {
+      finish()
+      return Promise.resolve()
+    }
   }
   _awaitMeta(model, key) {
     const { notifiers } = this[SceneMetaSymbol]
@@ -342,7 +338,7 @@ export class SceneMeta extends Meta {
           if (isArray(target[SceneCodesSymbol])) {
             target[SceneCodesSymbol].forEach(unshift)
           }
-          else if (target[SceneCodesSymbol]) {
+          else if (isString(target[SceneCodesSymbol])) {
             unshift(target[SceneCodesSymbol])
           }
         }

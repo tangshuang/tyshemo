@@ -22,6 +22,7 @@ import {
   hasOwnKey,
   decideby,
   refineProxy,
+  isString,
 } from 'ts-fns'
 
 import { Schema as _Schema } from './schema.js'
@@ -413,12 +414,11 @@ export class Model {
       if (isArray(target[SceneCodesSymbol])) {
         target[SceneCodesSymbol].forEach(unshift)
       }
-      else if (target[SceneCodesSymbol]) {
+      else if (isString(target[SceneCodesSymbol])) {
         unshift(target[SceneCodesSymbol])
       }
     }
     traverseChain(Constructor, Model, pushSceneCodes)
-    sceneCodes.reverse()
     return sceneCodes
   }
 
