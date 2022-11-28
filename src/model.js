@@ -419,6 +419,7 @@ export class Model {
       }
     }
     traverseChain(Constructor, Model, pushSceneCodes)
+    sceneCodes.reverse()
     return sceneCodes
   }
 
