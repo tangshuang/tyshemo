@@ -22,7 +22,7 @@ import {
 import { FactoryMeta } from './factory.js'
 import { Ty, Rule } from './ty/index.js'
 import { Meta } from './meta.js'
-import { patchObj } from './shared/utils.js'
+import { patchObj, isMemoRef } from './shared/utils.js'
 
 export class Schema {
   constructor(metas) {
@@ -74,6 +74,9 @@ export class Schema {
     const { default: defaultValue } = meta
     if (isFunction(defaultValue)) {
       return defaultValue.call(context, key)
+    }
+    else if (isMemoRef(defaultValue)) {
+      return context?.$$memories.find(item => item.getter = defaultValue.getter)?.value
     }
     else if (isObject(defaultValue) || isArray(defaultValue)) {
       return clone(defaultValue)
@@ -1071,6 +1074,7 @@ export class Schema {
       const { save, saveAs, catch: handle, asset } = meta
       const value = data[key]
       const dataKey = asset ? (isFunction(asset) ? asset(data, key) : asset) : key
+      const defaultValue = this.getDefault(key, context)
 
       if (isFunction(saveAs)) {
         const res = this._trydo(
@@ -1090,7 +1094,7 @@ export class Schema {
       if (isFunction(save)) {
         const res = this._trydo(
           () => save.call(context, value, key, data),
-          (error) => isFunction(handle) && handle.call(context, error, key) || {},
+          (error) => isFunction(handle) && handle.call(context, error, key) || defaultValue,
           {
             key,
             attr: 'save',
