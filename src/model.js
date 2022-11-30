@@ -133,23 +133,17 @@ export class Model {
     }
     define(this, '$schema', schema)
 
-    const needs = []
-    const gives = []
-    let deferer = null
-    // switchScene should come before needs check
+    /**
+     * process generated metas
+     * metas' attributes may be changed dynamicly after schema created
+     */
+
     const metaKeys = Object.keys(this.$schema)
+
+    // switchScene should come before needs check
+    const deferers = []
     metaKeys.forEach((metaKey) => {
       const meta = this.$schema[metaKey]
-      if (isFunction(meta.needs)) {
-        needs.push(...meta.needs.call(this, metaKey))
-      }
-      gives.push(meta)
-      // if it is Model, make make visible in gives
-      if (isInstanceOf(meta, FactoryMeta)) {
-        const entries = meta.$entries
-        gives.push(...[].concat(entries))
-      }
-
       if (isInstanceOf(meta, AsyncMeta)) {
         // make async attribute enable to notify back
         meta._awaitMeta($this, metaKey, meta)
@@ -158,14 +152,48 @@ export class Model {
         // make async attribute enable to notify back
         meta._awaitMeta($this, metaKey, meta)
         // switch to new scene
-        deferer = meta.switchScene(scenes)
+        const deferer = meta.switchScene(scenes)
+        deferers.push(deferer)
       }
     })
+
+    // override by _takeOverrideAttrs
+    const overrideAttrs = () => {
+      const overrides = this._takeOverrideAttrs()
+      if (!overrides.length) {
+        return
+      }
+      metaKeys.forEach((metaKey) => {
+        const meta = this.$schema[metaKey]
+        const item = overrides.find(item => isMatchMeta(meta, item.meta))
+        if (!item) {
+          return
+        }
+        Object.assign(meta, item.attrs)
+      })
+    }
+
     // check needs() and deps()
     const checkNeeds = () => {
+      const needs = []
+      const gives = []
+      metaKeys.forEach((metaKey) => {
+        const meta = this.$schema[metaKey]
+        if (isFunction(meta.needs)) {
+          needs.push(...meta.needs.call(this, metaKey))
+        }
+        gives.push(meta)
+        // if it is Model, make make visible in gives
+        if (isInstanceOf(meta, FactoryMeta)) {
+          const entries = meta.$entries
+          gives.push(...[].concat(entries))
+        }
+      })
+
       if (!needs.length) {
         return
       }
+
       for (let i = 0, len = needs.length; i < len; i ++) {
         const need = needs[i]
         let flag = false
@@ -182,12 +210,24 @@ export class Model {
         }
       }
     }
-    if (deferer instanceof Promise) {
-      deferer.then(checkNeeds)
+
+    if (deferers.length) {
+      Promise.all(deferers).then(() => {
+        overrideAttrs()
+        checkNeeds()
+      })
     }
     else {
-      Promise.resolve().then(checkNeeds)
+      Promise.resolve().then(() => {
+        overrideAttrs()
+        checkNeeds()
+      })
     }
+
+    /**
+     * patch nested model properties
+     * $root, $parent, $keyPath, $absKeyPath
+     */
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && key) {
@@ -228,6 +268,7 @@ export class Model {
     /**
      * create store
      */
+
     class Store extends _Store {
       _traps(traps) {
         const isNotNeed = (keyPath) => {
@@ -377,6 +418,10 @@ export class Model {
     const store = new Store()
     define(this, '$store', store)
 
+    /**
+     * finish
+     */
+
     this.init(data)
     this.emit('init')
     define(this, '$inited', true)
@@ -399,6 +444,14 @@ export class Model {
   }
 
   _takeOverrideMetas() {
+    return []
+  }
+
+  /**
+   * the same given with _takeOverrideMetas
+   * this will force override given attributes, have highest priority
+   */
+  _takeOverrideAttrs() {
     return []
   }
 
