@@ -106,7 +106,7 @@ export function edit(Constructor) {
       return this
     }
 
-    commit(tag) {
+    commit(tag = '$origin') {
       const data = this.toJSON()
       this.$commits[tag] = data
       return this

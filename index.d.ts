@@ -1010,12 +1010,12 @@ declare class EditorModel extends Model {
    * create a mirror
    * @param tag
    */
-  commit(tag: string): void
+  commit(tag?: string): void
   /**
    * rollback to the given named mirror
    * @param tag
    */
-  rollback(tag: string): void
+  rollback(tag?: string): void
   /**
    * cancel the previous change
    */
