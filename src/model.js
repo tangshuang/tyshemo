@@ -177,13 +177,14 @@ export class Model {
     const checkNeeds = () => {
       const needs = []
       const gives = []
+
       metaKeys.forEach((metaKey) => {
         const meta = this.$schema[metaKey]
         if (isFunction(meta.needs)) {
-          needs.push(...meta.needs.call(this, metaKey))
+          needs.push(...meta.needs.call(this, metaKey).map(item => ({ need: item, by: meta })))
         }
         gives.push(meta)
-        // if it is Model, make make visible in gives
+        // if it is Model, make visible in gives
         if (isInstanceOf(meta, FactoryMeta)) {
           const entries = meta.$entries
           gives.push(...[].concat(entries))
@@ -195,19 +196,12 @@ export class Model {
       }
 
       for (let i = 0, len = needs.length; i < len; i ++) {
-        const need = needs[i]
-        let flag = false
-        for (let j = 0, leng = gives.length; j < leng; j ++) {
-          const give = gives[j]
-          if (isMatchMeta(give, need)) {
-            flag = true
-            break
-          }
+        const { need, by } = needs[i]
+        if (gives.some(item => isMatchMeta(item, need))) {
+          break
         }
-        if (!flag) {
-          console.error(need, `is needed, but not given in Model`, $this)
-          throw new Error('Dependence is not given, please check dependencies graph.')
-        }
+        console.error(need, 'is needed by', by, 'but not given in Model', $this)
+        throw new Error('Dependence is not given, please check dependencies graph.')
       }
     }
 
