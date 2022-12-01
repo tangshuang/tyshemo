@@ -28,10 +28,10 @@ export function edit(Constructor) {
 
       // receive (clone) another model
       if (isInstanceOf(data, Constructor)) {
-        data = data.toJSON()
+        data = data.Chunk().toJSON()
         data = this.onEdit(data)
         super.init()
-        this.fromJSON(data)
+        this.Chunk().fromJSON(data)
       }
       else {
         super.init(data)
@@ -107,7 +107,7 @@ export function edit(Constructor) {
     }
 
     commit(tag = '$origin') {
-      const data = this.toJSON()
+      const data = this.Chunk().toJSON()
       this.$commits[tag] = data
       return this
     }
@@ -123,7 +123,7 @@ export function edit(Constructor) {
       }
 
       this.$doing = true
-      this.fromJSON(data)
+      this.Chunk().fromJSON(data)
       this.$doing = false
       this.$record({ tag, data })
 
@@ -179,9 +179,9 @@ export function edit(Constructor) {
 
     submit(model) {
       if (isInstanceOf(model, Constructor)) {
-        let data = this.toJSON()
+        let data = this.Chunk().toJSON()
         data = this.onSubmit(data)
-        model.fromJSON(data)
+        model.Chunk().fromJSON(data)
       }
       return model
     }

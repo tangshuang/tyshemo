@@ -1046,7 +1046,7 @@ export class Model {
 
   _initData(data) {
     this.$initing = true
-    this.fromJSON(data)
+    this.Chunk().fromJSON(data)
     delete this.$initing
   }
 
