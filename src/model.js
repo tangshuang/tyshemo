@@ -853,18 +853,13 @@ export class Model {
 
     // make meta.activate work
     const createActivation = (key, activate) => {
-      const createWatcher = (dep) => {
-        const watcher = () => {
-          this.unwatch(dep, watcher)
-          const value = createActivation(key, activate)
-          this.set(key, value)
-        }
-        return watcher
-      }
       const value = this.collect(() => activate.call(this), (deps) => {
         deps.forEach((dep) => {
-          const watcher = createWatcher(dep)
-          this.watch(dep, watcher, true)
+          const watcher = () => {
+            const value = createActivation(key, activate)
+            this.set(key, value, true)
+          }
+          this.watch(dep, watcher, true, true)
         })
       })
       return value
@@ -1663,14 +1658,14 @@ export class Model {
     return coming
   }
 
-  watch(key, fn, deep) {
+  watch(key, fn, deep, once) {
     if (isInstanceOf(key, Meta) || isInheritedOf(key, Meta)) {
       key = this.use(key, view => view.key)
     }
     if (!key) {
       return this
     }
-    this.$store.watch(key, fn, deep)
+    this.$store.watch(key, fn, deep, once)
     return this
   }
 

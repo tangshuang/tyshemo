@@ -434,10 +434,10 @@ export class Store {
     return value
   }
 
-  watch(keyPath, fn, deep = false) {
+  watch(keyPath, fn, deep = false, once = false) {
     const items = this._watchers
     const key = isArray(keyPath) ? keyPath : makeKeyChain(keyPath)
-    items.push({ key, fn, deep })
+    items.push({ key, fn, deep, once })
     return this
   }
 
@@ -494,7 +494,11 @@ export class Store {
 
     items.forEach((item) => {
       const target = item.key
+      const once = item.once
       item.fn.call(this.context || this.state, { target, key, value, next, prev, active, invalid, compute })
+      if (once) {
+        this.unwatch(item.key, item.fn)
+      }
     })
 
     return true
