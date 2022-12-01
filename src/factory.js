@@ -177,7 +177,7 @@ export class Factory {
           return gen(isArray(coming) ? coming : [], key, this)
         }),
         save: factory.save(_save || ((ms) => ms.map(m => m.Chunk().toJSON()))),
-        map: factory.map(_map || (ms => ms.map(m => m.toData()))),
+        map: factory.map(_map || (ms => ms.map(m => m.Chunk().toData()))),
         setter: factory.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
           return gen(isArray(coming) ? coming : [], key, this)
@@ -225,7 +225,7 @@ export class Factory {
           return gen(coming, key, this)
         }),
         save: factory.save(_save || ((m) => m.Chunk().toJSON())),
-        map: factory.map(_map || (m => m.toData())),
+        map: factory.map(_map || (m => m.Chunk().toData())),
         setter: factory.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
           return gen(coming, key, this)

@@ -2031,13 +2031,13 @@ export class Model {
   }
 
   toParams(determine) {
-    const data = this.toData()
+    const data = this.Chunk().toData()
     const output = Factory.toParams(data, determine)
     return output
   }
 
   toFormData(determine) {
-    const data = this.toData()
+    const data = this.Chunk().toData()
     const formdata = Factory.toFormData(data, determine)
     return formdata
   }
