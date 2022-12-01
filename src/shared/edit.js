@@ -4,6 +4,8 @@ import {
   isInstanceOf,
 } from 'ts-fns'
 
+export const EditSymbol = Symbol('editmode')
+
 export function edit(Constructor) {
   class Editor extends Constructor {
     init(data) {
@@ -25,6 +27,7 @@ export function edit(Constructor) {
         writable: true,
         configurable: true,
       })
+      define(this, EditSymbol, true)
 
       // receive (clone) another model
       if (isInstanceOf(data, Constructor)) {
