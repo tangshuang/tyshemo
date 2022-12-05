@@ -446,7 +446,9 @@ export class Model {
    * this will force override given attributes, have highest priority
    */
   _takeOverrideAttrs() {
-    return []
+    const Constructor = getConstructorOf(this)
+    const overrideAttrs = Constructor.Attrs || []
+    return overrideAttrs
   }
 
   _takeSceneCodes() {

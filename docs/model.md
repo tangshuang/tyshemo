@@ -972,6 +972,22 @@ const data = model.Chunk(someChunk).toData()
 
 Why we need `chunk`? Because in some cases we do not sure the `create` and `save` is enough, a Model may have different data sources and need to generate by different ways. In these situations, we can create different chunks and use `model.fromChunk` `model.toJSON` `model.toData` to generate different kind of data.
 
+## Attrs
+
+```js
+class Some extends Model {
+  static Attrs = [
+    {
+      meta: SomeMeta,
+      attrs: {
+        hidden: true,
+      },
+    }
+  ]
+}
+```
+
+The static `Attrs` property is a option to override the metas' attributes be given options. The given array's structure is like `Factory`'s `override` hook's return value structure.
 
 ## Data Flow
 
