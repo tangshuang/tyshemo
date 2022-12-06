@@ -904,7 +904,7 @@ type View<T = any, I = T> = {
 } & Obj
 
 export declare class Model implements Obj {
-  constructor(data?: Obj, parent?: [Model, string | string[]])
+  constructor(data?: Obj)
 
   $views: {
     [field: string]: View
@@ -1005,7 +1005,7 @@ export declare class Model implements Obj {
   static Scene<T>(this: ConstructorOf<T>, sceneCodes: string | string[]): ConstructorOf<T> & typeof Model
 }
 
-declare class EditorModel extends Model {
+export declare class EditorModel extends Model {
   /**
    * create a mirror
    * @param tag
