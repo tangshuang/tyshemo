@@ -220,7 +220,6 @@ export class SceneMeta extends Meta {
   switchScene(sceneCode) {
     const { codes, passed, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
     if (disabled) {
-      // console.warn(this, 'can not switch to scene', sceneCodes, ', because it is presisted.')
       return
     }
 
@@ -301,11 +300,9 @@ export class SceneMeta extends Meta {
       this[SceneMetaSymbol].codes = sceneCodes
       notifyAttrs(notifiers, attrs, 'scene meta')
       finish()
-      return Promise.resolve()
     }
     else {
       finish()
-      return Promise.resolve()
     }
   }
   _awaitMeta(model, key) {

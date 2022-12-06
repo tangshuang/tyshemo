@@ -49,7 +49,7 @@ export class Model {
     // const Constructor = getConstructorOf(this)
     const {
       parent,
-      key,
+      key: keyInParent,
       scenes = this._takeSceneCodes(),
     } = options
 
@@ -153,12 +153,14 @@ export class Model {
         meta._awaitMeta($this, metaKey, meta)
         // switch to new scene
         const deferer = meta.switchScene(scenes)
-        deferers.push(deferer)
+        if (isInstanceOf(deferer, Promise)) {
+          deferers.push(deferer)
+        }
       }
     })
 
     // override by _takeOverrideAttrs
-    const overrideAttrs = () => {
+    const overrideAttrs = (dispatch) => {
       const overrides = this._takeOverrideAttrs()
       if (!overrides.length) {
         return
@@ -170,6 +172,9 @@ export class Model {
           return
         }
         Object.assign(meta, item.attrs)
+        if (dispatch) {
+          this.$store.forceDispatch(`!${metaKey}`, message)
+        }
       })
     }
 
@@ -207,15 +212,13 @@ export class Model {
 
     if (deferers.length) {
       Promise.all(deferers).then(() => {
-        overrideAttrs()
-        checkNeeds()
+        overrideAttrs(true)
+        setTimeout(checkNeeds, 0)
       })
     }
     else {
-      Promise.resolve().then(() => {
-        overrideAttrs()
-        checkNeeds()
-      })
+      overrideAttrs()
+      setTimeout(checkNeeds, 0)
     }
 
     /**
@@ -224,8 +227,8 @@ export class Model {
      */
 
     // use passed parent
-    if (parent && isInstanceOf(parent, Model) && key) {
-      this.setParent([parent, key])
+    if (parent && isInstanceOf(parent, Model) && keyInParent) {
+      this.setParent([parent, keyInParent])
     }
 
     define(this, '$root', () => {
