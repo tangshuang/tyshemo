@@ -173,7 +173,7 @@ export class Model {
         }
         Object.assign(meta, item.attrs)
         if (dispatch) {
-          this.$store.forceDispatch(`!${metaKey}`, message)
+          this.$store.forceDispatch(`!${metaKey}`, 'override attrs')
         }
       })
     }
