@@ -149,7 +149,7 @@ const notifyAttrs = (notifiers, attrs, message) => {
       each(viewGetters, (getter, attr) => {
         define(view, attr, {
           get: () => {
-            const data = model._getData(key)
+            const data = model.getData(key)
             return getter.call(this, data, key)
           },
           enumerable: true,
