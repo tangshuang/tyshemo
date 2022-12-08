@@ -82,13 +82,10 @@ export class Meta {
 
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    const meta = new Constructor()
+    const meta = new Constructor(attrs)
 
     // merge attrs
     each(this, (descriptor, attr) => {
-      define(meta, attr, descriptor)
-    }, true)
-    each(attrs, (descriptor, attr) => {
       define(meta, attr, descriptor)
     }, true)
 
