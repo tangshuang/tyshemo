@@ -81,17 +81,16 @@ export class Meta {
   }
 
   extend(attrs = {}) {
+    const Constructor = getConstructorOf(this)
+    const meta = new Constructor()
+
     // merge attrs
-    const mergedAttrs = {}
     each(this, (descriptor, attr) => {
-      define(mergedAttrs, attr, descriptor)
+      define(meta, attr, descriptor)
     }, true)
     each(attrs, (descriptor, attr) => {
-      define(mergedAttrs, attr, descriptor)
+      define(meta, attr, descriptor)
     }, true)
-
-    const Constructor = getConstructorOf(this)
-    const meta = new Constructor(mergedAttrs)
 
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
 
