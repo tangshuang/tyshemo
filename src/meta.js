@@ -82,12 +82,14 @@ export class Meta {
 
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    const meta = new Constructor(attrs)
 
     // merge attrs
     each(this, (descriptor, attr) => {
-      define(meta, attr, descriptor)
+      define(Constructor, attr, descriptor)
     }, true)
+
+    // pass attrs so that it will be used as passed attrs in scene meta
+    const meta = new Constructor(attrs)
 
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
 
