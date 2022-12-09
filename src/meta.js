@@ -82,14 +82,29 @@ export class Meta {
 
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
+    let attrset = { ...attrs }
 
-    // merge attrs
+    // merge passed attrs
+    const sceneInfo = this[SceneMetaSymbol]
+    if (sceneInfo) {
+      const passed = sceneInfo.passed || {}
+      attrset = { ...passed, ...attrs }
+    }
+
+    // merge attrs, should before new Constructor, because we need to keep inherited attributes inside,
+    // if we merge after new, default attributes of SceneMeta will not be as expected
     each(this, (descriptor, attr) => {
+      if (typeof attr === 'symbol') {
+        return
+      }
+      if (!descriptor.configurable) {
+        return
+      }
       define(Constructor, attr, descriptor)
     }, true)
 
     // pass attrs so that it will be used as passed attrs in scene meta
-    const meta = new Constructor(attrs)
+    const meta = new Constructor(attrset)
 
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
 
