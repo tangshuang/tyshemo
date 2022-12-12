@@ -58,7 +58,7 @@ export class Meta {
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'Scene'].includes(key)) {
+      if (['constructor', '__init', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'Scene'].includes(key)) {
         return
       }
       if (inObject(key, attrs, true)) {
@@ -82,8 +82,9 @@ export class Meta {
 
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    let attrset = { ...attrs }
+    class NewConstructor extends Constructor {}
 
+    let attrset = { ...attrs }
     // merge passed attrs
     const sceneInfo = this[SceneMetaSymbol]
     if (sceneInfo) {
@@ -91,7 +92,7 @@ export class Meta {
       attrset = { ...passed, ...attrs }
     }
 
-    // merge attrs, should before new Constructor, because we need to keep inherited attributes inside,
+    // merge attrs, should before new NewConstructor, because we need to keep inherited attributes inside,
     // if we merge after new, default attributes of SceneMeta will not be as expected
     each(this, (descriptor, attr) => {
       if (typeof attr === 'symbol') {
@@ -100,11 +101,11 @@ export class Meta {
       if (!descriptor.configurable) {
         return
       }
-      define(Constructor, attr, descriptor)
+      define(NewConstructor, attr, descriptor)
     }, true)
 
     // pass attrs so that it will be used as passed attrs in scene meta
-    const meta = new Constructor(attrset)
+    const meta = new NewConstructor(attrset)
 
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
 
