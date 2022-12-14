@@ -2226,12 +2226,9 @@ export class Model {
       }
     }
     const editor = new Editor({ ...this.toJSON(), ...data })
-    this.onEdit(editor)
-    this.emit('edit', editor)
+    this.emit('editor', editor)
     return editor
   }
-
-  onEdit() {}
 
   /**
    * remember a value when using for getter in meta
