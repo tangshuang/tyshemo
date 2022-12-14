@@ -181,11 +181,10 @@ export function edit(Constructor) {
     }
 
     submit(model) {
-      if (isInstanceOf(model, Constructor)) {
-        let data = this.Chunk().toJSON()
-        data = this.onSubmit(data)
-        model.Chunk().fromJSON(data)
-      }
+      let data = this.Chunk().toJSON()
+      data = this.onSubmit(data)
+      // here we should must ensure model is able to receive current editor's data
+      model.Chunk().fromJSON(data)
       return model
     }
 

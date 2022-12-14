@@ -2208,20 +2208,21 @@ export class Model {
   Edit(data = {}) {
     const $this = this
     const Constructor = getConstructorOf(this)
-    const _Editor = edit(Constructor)
-
-    class Editor extends _Editor {
+    const source = Symbol('editsource')
+    class Editor extends Constructor.Edit() {
       init(data) {
+        super.init(data)
+
         // set parent before restore
         const { $parent, $keyPath } = $this
         if ($parent) {
           this.setParent([$parent, $keyPath[0]])
         }
 
-        super.init(data)
+        this[source] = $this
       }
       submit() {
-        return super.submit($this)
+        return super.submit(this[source])
       }
     }
     const editor = new Editor({ ...this.toJSON(), ...data })
