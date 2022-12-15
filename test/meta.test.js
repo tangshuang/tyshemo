@@ -2,7 +2,7 @@ import { Model } from '../src/model.js'
 import { Meta, StateMeta } from '../src/meta.js'
 import { formatDate, createDate } from 'ts-fns'
 import { Numeric } from '../src/ty/index.js'
-import { createMetaGroup, createMeta, createAsyncMeta } from '../src/interface.js'
+import { createMetaRef, createMeta, createAsyncMeta } from '../src/interface.js'
 
 describe('Meta', () => {
   test('extend', () => {
@@ -132,8 +132,8 @@ describe('Meta', () => {
     expect(good.use('discount').will_cost).toBe(12)
   })
 
-  test('createMetaGroup', () => {
-    const [NameMeta, AgeMeta, HeightMeta] = createMetaGroup((NameMeta, AgeMeta, HeightMeta) => [
+  test('createMetaRef', () => {
+    const [NameMeta, AgeMeta, HeightMeta] = createMetaRef((NameMeta, AgeMeta, HeightMeta) => [
       createMeta({
         default: 'tom',
         total() {

@@ -99,12 +99,6 @@ function useAttr(meta, key, descriptor) {
   define(meta, key, descriptor)
 }
 
-function useAttrs(meta, attrs) {
-  each(attrs, (descriptor, key) => {
-    useAttr(meta, key, descriptor)
-  }, true)
-}
-
 const ensureAttrs = (attrs) => {
   if (!attrs || typeof attrs !== 'object') {
     return {}
@@ -167,14 +161,17 @@ export class Meta {
       if (inObject(key, attrs, true)) {
         return
       }
-      descriptors[key] = descriptor
+      descriptors[key] = properties[key]
     }, true)
 
     // from prototype
     const Constructor = getConstructorOf(this)
     const { prototype } = Constructor
     each(prototype, (descriptor, key) => {
-      if (['constructor', '__init', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'Scene'].includes(key)) {
+      if (key[0] === '_') {
+        return
+      }
+      if (['constructor', 'extend', 'fetchAsyncAttrs', 'defineScenes', 'switchScene', 'Scene'].includes(key)) {
         return
       }
       if (inObject(key, attrs, true)) {
@@ -183,17 +180,24 @@ export class Meta {
       if (inObject(key, descriptors)) {
         return
       }
-      descriptors[key] = descriptor
+      descriptors[key] = prototype[key]
     }, true)
 
     this.__init(descriptors, attrs)
   }
 
   __init(descriptors, attrs) {
-    each(descriptors, (descriptor, key) => {
+    this.__useAttrs(descriptors, attrs)
+  }
+
+  __useAttrs(...attrsets) {
+    const attrs = attrsets.length > 1 ? attrsets.reduce((attrs, item) => {
+      Object.assign(attrs, item)
+      return attrs
+    }, {}) : attrsets[0]
+    each(attrs, (descriptor, key) => {
       useAttr(this, key, descriptor)
-    })
-    useAttrs(this, attrs)
+    }, true)
   }
 
   extend(attrs = {}) {
@@ -264,7 +268,7 @@ export class AsyncMeta extends Meta {
         ...data,
         ...attrs,
       })
-      useAttrs(this, next)
+      this.__useAttrs(next)
       notifyAttrs(ready.notifiers, next, 'async meta')
       ready.notifiers.length = 0
     })
@@ -350,7 +354,7 @@ export class SceneMeta extends Meta {
         ...attrs,
         ...passed,
       })
-      useAttrs(this, next)
+      this.__useAttrs(next)
       return next
     }
 
@@ -445,28 +449,20 @@ export class StateMeta extends Meta {
     delete others.state
     delete others.default
 
-    // force make drop true, can not be changed
-    descriptors.drop = { value: true, writable: false, enumerable: true, configurable: false }
-    delete descriptors.state
-    descriptors.default = isUndefined(value) ? descriptors.value : { value }
+    const desc = { ...descriptors }
+    delete desc.drop
+    delete desc.state
+    desc.default = isUndefined(value) ? descriptors.value : value
 
-    super.__init(descriptors, others)
+    super.__init(desc, others)
+    // force make drop true, can not be changed
+    define(this, 'drop', { value: true, writable: false, enumerable: true, configurable: false })
   }
 }
 
 export class SceneStateMeta extends SceneMeta {
   __init(descriptors, attrs) {
-    const { value, ...others } = attrs
-    delete others.drop
-    delete others.state
-    delete others.default
-
-    // force make drop true, can not be changed
-    descriptors.drop = { value: true, writable: false, enumerable: true, configurable: false }
-    delete descriptors.state
-    descriptors.default = isUndefined(value) ? descriptors.value : { value }
-
-    super.__init(descriptors, others)
+    StateMeta.prototype.__init.call(this, descriptors, attrs)
   }
   _ensureAttrs(attrs) {
     const { value, ...others } = attrs
@@ -479,6 +475,6 @@ export class SceneStateMeta extends SceneMeta {
       others.default = value
     }
 
-    return others
+    return super._ensureAttrs(others)
   }
 }
