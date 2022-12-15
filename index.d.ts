@@ -495,9 +495,9 @@ export declare class Validator<T extends Model = Model, I extends any = any> {
   static readonly minLen: (message: string, len?: number) => Validator
   static readonly max: (message: string, len?: number) => Validator
   static readonly min: (message: string, len?: number) => Validator
+  static readonly integer: (message: string, len?: number) => Validator
+  static readonly decimal: (message: string, len?: number) => Validator
 
-  static readonly integer: (len: number, message: string) => Validator
-  static readonly decimal: (len: number, message: string) => Validator
   static readonly email: (message: string) => Validator
   static readonly url: (message: string) => Validator
   static readonly date: (message: string) => Validator

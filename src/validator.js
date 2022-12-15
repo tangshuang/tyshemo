@@ -170,38 +170,78 @@ function min(message, num) {
   })
 }
 
-function integer(len, message) {
-  const validate = (value) => {
-    if (!isNumber(value) && !isNumeric(value)) {
+function integer(message, len) {
+  return new Validator({
+    name: 'integer',
+    determine(_, key) {
+      if (isNumber(len)) {
+        return true
+      }
+      if (isNumber(this?.$views?.[key]?.integer)) {
+        return true
+      }
       return false
-    }
+    },
+    validate(value, key) {
+      if (!isNumber(value) && !isNumeric(value)) {
+        return false
+      }
 
-    const num = numerify(value).replace('-', '')
-    const [integ] = num.split('.')
-    if (integ.length > len) {
-      return false
-    }
+      const num = numerify(value).replace('-', '')
+      const [intPart] = num.split('.')
+      const integer = this?.$views?.[key]?.integer
+      const limit = isNumber(len) ? len : isNumber(integer) ? integer : null
 
-    return true
-  }
-  return match(validate, message, 'integer')
+      if (limit === null) {
+        return true
+      }
+
+      if (intPart.length > limit) {
+        return false
+      }
+
+      return true
+    },
+    message,
+    break: true,
+  })
 }
 
-function decimal(len, message) {
-  const validate = (value) => {
-    if (!isNumber(value) && !isNumeric(value)) {
+function decimal(message, len) {
+  return new Validator({
+    name: 'decimal',
+    determine(_, key) {
+      if (isNumber(len)) {
+        return true
+      }
+      if (isNumber(this?.$views?.[key]?.decimal)) {
+        return true
+      }
       return false
-    }
+    },
+    validate(value, key) {
+      if (!isNumber(value) && !isNumeric(value)) {
+        return false
+      }
 
-    const num = numerify(value)
-    const [_, decim = ''] = num.split('.')
-    if (decim.length > len) {
-      return false
-    }
+      const num = numerify(value).replace('-', '')
+      const [, deciPart = ''] = num.split('.')
+      const decimal = this?.$views?.[key]?.decimal
+      const limit = isNumber(len) ? len : isNumber(decimal) ? decimal : null
 
-    return true
-  }
-  return match(validate, message, 'decimal')
+      if (limit === null) {
+        return true
+      }
+
+      if (deciPart.length > limit) {
+        return false
+      }
+
+      return true
+    },
+    message,
+    break: true,
+  })
 }
 
 function email(message) {

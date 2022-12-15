@@ -172,6 +172,12 @@ const attrs = {
   // optional, function or boolean
   // works with Validator.minLen when value is string
   minLen: number,
+  // optional, function or boolean
+  // works with Validator.integer when value is numeric
+  integer: number,
+  // optional, function or boolean
+  // works with Validator.decimal when value is numeric
+  decimal: number,
 
   // when this field's value changed, the `watch` function will be invoke
   watch(e) {},
