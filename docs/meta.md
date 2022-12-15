@@ -147,16 +147,31 @@ const attrs = {
   // optional, function or boolean or string,
   // if `hidden` is true, it means you want to hide the field related ui component
   hidden: boolean | (value, key) => boolean,
-  // optional, function or boolean or string.
-  // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
-  // `Empty` rule: null|undefined|''|NaN|[]|{}
-  required: boolean | (value, key) => boolean,
-  // optional, function to determine the value is empty
-  empty: (value, key) => boolean,
   // optional, function to determine wheather the field is available
   // when available is false, disabled (drop), hidden will be forcely set `true`
   // it is like a higher priority toggler of `disabled, drop, hidden`
   available: boolean | (value, key) => boolean,
+
+  // optional, function or boolean or string.
+  // `required` will affect validation. If `required` is false, validation will be dropped when the given value is empty. For example, schema.validate('some', null, context) -> true. Only when `required` is true, the validation will thrown out the errors when the given value is empty.
+  // `Empty` rule: null|undefined|''|NaN|[]|{}
+  // works with Validator.required
+  required: boolean | (value, key) => boolean,
+  // optional, function to determine the value is empty
+  // works with Validator.required
+  empty: (value, key) => boolean,
+  // optional, function or boolean
+  // works with Validator.max when value is numeric
+  max: number,
+  // optional, function or boolean
+  // works with Validator.min when value is numeric
+  min: number,
+  // optional, function or boolean
+  // works with Validator.maxLen when value is string
+  maxLen: number,
+  // optional, function or boolean
+  // works with Validator.minLen when value is string
+  minLen: number,
 
   // when this field's value changed, the `watch` function will be invoke
   watch(e) {},

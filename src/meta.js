@@ -12,33 +12,149 @@ import {
   isFunction,
   define,
   isString,
+  isObject,
 } from 'ts-fns'
 import { Validator } from './validator.js'
 import { ofChain, traverseChain } from './shared/utils.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 
+const AsyncMetaSymbol = Symbol()
+const SceneMetaSymbol = Symbol()
+const SceneCodesSymbol = Symbol()
+
+const createValidator = v =>
+  isInstanceOf(v, Validator) ? v
+    : isInheritedOf(v, Validator) ? new v()
+      : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
+        : null
+
 const createValidators = (items) => {
-  return items.map(v =>
-    isInstanceOf(v, Validator) ? v
-      : isInheritedOf(v, Validator) ? new v()
-        : v && typeof v === 'object' && !isEmpty(v) ? new Validator(v)
-          : null
-  ).filter(v => !!v)
+  if (isArray(items)) {
+    return items.map(createValidator).filter(Boolean)
+  }
+  if (isObject(items)) {
+    const validators = []
+    const keys = Object.keys(items)
+    keys.forEach((key) => {
+      const item = items[key]
+      const validator = createValidator(item)
+      if (validator) {
+        const index = validators.length
+        validators[key] = index // patch key on the array
+        validators.push(validator)
+      }
+    })
+    return validators
+  }
+}
+
+const mergeValidators = (meta, newValdiators) => {
+  const originValidators = isObject(meta.validators) ? createValidators(meta.validators)
+    : meta.validators || []
+  // concat array
+  if (isArray(newValdiators)) {
+    return [...originValidators, ...newValdiators.map(createValidator).filter(Boolean)]
+  }
+  // merge mapping
+  if (isObject(newValdiators)) {
+    const validators = []
+    Object.assign(validators, originValidators) // originValidators may have keys more than indexes
+    const keys = Object.keys(newValdiators)
+    keys.forEach((key) => {
+      const item = newValdiators[key]
+      const validator = createValidator(item)
+      const keyIndex = originValidators[key]
+      // add or replace validator
+      if (validator) {
+        // replace
+        if (!isUndefined(keyIndex)) {
+          validators[keyIndex] = validator
+        }
+        // add
+        else {
+          const index = validators.length
+          validators[key] = index // patch key on the array
+          validators.push(validator)
+        }
+      }
+      // remove the previous validator
+      else {
+        if (!isUndefined(keyIndex)) {
+          validators[keyIndex] = null
+        }
+      }
+    })
+    return validators.filter(Boolean)
+  }
+  // no change
+  return originValidators
 }
 
 function useAttr(meta, key, descriptor) {
-  const { value } = descriptor
   if (key === 'validators') {
-    meta.validators = isArray(value) ? createValidators(value) : []
+    const { value } = descriptor
+    meta.validators = createValidators(value)
     return
   }
-  meta[key] = value
+  define(meta, key, descriptor)
 }
 
 function useAttrs(meta, attrs) {
   each(attrs, (descriptor, key) => {
     useAttr(meta, key, descriptor)
   }, true)
+}
+
+const ensureAttrs = (attrs) => {
+  if (!attrs || typeof attrs !== 'object') {
+    return {}
+  }
+  return filter(attrs, (value) => {
+    if (isUndefined(value)) {
+      return false
+    }
+    return true
+  })
+}
+
+const notifyAttrs = (notifiers, attrs, message) => {
+  const viewGetters = {}
+  const viewAttrs = {}
+  each(attrs, (value, key) => {
+    if (isUndefined(value)) {
+      return
+    }
+    if (inObject(key, RESERVED_ATTRIBUTES)) {
+      return
+    }
+    if (isFunction(value)) {
+      viewGetters[key] = value
+    }
+    else {
+      viewAttrs[key] = value
+    }
+  })
+  notifiers.forEach(({ model, key }) => {
+    if (!model.$inited) {
+      return
+    }
+    model.use(key, (view) => {
+      model.$store.runSilent(() => {
+        Object.assign(view, viewAttrs)
+      })
+      each(viewGetters, (getter, attr) => {
+        define(view, attr, {
+          get: () => {
+            const data = model.getData(key)
+            return getter.call(model, data, key)
+          },
+          enumerable: true,
+          configurable: true,
+        })
+      })
+      model.$store.forceDispatch(`!${key}`, message)
+    })
+  })
 }
 
 export class Meta {
@@ -92,6 +208,10 @@ export class Meta {
       attrset = { ...passed, ...attrs }
     }
 
+    if (attrs.validators) {
+      attrset.validators = mergeValidators(this, attrs.validators)
+    }
+
     // merge attrs, should before new NewConstructor, because we need to keep inherited attributes inside,
     // if we merge after new, default attributes of SceneMeta will not be as expected
     each(this, (descriptor, attr) => {
@@ -113,6 +233,11 @@ export class Meta {
   }
 
   static extend(attrs) {
+    if (attrs?.validators) {
+      const validators = mergeValidators(this, attrs && attrs.validators)
+      const Constructor = inherit(this, null, { ...attrs, validators })
+      return Constructor
+    }
     const Constructor = inherit(this, null, attrs)
     return Constructor
   }
@@ -121,58 +246,6 @@ export class Meta {
     const Constructor = inherit(Meta, null, attrs)
     return Constructor
   }
-}
-
-const AsyncMetaSymbol = Symbol()
-const ensureAttrs = (attrs) => {
-  if (!attrs || typeof attrs !== 'object') {
-    return {}
-  }
-  return filter(attrs, (value) => {
-    if (isUndefined(value)) {
-      return false
-    }
-    return true
-  })
-}
-const notifyAttrs = (notifiers, attrs, message) => {
-  const viewGetters = {}
-  const viewAttrs = {}
-  each(attrs, (value, key) => {
-    if (isUndefined(value)) {
-      return
-    }
-    if (inObject(key, RESERVED_ATTRIBUTES)) {
-      return
-    }
-    if (isFunction(value)) {
-      viewGetters[key] = value
-    }
-    else {
-      viewAttrs[key] = value
-    }
-  })
-  notifiers.forEach(({ model, key }) => {
-    if (!model.$inited) {
-      return
-    }
-    model.use(key, (view) => {
-      model.$store.runSilent(() => {
-        Object.assign(view, viewAttrs)
-      })
-      each(viewGetters, (getter, attr) => {
-        define(view, attr, {
-          get: () => {
-            const data = model.getData(key)
-            return getter.call(model, data, key)
-          },
-          enumerable: true,
-          configurable: true,
-        })
-      })
-      model.$store.forceDispatch(`!${key}`, message)
-    })
-  })
 }
 
 export class AsyncMeta extends Meta {
@@ -211,8 +284,6 @@ export class AsyncMeta extends Meta {
   }
 }
 
-const SceneMetaSymbol = Symbol()
-const SceneCodesSymbol = Symbol()
 export class SceneMeta extends Meta {
   __init(descriptors, attrs) {
     super.__init(descriptors, attrs)

@@ -539,7 +539,9 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
   /**
    * validators used by `validate` or `validateAsync`
    */
-  validators?: (Validator<M, I> | ValidatorOptions<M, I>)[]
+  validators?: (Validator<M, I> | ValidatorOptions<M, I>)[] | {
+    [key: string]: Validator<M, I> | ValidatorOptions<M, I>
+  }
   /**
    * create field value used by `formJSON`
    */
@@ -600,6 +602,10 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    */
   hidden?: boolean | ((this: M, value: I, key: string) => boolean)
   /**
+   * whether to make the field available, if false, disabled & drop & readonly & hidden will be forcely set `true`
+   */
+  available?: boolean | ((this: M, value: I, key: string) => boolean)
+  /**
    * whether the field is required, should be used together with Validator.required in `vlaidators`
    */
   required?: boolean | ((this: M, value: I, key: string) => boolean)
@@ -608,9 +614,21 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    */
   empty?(this: M, value: I, key: string): boolean
   /**
-   * whether to make the field available, if false, disabled & drop & readonly & hidden will be forcely set `true`
+   * works with Validator.max when value is numeric
    */
-  available?: boolean | ((this: M, value: I, key: string) => boolean)
+  max?: number
+  /**
+   * works with Validator.min when value is numeric
+   */
+  min?: number
+  /**
+   * works with Validator.max when value is string
+   */
+  maxLen?: number
+  /**
+   * works with Validator.min when value is string
+   */
+  minLen?: number
   /**
    * provide deps
    */
@@ -1090,7 +1108,7 @@ interface FactoryHooks {
 
   default?(fn?: Function): Function
   type?(type?: any): any
-  validators?(validators?: Validator[]): Validator[]
+  validators?(validators?: Validator[] | { [key: string]: Validator }): Validator[] | { [key: string]: Validator }
   create?(fn?: (value?: any, key?: string, data?: any) => any | any[]): (value?: any, key?: string) => any | any[]
   save?(fn?: (value?: any, key?: string, data?: any) => any | any[]): (value?: any, key?: string) => any | any[]
   map?(fn?: (value?: any, key?: string) => any | any[]): (value?: any, key?: string) => any | any[]
