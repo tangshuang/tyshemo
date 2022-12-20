@@ -118,6 +118,15 @@ export class Factory {
       }
     }
 
+    class ThisFactoryMeta extends FactoryMeta {
+      defineScenes() {
+        if (isFunction(factory.scenes)) {
+          return factory.scenes()
+        }
+        return {}
+      }
+    }
+
     if (isList) {
       const filter = (items, key, parent) => {
         const nexts = items.filter((item) => {
@@ -187,7 +196,7 @@ export class Factory {
         $entries: Entries,
         $create: gen,
       }
-      this.meta = new FactoryMeta(attributes)
+      this.meta = new ThisFactoryMeta(attributes)
     }
     else {
       const gen = function(value, key, parent) {
@@ -235,14 +244,6 @@ export class Factory {
         }),
         $entries: Entries,
         $create: gen,
-      }
-      class ThisFactoryMeta extends FactoryMeta {
-        defineScenes() {
-          if (isFunction(factory.scenes)) {
-            return factory.scenes()
-          }
-          return {}
-        }
       }
       this.meta = new ThisFactoryMeta(attributes)
     }

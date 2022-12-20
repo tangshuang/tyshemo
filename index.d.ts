@@ -16,7 +16,7 @@ type ConstructorOf<T> = new (...args: any[]) => T
 /**
  * InstanceType
  */
-type InstanceOf<T> = InstanceType<T>
+// type InstanceOf<T> = InstanceType<T>
 
 /**
  * 读取数组的项的类型
