@@ -8,4 +8,10 @@ export { Validator } from './validator.js'
 export { Factory } from './factory.js'
 export { createAsyncRef as AsyncGetter, createMemoRef as MemoGetter } from './shared/utils.js'
 export { meta, state, type, enhance, eject } from './decorators.js'
-export { createMeta, createMetaGroup, createAsyncMeta, createSceneMeta, createStateMeta, createSceneStateMeta } from './interface'
+export {
+  createMeta, createMetaRef, createAsyncMeta, createSceneMeta, createStateMeta, createSceneStateMeta,
+  /**
+   * @deprecated
+   */
+  createMetaGroup,
+} from './interface'
