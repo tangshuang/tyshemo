@@ -1692,7 +1692,7 @@ export class Model {
       const outs = decideby(() => {
         // check the given meta validators at first
         const outs = this.$schema.validate(key, value, this)
-        if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
+        if (isArray(value) && !value.some(item => !isInstanceOf(item, Model)) && !this.$schema.disabled(key, value, this)) {
           const suberrs = value.map(model => model.validate())
           suberrs.forEach((items, i) => {
             items.forEach((item) => {
@@ -1702,7 +1702,7 @@ export class Model {
           })
           return outs
         }
-        if (value && isInstanceOf(value, Model)) {
+        if (value && isInstanceOf(value, Model) && !this.$schema.disabled(key, value, this)) {
           const items = value.validate()
           items.forEach((item) => {
             item.key = makeKeyPath([...this.$absKeyPath, key, item.key])
@@ -1742,7 +1742,7 @@ export class Model {
         // check the given meta validators at first
         return this.$schema.validateAsync(key, value, this).then((preouts) => {
           const outs = [...preouts]
-          if (isArray(value) && !value.some(item => !isInstanceOf(item, Model))) {
+          if (isArray(value) && !value.some(item => !isInstanceOf(item, Model)) && !this.$schema.disabled(key, value, this)) {
             const subdefers = value.map(model => model.validateAsync())
             return Promise.all(subdefers).then((suberrs) => {
               suberrs.forEach((items, i) => {
@@ -1754,7 +1754,7 @@ export class Model {
               return outs
             })
           }
-          else if (value && isInstanceOf(value, Model)) {
+          else if (value && isInstanceOf(value, Model) && !this.$schema.disabled(key, value, this)) {
             return value.validateAsync().then((items) => {
               items.forEach((item) => {
                 item.key = makeKeyPath([...this.$absKeyPath, key, item.key])
