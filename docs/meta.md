@@ -67,6 +67,12 @@ const attrs = {
     const b = this.b
     return a + '' + b
   },
+  // optional, calculate value when init and the dependencies change, almost like activate, the difference is that, activate will trigger the fields which depend on current field, accept will not trigger, so you should use activate at first and only use accept when needed.
+  accept() {
+    const a = this.a
+    const b = this.b
+    return a + '' + b
+  },
 
   // optional, when passed, `set` action will return prev value if not pass type checking
   // notice: `default` and result of `compute` should match type,
@@ -408,7 +414,7 @@ class MyAsyncMeta extends AsyncMeta {
 
   fetchAsyncAttrs() {
     return Promise.resolve(Loader.parseAttrs({
-      // `default, activate` is not supported
+      // `default, activate, accept` is not supported
       'disabled(v)': '{ v > 10 }',
       'drop(v)': '{ !v }',
     }))
@@ -547,15 +553,18 @@ const scene1Model = new SomeModel()
 
 ## Value Control
 
-`default` `compute` `activate` `getter` `setter` affect the field value.
+`default` `compute` `activate` `accept` `getter` `setter` affect the field value.
 
 **compute** will make this field's value to be computed value, you will get computed result as the value each time. If you depend the field on any other fields, the other fields' changing will trigger this field's watchers. Computed field will lose computability till the value is changed manually. After you manually change the value (set, fromJSON, patch...), the field will not be a computed field any more.
 
 **activate** will make this field's value change when the depndencies change. It is not computed value, you can change the value manually, however, when one of the dependencies changes this field will be forcely reset by `activate`. So the value you manually set is not stable, it will be changed by dependencies.
 
+**accept** is almost like `activate` but not trigger the fields which depend on current field.
+
 ```
 computed: value=compute()
 activate: value=watch(activate)
+accept: value=watch(accept)
 ```
 
 ## createMeta()
@@ -644,7 +653,7 @@ const SomeMeta = createAsyncMeta({
 })
 ```
 
-Notice, `default, activate, init, state, compute, AsyncGetter` should not be overrided, they may work only once inside.
+Notice, `default, activate, accept, init, state, compute, AsyncGetter` should not be overrided, they may work only once inside.
 
 ## StateMeta
 

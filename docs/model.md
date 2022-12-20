@@ -414,6 +414,30 @@ class MyModel extends Model {
 }
 ```
 
+**daemon**
+
+Dynimicly compute some value and do some thing after dependencies change.
+
+```js
+const value = model.daemon(
+  function () { return this.a + this.b },
+  function (value) { this.set('c', value) },
+)
+```
+
+```
+/**
+  * create a daemon runner for a computed value
+  * @param {function} getter the compute function to get the value
+  * @param {function} runner the runner to run when dependencies change
+  * @param {boolean} [immediate] whether to run runner immediately
+  * @param {boolean} [silent] whether to run runner silently
+  */
+daemon<T>(getter: (this: model) => T, runner: (this: model, value: T) => void, immediate?: boolean, silent?: boolean): T
+```
+
+Notice that, after you run a `model.daemon`, the watchers inside is daemoned, you have no idea to unwatch them, so you should use it in right way.
+
 ### Validate
 
 ```js

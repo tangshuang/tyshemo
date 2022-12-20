@@ -525,6 +525,13 @@ export type Attrs<T = any, I = T, M extends Model = Model, U extends Obj = Obj> 
    */
   activate?(this: M): T
   /**
+   * calculate value when init and the dependencies change,
+   * different from `compute`, it will rewrite value when inside dependencies change,
+   * you can change the value manually, however, the manual value will be changed by `activate` later if dependencies change.
+   * it is almost like `activate` but not trigger the fields which depend on current field.
+   */
+  accept?(this: M): T
+  /**
    * field value type
    */
   type?: any
@@ -780,7 +787,7 @@ export declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta
  *   createMeta(...),
  * ])
  */
-export declare function createMetaRef<T extends Meta[]>(create: (...args: Meta[]) => T): T
+export declare function createMetaRef<T extends Meta[]>(create: (...args: Meta[]) => T, types: Meta[] | { [key: number]: Meta }): T
 
 /**
  * create an async meta, which can be overrided by asyncGetter return value

@@ -49,11 +49,15 @@ export function createMeta(...args) {
  *   ]
  * })
  */
-export function createMetaRef(create) {
+export function createMetaRef(create, types) {
   const count = create.length
   const metas = []
   for (let i = 0; i < count; i ++) {
-    metas.push(class extends Meta {})
+    let type = types ? types[i] : null
+    if (!type) {
+      type = class extends Meta {}
+    }
+    metas.push(type)
   }
 
   const items = create(...metas)
@@ -64,7 +68,8 @@ export function createMetaRef(create) {
 
   const output = items.map((item, i) => {
     const Meta = metas[i]
-    return new Meta(item)
+    const src = new Meta()
+    return Object.setPrototypeOf(item, src)
   })
 
   return output

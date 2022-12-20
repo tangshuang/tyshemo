@@ -533,6 +533,7 @@ export class Model {
     // views
     const views = {}
     const reactivators = []
+    const reacceptors = []
 
     // provide a possibility to check whether during validating
     let validatingQueues = {}
@@ -550,6 +551,10 @@ export class Model {
 
       if (meta.activate) {
         reactivators.push({ key, activate: meta.activate })
+      }
+
+      if (meta.accept) {
+        reacceptors.push({ key, accept: meta.accept })
       }
 
       each(attrs, (fallback, attr) => {
@@ -856,25 +861,23 @@ export class Model {
     // init data
     this._initData(data)
 
-    // make meta.activate work
-    const createActivation = (key, activate) => {
-      const value = this.collect(() => activate.call(this), (deps) => {
-        deps.forEach((dep) => {
-          const watcher = () => {
-            const value = createActivation(key, activate)
-            this.set(key, value, true)
-          }
-          this.watch(dep, watcher, true, true)
-        })
-      })
-      return value
-    }
-    const registerActivator = (activator) => {
-      const { key, activate } = activator
-      const value = createActivation(key, activate)
+    // make meta.accept work
+    reacceptors.forEach((acceptor) => {
+      const { key, accept } = acceptor
+      const value = this.daemon(accept, (value) => {
+        this.set(key, value, true)
+      }, false, true)
       this.reset(key, value)
-    }
-    reactivators.forEach(registerActivator)
+    })
+
+    // make meta.activate work
+    reactivators.forEach((activator) => {
+      const { key, activate } = activator
+      const value = this.daemon(activate, (value) => {
+        this.set(key, value, true)
+      })
+      this.reset(key, value)
+    })
 
     // register a global listener to watch all changes
     this.watch('*', (e) => {
@@ -1549,6 +1552,7 @@ export class Model {
    * @param {Meta} Meta
    * @param {function} [fn] key => any
    * @returns {view}
+   * @deprecated
    * @example
    * class Some extends Meta {
    *   ...
@@ -1661,6 +1665,46 @@ export class Model {
     this.emit('define', key, value)
 
     return coming
+  }
+
+  /**
+   * create a daemon runner for a computed value
+   * @param {function} getter the compute function to get the value
+   * @param {function} runner the runner to run when dependencies change
+   * @param {boolean} [immediate] whether to run runner immediately
+   * @param {boolean} [silent] whether to run runner silently
+   */
+  daemon(getter, runner, immediate, silent) {
+    const run = (value) => {
+      if (silent) {
+        this.$store.runSilent(() => {
+          runner.call(this, value)
+        })
+      }
+      else {
+        runner.call(this, value)
+      }
+    }
+    const create = () => {
+      const next = this.collect(() => getter.call(this), (deps) => {
+        deps.forEach((dep) => {
+          const watcher = ({ prev, next }) => {
+            if (prev === next) {
+              return
+            }
+            const value = create()
+            run(value)
+          }
+          this.watch(dep, watcher, true, true)
+        })
+      })
+      return next
+    }
+    const next = create()
+    if (immediate) {
+      run(next)
+    }
+    return next
   }
 
   watch(key, fn, deep, once) {
