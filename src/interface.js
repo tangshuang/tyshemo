@@ -76,11 +76,6 @@ export function createMetaRef(create, types) {
 }
 
 /**
- * @deprecated
- */
-export const createMetaGroup = createMetaRef
-
-/**
  *
  * @param {*} defaultAttrs
  * @param {*} asyncGetter not supports `default, activate, init, state, compute, AsyncGetter`

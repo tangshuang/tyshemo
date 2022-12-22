@@ -3,7 +3,8 @@
 If you do not want to use `Meta` in `Model`, you can use decorators to define like this:
 
 ```js
-import { Model, Controller, meta, state, type, enhance } from 'tyshemo'
+import { Model, meta, state, type, inject } from 'tyshemo'
+import { Controller } from 'nautil'
 
 class SomeModel extends Model {
   @meta({
@@ -22,7 +23,7 @@ class SomeModel extends Model {
 }
 
 class SomeController extends Controller {
-  @enhance(SomeModel)
+  @inject(SomeModel)
   // only works on properties which have no initializer
   model: SomeModel;
 
@@ -63,34 +64,34 @@ declare function state(options: { value: any } | { get: () => any, set: (v: any)
 - { value }: give normal initalizer value
 - { get, set }: give getter and setter, eigther
 
-## @enhance()
+## @inject()
 
 ```js
-declare function enhance(source: any): PropertyDecorator;
+declare function inject(source: any): PropertyDecorator;
 ```
 
 Patch any to current class.
 
 ```js
 class A extends Model {
-  @enhance(SomeMeta)
+  @inject(SomeMeta)
   some // -> notice, without value
 }
 
 console.log(A.some) // -> SomeMeta
 ```
 
-## @layoff()
+## @eject(unbind?: boolean)
 
 ```js
-declare function layoff(): PropertyDecorator;
+declare function eject(): PropertyDecorator;
 ```
 
 Invalidate properties which have no initializer.
 
 ```js
 class S {
-  @layout()
+  @eject()
   some: string;
 }
 
@@ -98,6 +99,20 @@ console.log(new S()) // -> without `some` own property
 ```
 
 This always useful when you use typescript to declare a class property and do not want it to generate a property when using `@babel/plugin-proposal-class-properties` (in which will generate a property assigned `void 0` without initializer following standard proposal).
+
+```ts
+import { Model, type ReflectMeta, meta, eject } from 'tyshemo'
+
+class SomeModel extends Model {
+  @meta(SomeMeta)
+  some: ReflectMeta<typeof SomeMeta>
+}
+
+class AnyModel extends SomeModel {
+  @eject(true)
+  some: never
+}
+```
 
 ## @type()
 

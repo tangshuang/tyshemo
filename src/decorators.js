@@ -130,8 +130,8 @@ export function type(...args) {
  * @param {*} source
  * @returns
  */
-export function enhance(source) {
-  return createDecorator('enhance', (protos, key) => {
+export function inject(source) {
+  return createDecorator('inject', (protos, key) => {
     const CurrentModel = protos.constructor
     define(CurrentModel, key, source)
   })

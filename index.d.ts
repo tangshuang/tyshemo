@@ -1221,10 +1221,14 @@ export declare function state<T>(options: { value: T } | { get: () => T, set?: (
 
 export declare function type(type: any): PropertyDecorator
 
+/**
+ * @deprecated use `inject` instead
+ */
 export declare function enhance(source: any): PropertyDecorator
+export declare function inject(source: any): PropertyDecorator
 
 /**
- * @deprecated use eject instead
+ * @deprecated use `eject` instead
  */
 export declare function layoff(): PropertyDecorator
 export declare function eject(froce?: boolean): PropertyDecorator
