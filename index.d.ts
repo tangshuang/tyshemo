@@ -787,7 +787,7 @@ export declare function createMetaGroup<T extends Meta[]>(create: (...args: Meta
  *   createMeta(...),
  * ])
  */
-export declare function createMetaRef<T extends Meta[]>(create: (...args: Meta[]) => T, types: Meta[] | { [key: number]: Meta }): T
+export declare function createMetaRef<T extends Meta[]>(create: (...args: Meta[]) => T, types?: Meta[] | { [key: number]: Meta }): T
 
 /**
  * create an async meta, which can be overrided by asyncGetter return value
