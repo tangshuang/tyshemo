@@ -2331,7 +2331,7 @@ export class Model {
   }
 }
 
-function isMatchMeta (give, need) {
+function isMatchMeta(give, need) {
   if (give === need) {
     return true
   }

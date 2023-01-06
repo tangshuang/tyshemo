@@ -1,6 +1,7 @@
 import {
   isInheritedOf,
   isArray,
+  getConstructorOf,
 } from 'ts-fns'
 import { Meta, AsyncMeta, SceneMeta, StateMeta, SceneStateMeta } from './meta.js'
 import { Model } from './model.js'
@@ -49,27 +50,21 @@ export function createMeta(...args) {
  *   ]
  * })
  */
-export function createMetaRef(create, types) {
+export function createMetaRef(create) {
   const count = create.length
-  const metas = []
-  for (let i = 0; i < count; i ++) {
-    let type = types ? types[i] : null
-    if (!type) {
-      type = class extends Meta {}
-    }
-    metas.push(type)
-  }
-
-  const items = create(...metas)
+  const items = create() // prepare
 
   if (!isArray(items) || items.length !== count) {
     throw new Error('[TySheMo]: createMetaRef should get an array with same length as count.')
   }
 
-  const output = items.map((item, i) => {
-    const Meta = metas[i]
-    const src = new Meta()
-    return Object.setPrototypeOf(item, src)
+  const metaClasses = items.map((item) => getConstructorOf(item))
+  const metas = metaClasses.map(M => new M())
+  const results = create(...metas)
+
+  const output = results.map((item, i) => {
+    const meta = metas[i]
+    return Object.setPrototypeOf(item, meta)
   })
 
   return output

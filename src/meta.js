@@ -255,23 +255,9 @@ export class Meta {
 export class AsyncMeta extends Meta {
   constructor(attrs = {}) {
     super()
-    const Constructor = getConstructorOf(this)
-    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaSymbol)?.value
-    if (!ready) {
-      ready = Constructor[AsyncMetaSymbol] = {
-        notifiers: [],
-      }
+    this[AsyncMetaSymbol] = {
+      attrs,
     }
-    // fetch each time inistalized
-    this.fetchAsyncAttrs().then((data) => {
-      const next = ensureAttrs({
-        ...data,
-        ...attrs,
-      })
-      this.__useAttrs(next)
-      notifyAttrs(ready.notifiers, next, 'async meta')
-      ready.notifiers.length = 0
-    })
   }
   fetchAsyncAttrs() {
     return Promise.resolve({})
@@ -283,6 +269,17 @@ export class AsyncMeta extends Meta {
       ready = Constructor[AsyncMetaSymbol] = {
         notifiers: [],
       }
+      // fetch only once
+      this.fetchAsyncAttrs().then((data) => {
+        const { attrs } = this[AsyncMetaSymbol]
+        const next = ensureAttrs({
+          ...data,
+          ...attrs,
+        })
+        this.__useAttrs(next)
+        notifyAttrs(ready.notifiers, next, 'async meta')
+        ready.notifiers.length = 0
+      })
     }
     ready.notifiers.push({ model, key })
   }
