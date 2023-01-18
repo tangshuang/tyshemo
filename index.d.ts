@@ -960,7 +960,9 @@ export declare class Model implements Obj {
   update(data: Obj): this
   reset(key: string | Meta | MetaClass): this
   patch(data: Obj): this
-  define(key: string, value: Function | any): any
+  define<V = any>(key: string, value: (() => V) | V): V
+  define(key: string): void
+  daemon<V = any>(getter: (this: this) => V, runner: (this: this, value: V) => void, immediate: boolean, silent: boolean): V
   lock(): void
   unlock(): void
   setParent(parent: [Model, string]): this

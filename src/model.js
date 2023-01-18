@@ -1070,6 +1070,9 @@ export class Model {
               return
             }
             this[key] = next // will trigger watcher
+            this.$store.runSilent(() => {
+              this.$views[key].changed = false
+            })
           })
 
           return
@@ -1264,6 +1267,9 @@ export class Model {
             return
           }
           this[key] = next // will trigger watcher
+          this.$store.runSilent(() => {
+            this.$views[key].changed = false
+          })
         })
 
         params[key] = current
@@ -1671,7 +1677,7 @@ export class Model {
    * create a daemon runner for a computed value
    * @param {function} getter the compute function to get the value
    * @param {function} runner the runner to run when dependencies change
-   * @param {boolean} [immediate] whether to run runner immediately
+   * @param {boolean} [immediate] whether to run runner immediately, if true, runner will be run before result returned
    * @param {boolean} [silent] whether to run runner silently
    */
   daemon(getter, runner, immediate, silent) {
