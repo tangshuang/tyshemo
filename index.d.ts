@@ -945,8 +945,8 @@ export declare class Model implements Obj {
   $schema: {
     [field: string]: Meta
   }
-  $root: this | null
-  $parent: this | null
+  $root: Model
+  $parent: Model
   $keyPath: string[]
   $absKeyPath: string[]
 
