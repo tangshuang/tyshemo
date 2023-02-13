@@ -1443,4 +1443,21 @@ describe('Model', () => {
 
     expect(errors.length).toBe(1)
   })
+
+  test('auto set $parent when push', () => {
+    class ChildModel extends Model {
+      static a = new Meta({
+        default: '',
+      })
+    }
+    class ParentModel extends Model {
+      static children = [ChildModel]
+    }
+
+    const parent = new ParentModel()
+    const newChild = new ChildModel()
+    parent.children.push(newChild)
+
+    expect(newChild.$parent === parent)
+  })
 })
