@@ -1164,9 +1164,11 @@ describe('Model', () => {
     expect(some.age).toBe(10)
     expect(count).toBe(0)
 
+    // only age is used
     some.fromJSONPatch({
       age: 15,
-    }) // only age is used
+      height: 100,
+    })
 
     expect(some.name).toBe('lucy')
     expect(some.age).toBe(15) // only age changed

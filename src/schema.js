@@ -934,7 +934,7 @@ export class Schema {
       const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
       const hasCreate = isFunction(create)
 
-      const hasGivenData = isUndefined(json[dataKey])
+      const hasNoGivenData = isUndefined(json[dataKey])
 
       /**
        * because the given json may generate outside with unknow data,
@@ -948,11 +948,11 @@ export class Schema {
        */
 
       // certain asset key required
-      if (asset && hasGivenData) {
+      if (asset && hasNoGivenData) {
         return
       }
       // without create (means will not consume other properties) and key
-      else if (!hasCreate && hasGivenData) {
+      else if (!hasCreate && hasNoGivenData) {
         return
       }
 
@@ -973,10 +973,12 @@ export class Schema {
           },
         )
 
-        // if the given json is not fit for current create required,
-        // it means this field should not generate
-        if (!hasGivenData) {
+        // only check when coming is undefined
+        if (isUndefined(coming)) {
+          // if the given json is not fit for current create required,
+          // it means this field should not generate
           if (!deps.length || !deps.some(dep => !isUndefined(json[dep]))) {
+            deps.length = 0 // clear deps
             return
           }
         }
