@@ -459,6 +459,7 @@ export class StateMeta extends Meta {
 
 export class SceneStateMeta extends SceneMeta {
   __init(descriptors, attrs) {
+    super.__init(descriptors, attrs)
     StateMeta.prototype.__init.call(this, descriptors, attrs)
   }
   _ensureAttrs(attrs) {
