@@ -567,6 +567,11 @@ activate: value=watch(activate)
 accept: value=watch(accept)
 ```
 
+```
+a activate with (b, c) -> d activate with (a) -> c changed -> a and d changed
+a accept (b, c) -> d accept (a) -> c changed -> a changed and d NOT
+```
+
 ## createMeta()
 
 To create a meta, you can use `createMeta`.

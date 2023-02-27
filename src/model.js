@@ -865,7 +865,7 @@ export class Model {
     reacceptors.forEach((acceptor) => {
       const { key, accept } = acceptor
       const value = this.daemon(accept, (value) => {
-        this.set(key, value, true)
+        this.set(key, value)
       }, false, true)
       this.reset(key, value)
     })
