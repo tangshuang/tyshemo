@@ -1092,18 +1092,18 @@ interface FactoryHooks {
    * after child model generated,
    * only once
    */
-  transport?(child?: Model, parent?: Model): void
+  transport?(child?: Model, parent?: Model, sceneCodes?: string[]): void
 
   /**
    * each the parent's fields which are depended on changed,
    * use `use` before `if...else`
    */
-  linkage?(child?: Model, parent?: Model): void
+  linkage?(child?: Model, parent?: Model, sceneCodes?: string[]): void
 
   /**
    * override Meta Attribute of child Model
    */
-  override?(child?: Model, parent?: Model, scenes?: string[]): Array<{
+  override?(child?: Model, parent?: Model, sceneCodes?: string[]): Array<{
     meta: Meta | MetaClass,
     attrs: Partial<Attrs>,
   }>

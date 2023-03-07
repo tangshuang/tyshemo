@@ -56,9 +56,11 @@ export class Factory {
     } = this.attrs || {}
 
     const setupLinkage = (child, parent, key) => {
+      const scenes = parent.$$scenes
+
       // do only once
       if (factory.transport) {
-        factory.transport(child, parent, key)
+        factory.transport(child, parent, scenes)
       }
 
       // --------
@@ -69,11 +71,11 @@ export class Factory {
 
       const register = () => {
         const deps = parent.collect(() => {
-          factory.linkage(child, parent, key)
+          factory.linkage(child, parent, scenes)
         })
 
         const fn = () => {
-          factory.linkage(child, parent, key)
+          factory.linkage(child, parent, scenes)
 
           // -------
           // check whether the child is in parent model, if not, remove watchers
