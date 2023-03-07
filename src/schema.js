@@ -840,18 +840,23 @@ export class Schema {
     return this.$validateAsync(key, value, context)([])
   }
 
-  $parse(key, value, data, context) {
+  $parse(key, data, context) {
     const meta = this[key]
+    const dataValue = data[key]
     if (!meta) {
-      return value
+      return dataValue
     }
 
     const { catch: handle, create, saveAs, save, asset, force } = meta
     const dataKey = asset ? (isFunction(asset) ? asset(data, key) : asset) : key
     const defaultValue = this.getDefault(key, context)
+    const assetValue = data[dataKey]
+    // use asset first, then fallback to key
+    const value = isUndefined(assetValue) ? dataValue : assetValue
 
     let coming = isUndefined(value) ? defaultValue : value
 
+    // use create to create value
     if (isFunction(create)) {
       const fromData = decideby(() => {
         if (!isUndefined(value)) {
@@ -872,9 +877,19 @@ export class Schema {
         }
         return fromJson
       })
-      const base = isUndefined(value) ? (isInstanceOf(meta, FactoryMeta) ? defaultValue : value) : value
+
+      const usedValue = decideby(() => {
+        if (!isUndefined(value)) {
+          return value
+        }
+        if (isInstanceOf(meta, FactoryMeta)) {
+          return defaultValue
+        }
+        return fromData[dataKey]
+      })
+
       coming = this._trydo(
-        () => create.call(context, base, key, fromData),
+        () => create.call(context, usedValue, key, fromData),
         (error) => isFunction(handle) && handle.call(context, error, key) || coming,
         {
           key,
@@ -898,13 +913,9 @@ export class Schema {
   parse(json, context) {
     const output = {}
 
-    each(this, (meta, key) => {
-      const { asset } = meta
-      const dataKey = asset ? (isFunction(asset) ? asset(json, key) : asset) : key
-      const value = json[dataKey]
-
-      const coming = this.$parse(key, value, json, context)
-
+    const keys = Object.keys(this)
+    keys.forEach((key) => {
+      const coming = this.$parse(key, json, context)
       output[key] = coming
     })
 
