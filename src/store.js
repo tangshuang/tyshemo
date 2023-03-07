@@ -510,6 +510,11 @@ export class Store {
     }
 
     const key = isArray(keyPath) ? [...keyPath] : makeKeyChain(keyPath)
+    // pad '!'
+    if (key[0][0] !== '!') {
+      key[0] = '!' + key[0]
+    }
+
     const watchers = this._watchers
     const items = watchers.filter((item) => {
       if (!(item.key[0] && item.key[0][0] === '!')) {
@@ -545,5 +550,4 @@ export class Store {
 
     return true
   }
-
 }

@@ -1032,6 +1032,13 @@ export class Model {
       this.onChange(root)
     }, true)
 
+    // propagate recover with force dispatch
+    this.on('recover', () => {
+      if (this.$parent) {
+        this.$parent.$store.forceDispatch(this.$keyPath, 'sub recover')
+      }
+    })
+
     keys.forEach((key) => {
       const meta = this.$schema[key]
       // invoke `init` attribute
