@@ -368,13 +368,23 @@ export class SceneMeta extends Meta {
       results.push(scene)
     })
 
+    this[SceneMetaSymbol].codes = sceneCodes
+
+    // set new attributes
     if (results.some(item => item instanceof Promise)) {
+      // update some scenes before async
+      const preloadScenes = results.filter(item => !(item instanceof Promise))
+      if (preloadScenes.length) {
+        const preloadAttrs = update(preloadScenes)
+        notifyAttrs(notifiers, preloadAttrs, 'scene meta')
+        // dont finish it
+      }
+
       return Promise.all(results.map(item => item instanceof Promise ? item : Promise.resolve(item)))
         .then((scenes) => {
           return update(scenes)
         })
         .then((attrs) => {
-          this[SceneMetaSymbol].codes = sceneCodes
           notifyAttrs(notifiers, attrs, 'scene meta')
         })
         .finally(() => {
@@ -383,7 +393,6 @@ export class SceneMeta extends Meta {
     }
     else if (results.length) {
       const attrs = update(results)
-      this[SceneMetaSymbol].codes = sceneCodes
       notifyAttrs(notifiers, attrs, 'scene meta')
       finish()
     }

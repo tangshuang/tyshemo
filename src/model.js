@@ -458,16 +458,16 @@ export class Model {
     const Constructor = getConstructorOf(this)
     const sceneCodes = []
     const pushSceneCodes = (target) => {
-      const unshift = (item) => {
+      const append = (item) => {
         if (!sceneCodes.includes(item)) {
-          sceneCodes.unshift(item)
+          sceneCodes.push(item)
         }
       }
       if (isArray(target[SceneCodesSymbol])) {
-        target[SceneCodesSymbol].forEach(unshift)
+        target[SceneCodesSymbol].forEach(append)
       }
       else if (isString(target[SceneCodesSymbol])) {
-        unshift(target[SceneCodesSymbol])
+        append(target[SceneCodesSymbol])
       }
     }
     traverseChain(Constructor, Model, pushSceneCodes)
