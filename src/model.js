@@ -28,7 +28,7 @@ import {
 import { Schema as _Schema } from './schema.js'
 import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef, traverseChain } from './shared/utils.js'
-import { edit } from './shared/edit.js'
+import { edit, EditorSymbol } from './shared/edit.js'
 import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
@@ -40,7 +40,7 @@ export class State {
   }
 }
 
-const SceneCodesSymbol = Symbol()
+const SceneCodesSymbol = Symbol('scenecodes')
 const ComputeSymbol = Symbol()
 
 export class Model {
@@ -2265,6 +2265,9 @@ export class Model {
     const Constructor = getConstructorOf(this)
     class Editor extends Constructor.Edit() {
       init(data) {
+        // patch source
+        this[EditorSymbol] = $this
+
         super.init(data)
 
         // set parent before restore
@@ -2272,9 +2275,6 @@ export class Model {
         if ($parent) {
           this.setParent([$parent, $keyPath[0]])
         }
-      }
-      submit() {
-        return super.submit($this)
       }
     }
     const editor = new Editor({ ...this.toJSON(), ...data })

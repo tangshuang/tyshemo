@@ -2,9 +2,10 @@ import {
   define,
   parse,
   isInstanceOf,
+  getConstructorOf,
 } from 'ts-fns'
 
-export const EditSymbol = Symbol('editmode')
+export const EditorSymbol = Symbol('editof')
 
 export function edit(Constructor) {
   class Editor extends Constructor {
@@ -27,7 +28,6 @@ export function edit(Constructor) {
         writable: true,
         configurable: true,
       })
-      define(this, EditSymbol, true)
 
       // receive (clone) another model
       if (isInstanceOf(data, Constructor)) {
@@ -180,12 +180,25 @@ export function edit(Constructor) {
       this.$doing = false
     }
 
-    submit(model) {
+    submit() {
+      const editof = this[EditorSymbol]
+
       let data = this.Chunk().toJSON()
       data = this.onSubmit(data)
-      // here we should must ensure model is able to receive current editor's data
-      model.Chunk().fromJSON(data)
-      return model
+
+      if (editof) {
+        // here we should must ensure model is able to receive current editor's data
+        editof.Chunk().fromJSON(data)
+        return editof
+      }
+
+      const Editor = getConstructorOf(this)
+      const Constructor = Editor[EditorSymbol]
+      if (Constructor) {
+        return new Constructor(data)
+      }
+
+      throw new Error(`[TySheMo]: without submit target`)
     }
 
     onEdit(data) {
@@ -195,6 +208,8 @@ export function edit(Constructor) {
     onSubmit(data) {
       return data
     }
+
+    static [EditorSymbol] = Constructor
   }
   return Editor
 }

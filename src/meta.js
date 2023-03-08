@@ -20,7 +20,7 @@ import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 
 const AsyncMetaSymbol = Symbol()
 const SceneMetaSymbol = Symbol()
-const SceneCodesSymbol = Symbol()
+const SceneCodesSymbol = Symbol('scenecodes')
 
 const createValidator = v =>
   isInstanceOf(v, Validator) ? v
