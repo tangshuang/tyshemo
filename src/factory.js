@@ -158,6 +158,7 @@ export class Factory {
           }
           const child = decideby(() => {
             if (this.adapt(Entries, next, parent, key)) {
+              // TODO how to rewrite scenes
               return next.setParent([parent, key])
             }
             if (isObject(next)) {
@@ -215,6 +216,7 @@ export class Factory {
         }
         const child = decideby(() => {
           if (factory.adapt(Entries, value, key, parent)) {
+            // TODO how to rewrite scenes
             return value.setParent([parent, key])
           }
           if (isObject(value)) {

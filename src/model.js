@@ -2260,24 +2260,23 @@ export class Model {
     return Editor
   }
 
-  Edit(data = {}) {
+  Edit() {
     const $this = this
     const Constructor = getConstructorOf(this)
     class Editor extends Constructor.Edit() {
       init(data) {
         // patch source
         define(this, '$$editof', { value: $this, configurable: true })
-
         super.init(data)
-
-        // set parent before restore
-        const { $parent, $keyPath } = $this
-        if ($parent) {
-          this.setParent([$parent, $keyPath[0]])
-        }
       }
     }
-    const editor = new Editor({ ...this.toJSON(), ...data })
+    const data = this.Chunk().toJSON()
+    const { $parent: parent, $keyPath, $$scenes: scenes } = this
+    const editor = new Editor(data, {
+      scenes,
+      parent,
+      key: $keyPath ? $keyPath[0] : void 0,
+    })
     this.emit('editor', editor)
     return editor
   }
