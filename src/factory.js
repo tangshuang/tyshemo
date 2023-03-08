@@ -9,7 +9,6 @@ import {
   decideby,
 } from 'ts-fns'
 import { SceneMeta } from './meta.js'
-import { EditorSymbol } from './shared/edit.js'
 
 export class FactoryMeta extends SceneMeta {
   constructor(options) {
@@ -151,7 +150,7 @@ export class Factory {
             throw new Error('[TySheMo]: Factory.select Model not found!')
           }
           const LocalModel = scenes ? FoundModel.Scene(scenes) : FoundModel
-          const ChoosedModel = parent[EditorSymbol] ? class extends LocalModel.Edit() {} : class extends LocalModel {}
+          const ChoosedModel = parent.$$editof ? class extends LocalModel.Edit() {} : class extends LocalModel {}
           if (factory.override) {
             ChoosedModel.prototype._takeOverrideMetas = function() {
               return factory.override(this, parent, scenes)
@@ -208,7 +207,7 @@ export class Factory {
           throw new Error('[TySheMo]: Factory.select Model not found!')
         }
         const LocalModel = scenes ? FoundModel.Scene(scenes) : FoundModel
-        const ChoosedModel = parent[EditorSymbol] ? class extends LocalModel.Edit() {} : class extends LocalModel {}
+        const ChoosedModel = parent.$$editof ? class extends LocalModel.Edit() {} : class extends LocalModel {}
         if (factory.override) {
           ChoosedModel.prototype._takeOverrideMetas = function() {
             return factory.override(this, parent, scenes)

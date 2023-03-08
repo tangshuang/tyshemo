@@ -28,7 +28,7 @@ import {
 import { Schema as _Schema } from './schema.js'
 import { Store as _Store } from './store.js'
 import { ofChain, tryGet, makeMsg, isAsyncRef, isMemoRef, traverseChain } from './shared/utils.js'
-import { edit, EditorSymbol } from './shared/edit.js'
+import { edit } from './shared/edit.js'
 import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
@@ -2266,7 +2266,7 @@ export class Model {
     class Editor extends Constructor.Edit() {
       init(data) {
         // patch source
-        this[EditorSymbol] = $this
+        define(this, '$$editof', $this)
 
         super.init(data)
 

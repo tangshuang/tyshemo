@@ -5,7 +5,7 @@ import {
   getConstructorOf,
 } from 'ts-fns'
 
-export const EditorSymbol = Symbol('editof')
+const EditorSymbol = Symbol('editof')
 
 export function edit(Constructor) {
   class Editor extends Constructor {
@@ -181,7 +181,7 @@ export function edit(Constructor) {
     }
 
     submit() {
-      const editof = this[EditorSymbol]
+      const editof = this.$$editof
 
       let data = this.Chunk().toJSON()
       data = this.onSubmit(data)
