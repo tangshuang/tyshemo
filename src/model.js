@@ -2266,7 +2266,7 @@ export class Model {
     class Editor extends Constructor.Edit() {
       init(data) {
         // patch source
-        define(this, '$$editof', $this)
+        define(this, '$$editof', { value: $this, configurable: true })
 
         super.init(data)
 
