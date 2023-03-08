@@ -91,7 +91,7 @@ export function createAsyncMeta(defaultAttrs, asyncGetter) {
 export function createSceneMeta(defaultAttrs, sceneMapping) {
   class ThisSceneMeta extends SceneMeta {
     defineScenes() {
-      return sceneMapping
+      return typeof sceneMapping === 'function' ? sceneMapping() : sceneMapping
     }
   }
   Object.assign(ThisSceneMeta, defaultAttrs)
@@ -105,7 +105,7 @@ export function createStateMeta(attrs) {
 export function createSceneStateMeta(defaultAttrs, sceneMapping) {
   class ThisSceneStateMeta extends SceneStateMeta {
     defineScenes() {
-      return sceneMapping
+      return typeof sceneMapping === 'function' ? sceneMapping() : sceneMapping
     }
   }
   Object.assign(ThisSceneStateMeta, defaultAttrs)

@@ -796,14 +796,16 @@ export declare function createMetaRef<T extends Meta[]>(create: (...args: Meta[]
  */
 export declare function createAsyncMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, asyncGetter: () => Promise<Partial<Attrs<T, I, M, U>>>): AsyncMeta<T, I, M, U>
 
+type SceneMapping<T, I, M, U> = {
+  [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
+}
+
 /**
  * create a scene meta, which can be switch to certain scene by Model#Scene(sceneCode)
  * @param attrs
  * @param mapping
  */
-export declare function createSceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, mapping: {
-  [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
-}): SceneMeta<T, I, M, U>
+export declare function createSceneMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Attrs<T, I, M, U>, mapping: SceneMapping<T, I, M, U> | (() => SceneMapping<T, I, M, U>)): SceneMeta<T, I, M, U>
 
 /**
  * create a state meta, whose disabled is force set to be true
@@ -816,9 +818,7 @@ export declare function createStateMeta<T = any, I = T, M extends Model = Model,
  * @param attrs
  * @param mapping
  */
-export declare function createSceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'state'> & { value: T }, mapping: {
-  [sceneCode: string]: Partial<Attrs<T, I, M, U>> | (() => Partial<Attrs<T, I, M, U>>) | (() => Promise<Partial<Attrs<T, I, M, U>>>)
-}): SceneMeta<T, I, M, U>
+export declare function createSceneStateMeta<T = any, I = T, M extends Model = Model, U extends Obj = Obj>(attrs: Omit<Attrs<T, I, M, U>, 'default' | 'drop' | 'to' | 'map' | 'state'> & { value: T }, mapping: SceneMapping<T, I, M, U> | (() => SceneMapping<T, I, M, U>)): SceneMeta<T, I, M, U>
 
 /**
  * use field value type from a meta
