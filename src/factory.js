@@ -6,16 +6,17 @@ import {
   define,
   flat,
   each,
-  decideby,
+  isEqual,
 } from 'ts-fns'
 import { SceneMeta } from './meta.js'
 
 export class FactoryMeta extends SceneMeta {
   constructor(options) {
-    const { $entries, $create, ...opts } = options
+    const { $entries, $create, $adapt, ...opts } = options
     super(opts)
     define(this, '$entries', () => $entries)
     define(this, '$create', () => $create)
+    define(this, '$adapt', () => $adapt)
   }
 }
 
@@ -128,6 +129,37 @@ export class Factory {
       }
     }
 
+    const $adapt = factory.adapt.bind(factory)
+    const createInstance = (value, key, parent) => {
+      const scenes = parent.$$scenes
+      const editof = parent.$$editof
+      const FoundModel = factory.select(Entries, value, parent, key)
+      if (!FoundModel) {
+        throw new Error('[TySheMo]: Factory.select Model not found!')
+      }
+      const LocalModel = scenes ? FoundModel.Scene(scenes) : FoundModel
+      const ChoosedModel = editof ? class extends LocalModel.Edit() {} : class extends LocalModel {}
+      if (factory.override) {
+        ChoosedModel.prototype._takeOverrideMetas = function() {
+          return factory.override(this, parent, scenes)
+        }
+      }
+      if (factory.adapt(Entries, value, key, parent)) {
+        // TODO how to rewrite scenes?
+        if ((scenes && scenes.length && !isEqual(scenes, value.$$scenes)) || editof) {
+          value = value.Chunk().toJSON()
+        }
+        else {
+          value._setParent([parent, key])
+          return value
+        }
+      }
+      if (isObject(value)) {
+        return factory.instance(ChoosedModel, value, { key, parent, scenes })
+      }
+      return factory.instance(ChoosedModel, {}, { key, parent, scenes })
+    }
+
     if (isList) {
       const filter = (items, key, parent) => {
         const nexts = items.filter((item) => {
@@ -142,33 +174,9 @@ export class Factory {
         return nexts
       }
       const gen = (items, key, parent) => {
-        const scenes = parent.$$scenes
         const nexts = filter(items, key, parent)
         const values = nexts.map((next) => {
-          const FoundModel = factory.select(Entries, next, parent, key)
-          if (!FoundModel) {
-            throw new Error('[TySheMo]: Factory.select Model not found!')
-          }
-          const LocalModel = scenes ? FoundModel.Scene(scenes) : FoundModel
-          const ChoosedModel = parent.$$editof ? class extends LocalModel.Edit() {} : class extends LocalModel {}
-          if (factory.override) {
-            ChoosedModel.prototype._takeOverrideMetas = function() {
-              return factory.override(this, parent, scenes)
-            }
-          }
-          const child = decideby(() => {
-            if (this.adapt(Entries, next, parent, key)) {
-              // TODO how to rewrite scenes
-              return next.setParent([parent, key])
-            }
-            if (isObject(next)) {
-              return factory.instance(ChoosedModel, next, { parent, key, scenes })
-            }
-            return factory.instance(ChoosedModel, {}, { parent, key, scenes })
-          })
-          if (!child) {
-            return
-          }
+          const child = createInstance(next, key, parent)
           setupLinkage(child, parent, key)
           return child
         })
@@ -196,34 +204,14 @@ export class Factory {
         }),
         $entries: Entries,
         $create: gen,
+        $adapt,
       }
       Object.assign(ThisFactoryMeta, attrs)
       this.meta = new ThisFactoryMeta(attributes)
     }
     else {
       const gen = function(value, key, parent) {
-        const scenes = parent.$$scenes
-        const FoundModel = factory.select(Entries, value, parent, key)
-        if (!FoundModel) {
-          throw new Error('[TySheMo]: Factory.select Model not found!')
-        }
-        const LocalModel = scenes ? FoundModel.Scene(scenes) : FoundModel
-        const ChoosedModel = parent.$$editof ? class extends LocalModel.Edit() {} : class extends LocalModel {}
-        if (factory.override) {
-          ChoosedModel.prototype._takeOverrideMetas = function() {
-            return factory.override(this, parent, scenes)
-          }
-        }
-        const child = decideby(() => {
-          if (factory.adapt(Entries, value, key, parent)) {
-            // TODO how to rewrite scenes
-            return value.setParent([parent, key])
-          }
-          if (isObject(value)) {
-            return factory.instance(ChoosedModel, value, { key, parent, scenes })
-          }
-          return factory.instance(ChoosedModel, {}, { key, parent, scenes })
-        })
+        const child = createInstance(value, key, parent)
         setupLinkage(child, parent, key)
         return child
       }
@@ -246,6 +234,7 @@ export class Factory {
         }),
         $entries: Entries,
         $create: gen,
+        $adapt,
       }
       Object.assign(ThisFactoryMeta, attrs)
       this.meta = new ThisFactoryMeta(attributes)

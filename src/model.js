@@ -53,7 +53,7 @@ export class Model {
       scenes = this._takeSceneCodes(),
     } = options
 
-    define(this, '$$hooks', [])
+    define(this, '$$events', [])
     define(this, '$$attrs', { ...RESERVED_ATTRIBUTES, ...this._takeAttrs() })
     define(this, '$$state', this._takeState())
     define(this, '$$deps', {})
@@ -228,7 +228,7 @@ export class Model {
 
     // use passed parent
     if (parent && isInstanceOf(parent, Model) && keyInParent) {
-      this.setParent([parent, keyInParent])
+      this._setParent([parent, keyInParent])
     }
 
     define(this, '$root', () => {
@@ -296,18 +296,18 @@ export class Model {
 
           const [key] = keyPath
           const meta = $this.$schema[key]
-          const { $entries, $create } = meta
+          const { $entries, $create, $adapt } = meta
 
-          const nexts = args.filter((item) => {
-            if ($entries.some(One => isInstanceOf(item, One))) {
-              return true
-            }
-            if (isObject(item)) {
-              return true
-            }
-            return false
-          })
           try {
+            const nexts = args.filter((item) => {
+              if ($adapt($entries, item, key, $this)) {
+                return true
+              }
+              if (isObject(item)) {
+                return true
+              }
+              return false
+            })
             const values = $create(nexts, key, $this)
             return values
           }
@@ -457,16 +457,21 @@ export class Model {
   _takeSceneCodes() {
     const Constructor = getConstructorOf(this)
     const sceneCodes = []
+    const append = (code) => {
+      if (!sceneCodes.includes(code)) {
+        sceneCodes.unshift(code)
+      }
+    }
     const pushSceneCodes = (target) => {
       if (isArray(target[SceneCodesSymbol])) {
         const codes = target[SceneCodesSymbol]
         for (let i = codes.length - 1; i >= 0; i --) {
           const code = codes[i]
-          sceneCodes.unshift(code)
+          append(code)
         }
       }
       else if (isString(target[SceneCodesSymbol])) {
-        sceneCodes.unshift(target[SceneCodesSymbol])
+        append(target[SceneCodesSymbol])
       }
     }
     traverseChain(Constructor, Model, pushSceneCodes)
@@ -1251,7 +1256,7 @@ export class Model {
         value.forEach((item) => ensure(item, key))
       }
       else if (isInstanceOf(value, Model)) {
-        value.setParent([this, key])
+        value._setParent([this, key])
       }
     }
     const asyncReactors = {}
@@ -1893,7 +1898,7 @@ export class Model {
   }
 
   _bundleData() {
-    const state = this.$store.state
+    const data = this.$store.data
     const schema = this.$schema
     const views = this.$views
     const computed = {}
@@ -1903,12 +1908,12 @@ export class Model {
         return
       }
       if (meta.compute) {
-        const value = tryGet(() => meta.compute.call(this), state[key])
+        const value = tryGet(() => meta.compute.call(this), data[key])
         computed[key] = value
       }
     })
 
-    return { ...state, ...computed }
+    return { ...data, ...computed }
   }
 
   Chunk(chunk) {
@@ -2092,21 +2097,21 @@ export class Model {
   }
 
   on(hook, fn) {
-    this.$$hooks.push({ hook, fn })
+    this.$$events.push({ hook, fn })
     return this
   }
 
   off(hook, fn) {
-    this.$$hooks.forEach((item, i) => {
+    this.$$events.forEach((item, i) => {
       if (hook === item.hook && (isUndefined(fn) || fn === item.fn)) {
-        this.$$hooks.splice(i, 1)
+        this.$$events.splice(i, 1)
       }
     })
     return this
   }
 
   emit(hook, ...args) {
-    this.$$hooks.forEach((item) => {
+    this.$$events.forEach((item) => {
       if (hook !== item.hook) {
         return
       }
@@ -2149,7 +2154,7 @@ export class Model {
     this.emit('unlock')
   }
 
-  setParent([parent, key]) {
+  _setParent([parent, key]) {
     if (this.$parent && this.$parent === parent && this.$keyPath && this.$keyPath[0] === key) {
       return this
     }
@@ -2199,7 +2204,7 @@ export class Model {
   _ensure(key) {
     const add = (value, key) => {
       if (isInstanceOf(value, Model) && !value.$parent) {
-        value.setParent([this, key])
+        value._setParent([this, key])
         value.onEnsure(this)
         value.emit('ensure', this)
       }
