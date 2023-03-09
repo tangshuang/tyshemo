@@ -191,7 +191,7 @@ const attrs = {
   // current field changing will NOT be triggered (use watch instead)
   // if pass an array, it means you want to follow certain field's changes,
   // if pass a function, it means you want to follow any field's changes, you should use `key` to determine which field is changed
-  follow(e, key, keyOfChangedField): void | Array<{ key?, meta?, action: (e, key) => void }>,
+  follow(e, key, keyOfChangedField): void | Array<{ key?, meta?, action: (valueOfChangedField, keyOfChangedField) => void }>,
 
   // invoke when the model initailized
   init() {},
