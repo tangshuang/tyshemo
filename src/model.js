@@ -72,14 +72,19 @@ export class Model {
             return
           }
 
-          if (isInstanceOf(def, Meta) || isInheritedOf(def, Meta)) {
+          if (isInheritedOf(def, Meta)) {
+            def = new def()
+          }
+
+          if (isInstanceOf(def, Meta)) {
             if (overrideMetas.length) {
-              const item = overrideMetas.find(item => isMatchMeta(def, item.meta))
+              const item = overrideMetas.find((item) => isMatchMeta(def, item.meta))
               if (item) {
                 return def.extend(item.attrs)
               }
             }
-            return def
+            // use .extend to forbide use the some instance and be overrided by scene switching
+            return def.extend({})
           }
 
           if (isObject(def) && inObject('default', def)) {
