@@ -18,6 +18,11 @@ export class FactoryMeta extends SceneMeta {
     define(this, '$create', () => $create)
     define(this, '$adapt', () => $adapt)
   }
+
+  extend(attrs = {}) {
+    const { $entries, $create, $adapt } = this
+    return super.extend({ ...attrs, $entries, $create, $adapt })
+  }
 }
 
 export class FactoryChunk {

@@ -202,7 +202,7 @@ export class Meta {
 
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
-    class NewConstructor extends Constructor {}
+    class NewMeta extends Constructor {}
 
     let attrset = { ...attrs }
     // merge passed attrs
@@ -216,20 +216,24 @@ export class Meta {
       attrset.validators = mergeValidators(this, attrs.validators)
     }
 
-    // merge attrs, should before new NewConstructor, because we need to keep inherited attributes inside,
-    // if we merge after new, default attributes of SceneMeta will not be as expected
-    each(this, (descriptor, attr) => {
-      if (typeof attr === 'symbol') {
-        return
-      }
-      if (!descriptor.configurable) {
-        return
-      }
-      define(NewConstructor, attr, descriptor)
-    }, true)
-
     // pass attrs so that it will be used as passed attrs in scene meta
-    const meta = new NewConstructor(attrset)
+    const meta = new NewMeta(attrset)
+
+    // merge attrs, should before new NewMeta, because we need to keep inherited attributes inside,
+    // if we merge after new, default attributes of SceneMeta will not be as expected
+    each(
+      this,
+      (descriptor, attr) => {
+        if (typeof attr === 'symbol') {
+          return
+        }
+        if (!descriptor.configurable) {
+          return
+        }
+        define(meta, attr, descriptor)
+      },
+      true,
+    )
 
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
 
