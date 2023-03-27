@@ -11,16 +11,15 @@ import {
   isUndefined,
   isFunction,
   define,
-  isString,
   isObject,
 } from 'ts-fns'
 import { Validator } from './validator.js'
-import { ofChain, traverseChain } from './shared/utils.js'
+import { ofChain } from './shared/utils.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
+import { ComputeSymbol } from './shared/constants.js'
 
 const AsyncMetaSymbol = Symbol()
 const SceneMetaSymbol = Symbol()
-const SceneCodesSymbol = Symbol('scenecodes')
 
 const createValidator = v =>
   isInstanceOf(v, Validator) ? v
@@ -200,40 +199,40 @@ export class Meta {
     }, true)
   }
 
+  __restoreAttrs(allAttrs) {
+    const attrs = { ...allAttrs }
+    if (this[ComputeSymbol] && attrs.compute) {
+      this[ComputeSymbol] = attrs.compute
+      delete attrs.compute
+    }
+
+    this.__useAttrs(attrs)
+    each(this, (_, key) => {
+      if (!(key in attrs)) {
+        delete this[key]
+      }
+    })
+  }
+
   extend(attrs = {}) {
     const Constructor = getConstructorOf(this)
     class NewMeta extends Constructor {}
 
-    let attrset = { ...attrs }
-    // merge passed attrs
-    const sceneInfo = this[SceneMetaSymbol]
-    if (sceneInfo) {
-      const passed = sceneInfo.passed || {}
-      attrset = { ...passed, ...attrs }
+    let defaultAttrs = { ...this }
+    if (this[AsyncMetaSymbol]) {
+      defaultAttrs = this[AsyncMetaSymbol].default
+    }
+    else if (this[SceneMetaSymbol]) {
+      defaultAttrs = this[SceneMetaSymbol].default
     }
 
+    const attrset = { ...defaultAttrs, ...attrs }
     if (attrs.validators) {
       attrset.validators = mergeValidators(this, attrs.validators)
     }
 
     // pass attrs so that it will be used as passed attrs in scene meta
     const meta = new NewMeta(attrset)
-
-    // merge attrs, should before new NewMeta, because we need to keep inherited attributes inside,
-    // if we merge after new, default attributes of SceneMeta will not be as expected
-    each(
-      this,
-      (descriptor, attr) => {
-        if (typeof attr === 'symbol') {
-          return
-        }
-        if (!descriptor.configurable) {
-          return
-        }
-        define(meta, attr, descriptor)
-      },
-      true,
-    )
 
     Object.setPrototypeOf(meta, this) // make it impossible to use meta
 
@@ -249,43 +248,48 @@ export class Meta {
     const Constructor = inherit(this, null, attrs)
     return Constructor
   }
-
-  static create(attrs) {
-    const Constructor = inherit(Meta, null, attrs)
-    return Constructor
-  }
 }
 
 export class AsyncMeta extends Meta {
-  constructor(attrs = {}) {
-    super()
+  __init(descriptors, attrs) {
+    super.__init(descriptors, attrs)
     this[AsyncMetaSymbol] = {
-      attrs,
+      descriptors,
+      default: attrs,
+      notifiers: [],
+      // -1 not begin fetching
+      // 0 fetching
+      // 1 fetched
+      status: -1,
     }
   }
   fetchAsyncAttrs() {
     return Promise.resolve({})
   }
   _awaitMeta(model, key) {
-    const Constructor = getConstructorOf(this)
-    let ready = Object.getOwnPropertyDescriptor(Constructor, AsyncMetaSymbol)?.value
-    if (!ready) {
-      ready = Constructor[AsyncMetaSymbol] = {
-        notifiers: [],
-      }
-      // fetch only once
-      this.fetchAsyncAttrs().then((data) => {
-        const { attrs } = this[AsyncMetaSymbol]
-        const next = ensureAttrs({
-          ...data,
-          ...attrs,
-        })
-        this.__useAttrs(next)
-        notifyAttrs(ready.notifiers, next, 'async meta')
-        ready.notifiers.length = 0
-      })
+    const { descriptors, default: attrs, notifiers, status } = this[AsyncMetaSymbol]
+
+    if (status === 1) {
+      return
     }
-    ready.notifiers.push({ model, key })
+
+    if (status === 0) {
+      notifiers.push({ model, key })
+      return
+    }
+
+    this[AsyncMetaSymbol].status = 0
+    this.fetchAsyncAttrs().then((data) => {
+      const next = ensureAttrs({
+        ...descriptors,
+        ...attrs,
+        ...data,
+      })
+      this.__restoreAttrs(next)
+      notifyAttrs(notifiers, next, 'async meta')
+      notifiers.length = 0
+      this[AsyncMetaSymbol].status = 1
+    })
   }
 }
 
@@ -293,11 +297,10 @@ export class SceneMeta extends Meta {
   __init(descriptors, attrs) {
     super.__init(descriptors, attrs)
     this[SceneMetaSymbol] = {
-      codes: [],
-      default: { ...this },
-      passed: attrs,
+      descriptors,
+      default: attrs,
       notifiers: [],
-      disabled: false,
+      codes: [],
     }
     this._initSceneCode()
   }
@@ -308,10 +311,7 @@ export class SceneMeta extends Meta {
     return {}
   }
   switchScene(sceneCode) {
-    const { codes, passed, default: defaultAttrs, notifiers, disabled } = this[SceneMetaSymbol]
-    if (disabled) {
-      return
-    }
+    const { descriptors, default: defaultAttrs, notifiers } = this[SceneMetaSymbol]
 
     const sceneCodes = isArray(sceneCode) ? sceneCode : [sceneCode]
     const scenes = this.defineScenes()
@@ -331,31 +331,17 @@ export class SceneMeta extends Meta {
       // }
     }
 
-    const clear = () => {
-      // delete prev scene attrs at first
-      const prevScenes = codes.map((code) => scenes[code] || {})
-      const prevAttrs = prevScenes.reduce((attrs, scene) => {
-        return [...attrs, Object.keys(scene)]
-      }, [])
-      if (prevAttrs.length) {
-        prevAttrs.forEach((key) => {
-          delete this[key]
-        })
-      }
-    }
-
-    const update = (scenes) => {
-      clear()
+    const restore = (scenes) => {
       const attrs = {}
       scenes.forEach((scene) => {
         Object.assign(attrs, this._ensureAttrs(scene))
       })
       const next = this._ensureAttrs({
+        ...descriptors,
         ...defaultAttrs,
         ...attrs,
-        ...passed,
       })
-      this.__useAttrs(next)
+      this.__restoreAttrs(next)
       return next
     }
 
@@ -371,22 +357,21 @@ export class SceneMeta extends Meta {
       }
       results.push(scene)
     })
-
     this[SceneMetaSymbol].codes = sceneCodes
 
     // set new attributes
     if (results.some(item => item instanceof Promise)) {
-      // update some scenes before async
+      // restore some scenes before async
       const preloadScenes = results.filter(item => !(item instanceof Promise))
       if (preloadScenes.length) {
-        const preloadAttrs = update(preloadScenes)
+        const preloadAttrs = restore(preloadScenes)
         notifyAttrs(notifiers, preloadAttrs, 'scene meta')
         // dont finish it
       }
 
       return Promise.all(results.map(item => item instanceof Promise ? item : Promise.resolve(item)))
         .then((scenes) => {
-          return update(scenes)
+          return restore(scenes)
         })
         .then((attrs) => {
           notifyAttrs(notifiers, attrs, 'scene meta')
@@ -396,7 +381,7 @@ export class SceneMeta extends Meta {
         })
     }
     else if (results.length) {
-      const attrs = update(results)
+      const attrs = restore(results)
       notifyAttrs(notifiers, attrs, 'scene meta')
       finish()
     }
@@ -409,43 +394,6 @@ export class SceneMeta extends Meta {
     notifiers.push({ model, key })
   }
   _initSceneCode() {}
-
-  Scene(sceneCode) {
-    const { passed } = this[SceneMetaSymbol]
-    const Constructor = getConstructorOf(this)
-    const NewMetaClass = Constructor.Scene(sceneCode)
-    const newMeta = new NewMetaClass(passed)
-    Object.setPrototypeOf(newMeta, this) // make it impossible to use meta
-    return newMeta
-  }
-
-  static Scene(sceneCode) {
-    const Constructor = this
-    class PresistSceneMeta extends Constructor {
-      _initSceneCode() {
-        const sceneCodes = []
-        const Constructor = getConstructorOf(this)
-        const unshift = (item) => {
-          if (!sceneCodes.includes(item)) {
-            sceneCodes.unshift(item)
-          }
-        }
-        const pushSceneCodes = (target) => {
-          if (isArray(target[SceneCodesSymbol])) {
-            target[SceneCodesSymbol].forEach(unshift)
-          }
-          else if (isString(target[SceneCodesSymbol])) {
-            unshift(target[SceneCodesSymbol])
-          }
-        }
-        traverseChain(Constructor, SceneMeta, pushSceneCodes)
-        this.switchScene(sceneCodes)
-        this[SceneMetaSymbol].disabled = true
-      }
-      static [SceneCodesSymbol] = sceneCode
-    }
-    return PresistSceneMeta
-  }
 }
 
 /**

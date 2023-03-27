@@ -59,68 +59,6 @@ describe('Scene', () => {
     expect(tank.some).toBe(3)
   })
 
-  test('Meta#Scene', () => {
-    class SomeMeta extends SceneMeta {
-      static default = 1
-      defineScenes() {
-        return {
-          Scene1: {
-            default: 2,
-          },
-          Scene2: {
-            default: 3,
-          },
-        }
-      }
-    }
-
-    class Some1Model extends Model {
-      static some = SomeMeta.Scene('Scene1')
-    }
-
-    const some = new Some1Model()
-    expect(some.some).toBe(2)
-
-    class Some2Model extends Model {
-      static some = SomeMeta.Scene('Scene2')
-    }
-
-    const tank = new Some2Model()
-    expect(tank.some).toBe(3)
-  })
-
-  test('Meta.Scene', () => {
-    class SomeMeta extends SceneMeta {
-      static default = 1
-      defineScenes() {
-        return {
-          Scene1: {
-            default: 2,
-          },
-          Scene2: {
-            default: 3,
-          },
-        }
-      }
-    }
-
-    const meta = new SomeMeta()
-
-    class Some1Model extends Model {
-      static some = meta.Scene('Scene1')
-    }
-
-    const some = new Some1Model()
-    expect(some.some).toBe(2)
-
-    class Some2Model extends Model {
-      static some = meta.Scene('Scene2')
-    }
-
-    const tank = new Some2Model()
-    expect(tank.some).toBe(3)
-  })
-
   test('multiple scenes, priority of after is higher than before', () => {
     class SomeMeta extends SceneMeta {
       static default = 1

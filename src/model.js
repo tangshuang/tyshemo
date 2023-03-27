@@ -33,15 +33,13 @@ import { Meta, AsyncMeta, SceneMeta } from './meta.js'
 import { Factory, FactoryMeta, FactoryChunk } from './factory.js'
 import { RESERVED_ATTRIBUTES } from './shared/configs.js'
 import { Type } from './ty/type.js'
+import { ComputeSymbol, SceneCodesSymbol } from './shared/constants.js'
 
 export class State {
   constructor(options) {
     Object.assign(this, options)
   }
 }
-
-const SceneCodesSymbol = Symbol('scenecodes')
-const ComputeSymbol = Symbol()
 
 export class Model {
   constructor(data = {}, options = {}) {
@@ -801,7 +799,7 @@ export class Model {
           get: () => changed,
           set: (status) => {
             // make sure the computed field value sync to data
-            if (status && meta.compute) {
+            if (status && !meta[ComputeSymbol] && meta.compute) {
               this.$store.set(key, view.value, true)
             }
 
@@ -1308,7 +1306,7 @@ export class Model {
 
       if (inObject(key, data)) {
         // disable compute ability
-        if (meta.compute) {
+        if (!meta[ComputeSymbol] && meta.compute) {
           meta[ComputeSymbol] = meta.compute
           delete meta.compute
         }
@@ -1364,7 +1362,7 @@ export class Model {
     // dependencies collection
     // after onRestore, so that developers can do some thing before collection
     each(schema, (meta, key) => {
-      if (meta.compute) {
+      if (!meta[ComputeSymbol] && meta.compute) {
         this.getData(key)
       }
     })
@@ -1611,8 +1609,8 @@ export class Model {
       next = cloned
     }
 
-    const def = this.$schema[key]
-    if (!def) {
+    const meta = this.$schema[key]
+    if (!meta) {
       return this.define(key, next)
     }
 
@@ -1627,9 +1625,9 @@ export class Model {
 
     // BREAKING CHANGE
     // drop the ability of compute, after change vlaue manully, the field will be a normal field
-    if (def.compute) {
-      def[ComputeSymbol] = def.compute
-      delete def.compute
+    if (!meta[ComputeSymbol] && meta.compute) {
+      meta[ComputeSymbol] = meta.compute
+      delete meta.compute
     }
 
     this.emit('set', keyPath, coming, prev)
@@ -1863,7 +1861,7 @@ export class Model {
       return value
     }
     // if value is not changed, we will use computed value
-    else if (meta && meta.compute) {
+    else if (meta && !meta[ComputeSymbol] && meta.compute) {
       // clear all previous dependencies' watchers
       const depent = this.$$deps[key]
       if (depent && depent.deps && depent.deps.length) {
@@ -1912,7 +1910,7 @@ export class Model {
       if (this.collect(() => views[key] && views[key].changed, true)) {
         return
       }
-      if (meta.compute) {
+      if (!meta[ComputeSymbol] && meta.compute) {
         const value = tryGet(() => meta.compute.call(this), data[key])
         computed[key] = value
       }

@@ -365,11 +365,13 @@ describe('Meta', () => {
     })
     expect(some.some).toBe(10)
 
+    global.__debug = 1
     // make it non-computed when restore
     some.fromJSON({
       count: 1,
       some: 9,
     })
     expect(some.some).toBe(9)
+    global.__debug = 0
   })
 })
