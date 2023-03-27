@@ -402,15 +402,14 @@ export class SceneMeta extends Meta {
  */
 export class StateMeta extends Meta {
   __init(descriptors, attrs) {
-    const { value, ...others } = attrs
+    const { value, default: defaultValue = value, ...others } = attrs
     delete others.drop
     delete others.state
-    delete others.default
 
     const desc = { ...descriptors }
     delete desc.drop
     delete desc.state
-    desc.default = isUndefined(value) ? descriptors.value : value
+    desc.default = isUndefined(defaultValue) ? descriptors.value : defaultValue
 
     super.__init(desc, others)
     // force make drop true, can not be changed

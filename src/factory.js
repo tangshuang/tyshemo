@@ -190,6 +190,7 @@ export class Factory {
       }
 
       const attributes = {
+        ...attrs,
         default: factory.default(function(key) {
           const items = isFunction(_default) ? _default.call(this, key) : _default
           const values = isArray(items) ? items : []
@@ -211,7 +212,6 @@ export class Factory {
         $create: gen,
         $adapt,
       }
-      Object.assign(ThisFactoryMeta, attrs)
       this.meta = new ThisFactoryMeta(attributes)
     }
     else {
@@ -221,6 +221,7 @@ export class Factory {
         return child
       }
       const attributes = {
+        ...attrs,
         default: factory.default(function(key) {
           const value = isFunction(_default) ? _default.call(this, key) : _default
           return gen(value, key, this)
@@ -241,7 +242,6 @@ export class Factory {
         $create: gen,
         $adapt,
       }
-      Object.assign(ThisFactoryMeta, attrs)
       this.meta = new ThisFactoryMeta(attributes)
     }
   }
