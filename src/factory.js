@@ -9,6 +9,7 @@ import {
   isEqual,
 } from 'ts-fns'
 import { SceneMeta } from './meta.js'
+import { Model } from './model.js'
 
 export class FactoryMeta extends SceneMeta {
   constructor(options) {
@@ -202,7 +203,13 @@ export class Factory {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(isArray(coming) ? coming : [], key, this)
         }),
-        save: factory.save(_save || ((ms) => ms.map(m => m.Chunk().toJSON()))),
+        save: factory.save(_save || ((ms) => ms.map((m) => {
+          if (isInstanceOf(m, Model)) {
+            return m.Chunk().toJSON()
+          }
+          // when first time create, it will invoke save to generate data to pass into create as value
+          return m
+        }))),
         map: factory.map(_map || (ms => ms.map(m => m.Chunk().toData()))),
         setter: factory.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
@@ -232,7 +239,12 @@ export class Factory {
           const coming = _create ? _create.call(this, value, key, json) : value
           return gen(coming, key, this)
         }),
-        save: factory.save(_save || ((m) => m.Chunk().toJSON())),
+        save: factory.save(_save || ((m) => {
+          if (isInstanceOf(m, Model)) {
+            return m.Chunk().toJSON()
+          }
+          return m
+        })),
         map: factory.map(_map || (m => m.Chunk().toData())),
         setter: factory.setter(function(value, key) {
           const coming = _setter ? _setter.call(this, value, key) : value
