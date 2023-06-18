@@ -11,7 +11,7 @@
   "scripts": {
     "postversion": "git add . && git commit -m \"update version to $npm_package_version\"",
     "prepublishOnly": "npm run test && npm run build",
-    "build": "node gulpfile.js && webpack",
+    "build": "node gulpfile.js && cross-env NODE_OPTIONS=--openssl-legacy-provider webpack",
     "test": "cross-env NODE_ENV=test jest",
     "dev": "webpack-dev-server --config ./examples/webpack-dev-server.js",
     "doc": "node docserver.js",
@@ -53,6 +53,7 @@
     "webpack-dev-server": "^3.11.3"
   },
   "dependencies": {
+    "@babel/runtime": "^7.22.5",
     "scopex": "^4.3.3",
     "ts-fns": "^11.0.2"
   }
