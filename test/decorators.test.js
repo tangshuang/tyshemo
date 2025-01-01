@@ -1,5 +1,5 @@
-import { meta, state } from '../src/decorators.js'
-import { Model } from '../src/model.js'
+import { meta, state } from '../es/decorators.js'
+import { Model } from '../es/model.js'
 
 class SomeModel extends Model {
   @meta({

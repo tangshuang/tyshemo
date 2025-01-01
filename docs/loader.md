@@ -3,7 +3,7 @@
 An async loader to load json schema from remote to generate local Model.
 
 ```js
-import { Loader } from 'tyshemo/dist/tyshemo'
+import { Loader } from 'tyshemo'
 
 class SomeLoader extends Loader {
   fetchJSON(url) {

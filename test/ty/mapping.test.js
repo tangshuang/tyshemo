@@ -1,4 +1,4 @@
-import { Mapping, Numeric, Dict } from '../../src/ty/index.js'
+import { Mapping, Numeric, Dict } from '../../es/ty/index.js'
 
 describe('Mapping', () => {
   test('one level', () => {

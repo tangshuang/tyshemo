@@ -7,7 +7,7 @@ import {
   instance, equal, nullable,
   Dict,
   Prototype,
-} from '../../src/ty/index.js'
+} from '../../es/ty/index.js'
 
 describe('Rule Generators', () => {
   test('lazy', (done) => {

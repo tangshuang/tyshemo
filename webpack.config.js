@@ -2,7 +2,7 @@ const DeepScope = require('webpack-deep-scope-plugin').default
 
 const core = {
   mode: 'none',
-  entry: __dirname + '/src/index.js',
+  entry: __dirname + '/es/index.js',
   output: {
     path: __dirname + '/dist',
     filename: 'index.js',
@@ -48,7 +48,7 @@ const coreMini = {
 
 const ty = {
   ...core,
-  entry: __dirname + '/src/ty/index.js',
+  entry: __dirname + '/es/ty/index.js',
   output: {
     ...core.output,
     library: 'ty',
@@ -58,51 +58,11 @@ const ty = {
 
 const tyMini = {
   ...coreMini,
-  entry: __dirname + '/src/ty/index.js',
+  entry: __dirname + '/es/ty/index.js',
   output: {
     ...coreMini.output,
     library: 'ty',
     filename: 'ty.min.js',
-  },
-}
-
-const store = {
-  ...core,
-  entry: __dirname + '/src/store.js',
-  output: {
-    ...core.output,
-    library: 'store',
-    filename: 'store.js',
-  },
-}
-
-const storeMini = {
-  ...coreMini,
-  entry: __dirname + '/src/store.js',
-  output: {
-    ...coreMini.output,
-    library: 'store',
-    filename: 'store.min.js',
-  },
-}
-
-const complete = {
-  ...core,
-  entry: __dirname + '/src/complete/index.js',
-  output: {
-    ...core.output,
-    library: 'tyshemo',
-    filename: 'tyshemo.js',
-  },
-}
-
-const completeMini = {
-  ...coreMini,
-  entry: __dirname + '/src/complete/index.js',
-  output: {
-    ...core.output,
-    library: 'tyshemo',
-    filename: 'tyshemo.min.js',
   },
 }
 
@@ -111,8 +71,4 @@ module.exports = [
   coreMini,
   ty,
   tyMini,
-  store,
-  storeMini,
-  complete,
-  completeMini,
 ]

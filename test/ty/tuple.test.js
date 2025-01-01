@@ -1,4 +1,4 @@
-import { Tupl } from '../../src/ty/index.js'
+import { Tupl } from '../../es/ty/index.js'
 
 describe('Tupl', () => {
   describe('assert', () => {

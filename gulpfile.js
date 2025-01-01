@@ -1,4 +1,4 @@
 const gulp = require('gulp')
 const babel = require('gulp-babel')
 
-gulp.src('src/**/*.js').pipe(babel()).pipe(gulp.dest('cjs/'))
+gulp.src('es/**/*.js').pipe(babel()).pipe(gulp.dest('cjs/'))

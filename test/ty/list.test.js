@@ -1,4 +1,4 @@
-import { List } from '../../src/ty/index.js'
+import { List } from '../../es/ty/index.js'
 
 describe('List', () => {
   describe('assert', () => {

@@ -1,4 +1,4 @@
-import { Dict, SelfRef } from '../../src/ty/index.js'
+import { Dict, SelfRef } from '../../es/ty/index.js'
 
 describe('Self including type', () => {
   test('self include dict', () => {

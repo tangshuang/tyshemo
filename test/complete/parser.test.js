@@ -1,4 +1,4 @@
-import { Parser } from '../../src/complete/parser.js'
+import { Parser } from '../../es/tools/parser.js'
 
 describe('Parser', () => {
   test('parse', () => {

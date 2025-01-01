@@ -1,5 +1,5 @@
-import { SceneMeta } from '../src/meta'
-import { Model } from '../src/model'
+import { SceneMeta } from '../es/meta.js'
+import { Model } from '../es/model.js'
 
 describe('Scene', () => {
   test('basic', () => {

@@ -1,5 +1,5 @@
-import { Mocker } from '../../src/complete/mocker.js'
-import { Dict, ifexist, equal, determine, Positive, SelfRef } from '../../src/ty/index.js'
+import { Mocker } from '../../es/tools/mocker.js'
+import { Dict, ifexist, equal, determine, Positive, SelfRef } from '../../es/ty/index.js'
 
 describe('Mocker', () => {
   test('mock', () => {

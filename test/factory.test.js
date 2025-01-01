@@ -1,8 +1,8 @@
-import { Model } from '../src/model.js'
-import { meta, state } from '../src/decorators.js'
-import { Factory } from '../src/factory.js'
+import { Model } from '../es/model.js'
+import { meta, state } from '../es/decorators.js'
+import { Factory } from '../es/factory.js'
 import { isInstanceOf } from 'ts-fns'
-import { Meta } from '../src/meta'
+import { Meta } from '../es/meta.js'
 
 describe('Factory', () => {
   test('linkage', () => {

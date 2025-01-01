@@ -5,7 +5,7 @@ To mock data from our type system for testing or demo.
 ## Usage
 
 ```js
-import { Mocker } from 'tyshemo/dist/tyshemo'
+import { Mocker } from 'tyshemo'
 const mocker = new Mocker()
 
 const mockdata = mocker.mock(SomeDictType)

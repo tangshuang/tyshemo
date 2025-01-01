@@ -1,6 +1,6 @@
-import { Shape } from '../../src/ty/shape.js'
-import { SelfRef } from '../../src/ty/self-ref.js'
-import { ifexist } from '../../src/ty/rules.js'
+import { Shape } from '../../es/ty/shape.js'
+import { SelfRef } from '../../es/ty/self-ref.js'
+import { ifexist } from '../../es/ty/rules.js'
 
 describe('Shape', () => {
   test('shape', () => {

@@ -1,6 +1,6 @@
-import { Meta } from '../src/meta.js'
-import { Schema } from '../src/schema.js'
-import { ifexist } from '../src/ty/index.js'
+import { Meta } from '../es/meta.js'
+import { Schema } from '../es/schema.js'
+import { ifexist } from '../es/ty/index.js'
 import { isString, isEmpty } from 'ts-fns'
 
 describe('Schema', () => {

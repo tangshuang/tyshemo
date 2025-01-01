@@ -20,4 +20,8 @@ export {
    * @deprecated
    */
   createMetaRef as createMetaGroup,
-} from './interface'
+} from './interface.js'
+
+export { Parser } from './tools/parser.js'
+export { Mocker } from './tools/mocker.js'
+export { Loader } from './tools/loader.js'

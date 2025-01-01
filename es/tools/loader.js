@@ -1,7 +1,7 @@
 import { Parser } from './parser.js'
 import { Model } from '../model.js'
 import { createAsyncRef } from '../shared/utils.js'
-import { ScopeX, createScope } from 'scopex'
+import ScopeXModule from 'scopex'
 import { Validator } from '../validator.js'
 import { Factory } from '../factory.js'
 import {
@@ -17,6 +17,8 @@ import {
   uniqueArray,
   decideby,
 } from 'ts-fns'
+
+const { ScopeX, createScope } = ScopeXModule
 
 const getFinalExp = (exp) => exp.trim()
   .replace(/^\.\./g, '$views.') // -> { ..a.value }

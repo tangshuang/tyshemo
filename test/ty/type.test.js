@@ -1,4 +1,4 @@
-import { Type } from '../../src/ty/index.js'
+import { Type } from '../../es/ty/index.js'
 
 describe('Type', () => {
   describe('assert', () => {

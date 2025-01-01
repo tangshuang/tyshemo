@@ -1,4 +1,4 @@
-import { Validator, Meta, Model } from '../src/index.js'
+import { Validator, Meta, Model } from '../es/index.js'
 
 const { required, max } = Validator
 

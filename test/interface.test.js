@@ -1,6 +1,6 @@
-import { createAsyncMeta } from '../src/interface.js'
-import { Model } from '../src/model'
-import { Loader } from '../src/complete/loader'
+import { createAsyncMeta } from '../es/interface.js'
+import { Model } from '../es/model.js'
+import { Loader } from '../es/tools/loader.js'
 
 describe('Interface', () => {
   test('createAsyncMeta', (done) => {

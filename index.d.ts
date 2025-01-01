@@ -403,7 +403,7 @@ export declare class Ty {
 }
 
 export declare class Parser {
-  constructor(types: Obj)
+  constructor(types?: Obj)
 
   init(types: Obj): void
 
@@ -411,7 +411,7 @@ export declare class Parser {
 
   parse(description: Obj): ITypes & { __comments__: Obj }
 
-  describe(dict: Obj, options: { arrayStyle: number, ruleStyle: number }): Obj
+  describe(dict: Obj, options?: { arrayStyle: number, ruleStyle: number }): Obj
 
   /**
     * give a real data object, give its type shape

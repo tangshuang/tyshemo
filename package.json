@@ -3,6 +3,12 @@
   "version": "15.1.3",
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
+  "module": "es/index.js",
+  "exports": {
+    "import": "./es/index.js",
+    "require": "./cjs/index.js"
+  },
+  "browser": "dist/index.js",
   "types": "index.d.ts",
   "engines": {
     "node": ">=16",
@@ -15,7 +21,7 @@
     "test": "cross-env NODE_ENV=test jest",
     "dev": "webpack-dev-server --config ./examples/webpack-dev-server.js",
     "doc": "node docserver.js",
-    "eslint": "eslint src --ext js,jsx"
+    "eslint": "eslint es --ext js,jsx"
   },
   "repository": {
     "type": "git",
@@ -55,6 +61,6 @@
   "dependencies": {
     "@babel/runtime": "^7.22.5",
     "scopex": "^4.3.3",
-    "ts-fns": "^11.0.2"
+    "ts-fns": "^12.3.0"
   }
 }

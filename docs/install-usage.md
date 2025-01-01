@@ -28,38 +28,14 @@ If you are using webpack, try this:
 import { Ty } from 'tyshemo'
 ```
 
-Or use source code to be benefit from tree shaking:
-
-```js
-import { Ty } from 'tyshemo/src/ty'
-```
-
 ## CDN
 
 Link to [unpkg source](https://unpkg.com/browse/tyshemo@latest/):
 
 ```html
-<script src="https://unpkg.com/tyshemo/dist/tyshemo.min.js"></script>
+<script src="https://unpkg.com/tyshemo/dist/index.min.js"></script>
 <script>
   const { Ty } = window.tyshemo
-</script>
-```
-
-Use only ty:
-
-```html
-<script src="https://unpkg.com/tyshemo/dist/ty.min.js"></script>
-<script>
-  const { Ty } = window.ty
-</script>
-```
-
-Use only store:
-
-```html
-<script src="https://unpkg.com/tyshemo/dist/store.min.js"></script>
-<script>
-  const { Store } = window.store
 </script>
 ```
 
@@ -70,11 +46,16 @@ You can look into [unpkg](https://unpkg.com/browse/tyshemo@latest/) to find out 
 - Files in `src` directory is source code, it is written in ES6 but with some other packages.
 - Files in `cjs` directory is commonjs code which are able to use in nodejs directly.
 - Files in `dist` directory is webpack bundle files which are able to run in browsers directly. There are bundle/minified js files with their .map files.
-  - `ty.js` only contains tyshemo's type system (without Parser and Mocker).
-  - `store.js` only contains tyshemo's store library.
-  - `index.js` contains core exports.
-  - `tyshemo.js` contains complete exports which contains `Parser, Mocker, Loader`
 
-```html
-<script src="https://unpkg.com/tyshemo/dist/index.min.js"></script>
+Look into `package.json` to see `exports` field:
+
+```
+  "main": "cjs/index.js",
+  "module": "es/index.js",
+  "exports": {
+    "import": "./es/index.js",
+    "require": "./cjs/index.js"
+  },
+  "browser": "dist/index.js",
+  "types": "index.d.ts",
 ```

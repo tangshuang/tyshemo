@@ -1,7 +1,7 @@
 module.exports = {
   coverageReporters: ['json', 'html', 'text', 'text-summary'],
   collectCoverageFrom: [
-    'src/**/*.js',
+    'es/**/*.js',
   ],
   coverageDirectory: 'coverage',
 }

@@ -1,4 +1,4 @@
-import { Dict } from '../../src/ty/index.js'
+import { Dict } from '../../es/ty/index.js'
 
 describe('Dict', () => {
   describe('assert', () => {

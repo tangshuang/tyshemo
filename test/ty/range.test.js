@@ -1,4 +1,4 @@
-import { Range } from '../../src/ty/index.js'
+import { Range } from '../../es/ty/index.js'
 
 describe('Range', () => {
   test('range', () => {

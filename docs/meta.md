@@ -406,7 +406,7 @@ class MyAsyncMeta extends AsyncMeta {
 Work with Loader:
 
 ```js
-import { AsyncMeta, Loader } from 'tyshemo/dist/tyshemo'
+import { AsyncMeta, Loader } from 'tyshemo'
 
 class MyAsyncMeta extends AsyncMeta {
   static default = 1

@@ -1,4 +1,4 @@
-import { Ty } from '../../src/ty/index.js'
+import { Ty } from '../../es/ty/index.js'
 
 describe('Ty', () => {
   test('decorate', () => {

@@ -1,8 +1,8 @@
-import { Model } from '../src/model.js'
-import { Meta, StateMeta } from '../src/meta.js'
+import { Model } from '../es/model.js'
+import { Meta, StateMeta } from '../es/meta.js'
 import { formatDate, createDate } from 'ts-fns'
-import { Numeric } from '../src/ty/index.js'
-import { createMetaRef, createMeta, createAsyncMeta } from '../src/interface.js'
+import { Numeric } from '../es/ty/index.js'
+import { createMetaRef, createMeta, createAsyncMeta } from '../es/interface.js'
 
 describe('Meta', () => {
   test('extend', () => {
