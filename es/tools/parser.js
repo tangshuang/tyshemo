@@ -574,6 +574,13 @@ export class Parser {
       }
 
       const pattern = isInstanceOf(type, Type) || isInstanceOf(type, Rule) ? type.pattern : type
+
+      // secondary check
+      if (!pattern) {
+        const proto2 = getProto(pattern)
+        return proto2 ? proto2 : 'unknown'
+      }
+
       const desc = isArray(pattern) ? [] : {}
 
       each(pattern, (value, key) => {

@@ -4,7 +4,7 @@
   "description": "An ECMAScript data type/schema system which based on data type validation.",
   "main": "cjs/index.js",
   "module": "es/index.js",
-  "browser": "dist/index.js",
+  "browser": "dist/index.min.js",
   "typings": "index.d.ts",
   "types": "index.d.ts",
   "exports": {
@@ -68,6 +68,6 @@
   "dependencies": {
     "@babel/runtime": "^7.22.5",
     "scopex": "^4.3.3",
-    "ts-fns": "^13.0.0"
+    "ts-fns": "^13.0.2"
   }
 }
