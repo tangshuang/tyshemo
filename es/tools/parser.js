@@ -461,7 +461,8 @@ export class Parser {
       else if (isInstanceOf(value, Enum)) {
         const { pattern } = value
         const items = pattern.map(build)
-        const desc = items.join('|')
+        const strs = items.map(item => typeof item === 'string' ? item : define(item))
+        const desc = strs.join('|')
         sign = desc
       }
       else if (isInstanceOf(value, Range)) {
