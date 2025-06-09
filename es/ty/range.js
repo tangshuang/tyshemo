@@ -28,7 +28,7 @@ export class Range extends Type {
   _decide(value) {
     const pattern = this.pattern
     const tyerr = new TyError()
-    const { min, max, minBound = true, maxBound = true } = pattern
+    const { min, max, minBound = true, maxBound = true, step } = pattern
 
     if (!isNumber(value)) {
       tyerr.replace({ type: 'exception', value, name: this.name, pattern })
@@ -37,6 +37,9 @@ export class Range extends Type {
       tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     }
     else if ((maxBound && value > max) || (!maxBound && value >= max)) {
+      tyerr.replace({ type: 'exception', value, name: this.name, pattern })
+    }
+    else if (step && value % step !== 0) {
       tyerr.replace({ type: 'exception', value, name: this.name, pattern })
     }
     else {

@@ -246,6 +246,7 @@ export declare class Range extends Type {
     max: number
     minBound?: boolean
     maxBound?: boolean
+    step?: number
   })
 }
 
@@ -254,6 +255,7 @@ export declare function range(options: {
   max: number
   minBound?: boolean
   maxBound?: boolean
+  step?: number
 }): Range
 
 export declare class Mapping extends Type {
